@@ -1,0 +1,463 @@
+:root {
+  /* Paleta: tinta + papel, com selo em brasão/latão e carimbo em vinho.
+     Evita deliberadamente o combo creme + terracota comum em UI gerada por IA. */
+  --ink: #1b2a4a;
+  --ink-soft: #55627e;
+  --paper: #f7f4ec;
+  --paper-dim: #ece6d6;
+  --paper-line: #d8cfb4;
+  --oxblood: #7a2e2e;
+  --oxblood-soft: #a45252;
+  --brass: #8c6b2e;
+  --brass-soft: #b99b52;
+  --ok: #2f5d42;
+
+  --font-display: "Source Serif 4", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--oxblood);
+  outline-offset: 2px;
+}
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+/* ---------- Masthead ---------- */
+
+.masthead {
+  border-bottom: 3px double var(--ink);
+  padding-bottom: 18px;
+  margin-bottom: 8px;
+}
+
+.masthead-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0 0 6px;
+}
+
+.masthead-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 5vw, 40px);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.masthead-sub {
+  font-family: var(--font-body);
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.masthead-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-transform: capitalize;
+}
+
+/* ---------- Auth gate ---------- */
+
+.gate {
+  margin-top: 64px;
+  padding: 32px;
+  background: var(--paper-dim);
+  border: 1px solid var(--paper-line);
+}
+
+.gate h2 {
+  font-family: var(--font-display);
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.gate p {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+/* ---------- Form ---------- */
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.field {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  min-height: 14px;   /* garante que labels de 1 ou 2 linhas não desalinhem os inputs */
+  display: flex;
+  align-items: flex-end;
+}
+
+.field input {
+  border: 1px solid var(--paper-line);
+  background: #fff;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.field input:focus-visible {
+  border-color: var(--oxblood);
+}
+
+.field-error {
+  font-size: 12px;
+  color: var(--oxblood);
+  font-family: var(--font-mono);
+}
+
+.btn {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 41px;
+  align-self: flex-end;
+}
+
+.btn:hover {
+  background: var(--oxblood);
+  border-color: var(--oxblood);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--paper-line);
+}
+
+.btn-ghost:hover {
+  background: transparent;
+  color: var(--oxblood);
+  border-color: var(--oxblood-soft);
+}
+
+/* ---------- Section header ---------- */
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 56px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--paper-line);
+  padding-bottom: 10px;
+}
+
+.section-head h2 {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin: 0;
+}
+
+.section-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ---------- Process card (ficha de protocolo) ---------- */
+
+.docket-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.docket {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: #fff;
+  border: 1px solid var(--paper-line);
+  padding: 16px 20px 16px 28px;
+}
+
+/* borda picotada, como o canhoto de uma ficha */
+.docket::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--brass-soft) 0,
+    var(--brass-soft) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+.docket-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.docket-numero {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.docket-apelido {
+  font-family: var(--font-display);
+  font-size: 16px;
+  margin-top: 4px;
+  color: var(--ink);
+}
+
+.docket-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+.docket-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  border: 1px solid var(--paper-line);
+  background: transparent;
+  color: var(--ink-soft);
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  border-color: var(--oxblood);
+  color: var(--oxblood);
+}
+
+/* ---------- Estados ---------- */
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  border: 1px dashed var(--paper-line);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.banner {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 10px 14px;
+  margin-top: 16px;
+  border-left: 3px solid var(--oxblood);
+  background: #fbeeee;
+  color: var(--oxblood);
+}
+
+.banner-ok {
+  border-left-color: var(--ok);
+  background: #eaf3ee;
+  color: var(--ok);
+}
+
+.footer-note {
+  margin-top: 64px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--paper-line);
+  padding-top: 16px;
+}
+
+.footer-note button {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+/* ---------- Skeleton (loading) ---------- */
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+
+.docket-skeleton {
+  height: 78px;
+  background: var(--paper-dim);
+  border: 1px solid var(--paper-line);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docket-skeleton {
+    animation: none;
+  }
+}
+
+/* ---------- Abas ---------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  margin-top: 40px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 4px;
+  margin-right: 22px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab.active {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+}
+
+/* ---------- Linhas simples (e-mails / histórico) ---------- */
+
+.simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.simple-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.simple-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.simple-row-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.simple-row-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+}
+
+.badge-ok {
+  color: var(--ok);
+}
+
+.badge-pendente {
+  color: var(--brass);
+}
