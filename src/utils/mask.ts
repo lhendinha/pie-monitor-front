@@ -1,5 +1,5 @@
-/** Remove tudo que não é dígito. */
-export function apenasDigitos(valor) {
+/** Remove tudo que não é dígito, limitado a 20 caracteres (padrão CNJ). */
+export function apenasDigitos(valor: string | null | undefined): string {
   return (valor || "").replace(/\D/g, "").slice(0, 20);
 }
 
@@ -7,7 +7,7 @@ export function apenasDigitos(valor) {
  * Aplica a máscara CNJ progressivamente, conforme o usuário digita:
  * NNNNNNN-DD.AAAA.J.TR.OOOO
  */
-export function mascararNumeroProcesso(valorComOuSemMascara) {
+export function mascararNumeroProcesso(valorComOuSemMascara: string | null | undefined): string {
   const d = apenasDigitos(valorComOuSemMascara);
   let out = d.slice(0, 7);
   if (d.length > 7) out += "-" + d.slice(7, 9);

@@ -1,4 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import type { JwtPayload, Papel, TokensResponse } from "../types";
+import { HIERARQUIA_PAPEIS } from "../constants";
+
+const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 const KEYS = {
   access: "pje-monitor-access-token",
@@ -7,54 +10,53 @@ const KEYS = {
   username: "pje-monitor-username",
   papel: "pje-monitor-papel",
   grupoId: "pje-monitor-grupo-id",
-};
+} as const;
 
 /** Decodifica o payload de um JWT sem verificar assinatura -- só pra UI (a
  * autorização de verdade sempre acontece no backend). */
-function decodificarPayload(jwt) {
+function decodificarPayload(jwt: string): JwtPayload {
   try {
     const [, payloadB64] = jwt.split(".");
     const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
     const json = atob(padded.padEnd(padded.length + ((4 - (padded.length % 4)) % 4), "="));
-    return JSON.parse(json);
+    return JSON.parse(json) as JwtPayload;
   } catch {
     return {};
   }
 }
 
-export function getAccessToken() {
+export function getAccessToken(): string | null {
   return localStorage.getItem(KEYS.access);
 }
 
-export function getRefreshToken() {
+export function getRefreshToken(): string | null {
   return localStorage.getItem(KEYS.refresh);
 }
 
-export function getUsername() {
+export function getUsername(): string | null {
   return localStorage.getItem(KEYS.username);
 }
 
-export function getPapel() {
-  return localStorage.getItem(KEYS.papel);
+export function getPapel(): Papel | null {
+  return localStorage.getItem(KEYS.papel) as Papel | null;
 }
 
-export function getGrupoId() {
+export function getGrupoId(): string | null {
   return localStorage.getItem(KEYS.grupoId);
 }
 
-export function ehSuperAdmin() {
+export function ehSuperAdmin(): boolean {
   return getPapel() === "super_admin";
 }
 
 /** true se o papel atual atende ao mínimo exigido (mesma hierarquia do backend). */
-export function papelAtende(papelMinimo) {
-  const ordem = ["user", "manager", "admin", "super_admin"];
+export function papelAtende(papelMinimo: Papel): boolean {
   const atual = getPapel();
-  if (!ordem.includes(atual)) return false;
-  return ordem.indexOf(atual) >= ordem.indexOf(papelMinimo);
+  if (!atual || !HIERARQUIA_PAPEIS.includes(atual)) return false;
+  return HIERARQUIA_PAPEIS.indexOf(atual) >= HIERARQUIA_PAPEIS.indexOf(papelMinimo);
 }
 
-function salvarTokens({ access_token, refresh_token, expira_em, username }) {
+function salvarTokens({ access_token, refresh_token, expira_em, username }: TokensResponse): void {
   const payload = decodificarPayload(access_token);
   localStorage.setItem(KEYS.access, access_token);
   localStorage.setItem(KEYS.refresh, refresh_token);
@@ -64,16 +66,16 @@ function salvarTokens({ access_token, refresh_token, expira_em, username }) {
   localStorage.setItem(KEYS.grupoId, payload.grupo_id || "");
 }
 
-export function limparTokens() {
+export function limparTokens(): void {
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
 }
 
-export function estaAutenticado() {
+export function estaAutenticado(): boolean {
   return Boolean(getAccessToken() && getRefreshToken());
 }
 
 /** POST /login -- credenciais -> salva o par de tokens. */
-export async function login(username, password) {
+export async function login(username: string, password: string): Promise<TokensResponse> {
   const resp = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -88,7 +90,7 @@ export async function login(username, password) {
 }
 
 /** POST /refresh -- troca o refresh token (rotacionado) por um access token novo. */
-export async function renovarToken() {
+export async function renovarToken(): Promise<boolean> {
   const refresh_token = getRefreshToken();
   if (!refresh_token) return false;
 
@@ -111,7 +113,7 @@ export async function renovarToken() {
 }
 
 /** POST /logout -- revoga o refresh token no servidor e limpa localmente. */
-export async function logout() {
+export async function logout(): Promise<void> {
   const refresh_token = getRefreshToken();
   limparTokens();
   if (refresh_token) {
@@ -128,7 +130,11 @@ export async function logout() {
 }
 
 /** POST /convites/{token}/aceitar -- público, cria a conta e já loga (auto-login). */
-export async function aceitarConvite(token, username, password) {
+export async function aceitarConvite(
+  token: string,
+  username: string,
+  password: string
+): Promise<TokensResponse> {
   const resp = await fetch(`${API_URL}/convites/${token}/aceitar`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
