@@ -461,3 +461,154 @@ input {
 .badge-pendente {
   color: var(--brass);
 }
+
+/* ---------- Docket clicável (abre detalhes) ---------- */
+
+.docket-main-clickable {
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  flex: 1;
+  min-width: 0;
+}
+
+.docket-main-clickable:hover .docket-apelido {
+  color: var(--oxblood);
+}
+
+/* ---------- Painel de detalhes do processo ---------- */
+
+.detail-panel {
+  margin-top: 24px;
+  border: 1px solid var(--paper-line);
+  background: #fff;
+}
+
+.detail-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--paper-line);
+  background: var(--paper-dim);
+}
+
+.detail-texto {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+
+.simple-row-block {
+  display: block;
+  padding: 16px 4px;
+}
+
+/* ---------- Barra do super_admin (grupo alvo) ---------- */
+
+.super-admin-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 10px 14px;
+  background: var(--paper-dim);
+  border: 1px dashed var(--brass-soft);
+}
+
+.super-admin-bar label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.super-admin-bar input {
+  flex: 1;
+  border: 1px solid var(--paper-line);
+  background: #fff;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ---------- Papel (badge) ---------- */
+
+.role-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+}
+
+.role-user {
+  color: var(--ink-soft);
+}
+
+.role-manager {
+  color: var(--brass);
+}
+
+.role-admin,
+.role-super_admin {
+  color: var(--oxblood);
+}
+
+/* ---------- Membros por subgrupo ---------- */
+
+.subgrupo-membros-card {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--paper-line);
+  background: #fff;
+}
+
+.subgrupo-membros-card h3 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+
+.subgrupo-membros-card .form-row {
+  margin-top: 14px;
+}
+
+.muted {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* ---------- Checkboxes (convite: escolher subgrupos) ---------- */
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin-top: 6px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  accent-color: var(--oxblood);
+  width: 16px;
+  height: 16px;
+}

@@ -1,74 +1,71 @@
 # Diário de Acompanhamento — front-end do PJe Monitor
 
-Front-end React (Vite) pra cadastrar/listar/remover processos monitorados, gerenciar e-mails notificados e ver o histórico de envios -- tudo com login (usuário/senha + JWT), consumindo a API que já está rodando na AWS.
+Front-end React (Vite) com login (JWT + refresh), gestão de **Grupos → Subgrupos → Processos**, membros por papel (`user`/`manager`/`admin`/`super_admin`), convites por e-mail e histórico de notificações — consumindo a API que já está rodando na AWS.
 
 ## Por que não hospedar na AWS (S3 + CloudFront)?
 
-Sua conta AWS foi criada em 07/01/2026 — depois da mudança de julho/2025 no modelo de free tier. Contas nesse modelo novo ganham **$200 em créditos válidos só por 6 meses**, não um free tier permanente pra S3/CloudFront (diferente de Lambda/DynamoDB/SNS, que são "Always Free" de verdade). Como sua conta já passou dos 6 meses, hospedar o front-end em S3 poderia gerar custo real sem aviso.
+Sua conta AWS foi criada depois da mudança de julho/2025 no modelo de free tier: contas nesse modelo novo ganham **$200 em créditos válidos só por 6 meses**, não um free tier permanente pra S3/CloudFront (diferente de Lambda/DynamoDB, que são "Always Free" de verdade). Pra garantir **$0 garantido**, esse projeto roda no **Vercel** — free tier permanente, deploy automático a cada push.
 
-Pra garantir **$0 garantido**, esse projeto foi pensado pra rodar em uma plataforma com free tier permanente de verdade: **Vercel** (recomendado abaixo), Netlify ou GitHub Pages — todas gratuitas pra sempre em projetos pessoais.
+## Antes de usar: cadastre o primeiro usuário (bootstrap)
 
-## Antes de usar: cadastre um usuário
-
-Esse front-end não tem tela de cadastro (por design -- ver `README.md` do backend). Cadastra o primeiro usuário direto via API, com a `x-api-key`:
+Esse front-end não tem tela de auto-cadastro (por design). O primeiro usuário de cada Grupo nasce via API, com a `x-api-key`:
 
 ```bash
 curl -X POST https://SUA_URL.lambda-url.sa-east-1.on.aws/usuarios \
   -H "x-api-key: $PJE_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"username": "pedro", "password": "uma-senha-forte-aqui"}'
+  -d '{
+    "username": "pedro",
+    "password": "uma-senha-forte-aqui",
+    "email": "pedro@exemplo.com",
+    "nome_grupo": "Meu Escritório",
+    "nome_subgrupo": "Cível"
+  }'
 ```
+
+Todo mundo mais entra por **convite** (aba "Convidar", visível pra quem é `admin`) — a pessoa recebe um e-mail com um link `/convite/{token}`, válido por 24h.
 
 ## Rodando localmente
 
 ```bash
 npm install
 cp .env.example .env
-# edita o .env com a URL real da sua Function URL (a mesma do backend)
+# edita o .env com a URL real da sua Function URL
 npm run dev
 ```
 
-Abre `http://localhost:5173` e loga com o usuário/senha cadastrados acima.
+Abre `http://localhost:5173` e loga com o usuário cadastrado acima.
 
-## Deploy no Vercel (recomendado)
+## Deploy no Vercel
 
-1. Sobe esse projeto pra um repositório no seu GitHub (ex: `pje-monitor-frontend`)
-2. Vai em [vercel.com](https://vercel.com) → login com GitHub (gratuito, sem cartão)
-3. **Add New → Project** → seleciona o repositório
-4. Em **Environment Variables**, adiciona:
-   - `VITE_API_URL` = a URL da sua Function URL (ex: `https://sluf66wurddjpssov4hqzzhflu0enbul.lambda-url.sa-east-1.on.aws`)
-5. **Deploy**
+1. Sobe esse projeto pra um repositório no GitHub
+2. [vercel.com](https://vercel.com) → login com GitHub → **Add New → Project** → seleciona o repo
+3. Em **Environment Variables**, adiciona `VITE_API_URL` com a URL da Function URL
+4. **Deploy**
 
-Pronto — cada push na branch principal já refaz o deploy sozinho. O domínio gerado é algo como `pje-monitor-frontend.vercel.app`.
+O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra rotas client-side funcionarem (`/convite/{token}` precisa cair no `index.html` mesmo em acesso direto pelo link do e-mail — sem isso, clicar no link do convite daria 404).
 
-## Ajustar o CORS do backend
+## Papéis e o que cada um vê
 
-O `serverless.yml` do backend está com `allowedOrigins: "*"` (liberado geral) por decisão consciente durante o desenvolvimento. Assim que esse front-end tiver domínio fixo no Vercel, troca essa linha por ele:
+| Papel | Abas visíveis |
+|---|---|
+| `user` | Processos, Subgrupos, Histórico |
+| `manager` | + Membros |
+| `admin` | + Convidar |
+| `super_admin` | Todas — mas precisa preencher o campo **"Grupo alvo"** que aparece no topo da tela (ele não pertence a nenhum grupo, então toda ação exige dizer em qual grupo está agindo) |
 
-```yaml
-allowedOrigins:
-  - "https://pje-monitor-frontend.vercel.app"
-```
+## Sobre a autenticação
 
-E faz `serverless deploy` de novo no backend.
-
-## Sobre a autenticação (login + JWT)
-
-Diferente da versão anterior (que guardava a `x-api-key` real no navegador), esse front-end agora **loga com usuário/senha** e guarda só um **access token JWT** (válido por 24h) + um **refresh token** (válido por 30 dias) no `localStorage`. A `x-api-key` de verdade nunca chega ao navegador -- ela só é usada por scripts/CLI e pra cadastrar usuários (`POST /usuarios`).
-
-- O `api.js` injeta o access token em todo request (`Authorization: Bearer ...`).
-- Quando o access token expira (24h), o `chamar()` em `api.js` tenta renovar automaticamente via `/refresh` antes de desistir -- o usuário não precisa logar de novo a cada 24h, só quando o refresh token (30 dias) também expirar.
-- O refresh token é **rotacionado** a cada uso: o backend invalida o antigo e emite um novo par. Se alguém roubar um refresh token antigo já usado, ele não serve mais pra nada.
-- `localStorage` ainda é acessível por quem tiver acesso físico/DevTools ao navegador -- é um risco aceitável pra uso pessoal, mas os tokens aqui têm blast radius bem menor que a `x-api-key` bruta (expiram, e não dão acesso a `/usuarios`).
+Login guarda um **access token JWT** (24h) + **refresh token** (30 dias) no `localStorage` — a `x-api-key` real nunca chega ao navegador. O `papel` e `grupo_id` também ficam decodificados do próprio JWT (client-side, só pra decidir o que mostrar na UI — a autorização de verdade sempre é validada de novo no backend). Quando o access token expira, o `api.js` renova sozinho via `/refresh` antes de desistir.
 
 ## Estrutura
 
 ```
 src/
-  auth.js      -- login, refresh automático, tokens em localStorage
-  api.js       -- chamadas fetch pra API, já autenticadas
+  auth.js      -- login, refresh automático, decodifica papel/grupo do JWT
+  api.js       -- chamadas fetch pra todas as rotas (grupos/subgrupos/membros/processos/convites/histórico)
   mask.js      -- máscara CNJ do número de processo
-  App.jsx      -- telas: login + abas (processos / e-mails / histórico)
+  App.jsx      -- login + tela de aceite de convite + abas (Processos/Subgrupos/Membros/Convidar/Histórico)
   index.css    -- design tokens e estilos
-index.html
+vercel.json    -- SPA fallback (necessário pro link de convite funcionar)
 ```
