@@ -3,7 +3,7 @@
 > Este arquivo existe pra você (Claude) retomar o projeto numa sessão nova
 > sem precisar que o usuário reexplique tudo do zero. Leia isso primeiro.
 > Uma cópia equivalente (focada no backend) existe em `CONTEXT.md` no
-> repositório `pje-monitor-aws`.
+> repositório `pje-monitor-aws (caminho interno: /Users/pedrohenriquesousaalmeida/Documents/Projects/PJE Monitor/api)`.
 
 ## 1) Objetivo do projeto
 
