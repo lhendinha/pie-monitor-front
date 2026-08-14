@@ -7,7 +7,8 @@ const KEYS = {
   access: "pje-monitor-access-token",
   refresh: "pje-monitor-refresh-token",
   expira: "pje-monitor-expira-em",
-  username: "pje-monitor-username",
+  email: "pje-monitor-email",
+  apelido: "pje-monitor-apelido",
   papel: "pje-monitor-papel",
   grupoId: "pje-monitor-grupo-id",
 } as const;
@@ -33,8 +34,12 @@ export function getRefreshToken(): string | null {
   return localStorage.getItem(KEYS.refresh);
 }
 
-export function getUsername(): string | null {
-  return localStorage.getItem(KEYS.username);
+export function getEmail(): string | null {
+  return localStorage.getItem(KEYS.email);
+}
+
+export function getApelido(): string | null {
+  return localStorage.getItem(KEYS.apelido);
 }
 
 export function getPapel(): Papel | null {
@@ -56,12 +61,14 @@ export function papelAtende(papelMinimo: Papel): boolean {
   return HIERARQUIA_PAPEIS.indexOf(atual) >= HIERARQUIA_PAPEIS.indexOf(papelMinimo);
 }
 
-function salvarTokens({ access_token, refresh_token, expira_em, username }: TokensResponse): void {
+function salvarTokens({ access_token, refresh_token, expira_em, email, apelido }: TokensResponse): void {
   const payload = decodificarPayload(access_token);
   localStorage.setItem(KEYS.access, access_token);
   localStorage.setItem(KEYS.refresh, refresh_token);
   localStorage.setItem(KEYS.expira, String(expira_em));
-  localStorage.setItem(KEYS.username, username);
+  localStorage.setItem(KEYS.email, email);
+  if (apelido) localStorage.setItem(KEYS.apelido, apelido);
+  else localStorage.removeItem(KEYS.apelido);
   localStorage.setItem(KEYS.papel, payload.papel || "");
   localStorage.setItem(KEYS.grupoId, payload.grupo_id || "");
 }
@@ -75,11 +82,11 @@ export function estaAutenticado(): boolean {
 }
 
 /** POST /login -- credenciais -> salva o par de tokens. */
-export async function login(username: string, password: string): Promise<TokensResponse> {
+export async function login(email: string, password: string): Promise<TokensResponse> {
   const resp = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ email, password }),
   });
   const dados = await resp.json();
   if (!resp.ok) {
@@ -129,21 +136,49 @@ export async function logout(): Promise<void> {
   }
 }
 
-/** POST /convites/{token}/aceitar -- público, cria a conta e já loga (auto-login). */
+/** POST /convites/{token}/aceitar -- público, cria a conta e já loga (auto-login). Apelido é opcional. */
 export async function aceitarConvite(
   token: string,
-  username: string,
-  password: string
+  password: string,
+  apelido?: string
 ): Promise<TokensResponse> {
   const resp = await fetch(`${API_URL}/convites/${token}/aceitar`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ password, apelido: apelido || undefined }),
   });
   const dados = await resp.json();
   if (!resp.ok) {
     throw new Error(dados.erro || "Não foi possível aceitar o convite.");
   }
   salvarTokens(dados);
+  return dados;
+}
+
+/** POST /senha/esqueci -- público, sempre responde com sucesso genérico (não revela se o e-mail existe). */
+export async function solicitarRecuperacaoSenha(email: string): Promise<{ mensagem: string }> {
+  const resp = await fetch(`${API_URL}/senha/esqueci`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const dados = await resp.json();
+  if (!resp.ok) {
+    throw new Error(dados.erro || "Não foi possível processar o pedido.");
+  }
+  return dados;
+}
+
+/** POST /senha/redefinir -- público, troca a senha a partir do token recebido por e-mail. */
+export async function redefinirSenha(token: string, password: string): Promise<{ mensagem: string }> {
+  const resp = await fetch(`${API_URL}/senha/redefinir`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  const dados = await resp.json();
+  if (!resp.ok) {
+    throw new Error(dados.erro || "Não foi possível redefinir a senha.");
+  }
   return dados;
 }

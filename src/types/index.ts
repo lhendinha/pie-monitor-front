@@ -12,13 +12,17 @@ export interface Processo {
   numero_processo: string;
   apelido: string;
   criado_por?: string;
+  grupo_id?: string;
+  sequencia?: number;
   ultima_verificacao?: string | null;
 }
 
 export interface Membro {
-  username: string;
+  email: string;
+  apelido?: string;
   papel?: Papel;
   criado_em?: string;
+  adicionado_em?: string;
 }
 
 export interface Comunicacao {
@@ -46,11 +50,12 @@ export interface TokensResponse {
   access_token: string;
   refresh_token: string;
   expira_em: number;
-  username: string;
+  email: string;
+  apelido?: string | null;
 }
 
 export interface JwtPayload {
-  username?: string;
+  email?: string;
   grupo_id?: string | null;
   papel?: Papel;
   type?: string;
@@ -65,3 +70,14 @@ export interface OpcoesRequisicao {
   body?: Record<string, unknown>;
   query?: Record<string, string | undefined>;
 }
+
+/** Campos comuns do envelope de paginação real (backend: shared/paginacao.py). */
+export interface EnvelopePaginacao {
+  pagina: number;
+  tamanho_pagina: number;
+  total: number;
+  total_paginas: number;
+}
+
+export const TAMANHOS_PAGINA = [10, 20, 30, 50, 100] as const;
+export type TamanhoPagina = (typeof TAMANHOS_PAGINA)[number];

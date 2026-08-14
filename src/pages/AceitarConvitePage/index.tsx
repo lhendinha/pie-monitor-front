@@ -1,29 +1,32 @@
 import { useState, type FormEvent } from "react";
 import { aceitarConvite } from "../../services";
+import { useToast } from "../../components";
 
 interface AceitarConvitePageProps {
   token: string;
 }
 
 export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
-  const [username, setUsername] = useState("");
+  const [apelido, setApelido] = useState("");
   const [password, setPassword] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
+  const [campoInvalido, setCampoInvalido] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setErro(null);
+    setCampoInvalido(false);
     setEnviando(true);
     try {
-      await aceitarConvite(token, username.trim().toLowerCase(), password);
+      await aceitarConvite(token, password, apelido.trim() || undefined);
       setSucesso(true);
       setTimeout(() => {
         window.location.href = "/";
       }, 1500);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível aceitar o convite.");
+      setCampoInvalido(true);
+      toast.erro(err instanceof Error ? err.message : "Não foi possível aceitar o convite.");
     } finally {
       setEnviando(false);
     }
@@ -34,7 +37,7 @@ export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
       <header className="masthead">
         <p className="masthead-eyebrow">Convite</p>
         <h1 className="masthead-title">Criar sua conta</h1>
-        <p className="masthead-sub">Escolha um usuário e senha pra entrar no grupo.</p>
+        <p className="masthead-sub">Escolha uma senha pra entrar no grupo.</p>
       </header>
 
       {sucesso ? (
@@ -43,29 +46,31 @@ export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
         <div className="gate">
           <form className="form-row" onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="username">Usuário</label>
+              <label htmlFor="apelido">Apelido (opcional)</label>
               <input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="seu-usuario"
+                id="apelido"
+                value={apelido}
+                onChange={(e) => setApelido(e.target.value)}
+                placeholder="como quer ser chamado"
               />
             </div>
-            <div className="field">
+            <div className={`field${campoInvalido ? " field-error" : ""}`}>
               <label htmlFor="password">Senha</label>
               <input
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setCampoInvalido(false);
+                }}
                 placeholder="mínimo 8 caracteres"
               />
             </div>
-            <button className="btn" type="submit" disabled={enviando || !username.trim() || password.length < 8}>
+            <button className="btn" type="submit" disabled={enviando || password.length < 8}>
               {enviando ? "Criando…" : "Criar conta"}
             </button>
           </form>
-          {erro && <div className="banner">{erro}</div>}
         </div>
       )}
     </div>

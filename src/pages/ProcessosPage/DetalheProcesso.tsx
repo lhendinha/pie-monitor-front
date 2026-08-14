@@ -33,7 +33,7 @@ export default function DetalheProcesso({ numero, grupoAlvo, onFechar }: Detalhe
       {carregando ? (
         <Skeleton linhas={2} />
       ) : erro ? (
-        <div className="banner">{erro}</div>
+        <div className="empty">{erro}</div>
       ) : (dados?.comunicacoes || []).length === 0 ? (
         <div className="empty">Nenhuma comunicação registrada ainda pra esse processo.</div>
       ) : (

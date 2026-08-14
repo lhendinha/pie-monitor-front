@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { listarSubgrupos, criarConvite, ApiError } from "../../services";
+import { MultiSelect, useToast } from "../../components";
 import type { Papel, Subgrupo } from "../../types";
 
 interface PageProps {
@@ -12,9 +13,9 @@ export default function ConvidarPage({ grupoAlvo, onAutenticacaoInvalida }: Page
   const [email, setEmail] = useState("");
   const [papelInicial, setPapelInicial] = useState<Papel>("user");
   const [subgruposSelecionados, setSubgruposSelecionados] = useState<string[]>([]);
-  const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState<string | null>(null);
+  const [campoInvalido, setCampoInvalido] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     listarSubgrupos(grupoAlvo)
@@ -26,16 +27,16 @@ export default function ConvidarPage({ grupoAlvo, onAutenticacaoInvalida }: Page
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setErro(null);
-    setSucesso(null);
+    setCampoInvalido(false);
     setEnviando(true);
     try {
       await criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados, grupoAlvo);
-      setSucesso(`Convite enviado pra ${email}.`);
+      toast.sucesso(`Convite enviado pra ${email}.`);
       setEmail("");
       setSubgruposSelecionados([]);
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : "Não foi possível convidar.");
+      setCampoInvalido(true);
+      toast.erro(err instanceof ApiError ? err.message : "Não foi possível convidar.");
     } finally {
       setEnviando(false);
     }
@@ -49,9 +50,17 @@ export default function ConvidarPage({ grupoAlvo, onAutenticacaoInvalida }: Page
 
       <form onSubmit={handleSubmit}>
         <div className="form-row">
-          <div className="field" style={{ flex: 2 }}>
+          <div className={`field${campoInvalido ? " field-error" : ""}`} style={{ flex: 2 }}>
             <label htmlFor="email-convite">E-mail</label>
-            <input id="email-convite" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input
+              id="email-convite"
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setCampoInvalido(false);
+              }}
+            />
           </div>
           <div className="field">
             <label htmlFor="papel-convite">Papel inicial</label>
@@ -69,32 +78,25 @@ export default function ConvidarPage({ grupoAlvo, onAutenticacaoInvalida }: Page
 
         <div className="field" style={{ marginTop: 16 }}>
           <label htmlFor="subgrupos-convite">Subgrupos</label>
-          <select
+          <MultiSelect
             id="subgrupos-convite"
-            multiple
-            className="multi-select"
-            value={subgruposSelecionados}
-            onChange={(e) =>
-              setSubgruposSelecionados(Array.from(e.target.selectedOptions, (o) => o.value))
-            }
-          >
-            {subgrupos.map((s) => (
-              <option key={s.subgrupo_id} value={s.subgrupo_id}>
-                {s.nome}
-              </option>
-            ))}
-          </select>
+            opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
+            selecionados={subgruposSelecionados}
+            onMudar={setSubgruposSelecionados}
+            placeholder="Selecione os subgrupos"
+          />
         </div>
 
         <div className="form-row" style={{ marginTop: 16 }}>
-          <button className="btn" type="submit" disabled={enviando || !email.trim() || subgruposSelecionados.length === 0}>
+          <button
+            className="btn"
+            type="submit"
+            disabled={enviando || !email.trim() || subgruposSelecionados.length === 0}
+          >
             {enviando ? "Enviando…" : "Enviar convite"}
           </button>
         </div>
       </form>
-
-      {erro && <div className="banner">{erro}</div>}
-      {sucesso && <div className="banner banner-ok">{sucesso}</div>}
     </>
   );
 }

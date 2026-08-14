@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende, ApiError } from "../../services";
-import { Skeleton } from "../../components";
+import { Skeleton, useToast } from "../../components";
 import type { Subgrupo } from "../../types";
 
 interface PageProps {
@@ -11,26 +11,26 @@ interface PageProps {
 export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: PageProps) {
   const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
   const [nome, setNome] = useState("");
+  const [campoInvalido, setCampoInvalido] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
 
   const podeCriar = papelAtende("manager");
   const podeExcluir = papelAtende("admin");
 
   const carregar = useCallback(async () => {
     setCarregando(true);
-    setErro(null);
     try {
       const d = (await listarSubgrupos(grupoAlvo)) as { subgrupos: Subgrupo[] };
       setSubgrupos(d.subgrupos || []);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
-      else setErro("Não foi possível carregar os subgrupos.");
+      else toast.erro("Não foi possível carregar os subgrupos.");
     } finally {
       setCarregando(false);
     }
-  }, [grupoAlvo, onAutenticacaoInvalida]);
+  }, [grupoAlvo, onAutenticacaoInvalida, toast]);
 
   useEffect(() => {
     carregar();
@@ -38,14 +38,15 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
 
   async function handleCriar(e: FormEvent) {
     e.preventDefault();
-    setErro(null);
+    setCampoInvalido(false);
     setEnviando(true);
     try {
       await criarSubgrupo(nome.trim(), grupoAlvo);
       setNome("");
       await carregar();
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : "Não foi possível criar.");
+      setCampoInvalido(true);
+      toast.erro(err instanceof ApiError ? err.message : "Não foi possível criar.");
     } finally {
       setEnviando(false);
     }
@@ -57,7 +58,7 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
       await removerSubgrupo(id, grupoAlvo);
       setSubgrupos((prev) => prev.filter((s) => s.subgrupo_id !== id));
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : "Não foi possível remover.");
+      toast.erro(err instanceof ApiError ? err.message : "Não foi possível remover.");
     }
   }
 
@@ -66,12 +67,15 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
       {podeCriar && (
         <form onSubmit={handleCriar}>
           <div className="form-row">
-            <div className="field" style={{ flex: 2 }}>
+            <div className={`field${campoInvalido ? " field-error" : ""}`} style={{ flex: 2 }}>
               <label htmlFor="nome-subgrupo">Novo subgrupo</label>
               <input
                 id="nome-subgrupo"
                 value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                onChange={(e) => {
+                  setNome(e.target.value);
+                  setCampoInvalido(false);
+                }}
                 placeholder="Cível, Trabalhista..."
               />
             </div>
@@ -86,8 +90,6 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
         <h2>Subgrupos</h2>
         <span className="section-count">{carregando ? "carregando…" : `${subgrupos.length}`}</span>
       </div>
-
-      {erro && <div className="banner">{erro}</div>}
 
       {carregando ? (
         <Skeleton linhas={2} />

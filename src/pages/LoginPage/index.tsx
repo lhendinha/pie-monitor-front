@@ -1,25 +1,29 @@
 import { useState, type FormEvent } from "react";
 import { login } from "../../services";
+import { useToast } from "../../components";
 
 interface LoginPageProps {
   onEntrar: () => void;
+  onEsqueciSenha: () => void;
 }
 
-export default function LoginPage({ onEntrar }: LoginPageProps) {
-  const [username, setUsername] = useState("");
+export default function LoginPage({ onEntrar, onEsqueciSenha }: LoginPageProps) {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
+  const [campoInvalido, setCampoInvalido] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setErro(null);
+    setCampoInvalido(false);
     setEnviando(true);
     try {
-      await login(username.trim().toLowerCase(), password);
+      await login(email.trim().toLowerCase(), password);
       onEntrar();
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Não foi possível entrar.");
+      setCampoInvalido(true);
+      toast.erro(err instanceof Error ? err.message : "Não foi possível entrar.");
     } finally {
       setEnviando(false);
     }
@@ -30,30 +34,41 @@ export default function LoginPage({ onEntrar }: LoginPageProps) {
       <h2>Entrar</h2>
       <p>O cadastro é feito manualmente (bootstrap) ou por convite de um admin do grupo.</p>
       <form className="form-row" onSubmit={handleSubmit}>
-        <div className="field">
-          <label htmlFor="username">Usuário</label>
+        <div className={`field${campoInvalido ? " field-error" : ""}`}>
+          <label htmlFor="email">E-mail</label>
           <input
-            id="username"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setCampoInvalido(false);
+            }}
           />
         </div>
-        <div className="field">
+        <div className={`field${campoInvalido ? " field-error" : ""}`}>
           <label htmlFor="password">Senha</label>
           <input
             id="password"
             type="password"
             autoComplete="current-password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setCampoInvalido(false);
+            }}
           />
         </div>
-        <button className="btn" type="submit" disabled={enviando || !username.trim() || !password}>
+        <button className="btn" type="submit" disabled={enviando || !email.trim() || !password}>
           {enviando ? "Entrando…" : "Entrar"}
         </button>
       </form>
-      {erro && <div className="banner">{erro}</div>}
+      <p className="gate-link">
+        <button type="button" className="link-button" onClick={onEsqueciSenha}>
+          Esqueci minha senha
+        </button>
+      </p>
     </div>
   );
 }

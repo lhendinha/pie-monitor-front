@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { criarProcesso, ApiError } from "../../services";
 import { apenasDigitos, mascararNumeroProcesso } from "../../utils";
+import { useToast } from "../../components";
 import type { Subgrupo } from "../../types";
 
 interface NovoProcessoFormProps {
@@ -19,21 +20,23 @@ export default function NovoProcessoForm({
   const [subgrupoId, setSubgrupoId] = useState(subgrupos[0]?.subgrupo_id || "");
   const [numeroMascarado, setNumeroMascarado] = useState("");
   const [apelido, setApelido] = useState("");
-  const [erro, setErro] = useState<string | null>(null);
+  const [campoInvalido, setCampoInvalido] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
 
   const numeroLimpo = apenasDigitos(numeroMascarado);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setErro(null);
+    setCampoInvalido(false);
     setEnviando(true);
     try {
       await criarProcesso(subgrupoId, numeroLimpo, apelido.trim(), grupoAlvo);
       onCadastrado();
       onFechar();
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : "Não foi possível cadastrar.");
+      setCampoInvalido(true);
+      toast.erro(err instanceof ApiError ? err.message : "Não foi possível cadastrar.");
     } finally {
       setEnviando(false);
     }
@@ -55,12 +58,15 @@ export default function NovoProcessoForm({
           ))}
         </select>
       </div>
-      <div className="field" style={{ marginTop: 14 }}>
+      <div className={`field${campoInvalido ? " field-error" : ""}`} style={{ marginTop: 14 }}>
         <label htmlFor="numero">Número do processo</label>
         <input
           id="numero"
           value={numeroMascarado}
-          onChange={(e) => setNumeroMascarado(mascararNumeroProcesso(e.target.value))}
+          onChange={(e) => {
+            setNumeroMascarado(mascararNumeroProcesso(e.target.value));
+            setCampoInvalido(false);
+          }}
           placeholder="0000266-87.2021.8.13.0559"
           inputMode="numeric"
           autoFocus
@@ -70,7 +76,6 @@ export default function NovoProcessoForm({
         <label htmlFor="apelido">Apelido (opcional)</label>
         <input id="apelido" value={apelido} onChange={(e) => setApelido(e.target.value)} maxLength={512} />
       </div>
-      {erro && <div className="banner">{erro}</div>}
       <div className="modal-actions">
         <button className="btn" type="submit" disabled={enviando || numeroLimpo.length !== 20 || !subgrupoId}>
           {enviando ? "Cadastrando…" : "Cadastrar"}

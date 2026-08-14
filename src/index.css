@@ -57,6 +57,12 @@ input {
   padding: 48px 24px 96px;
 }
 
+@media (max-width: 640px) {
+  .app {
+    padding: 32px 16px 72px;
+  }
+}
+
 /* ---------- Masthead ---------- */
 
 .masthead {
@@ -116,6 +122,26 @@ input {
   font-size: 14px;
   line-height: 1.5;
   margin: 0 0 20px;
+}
+
+.gate-link {
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.link-button:hover {
+  color: var(--oxblood);
 }
 
 /* ---------- Form ---------- */
@@ -178,17 +204,6 @@ input {
   border-color: var(--oxblood);
 }
 
-.field select.multi-select {
-  height: auto;
-  min-height: 120px;
-  background-image: none;
-  padding: 8px;
-}
-
-.field select.multi-select option {
-  padding: 6px 8px;
-}
-
 .field input:focus-visible {
   border-color: var(--oxblood);
 }
@@ -197,6 +212,14 @@ input {
   font-size: 12px;
   color: var(--oxblood);
   font-family: var(--font-mono);
+}
+
+/* Aplicada no wrapper .field quando o campo falhou validação -- circula o
+   input/select em vermelho, a mensagem em si vai como toast agora. */
+.field.field-error input,
+.field.field-error select,
+.field.field-error .multi-select-trigger {
+  border-color: var(--oxblood);
 }
 
 .btn {
@@ -241,6 +264,8 @@ input {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 10px;
   margin-top: 56px;
   margin-bottom: 18px;
   border-bottom: 1px solid var(--paper-line);
@@ -418,6 +443,13 @@ input {
   gap: 2px;
   margin-top: 40px;
   border-bottom: 1px solid var(--paper-line);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -432,6 +464,8 @@ input {
   letter-spacing: 0.08em;
   color: var(--ink-soft);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab:hover {
@@ -669,4 +703,224 @@ input {
   margin-top: 18px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* ---------- Toast ---------- */
+
+.toast-stack {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.toast {
+  display: block;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: left;
+  padding: 12px 16px;
+  border: none;
+  border-left: 3px solid var(--oxblood);
+  background: #fbeeee;
+  color: var(--oxblood);
+  box-shadow: 2px 2px 0 rgba(27, 42, 74, 0.1);
+  cursor: pointer;
+  animation: toast-entrar 0.15s ease-out;
+}
+
+.toast-sucesso {
+  border-left-color: var(--ok);
+  background: #eaf3ee;
+  color: var(--ok);
+}
+
+@keyframes toast-entrar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .toast-stack {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+  }
+}
+
+/* ---------- MultiSelect (dropdown fechado com checkboxes) ---------- */
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select-trigger {
+  width: 100%;
+  border: 1px solid var(--paper-line);
+  background: #fff;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--ink);
+  font-family: inherit;
+  height: 41px;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 13px) calc(50% - 3px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.multi-select-trigger:focus-visible {
+  border-color: var(--oxblood);
+}
+
+.multi-select-painel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--paper-line);
+  box-shadow: 2px 2px 0 rgba(27, 42, 74, 0.1);
+  z-index: 50;
+  padding: 6px;
+}
+
+.multi-select-opcao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.multi-select-opcao:hover {
+  background: var(--paper-dim);
+}
+
+.multi-select-vazio {
+  padding: 8px;
+}
+
+/* ---------- Paginação ---------- */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--paper-line);
+}
+
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.pagination-numeros {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-numero,
+.pagination-seta {
+  border: 1px solid var(--paper-line);
+  background: transparent;
+  color: var(--ink-soft);
+  min-width: 34px;
+  height: 34px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pagination-numero:hover,
+.pagination-seta:hover:not(:disabled) {
+  border-color: var(--oxblood);
+  color: var(--oxblood);
+}
+
+.pagination-numero.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.pagination-seta:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-reticencias {
+  color: var(--ink-soft);
+  padding: 0 4px;
+}
+
+.pagination-tamanho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-tamanho label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.pagination-tamanho select {
+  border: 1px solid var(--paper-line);
+  background: #fff;
+  padding: 6px 28px 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+  background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px);
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
 }

@@ -1,7 +1,20 @@
 import { chamar, comGrupoAlvo } from "./client";
 
-export function listarProcessos(grupoIdAlvo?: string) {
-  return chamar("/processos", comGrupoAlvo({}, grupoIdAlvo));
+interface OpcoesListarProcessos {
+  pagina?: number;
+  tamanhoPagina?: number;
+  busca?: string;
+}
+
+/** GET /processos -- paginado de verdade (backend faz Query por intervalo de
+ * sequência, nunca carrega tudo). Se `busca` vier preenchido, ignora
+ * pagina/tamanhoPagina -- é uma busca pontual, não paginada. */
+export function listarProcessos(opcoes: OpcoesListarProcessos = {}, grupoIdAlvo?: string) {
+  const { pagina, tamanhoPagina, busca } = opcoes;
+  const query: Record<string, string | undefined> = busca
+    ? { busca }
+    : { pagina: pagina ? String(pagina) : undefined, tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined };
+  return chamar("/processos", comGrupoAlvo({ query }, grupoIdAlvo));
 }
 
 export function criarProcesso(

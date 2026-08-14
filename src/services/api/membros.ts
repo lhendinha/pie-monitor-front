@@ -8,16 +8,16 @@ export function listarMembrosDoSubgrupo(subgrupoId: string, grupoIdAlvo?: string
   return chamar(`/subgrupos/${subgrupoId}/membros`, comGrupoAlvo({}, grupoIdAlvo));
 }
 
-export function adicionarMembro(subgrupoId: string, username: string, grupoIdAlvo?: string) {
+export function adicionarMembro(subgrupoId: string, email: string, grupoIdAlvo?: string) {
   return chamar(
     `/subgrupos/${subgrupoId}/membros`,
-    comGrupoAlvo({ method: "POST", body: { username } }, grupoIdAlvo)
+    comGrupoAlvo({ method: "POST", body: { email } }, grupoIdAlvo)
   );
 }
 
-export function removerMembro(subgrupoId: string, username: string, grupoIdAlvo?: string) {
+export function removerMembro(subgrupoId: string, email: string, grupoIdAlvo?: string) {
   return chamar(
-    `/subgrupos/${subgrupoId}/membros/${encodeURIComponent(username)}`,
+    `/subgrupos/${subgrupoId}/membros/${encodeURIComponent(email)}`,
     comGrupoAlvo({ method: "DELETE" }, grupoIdAlvo)
   );
 }

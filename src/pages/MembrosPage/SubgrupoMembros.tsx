@@ -1,23 +1,25 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { listarMembrosDoSubgrupo, adicionarMembro, removerMembro, ApiError } from "../../services";
+import { useToast } from "../../components";
 import type { Membro, Subgrupo } from "../../types";
 
 interface SubgrupoMembrosProps {
   subgrupo: Subgrupo;
   grupoAlvo: string;
-  onErro: (msg: string) => void;
+  apelidoPorEmail: Map<string, string | undefined>;
 }
 
-export default function SubgrupoMembros({ subgrupo, grupoAlvo, onErro }: SubgrupoMembrosProps) {
+export default function SubgrupoMembros({ subgrupo, grupoAlvo, apelidoPorEmail }: SubgrupoMembrosProps) {
   const [membros, setMembros] = useState<Membro[] | null>(null);
-  const [novoUsername, setNovoUsername] = useState("");
+  const [novoEmail, setNovoEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const toast = useToast();
 
   const carregar = useCallback(() => {
     listarMembrosDoSubgrupo(subgrupo.subgrupo_id, grupoAlvo)
       .then((d: any) => setMembros(d.membros || []))
-      .catch(() => onErro("Não foi possível carregar os membros de " + subgrupo.nome));
-  }, [subgrupo, grupoAlvo, onErro]);
+      .catch(() => toast.erro("Não foi possível carregar os membros de " + subgrupo.nome));
+  }, [subgrupo, grupoAlvo, toast]);
 
   useEffect(() => {
     carregar();
@@ -27,22 +29,22 @@ export default function SubgrupoMembros({ subgrupo, grupoAlvo, onErro }: Subgrup
     e.preventDefault();
     setEnviando(true);
     try {
-      await adicionarMembro(subgrupo.subgrupo_id, novoUsername.trim().toLowerCase(), grupoAlvo);
-      setNovoUsername("");
+      await adicionarMembro(subgrupo.subgrupo_id, novoEmail.trim().toLowerCase(), grupoAlvo);
+      setNovoEmail("");
       carregar();
     } catch (err) {
-      onErro(err instanceof ApiError ? err.message : "Não foi possível adicionar.");
+      toast.erro(err instanceof ApiError ? err.message : "Não foi possível adicionar.");
     } finally {
       setEnviando(false);
     }
   }
 
-  async function handleRemover(username: string) {
+  async function handleRemover(email: string) {
     try {
-      await removerMembro(subgrupo.subgrupo_id, username, grupoAlvo);
+      await removerMembro(subgrupo.subgrupo_id, email, grupoAlvo);
       carregar();
     } catch (err) {
-      onErro(err instanceof ApiError ? err.message : "Não foi possível remover.");
+      toast.erro(err instanceof ApiError ? err.message : "Não foi possível remover.");
     }
   }
 
@@ -56,11 +58,11 @@ export default function SubgrupoMembros({ subgrupo, grupoAlvo, onErro }: Subgrup
       ) : (
         <ul className="simple-list">
           {membros.map((m) => (
-            <li className="simple-row" key={m.username}>
+            <li className="simple-row" key={m.email}>
               <div className="simple-row-main">
-                <div className="simple-row-title">{m.username}</div>
+                <div className="simple-row-title">{apelidoPorEmail.get(m.email) || m.email}</div>
               </div>
-              <button className="icon-btn" title="Remover" onClick={() => handleRemover(m.username)}>
+              <button className="icon-btn" title="Remover" onClick={() => handleRemover(m.email)}>
                 ✕
               </button>
             </li>
@@ -70,12 +72,13 @@ export default function SubgrupoMembros({ subgrupo, grupoAlvo, onErro }: Subgrup
       <form className="form-row" onSubmit={handleAdicionar}>
         <div className="field">
           <input
-            value={novoUsername}
-            onChange={(e) => setNovoUsername(e.target.value)}
-            placeholder="username pra adicionar"
+            type="email"
+            value={novoEmail}
+            onChange={(e) => setNovoEmail(e.target.value)}
+            placeholder="e-mail pra adicionar"
           />
         </div>
-        <button className="btn btn-ghost" type="submit" disabled={enviando || !novoUsername.trim()}>
+        <button className="btn btn-ghost" type="submit" disabled={enviando || !novoEmail.trim()}>
           + Adicionar
         </button>
       </form>
