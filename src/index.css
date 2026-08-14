@@ -551,21 +551,6 @@ input {
 
 /* ---------- Painel de detalhes do processo ---------- */
 
-.detail-panel {
-  margin-top: 24px;
-  border: 1px solid var(--paper-line);
-  background: #fff;
-}
-
-.detail-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--paper-line);
-  background: var(--paper-dim);
-}
-
 .detail-texto {
   font-size: 13px;
   line-height: 1.6;
@@ -577,6 +562,18 @@ input {
 .simple-row-block {
   display: block;
   padding: 16px 4px;
+}
+
+.simple-row-card {
+  display: block;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--paper-line);
+}
+
+.simple-row-card:last-child {
+  margin-bottom: 0;
 }
 
 /* ---------- Barra do super_admin (grupo alvo) ---------- */

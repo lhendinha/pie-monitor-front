@@ -200,11 +200,12 @@ export default function ProcessosPage({
       )}
 
       {numeroAberto && (
-        <DetalheProcesso
-          numero={numeroAberto}
-          grupoAlvo={grupoAlvo}
+        <Modal
+          titulo={mascararNumeroProcesso(numeroAberto)}
           onFechar={() => setNumeroAberto(null)}
-        />
+        >
+          <DetalheProcesso numero={numeroAberto} grupoAlvo={grupoAlvo} />
+        </Modal>
       )}
 
       {modalAberto && (
