@@ -62,7 +62,8 @@ export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
                   setPassword(e.target.value);
                   setCampoInvalido(false);
                 }}
-                placeholder="mínimo 8 caracteres"
+                placeholder="Senha deve conter entre 8 e 64 caracteres"
+                maxLength={64}
               />
             </div>
             <div className={`field${campoInvalido ? " field-error" : ""}`}>
@@ -75,9 +76,10 @@ export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
                   setConfirmacao(e.target.value);
                   setCampoInvalido(false);
                 }}
+                maxLength={64}
               />
             </div>
-            <button className="btn" type="submit" disabled={enviando || password.length < 8 || senhasDiferentes}>
+            <button className="btn" type="submit" disabled={enviando || password.length < 8 || password.length > 64 || senhasDiferentes}>
               {enviando ? "Salvando…" : "Redefinir senha"}
             </button>
           </form>

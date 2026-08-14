@@ -64,10 +64,11 @@ export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
                   setPassword(e.target.value);
                   setCampoInvalido(false);
                 }}
-                placeholder="mínimo 8 caracteres"
+                placeholder="Senha deve conter entre 8 e 64 caracteres"
+                maxLength={64}
               />
             </div>
-            <button className="btn" type="submit" disabled={enviando || password.length < 8}>
+            <button className="btn" type="submit" disabled={enviando || password.length < 8 || password.length > 64}>
               {enviando ? "Criando…" : "Criar conta"}
             </button>
           </form>

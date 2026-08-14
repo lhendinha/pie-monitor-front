@@ -58,6 +58,7 @@ export default function LoginPage({ onEntrar, onEsqueciSenha }: LoginPageProps) 
               setPassword(e.target.value);
               setCampoInvalido(false);
             }}
+            maxLength={64}
           />
         </div>
         <button className="btn" type="submit" disabled={enviando || !email.trim() || !password}>
