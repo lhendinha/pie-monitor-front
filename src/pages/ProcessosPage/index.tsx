@@ -5,10 +5,11 @@ import {
   listarSubgrupos,
   ApiError,
 } from "../../services";
-import { mascararNumeroProcesso, apenasDigitos } from "../../utils";
+import { mascararNumeroProcesso, apenasDigitos, formatarDataHoraAmPm } from "../../utils";
 import { Modal, Skeleton, Pagination, useToast } from "../../components";
 import DetalheProcesso from "./DetalheProcesso";
 import NovoProcessoForm from "./NovoProcessoForm";
+import EditarApelidoForm from "./EditarApelidoForm";
 import type { Processo, Subgrupo } from "../../types";
 
 interface ProcessosPageProps {
@@ -27,6 +28,7 @@ export default function ProcessosPage({
   const [carregando, setCarregando] = useState(true);
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [processoEmEdicao, setProcessoEmEdicao] = useState<Processo | null>(null);
 
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PADRAO);
@@ -162,11 +164,18 @@ export default function ProcessosPage({
                 <div className="docket-meta">
                   {subgrupoNome(p.subgrupo_id)}
                   {p.ultima_verificacao
-                    ? ` · Última verificação: ${p.ultima_verificacao}`
+                    ? ` · Última verificação: ${formatarDataHoraAmPm(p.ultima_verificacao)}`
                     : " · Ainda não verificado"}
                 </div>
               </button>
               <div className="docket-actions">
+                <button
+                  className="icon-btn"
+                  title="Editar apelido"
+                  onClick={() => setProcessoEmEdicao(p)}
+                >
+                  ✎
+                </button>
                 <button
                   className="icon-btn"
                   title="Remover"
@@ -205,6 +214,17 @@ export default function ProcessosPage({
             grupoAlvo={grupoAlvo}
             onCadastrado={carregar}
             onFechar={() => setModalAberto(false)}
+          />
+        </Modal>
+      )}
+
+      {processoEmEdicao && (
+        <Modal titulo="Editar apelido" onFechar={() => setProcessoEmEdicao(null)}>
+          <EditarApelidoForm
+            processo={processoEmEdicao}
+            grupoAlvo={grupoAlvo}
+            onAtualizado={carregar}
+            onFechar={() => setProcessoEmEdicao(null)}
           />
         </Modal>
       )}

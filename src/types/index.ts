@@ -66,7 +66,7 @@ export interface JwtPayload {
 
 /** Query string opcional + corpo opcional, usados nas chamadas de api.ts */
 export interface OpcoesRequisicao {
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
   query?: Record<string, string | undefined>;
 }

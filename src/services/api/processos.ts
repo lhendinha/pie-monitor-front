@@ -29,6 +29,18 @@ export function criarProcesso(
   );
 }
 
+export function atualizarApelidoProcesso(
+  subgrupoId: string,
+  numeroProcesso: string,
+  apelido: string,
+  grupoIdAlvo?: string
+) {
+  return chamar(
+    `/subgrupos/${subgrupoId}/processos/${numeroProcesso}`,
+    comGrupoAlvo({ method: "PATCH", body: { apelido } }, grupoIdAlvo)
+  );
+}
+
 export function removerProcesso(subgrupoId: string, numeroProcesso: string, grupoIdAlvo?: string) {
   return chamar(
     `/subgrupos/${subgrupoId}/processos/${numeroProcesso}`,
