@@ -18,7 +18,13 @@ em produção (Lambda + DynamoDB + SES).
 Front reescrito em TypeScript, estrutura em camadas (`pages/`, `services/`,
 `utils/`, `components/`, `constants/`), usando **Yarn** (não npm), deployado
 no **Vercel** em `pie-monitor-front.vercel.app`. React Compiler configurado
-e testado. Build (`yarn build`) passa limpo com type-check completo.
+e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
+de testes com `vitest` + `@testing-library/react` cobre `services/` e
+`utils/` (`yarn test`). `vercel.json` também define security headers (CSP,
+HSTS, etc.) pra todo o app. Fluxo de recuperação de senha
+(`EsqueciSenhaPage`/`RedefinirSenhaPage`), edição de apelido de processo, e
+o link do e-mail de notificação abrindo direto na aba Histórico (deep link
+via `?processo=&comunicacao=`) já implementados -- ver seção 3.
 
 ## 3) Decisões importantes já tomadas
 
@@ -46,24 +52,29 @@ src/
   types/index.ts
   constants/roles.ts, index.ts       -- NOME_PAPEL, HIERARQUIA_PAPEIS
   services/
-    auth.ts
-    api/ (client.ts + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + index.ts)
+    auth.ts (+ auth.test.ts)
+    api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + index.ts)
     index.ts
-  utils/mask.ts, date.ts, index.ts
+  utils/mask.ts, date.ts, deepLink.ts, index.ts (+ *.test.ts pra cada um)
   components/
-    Modal/index.tsx, Skeleton/index.tsx
+    Modal/index.tsx, Skeleton/index.tsx [+ index.test.tsx]
+    Toast/index.tsx [+ index.test.tsx]     -- ToastProvider/useToast, substitui <div className="banner">
+    Pagination/index.tsx                    -- números endereçáveis, não cursor
+    MultiSelect/index.tsx                   -- dropdown fechado com checkboxes, substitui <select multiple>
     index.ts
   pages/
     LoginPage/index.tsx
+    EsqueciSenhaPage/index.tsx, RedefinirSenhaPage/index.tsx
     AceitarConvitePage/index.tsx
-    ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, DetalheProcesso.tsx -- privados, não exportados)
+    ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, EditarApelidoForm.tsx, DetalheProcesso.tsx -- privados, não exportados)
     SubgruposPage/index.tsx
     MembrosPage/index.tsx (+ SubgrupoMembros.tsx -- privado)
     ConvidarPage/index.tsx
-    HistoricoPage/index.tsx
+    HistoricoPage/index.tsx (+ DetalheHistorico.tsx -- privado)
     index.ts
+  test/setup.ts        -- jest-dom matchers + TZ=America/Sao_Paulo fixo pros testes de data
   App.tsx, main.tsx
-vercel.json          -- SPA fallback (OBRIGATÓRIO -- sem isso, /convite/{token} dá 404)
+vercel.json          -- SPA fallback (OBRIGATÓRIO -- sem isso, /convite/{token} e /redefinir-senha/{token} dão 404) + security headers (CSP/HSTS/etc.)
 ```
 
 Regra geral: **componentes/páginas** viram pasta com `index.tsx` dentro;
@@ -112,9 +123,29 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
 ### Decisões de UX específicas
 
 - Cadastro de processo é um **modal** (botão "+ Novo Processo" abre), não
-  formulário inline.
-- Aba Convidar usa `<select multiple>` pra escolher subgrupos (não checkbox).
+  formulário inline. Edição de apelido (`EditarApelidoForm.tsx`) também é
+  modal, aberto pelo ícone ✎ na listagem.
+- Aba Convidar usa `MultiSelect` (`components/MultiSelect`, dropdown
+  fechado com checkboxes) pra escolher subgrupos -- **não** mais o
+  `<select multiple>` nativo, cujo listbox sempre aberto destoava do resto
+  do form.
 - `<select>` estilizado pra ter a mesma aparência visual do `<input>` de texto.
+- Feedback de ação pontual (erro, sucesso) usa **toast** (`components/Toast`,
+  `useToast()`), não mais `<div className="banner">` -- banner ficou restrito
+  a estados persistentes de tela inteira (sessão expirada, senha redefinida).
+- Listas paginadas (`Processos`, `Histórico`) usam `components/Pagination`:
+  números de página clicáveis direto (não só anterior/próximo), porque o
+  backend pagina por intervalo de sequência real, não cursor -- dá pra pular
+  pra qualquer página sem visitar as anteriores.
+- Texto de comunicação processual (`DetalheProcesso.tsx`, `DetalheHistorico.tsx`)
+  vem em HTML da API do PJe e é renderizado via `dangerouslySetInnerHTML`
+  depois de passar por `DOMPurify.sanitize()` -- fonte externa, nunca
+  confiar sem sanitizar.
+- Link do e-mail de notificação (`?processo=&comunicacao=`) não abre mais
+  um modal na aba Processos -- abre direto na aba **Histórico**, no item
+  exato que gerou o e-mail (`utils/deepLink.ts` + `HistoricoPage`). Decisão
+  trocada durante o desenvolvimento: fazia mais sentido levar pro registro
+  da notificação em si do que pro processo genérico.
 
 ## 4) Blocos de código essenciais
 
@@ -135,6 +166,8 @@ yarn install
 yarn dev          # servidor local
 yarn build        # roda tsc -b (type-check) + vite build
 yarn typecheck    # só tsc -b, sem build
+yarn test         # vitest, roda uma vez (CI)
+yarn test:watch   # vitest, modo watch
 ```
 
 **Decodificação de JWT no client** (só pra UI, autorização real sempre no
@@ -150,7 +183,9 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
    precisa ser atualizado manualmente de novo.
 2. Nenhuma tela de gestão para `super_admin` atribuir esse papel a alguém
    (não existe no backend ainda, então também não tem no front).
-3. Sem testes automatizados no front (não foi pedido ainda).
+3. Testes cobrem `services/`/`utils/` (lógica pura); nenhum teste de
+   componente/página ainda (`pages/`, `components/Toast`, `MultiSelect`,
+   `Pagination` sem cobertura própria).
 4. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
    específico do Vercel, em vez de `"*"` (pendência do lado do backend, mas
    afeta o front se for feito).

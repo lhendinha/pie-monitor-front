@@ -36,9 +36,10 @@ yarn dev
 
 Abre `http://localhost:5173` e loga com o usuário cadastrado acima.
 
-Antes de commitar/dar push, vale rodar o type-check (o `yarn build` já faz isso automaticamente, mas dá pra rodar isolado):
+Antes de commitar/dar push, vale rodar o type-check (o `yarn build` já faz isso automaticamente, mas dá pra rodar isolado) e a suite de testes:
 ```bash
 yarn typecheck
+yarn test
 ```
 
 ## Deploy no Vercel
@@ -65,6 +66,29 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 
 Login guarda um **access token JWT** (24h) + **refresh token** (30 dias) no `localStorage` — a `x-api-key` real nunca chega ao navegador. O `papel` e `grupo_id` também ficam decodificados do próprio JWT (client-side, só pra decidir o que mostrar na UI — a autorização de verdade sempre é validada de novo no backend). Quando o access token expira, `services/api/client.ts` renova sozinho via `/refresh` antes de desistir.
 
+Esqueceu a senha? A tela de login tem um link "Esqueci minha senha" (`EsqueciSenhaPage`) que chama `POST /senha/esqueci` — resposta sempre genérica, não revela se o e-mail existe. O link do e-mail recebido leva pra `/redefinir-senha/{token}` (`RedefinirSenhaPage`), válido por 1h e uso único.
+
+## Link do e-mail de notificação → aba Histórico
+
+O e-mail de movimentação processual leva pra `/?processo={numero}&comunicacao={id}`. O `App.tsx` lê esses dois parâmetros no mount (`utils/deepLink.ts::parseDeepLinkHistorico` — só conta como deep link se os dois vierem juntos), limpa a URL na hora, abre direto na aba **Histórico** e repassa pra `HistoricoPage` buscar e abrir o item certo num modal — sem listar as outras notificações do processo.
+
+## Notificações (toasts)
+
+Erros e confirmações usam um sistema de toast (`components/Toast`, `useToast()` dentro de `<ToastProvider>` montado em `App.tsx`) — substitui o antigo `<div className="banner">` pra feedback pontual de ação (ex: "Não foi possível carregar", convite enviado). O `banner` continua existindo só pra estados persistentes de tela inteira (sessão expirada, senha redefinida com sucesso).
+
+## Rodando os testes
+
+```bash
+yarn test         # roda uma vez (CI)
+yarn test:watch   # modo watch
+```
+
+`vitest` + `@testing-library/react` + `jsdom`. Cobre `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+
+## Segurança (headers)
+
+`vercel.json` define Content-Security-Policy, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` e HSTS pra todo o app. O CSP libera `connect-src` só pra `https://*.lambda-url.sa-east-1.on.aws` (a API) e bloqueia `script-src`/`object-src` externos — se a Function URL mudar de subdomínio ou surgir uma dependência de terceiro nova (fonte, script), ajustar o CSP em `vercel.json` junto.
+
 ## Sobre o React Compiler
 
 O projeto usa **React 18** (não 19), mas tem o [React Compiler](https://react.dev/learn/react-compiler) configurado mesmo assim — ele saiu de beta e ficou estável em outubro/2025, com suporte oficial a partir do React 17. Ele memoiza os componentes automaticamente durante o build (equivalente a espalhar `useMemo`/`useCallback`/`React.memo` manualmente pelo código), configurado em `vite.config.ts` com `target: "18"` + o pacote `react-compiler-runtime` (fornece o polyfill necessário pra rodar em versões anteriores à 19).
@@ -76,54 +100,69 @@ Pra conferir que está rodando de verdade, o bundle final (`yarn build`) contém
 ```
 src/
   types/
-    index.ts                 -- tipos compartilhados (Papel, Processo, Subgrupo, Membro, etc.)
+    index.ts                 -- tipos compartilhados (Papel, Processo, Subgrupo, Membro, Comunicacao, etc.)
   constants/
     roles.ts                  -- NOME_PAPEL, HIERARQUIA_PAPEIS (usado por services/ e pages/)
     index.ts                  -- reexporta tudo (importe de "../constants")
   vite-env.d.ts               -- tipos globais do Vite (import.meta.env)
-  App.tsx                     -- shell raiz: roteamento simples, autenticação, abas
+  App.tsx                     -- shell raiz: roteamento simples, autenticação, abas, deep link do e-mail
   main.tsx                    -- ponto de entrada React
 
   services/
     index.ts                  -- reexporta tudo (importe de "../services")
     auth.ts                   -- login, refresh automático, decodifica papel/grupo do JWT
+    auth.test.ts
     api/
       client.ts               -- núcleo HTTP compartilhado (chamar, ApiError, comGrupoAlvo)
+      client.test.ts
       subgrupos.ts             -- listar/criar/remover subgrupos
       membros.ts               -- listar/adicionar/remover membros
-      processos.ts             -- listar/criar/remover processos + detalhes
+      processos.ts             -- listar/criar/remover processos + editar apelido + detalhes
       convites.ts              -- criar convite
-      historico.ts             -- listar histórico de notificações
+      historico.ts             -- listar histórico de notificações (paginado ou por número)
       index.ts                 -- reexporta tudo (importe de "../services/api")
 
   utils/
     index.ts                  -- reexporta tudo (importe de "../utils")
-    mask.ts                    -- máscara CNJ do número de processo
-    date.ts                    -- formatação de data/hora (formatarDataHora, dataHojeExtenso)
+    mask.ts, mask.test.ts       -- máscara CNJ do número de processo
+    date.ts, date.test.ts       -- formatação de data/hora (formatarDataHora, formatarDataHoraAmPm, dataHojeExtenso)
+    deepLink.ts, deepLink.test.ts -- parse de ?processo=&comunicacao= do link do e-mail
 
   components/
     index.ts                  -- reexporta tudo (importe de "../components")
     Modal/index.tsx             -- modal genérico reutilizável
-    Skeleton/index.tsx           -- placeholder de loading
+    Skeleton/index.tsx, index.test.tsx -- placeholder de loading
+    Toast/index.tsx, index.test.tsx    -- toasts de erro/sucesso (ToastProvider, useToast)
+    Pagination/index.tsx         -- paginação com números endereçáveis (não cursor)
+    MultiSelect/index.tsx        -- dropdown fechado com checkboxes (seleção múltipla de subgrupos)
 
   pages/
     index.ts                    -- reexporta as páginas (importe de "./pages")
-    LoginPage/index.tsx          -- tela de login
+    LoginPage/index.tsx          -- tela de login (link "Esqueci minha senha")
+    EsqueciSenhaPage/index.tsx   -- solicita link de recuperação por e-mail
+    RedefinirSenhaPage/index.tsx -- define nova senha (/redefinir-senha/{token})
     AceitarConvitePage/index.tsx -- tela pública de aceite de convite (/convite/{token})
     ProcessosPage/
-      index.tsx                  -- lista + aciona modal/detalhes
-      NovoProcessoForm.tsx        -- formulário do modal (privado da página)
+      index.tsx                  -- lista + busca + aciona modal/detalhes/edição
+      NovoProcessoForm.tsx        -- formulário de cadastro, no modal (privado da página)
+      EditarApelidoForm.tsx       -- formulário de edição de apelido, no modal (privado da página)
       DetalheProcesso.tsx         -- painel de histórico de comunicações (privado da página)
     SubgruposPage/index.tsx      -- lista + criação + exclusão de subgrupos
     MembrosPage/
       index.tsx                  -- pessoas do grupo
       SubgrupoMembros.tsx         -- card de membros por subgrupo (privado da página)
-    ConvidarPage/index.tsx       -- formulário de convite
-    HistoricoPage/index.tsx      -- histórico de e-mails de notificação
+    ConvidarPage/index.tsx       -- formulário de convite (MultiSelect de subgrupos)
+    HistoricoPage/
+      index.tsx                  -- lista paginada + resolve deep link do e-mail
+      DetalheHistorico.tsx        -- modal com a comunicação exata que gerou o envio (privado da página)
+
+  test/
+    setup.ts                  -- setup global do vitest (jest-dom matchers, TZ fixo)
 
   index.css                  -- design tokens e estilos
 
-vercel.json                  -- SPA fallback (necessário pro link de convite funcionar)
+vercel.json                  -- SPA fallback (necessário pro link de convite/redefinição funcionar) + security headers (CSP etc.)
+vite.config.ts                -- config do Vite + React Compiler + vitest (environment: jsdom)
 tsconfig.json                 -- config do TypeScript pro código do app
 tsconfig.node.json          -- config do TypeScript pro vite.config.ts (roda em Node)
 ```
