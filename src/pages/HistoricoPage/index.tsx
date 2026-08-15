@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { listarHistorico, ApiError } from "../../services";
 import { mascararNumeroProcesso, formatarDataHora } from "../../utils";
-import { Skeleton, Pagination, useToast } from "../../components";
+import { Skeleton, Pagination, Modal, useToast } from "../../components";
+import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
 
 interface PageProps {
@@ -18,6 +19,7 @@ export default function HistoricoPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PADRAO);
   const [total, setTotal] = useState(0);
   const [totalPaginas, setTotalPaginas] = useState(0);
+  const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 
   const carregar = useCallback(() => {
@@ -60,15 +62,20 @@ export default function HistoricoPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
           <ul className="simple-list">
             {historico.map((h, i) => (
               <li className="simple-row simple-row-block" key={`${h.numero_processo}-${h.enviado_em}-${i}`}>
-                <div className="simple-row-title">{mascararNumeroProcesso(h.numero_processo)}</div>
-                <div className="simple-row-meta">
-                  {formatarDataHora(h.enviado_em)}
-                  {h.tipo_comunicacao ? ` · ${h.tipo_comunicacao}` : ""}
-                  {h.nome_orgao ? ` · ${h.nome_orgao}` : ""}
-                </div>
-                {h.destinatarios && h.destinatarios.length > 0 && (
-                  <div className="simple-row-meta">Pra: {h.destinatarios.join(", ")}</div>
-                )}
+                <button
+                  className="simple-row-clickable"
+                  onClick={() => setItemAberto(h)}
+                >
+                  <div className="simple-row-title">{mascararNumeroProcesso(h.numero_processo)}</div>
+                  <div className="simple-row-meta">
+                    {formatarDataHora(h.enviado_em)}
+                    {h.tipo_comunicacao ? ` · ${h.tipo_comunicacao}` : ""}
+                    {h.nome_orgao ? ` · ${h.nome_orgao}` : ""}
+                  </div>
+                  {h.destinatarios && h.destinatarios.length > 0 && (
+                    <div className="simple-row-meta">Pra: {h.destinatarios.join(", ")}</div>
+                  )}
+                </button>
               </li>
             ))}
           </ul>
@@ -80,6 +87,12 @@ export default function HistoricoPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
             onMudarTamanho={handleMudarTamanho}
           />
         </>
+      )}
+
+      {itemAberto && (
+        <Modal titulo="Detalhes do envio" onFechar={() => setItemAberto(null)}>
+          <DetalheHistorico item={itemAberto} />
+        </Modal>
       )}
     </>
   );

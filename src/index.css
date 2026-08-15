@@ -575,6 +575,22 @@ input {
   padding: 16px 4px;
 }
 
+.simple-row-clickable {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.simple-row-clickable:hover .simple-row-title {
+  color: var(--oxblood);
+}
+
 .simple-row-card {
   display: block;
   padding: 16px;
