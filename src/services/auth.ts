@@ -90,7 +90,7 @@ export async function login(email: string, password: string): Promise<TokensResp
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.erro || "Não foi possível entrar.");
+    throw new Error(dados.detail || "Não foi possível entrar.");
   }
   salvarTokens(dados);
   return dados;
@@ -149,7 +149,7 @@ export async function aceitarConvite(
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.erro || "Não foi possível aceitar o convite.");
+    throw new Error(dados.detail || "Não foi possível aceitar o convite.");
   }
   salvarTokens(dados);
   return dados;
@@ -164,7 +164,7 @@ export async function solicitarRecuperacaoSenha(email: string): Promise<{ mensag
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.erro || "Não foi possível processar o pedido.");
+    throw new Error(dados.detail || "Não foi possível processar o pedido.");
   }
   return dados;
 }
@@ -178,7 +178,7 @@ export async function redefinirSenha(token: string, password: string): Promise<{
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.erro || "Não foi possível redefinir a senha.");
+    throw new Error(dados.detail || "Não foi possível redefinir a senha.");
   }
   return dados;
 }

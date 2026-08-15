@@ -66,7 +66,7 @@ export async function chamar<T = any>(path: string, opcoes: OpcoesRequisicao = {
 
   if (!ok) {
     if (status === 401) limparTokens();
-    throw new ApiError(dados.erro || "Erro desconhecido", status);
+    throw new ApiError(dados.detail || "Erro desconhecido", status);
   }
   return dados as T;
 }
