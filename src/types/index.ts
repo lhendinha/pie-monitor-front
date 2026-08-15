@@ -44,6 +44,8 @@ export interface HistoricoItem {
   nome_orgao?: string;
   subgrupos_notificados?: string[];
   destinatarios?: string[];
+  /** HTML completo da comunicação do PJe que gerou essa notificação. */
+  texto?: string;
 }
 
 export interface TokensResponse {
