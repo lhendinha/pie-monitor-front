@@ -44,8 +44,9 @@ export interface HistoricoItem {
   nome_orgao?: string;
   subgrupos_notificados?: string[];
   destinatarios?: string[];
-  /** HTML completo da comunicação do PJe que gerou essa notificação. */
-  texto?: string;
+  /** Referência pra comunicação em GET /processos/{numero}/detalhes que
+   * gerou essa notificação -- não carrega o texto, só o ID pra casar. */
+  comunicacao_id?: number;
 }
 
 export interface TokensResponse {

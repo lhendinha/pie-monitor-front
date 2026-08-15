@@ -91,7 +91,7 @@ export default function HistoricoPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
 
       {itemAberto && (
         <Modal titulo="Detalhes do envio" onFechar={() => setItemAberto(null)}>
-          <DetalheHistorico item={itemAberto} />
+          <DetalheHistorico item={itemAberto} grupoAlvo={grupoAlvo} />
         </Modal>
       )}
     </>
