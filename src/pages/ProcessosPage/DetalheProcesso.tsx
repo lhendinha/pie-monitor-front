@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import { detalhesProcesso } from "../../services";
 import { Skeleton } from "../../components";
 import type { Comunicacao } from "../../types";
@@ -34,7 +35,17 @@ export default function DetalheProcesso({ numero, grupoAlvo }: DetalheProcessoPr
           <div className="simple-row-meta">
             {c.data_disponibilizacao} · {c.nome_orgao}
           </div>
-          {c.texto && <p className="detail-texto">{c.texto}</p>}
+          {c.texto && (
+            // O texto vem como HTML completo da API do PJe (às vezes um
+            // documento inteiro com <html>/<head>/<style>) -- sanitiza com
+            // DOMPurify antes de injetar (fonte externa, mesmo sendo órgão
+            // oficial) e usa <div>, não <p>, já que o conteúdo tem elementos
+            // de bloco (table, section) que quebrariam dentro de um <p>.
+            <div
+              className="detail-texto"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.texto) }}
+            />
+          )}
         </li>
       ))}
     </ul>

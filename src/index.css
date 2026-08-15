@@ -556,7 +556,18 @@ input {
   line-height: 1.6;
   color: var(--ink);
   margin: 8px 0 0;
-  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.detail-texto table {
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+.detail-texto td,
+.detail-texto th {
+  padding: 4px 8px;
+  vertical-align: top;
 }
 
 .simple-row-block {
