@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
 // React Compiler: memoiza automaticamente (equivalente a useMemo/useCallback/
@@ -14,4 +14,13 @@ export default defineConfig({
       },
     }),
   ],
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    css: false,
+    // Fixa o timezone dos testes -- sem isso, testes de formatação de data
+    // (formatarDataHoraAmPm etc.) dão resultado diferente dependendo da
+    // máquina/CI que roda. America/Sao_Paulo = o público real do app.
+    env: { TZ: "America/Sao_Paulo" },
+  },
 });
