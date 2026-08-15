@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { estaAutenticado, ehSuperAdmin, papelAtende, getEmail, getApelido, getPapel, limparTokens, logout } from "./services";
-import { dataHojeExtenso } from "./utils";
+import { dataHojeExtenso, parseDeepLinkHistorico } from "./utils";
+import type { DeepLinkHistorico } from "./utils";
 import { NOME_PAPEL } from "./constants";
 import { ToastProvider } from "./components";
 import type { Papel } from "./types";
@@ -40,7 +41,15 @@ export default function App() {
   const [autenticado, setAutenticado] = useState(() => estaAutenticado());
   const [autenticacaoInvalida, setAutenticacaoInvalida] = useState(false);
   const [telaAuth, setTelaAuth] = useState<TelaAuth>("login");
-  const [abaAtiva, setAbaAtiva] = useState<AbaId>("processos");
+  // Deep link do e-mail de notificação (?processo=&comunicacao=) -- lido
+  // uma vez aqui, no mount, e limpo da URL imediatamente. Decide a aba
+  // inicial e é repassado pra HistoricoPage abrir o modal certo sozinha.
+  const [deepLinkHistorico, setDeepLinkHistorico] = useState<DeepLinkHistorico | null>(() => {
+    const encontrado = parseDeepLinkHistorico(window.location.search);
+    if (encontrado) window.history.replaceState({}, "", window.location.pathname);
+    return encontrado;
+  });
+  const [abaAtiva, setAbaAtiva] = useState<AbaId>(() => (deepLinkHistorico ? "historico" : "processos"));
   const [grupoAlvo, setGrupoAlvo] = useState("");
 
   function handleEntrar() {
@@ -144,7 +153,12 @@ export default function App() {
               <ConvidarPage grupoAlvo={grupoAlvo} onAutenticacaoInvalida={handleAutenticacaoInvalida} />
             )}
             {abaAtiva === "historico" && (
-              <HistoricoPage grupoAlvo={grupoAlvo} onAutenticacaoInvalida={handleAutenticacaoInvalida} />
+              <HistoricoPage
+                grupoAlvo={grupoAlvo}
+                onAutenticacaoInvalida={handleAutenticacaoInvalida}
+                deepLink={deepLinkHistorico}
+                onDeepLinkConsumido={() => setDeepLinkHistorico(null)}
+              />
             )}
 
             <div className="footer-note">

@@ -26,15 +26,9 @@ export default function ProcessosPage({
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
   const [carregando, setCarregando] = useState(true);
-  // Deep link do e-mail de notificação: /?processo=<numero> abre o modal de
-  // detalhes desse processo direto ao carregar (ver check_service.py, que
-  // monta esse link no corpo do e-mail). Limpa o parâmetro da URL logo
-  // depois pra um refresh não reabrir o modal sozinho.
-  const [numeroAberto, setNumeroAberto] = useState<string | null>(() => {
-    const numero = new URLSearchParams(window.location.search).get("processo");
-    if (numero) window.history.replaceState({}, "", window.location.pathname);
-    return numero;
-  });
+  // O link do e-mail de notificação agora leva pra aba Histórico (ver
+  // HistoricoPage/index.tsx + App.tsx) -- aqui só abre por clique mesmo.
+  const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [processoEmEdicao, setProcessoEmEdicao] = useState<Processo | null>(null);
 

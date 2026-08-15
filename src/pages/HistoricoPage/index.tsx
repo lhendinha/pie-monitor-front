@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listarHistorico, ApiError } from "../../services";
 import { mascararNumeroProcesso, formatarDataHora } from "../../utils";
+import type { DeepLinkHistorico } from "../../utils";
 import { Skeleton, Pagination, Modal, useToast } from "../../components";
 import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
@@ -8,11 +9,18 @@ import type { HistoricoItem } from "../../types";
 interface PageProps {
   grupoAlvo: string;
   onAutenticacaoInvalida: () => void;
+  deepLink?: DeepLinkHistorico | null;
+  onDeepLinkConsumido?: () => void;
 }
 
 const TAMANHO_PADRAO = 10;
 
-export default function HistoricoPage({ grupoAlvo, onAutenticacaoInvalida }: PageProps) {
+export default function HistoricoPage({
+  grupoAlvo,
+  onAutenticacaoInvalida,
+  deepLink,
+  onDeepLinkConsumido,
+}: PageProps) {
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -40,6 +48,33 @@ export default function HistoricoPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  // Resolução do deep link do e-mail -- SEPARADA do carregar() paginado
+  // normal, pra nunca bloquear nem substituir a lista principal. Busca
+  // TODOS os registros daquele processo (não a página atual) e acha o
+  // que bate com o comunicacao_id do link.
+  useEffect(() => {
+    if (!deepLink) return;
+    listarHistorico({ numeroProcesso: deepLink.processo }, grupoAlvo)
+      .then((d: any) => {
+        const candidatos: HistoricoItem[] = d.historico || [];
+        const encontrado = candidatos.find(
+          (h) => String(h.comunicacao_id) === deepLink.comunicacaoId
+        );
+        if (encontrado) setItemAberto(encontrado);
+        else toast.erro("Não foi possível localizar a notificação do link recebido.");
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
+        else toast.erro("Não foi possível carregar os detalhes do link recebido.");
+      })
+      .finally(() => {
+        onDeepLinkConsumido?.();
+      });
+    // Deps proposital: só `deepLink` -- é resolvido uma vez (o App zera o
+    // estado depois via onDeepLinkConsumido pra não reabrir sozinho numa
+    // próxima visita à aba), não a cada mudança de grupoAlvo/toast/etc.
+  }, [deepLink]);
 
   function handleMudarTamanho(novoTamanho: number) {
     setTamanhoPagina(novoTamanho);
