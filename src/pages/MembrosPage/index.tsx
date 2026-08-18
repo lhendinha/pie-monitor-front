@@ -63,12 +63,12 @@ export default function MembrosPage({ onAutenticacaoInvalida }: MembrosPageProps
                 <div className="simple-row-title">{p.email}</div>
                 {p.apelido && <div className="simple-row-meta">{p.apelido}</div>}
               </div>
-              <span className={`role-badge role-${p.papel}`}>{(p.papel && NOME_PAPEL[p.papel]) || p.papel}</span>
               {ehSuperAdmin() && (
                 <button className="icon-btn" title="Editar" onClick={() => setMembroEmEdicao(p)}>
                   ✎
                 </button>
               )}
+              <span className={`role-badge role-${p.papel}`}>{(p.papel && NOME_PAPEL[p.papel]) || p.papel}</span>
             </li>
           ))}
         </ul>
