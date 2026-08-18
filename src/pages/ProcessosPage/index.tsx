@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  listarProcessos,
-  removerProcesso,
-  listarSubgrupos,
-  ApiError,
-} from "../../services";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { listarProcessos, removerProcesso, listarSubgrupos } from "../../services";
+import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { mascararNumeroProcesso, apenasDigitos, formatarDataHoraAmPm } from "../../utils";
 import { Modal, Skeleton, Pagination, useToast } from "../../components";
 import DetalheProcesso from "./DetalheProcesso";
@@ -12,18 +10,14 @@ import NovoProcessoForm from "./NovoProcessoForm";
 import EditarApelidoForm from "./EditarApelidoForm";
 import type { Processo, Subgrupo } from "../../types";
 
-interface ProcessosPageProps {
-  onAutenticacaoInvalida: () => void;
-}
-
 const TAMANHO_PADRAO = 10;
+// ultima_verificacao muda por um job no backend, sem ação de usuário --
+// e um apelido editado por outra pessoa também só apareceria aqui ao
+// trocar de aba/foco. Revalida sozinho enquanto a aba estiver aberta e em
+// foco (o RQ já pausa o polling em background por padrão).
+const INTERVALO_POLLING_MS = 60_000;
 
-export default function ProcessosPage({
-  onAutenticacaoInvalida,
-}: ProcessosPageProps) {
-  const [processos, setProcessos] = useState<Processo[]>([]);
-  const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export default function ProcessosPage() {
   // O link do e-mail de notificação agora leva pra aba Histórico (ver
   // HistoricoPage/index.tsx + App.tsx) -- aqui só abre por clique mesmo.
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
@@ -32,17 +26,13 @@ export default function ProcessosPage({
 
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PADRAO);
-  const [total, setTotal] = useState(0);
-  const [totalPaginas, setTotalPaginas] = useState(0);
 
   const [buscaInput, setBuscaInput] = useState("");
   const [busca, setBusca] = useState("");
   const buscaDigitos = apenasDigitos(buscaInput);
 
   const toast = useToast();
-
-  const subgrupoNome = (id: string) =>
-    subgrupos.find((s) => s.subgrupo_id === id)?.nome || id;
+  const queryClient = useQueryClient();
 
   // Debounce -- só dispara a busca depois de parar de digitar.
   useEffect(() => {
@@ -50,54 +40,51 @@ export default function ProcessosPage({
     return () => clearTimeout(t);
   }, [buscaDigitos]);
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const [dp, ds] = await Promise.all([
-        listarProcessos(
-          busca ? { busca } : { pagina, tamanhoPagina },
-        ) as Promise<{
-          processos: Processo[];
-          total: number;
-          total_paginas: number;
-        }>,
-        listarSubgrupos() as Promise<{ subgrupos: Subgrupo[] }>,
-      ]);
-      setProcessos(dp.processos || []);
-      setTotal(dp.total ?? 0);
-      setTotalPaginas(dp.total_paginas ?? 0);
-      setSubgrupos(ds.subgrupos || []);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401)
-        onAutenticacaoInvalida();
-      else toast.erro("Não foi possível carregar os processos.");
-    } finally {
-      setCarregando(false);
-    }
-  }, [onAutenticacaoInvalida, pagina, tamanhoPagina, busca, toast]);
+  const parametrosBusca = busca ? { busca } : { pagina, tamanhoPagina };
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
+  const processosQuery = useQuery<{ processos: Processo[]; total: number; total_paginas: number }>({
+    queryKey: qk.processos(parametrosBusca),
+    queryFn: () => listarProcessos(parametrosBusca),
+    refetchInterval: INTERVALO_POLLING_MS,
+  });
+  useToastOnQueryError(processosQuery.error, "Não foi possível carregar os processos.");
+  const processos = processosQuery.data?.processos || [];
+  const total = processosQuery.data?.total ?? 0;
+  const totalPaginas = processosQuery.data?.total_paginas ?? 0;
+  const carregando = processosQuery.isPending;
+
+  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+    queryKey: qk.subgrupos(),
+    queryFn: listarSubgrupos,
+  });
+  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
+  const subgrupos = subgruposQuery.data?.subgrupos || [];
+
+  const subgrupoNome = (id: string) => subgrupos.find((s) => s.subgrupo_id === id)?.nome || id;
+
+  const removerMutation = useMutation({
+    mutationFn: (p: Processo) => removerProcesso(p.subgrupo_id, p.numero_processo),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["processos"] }),
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível remover esse processo."),
+  });
 
   function handleMudarTamanho(novoTamanho: number) {
     setTamanhoPagina(novoTamanho);
     setPagina(1);
   }
 
-  async function handleRemover(p: Processo) {
+  function handleRemover(p: Processo) {
     if (
       !window.confirm(
         `Remover ${mascararNumeroProcesso(p.numero_processo)} desse subgrupo?`,
       )
     )
       return;
-    try {
-      await removerProcesso(p.subgrupo_id, p.numero_processo);
-      carregar();
-    } catch {
-      toast.erro("Não foi possível remover esse processo.");
-    }
+    removerMutation.mutate(p);
+  }
+
+  function invalidarProcessos() {
+    queryClient.invalidateQueries({ queryKey: ["processos"] });
   }
 
   return (
@@ -211,7 +198,7 @@ export default function ProcessosPage({
         <Modal titulo="Novo Processo" onFechar={() => setModalAberto(false)}>
           <NovoProcessoForm
             subgrupos={subgrupos}
-            onCadastrado={carregar}
+            onCadastrado={invalidarProcessos}
             onFechar={() => setModalAberto(false)}
           />
         </Modal>
@@ -221,7 +208,7 @@ export default function ProcessosPage({
         <Modal titulo="Editar apelido" onFechar={() => setProcessoEmEdicao(null)}>
           <EditarApelidoForm
             processo={processoEmEdicao}
-            onAtualizado={carregar}
+            onAtualizado={invalidarProcessos}
             onFechar={() => setProcessoEmEdicao(null)}
           />
         </Modal>

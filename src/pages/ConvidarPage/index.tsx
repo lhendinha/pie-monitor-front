@@ -1,44 +1,42 @@
-import { useEffect, useState, type FormEvent } from "react";
-import { listarSubgrupos, criarConvite, ApiError } from "../../services";
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { listarSubgrupos, criarConvite } from "../../services";
+import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { MultiSelect, useToast } from "../../components";
 import type { Papel, Subgrupo } from "../../types";
 
-interface PageProps {
-  onAutenticacaoInvalida: () => void;
-}
-
-export default function ConvidarPage({ onAutenticacaoInvalida }: PageProps) {
-  const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
+export default function ConvidarPage() {
   const [email, setEmail] = useState("");
   const [papelInicial, setPapelInicial] = useState<Papel>("user");
   const [subgruposSelecionados, setSubgruposSelecionados] = useState<string[]>([]);
   const [campoInvalido, setCampoInvalido] = useState(false);
-  const [enviando, setEnviando] = useState(false);
   const toast = useToast();
 
-  useEffect(() => {
-    listarSubgrupos()
-      .then((d: any) => setSubgrupos(d.subgrupos || []))
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
-      });
-  }, [onAutenticacaoInvalida]);
+  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+    queryKey: qk.subgrupos(),
+    queryFn: listarSubgrupos,
+  });
+  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
+  const subgrupos = subgruposQuery.data?.subgrupos || [];
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setCampoInvalido(false);
-    setEnviando(true);
-    try {
-      await criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados);
+  const convidarMutation = useMutation({
+    mutationFn: () => criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados),
+    onSuccess: () => {
       toast.sucesso(`Convite enviado pra ${email}.`);
       setEmail("");
       setSubgruposSelecionados([]);
-    } catch (err) {
+    },
+    onError: (err) => {
       setCampoInvalido(true);
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível convidar.");
-    } finally {
-      setEnviando(false);
-    }
+      toastErroMutation(toast, err, "Não foi possível convidar.");
+    },
+  });
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setCampoInvalido(false);
+    convidarMutation.mutate();
   }
 
   return (
@@ -90,9 +88,9 @@ export default function ConvidarPage({ onAutenticacaoInvalida }: PageProps) {
           <button
             className="btn"
             type="submit"
-            disabled={enviando || !email.trim() || subgruposSelecionados.length === 0}
+            disabled={convidarMutation.isPending || !email.trim() || subgruposSelecionados.length === 0}
           >
-            {enviando ? "Enviando…" : "Enviar convite"}
+            {convidarMutation.isPending ? "Enviando…" : "Enviar convite"}
           </button>
         </div>
       </form>

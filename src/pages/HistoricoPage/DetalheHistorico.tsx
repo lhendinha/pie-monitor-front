@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import { detalhesProcesso } from "../../services";
+import { qk } from "../../services/queryKeys";
 import { Skeleton } from "../../components";
 import { formatarDataHora, mascararNumeroProcesso } from "../../utils";
 import type { Comunicacao, HistoricoItem } from "../../types";
@@ -13,26 +14,30 @@ interface DetalheHistoricoProps {
  * lista TODAS as comunicações do processo), aqui mostra só a comunicação
  * que gerou essa notificação. Busca pela MESMA rota que o link do e-mail
  * já abre (GET /processos/{numero}/detalhes) e filtra pelo comunicacao_id
- * salvo no item -- sem endpoint novo, sem duplicar o texto no backend. */
+ * salvo no item -- sem endpoint novo, sem duplicar o texto no backend.
+ * Mesma query key que DetalheProcesso, pra compartilhar cache. */
 export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
-  const [comunicacao, setComunicacao] = useState<Comunicacao | null | undefined>(undefined);
-  const [erro, setErro] = useState<string | null>(null);
+  const habilitado = item.comunicacao_id != null;
 
-  useEffect(() => {
-    if (item.comunicacao_id == null) {
-      setComunicacao(null); // histórico antigo, sem comunicacao_id salvo
-      return;
-    }
-    setComunicacao(undefined);
-    detalhesProcesso(item.numero_processo)
-      .then((d: any) => {
-        const encontrada = (d.comunicacoes || []).find(
-          (c: Comunicacao) => String(c.comunicacao_id) === String(item.comunicacao_id)
-        );
-        setComunicacao(encontrada || null);
-      })
-      .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar."));
-  }, [item.numero_processo, item.comunicacao_id]);
+  const query = useQuery<{ comunicacoes: Comunicacao[] }>({
+    queryKey: qk.detalhesProcesso(item.numero_processo),
+    queryFn: () => detalhesProcesso(item.numero_processo),
+    enabled: habilitado,
+  });
+
+  const carregando = habilitado && query.isPending;
+  const erro =
+    habilitado && query.isError
+      ? query.error instanceof Error
+        ? query.error.message
+        : "Não foi possível carregar."
+      : null;
+  // histórico antigo, sem comunicacao_id salvo -> não achado
+  const comunicacao = !habilitado
+    ? null
+    : (query.data?.comunicacoes.find(
+        (c) => String(c.comunicacao_id) === String(item.comunicacao_id)
+      ) ?? null);
 
   return (
     <div>
@@ -46,9 +51,9 @@ export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
         <div className="simple-row-meta">Pra: {item.destinatarios.join(", ")}</div>
       )}
 
-      {comunicacao === undefined && <Skeleton linhas={2} />}
+      {carregando && <Skeleton linhas={2} />}
       {erro && <div className="empty">{erro}</div>}
-      {comunicacao === null && !erro && item.mensagem && (
+      {!carregando && !erro && comunicacao === null && item.mensagem && (
         <p className="detail-texto" style={{ whiteSpace: "pre-wrap" }}>
           {item.mensagem}
         </p>

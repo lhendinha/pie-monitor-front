@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { atualizarApelidoProcesso, ApiError } from "../../services";
+import { useMutation } from "@tanstack/react-query";
+import { atualizarApelidoProcesso } from "../../services";
+import { toastErroMutation } from "../../services/queryClient";
 import { useToast } from "../../components";
 import type { Processo } from "../../types";
 
@@ -16,27 +18,25 @@ export default function EditarApelidoForm({
 }: EditarApelidoFormProps) {
   const [apelido, setApelido] = useState(processo.apelido || "");
   const [campoInvalido, setCampoInvalido] = useState(false);
-  const [enviando, setEnviando] = useState(false);
   const toast = useToast();
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setCampoInvalido(false);
-    setEnviando(true);
-    try {
-      await atualizarApelidoProcesso(
-        processo.subgrupo_id,
-        processo.numero_processo,
-        apelido.trim()
-      );
+  const atualizarMutation = useMutation({
+    mutationFn: () =>
+      atualizarApelidoProcesso(processo.subgrupo_id, processo.numero_processo, apelido.trim()),
+    onSuccess: () => {
       onAtualizado();
       onFechar();
-    } catch (err) {
+    },
+    onError: (err) => {
       setCampoInvalido(true);
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível atualizar o apelido.");
-    } finally {
-      setEnviando(false);
-    }
+      toastErroMutation(toast, err, "Não foi possível atualizar o apelido.");
+    },
+  });
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setCampoInvalido(false);
+    atualizarMutation.mutate();
   }
 
   return (
@@ -55,8 +55,8 @@ export default function EditarApelidoForm({
         />
       </div>
       <div className="modal-actions">
-        <button className="btn" type="submit" disabled={enviando}>
-          {enviando ? "Salvando…" : "Salvar"}
+        <button className="btn" type="submit" disabled={atualizarMutation.isPending}>
+          {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
         </button>
       </div>
     </form>

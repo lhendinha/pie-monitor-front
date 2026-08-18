@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
-import { criarProcesso, ApiError } from "../../services";
+import { useMutation } from "@tanstack/react-query";
+import { criarProcesso } from "../../services";
+import { toastErroMutation } from "../../services/queryClient";
 import { apenasDigitos, mascararNumeroProcesso } from "../../utils";
 import { useToast } from "../../components";
 import type { Subgrupo } from "../../types";
@@ -19,25 +21,26 @@ export default function NovoProcessoForm({
   const [numeroMascarado, setNumeroMascarado] = useState("");
   const [apelido, setApelido] = useState("");
   const [campoInvalido, setCampoInvalido] = useState(false);
-  const [enviando, setEnviando] = useState(false);
   const toast = useToast();
 
   const numeroLimpo = apenasDigitos(numeroMascarado);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setCampoInvalido(false);
-    setEnviando(true);
-    try {
-      await criarProcesso(subgrupoId, numeroLimpo, apelido.trim());
+  const criarMutation = useMutation({
+    mutationFn: () => criarProcesso(subgrupoId, numeroLimpo, apelido.trim()),
+    onSuccess: () => {
       onCadastrado();
       onFechar();
-    } catch (err) {
+    },
+    onError: (err) => {
       setCampoInvalido(true);
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível cadastrar.");
-    } finally {
-      setEnviando(false);
-    }
+      toastErroMutation(toast, err, "Não foi possível cadastrar.");
+    },
+  });
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setCampoInvalido(false);
+    criarMutation.mutate();
   }
 
   if (subgrupos.length === 0) {
@@ -75,8 +78,12 @@ export default function NovoProcessoForm({
         <input id="apelido" value={apelido} onChange={(e) => setApelido(e.target.value)} maxLength={512} />
       </div>
       <div className="modal-actions">
-        <button className="btn" type="submit" disabled={enviando || numeroLimpo.length !== 20 || !subgrupoId}>
-          {enviando ? "Cadastrando…" : "Cadastrar"}
+        <button
+          className="btn"
+          type="submit"
+          disabled={criarMutation.isPending || numeroLimpo.length !== 20 || !subgrupoId}
+        >
+          {criarMutation.isPending ? "Cadastrando…" : "Cadastrar"}
         </button>
       </div>
     </form>

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import { detalhesProcesso } from "../../services";
+import { qk } from "../../services/queryKeys";
 import { Skeleton } from "../../components";
 import type { Comunicacao } from "../../types";
 
@@ -9,26 +10,29 @@ interface DetalheProcessoProps {
 }
 
 export default function DetalheProcesso({ numero }: DetalheProcessoProps) {
-  const [dados, setDados] = useState<{ comunicacoes: Comunicacao[] } | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
+  // Mesma query key que DetalheHistorico (HistoricoPage) -- os dois chamam
+  // o mesmo endpoint (`detalhesProcesso`), então compartilham cache.
+  const query = useQuery<{ comunicacoes: Comunicacao[] }>({
+    queryKey: qk.detalhesProcesso(numero),
+    queryFn: () => detalhesProcesso(numero),
+  });
 
-  useEffect(() => {
-    detalhesProcesso(numero)
-      .then(setDados)
-      .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar."))
-      .finally(() => setCarregando(false));
-  }, [numero]);
-
-  if (carregando) return <Skeleton linhas={2} />;
-  if (erro) return <div className="empty">{erro}</div>;
-  if ((dados?.comunicacoes || []).length === 0) {
+  if (query.isPending) return <Skeleton linhas={2} />;
+  if (query.isError) {
+    return (
+      <div className="empty">
+        {query.error instanceof Error ? query.error.message : "Não foi possível carregar."}
+      </div>
+    );
+  }
+  const comunicacoes = query.data?.comunicacoes || [];
+  if (comunicacoes.length === 0) {
     return <div className="empty">Nenhuma comunicação registrada ainda pra esse processo.</div>;
   }
 
   return (
     <ul className="simple-list">
-      {dados!.comunicacoes.map((c, i) => (
+      {comunicacoes.map((c, i) => (
         <li className="simple-row simple-row-card" key={`${c.comunicacao_id}-${i}`}>
           <div className="simple-row-title">{c.tipo_comunicacao || "Comunicação"}</div>
           <div className="simple-row-meta">

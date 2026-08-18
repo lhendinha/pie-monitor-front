@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { estaAutenticado, papelAtende, getEmail, getApelido, getPapel, limparTokens, logout } from "./services";
+import { setAutenticacaoInvalidaListener } from "./services/authBridge";
 import { dataHojeExtenso, parseDeepLinkHistorico } from "./utils";
 import type { DeepLinkHistorico } from "./utils";
 import { NOME_PAPEL } from "./constants";
@@ -69,6 +70,14 @@ export default function App() {
     setTelaAuth("login");
   }
 
+  // Registra esse handler pro queryClient poder disparar a mesma transição
+  // de tela quando qualquer query/mutation React Query levar um 401 (ver
+  // services/authBridge.ts e services/queryClient.ts).
+  useEffect(() => {
+    setAutenticacaoInvalidaListener(handleAutenticacaoInvalida);
+    return () => setAutenticacaoInvalidaListener(null);
+  });
+
   // Rotas públicas por caminho -- detecção simples, sem lib de router. Cada
   // uma continua precisando do <ToastProvider> (useToast() é usado dentro
   // dessas páginas), por isso entra dentro do provider igual o app principal.
@@ -126,21 +135,12 @@ export default function App() {
               ))}
             </nav>
 
-            {abaAtiva === "processos" && (
-              <ProcessosPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
-            )}
-            {abaAtiva === "subgrupos" && (
-              <SubgruposPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
-            )}
-            {abaAtiva === "membros" && (
-              <MembrosPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
-            )}
-            {abaAtiva === "convidar" && (
-              <ConvidarPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
-            )}
+            {abaAtiva === "processos" && <ProcessosPage />}
+            {abaAtiva === "subgrupos" && <SubgruposPage />}
+            {abaAtiva === "membros" && <MembrosPage />}
+            {abaAtiva === "convidar" && <ConvidarPage />}
             {abaAtiva === "historico" && (
               <HistoricoPage
-                onAutenticacaoInvalida={handleAutenticacaoInvalida}
                 deepLink={deepLinkHistorico}
                 onDeepLinkConsumido={() => setDeepLinkHistorico(null)}
               />

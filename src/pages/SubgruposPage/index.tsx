@@ -1,64 +1,58 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende, ApiError } from "../../services";
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende } from "../../services";
+import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { Skeleton, useToast } from "../../components";
 import type { Subgrupo } from "../../types";
 
-interface PageProps {
-  onAutenticacaoInvalida: () => void;
-}
-
-export default function SubgruposPage({ onAutenticacaoInvalida }: PageProps) {
-  const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export default function SubgruposPage() {
   const [nome, setNome] = useState("");
   const [campoInvalido, setCampoInvalido] = useState(false);
-  const [enviando, setEnviando] = useState(false);
   const toast = useToast();
+  const queryClient = useQueryClient();
 
   const podeCriar = papelAtende("manager");
   const podeExcluir = papelAtende("admin");
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const d = (await listarSubgrupos()) as { subgrupos: Subgrupo[] };
-      setSubgrupos(d.subgrupos || []);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
-      else toast.erro("Não foi possível carregar os subgrupos.");
-    } finally {
-      setCarregando(false);
-    }
-  }, [onAutenticacaoInvalida, toast]);
+  const query = useQuery<{ subgrupos: Subgrupo[] }>({
+    queryKey: qk.subgrupos(),
+    queryFn: listarSubgrupos,
+  });
+  useToastOnQueryError(query.error, "Não foi possível carregar os subgrupos.");
+  const subgrupos = query.data?.subgrupos || [];
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
+  const criarMutation = useMutation({
+    mutationFn: (nomeNovo: string) => criarSubgrupo(nomeNovo),
+    onSuccess: () => {
+      setNome("");
+      queryClient.invalidateQueries({ queryKey: qk.subgrupos() });
+    },
+    onError: (err) => {
+      setCampoInvalido(true);
+      toastErroMutation(toast, err, "Não foi possível criar.");
+    },
+  });
 
-  async function handleCriar(e: FormEvent) {
+  const removerMutation = useMutation({
+    mutationFn: (id: string) => removerSubgrupo(id),
+    onSuccess: (_dados, id) => {
+      queryClient.setQueryData<{ subgrupos: Subgrupo[] }>(qk.subgrupos(), (old) =>
+        old ? { subgrupos: old.subgrupos.filter((s) => s.subgrupo_id !== id) } : old
+      );
+    },
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível remover."),
+  });
+
+  function handleCriar(e: FormEvent) {
     e.preventDefault();
     setCampoInvalido(false);
-    setEnviando(true);
-    try {
-      await criarSubgrupo(nome.trim());
-      setNome("");
-      await carregar();
-    } catch (err) {
-      setCampoInvalido(true);
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível criar.");
-    } finally {
-      setEnviando(false);
-    }
+    criarMutation.mutate(nome.trim());
   }
 
-  async function handleRemover(id: string) {
+  function handleRemover(id: string) {
     if (!window.confirm("Remover esse subgrupo? Só funciona se estiver vazio (0 membros).")) return;
-    try {
-      await removerSubgrupo(id);
-      setSubgrupos((prev) => prev.filter((s) => s.subgrupo_id !== id));
-    } catch (err) {
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível remover.");
-    }
+    removerMutation.mutate(id);
   }
 
   return (
@@ -78,8 +72,8 @@ export default function SubgruposPage({ onAutenticacaoInvalida }: PageProps) {
                 placeholder="Cível, Trabalhista..."
               />
             </div>
-            <button className="btn" type="submit" disabled={enviando || !nome.trim()}>
-              {enviando ? "Criando…" : "Criar"}
+            <button className="btn" type="submit" disabled={criarMutation.isPending || !nome.trim()}>
+              {criarMutation.isPending ? "Criando…" : "Criar"}
             </button>
           </div>
         </form>
@@ -87,10 +81,10 @@ export default function SubgruposPage({ onAutenticacaoInvalida }: PageProps) {
 
       <div className="section-head">
         <h2>Subgrupos</h2>
-        <span className="section-count">{carregando ? "carregando…" : `${subgrupos.length}`}</span>
+        <span className="section-count">{query.isPending ? "carregando…" : `${subgrupos.length}`}</span>
       </div>
 
-      {carregando ? (
+      {query.isPending ? (
         <Skeleton linhas={2} />
       ) : subgrupos.length === 0 ? (
         <div className="empty">Nenhum subgrupo ainda.</div>

@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { listarHistorico, ApiError } from "../../services";
+import { useToastOnQueryError } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { mascararNumeroProcesso, formatarDataHora } from "../../utils";
 import type { DeepLinkHistorico } from "../../utils";
 import { Skeleton, Pagination, Modal, useToast } from "../../components";
@@ -7,71 +10,61 @@ import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
 
 interface PageProps {
-  onAutenticacaoInvalida: () => void;
   deepLink?: DeepLinkHistorico | null;
   onDeepLinkConsumido?: () => void;
 }
 
 const TAMANHO_PADRAO = 10;
 
-export default function HistoricoPage({
-  onAutenticacaoInvalida,
-  deepLink,
-  onDeepLinkConsumido,
-}: PageProps) {
-  const [historico, setHistorico] = useState<HistoricoItem[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: PageProps) {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PADRAO);
-  const [total, setTotal] = useState(0);
-  const [totalPaginas, setTotalPaginas] = useState(0);
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 
-  const carregar = useCallback(() => {
-    setCarregando(true);
-    listarHistorico({ pagina, tamanhoPagina })
-      .then((d: any) => {
-        setHistorico(d.historico || []);
-        setTotal(d.total ?? 0);
-        setTotalPaginas(d.total_paginas ?? 0);
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
-        else toast.erro("Não foi possível carregar o histórico.");
-      })
-      .finally(() => setCarregando(false));
-  }, [pagina, tamanhoPagina, onAutenticacaoInvalida, toast]);
+  const query = useQuery<{ historico: HistoricoItem[]; total: number; total_paginas: number }>({
+    queryKey: qk.historico({ pagina, tamanhoPagina }),
+    queryFn: () => listarHistorico({ pagina, tamanhoPagina }),
+  });
+  useToastOnQueryError(query.error, "Não foi possível carregar o histórico.");
+  const historico = query.data?.historico || [];
+  const total = query.data?.total ?? 0;
+  const totalPaginas = query.data?.total_paginas ?? 0;
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
+  // Resolução do deep link do e-mail -- SEPARADA da query paginada normal,
+  // pra nunca bloquear nem substituir a lista principal. Busca TODOS os
+  // registros daquele processo (não a página atual) e acha o que bate com o
+  // comunicacao_id do link. É uma ação one-shot (não um dado declarativo de
+  // render), por isso vira mutation em vez de query -- as variáveis do
+  // deepLink vão como argumento do mutate (não fechando sobre a prop), pra
+  // não pegar um `deepLink` desatualizado se ele mudar antes da resposta
+  // chegar.
+  const deepLinkMutation = useMutation({
+    mutationFn: (variaveis: { processo: string; comunicacaoId: string }) =>
+      listarHistorico({ numeroProcesso: variaveis.processo }),
+    onSuccess: (d: any, variaveis) => {
+      const candidatos: HistoricoItem[] = d.historico || [];
+      const encontrado = candidatos.find(
+        (h) => String(h.comunicacao_id) === variaveis.comunicacaoId
+      );
+      if (encontrado) setItemAberto(encontrado);
+      else toast.erro("Não foi possível localizar a notificação do link recebido.");
+    },
+    onError: (err) => {
+      if (!(err instanceof ApiError && err.status === 401)) {
+        toast.erro("Não foi possível carregar os detalhes do link recebido.");
+      }
+    },
+    onSettled: () => onDeepLinkConsumido?.(),
+  });
 
-  // Resolução do deep link do e-mail -- SEPARADA do carregar() paginado
-  // normal, pra nunca bloquear nem substituir a lista principal. Busca
-  // TODOS os registros daquele processo (não a página atual) e acha o
-  // que bate com o comunicacao_id do link.
   useEffect(() => {
     if (!deepLink) return;
-    listarHistorico({ numeroProcesso: deepLink.processo })
-      .then((d: any) => {
-        const candidatos: HistoricoItem[] = d.historico || [];
-        const encontrado = candidatos.find(
-          (h) => String(h.comunicacao_id) === deepLink.comunicacaoId
-        );
-        if (encontrado) setItemAberto(encontrado);
-        else toast.erro("Não foi possível localizar a notificação do link recebido.");
-      })
-      .catch((err) => {
-        if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
-        else toast.erro("Não foi possível carregar os detalhes do link recebido.");
-      })
-      .finally(() => {
-        onDeepLinkConsumido?.();
-      });
+    deepLinkMutation.mutate({ processo: deepLink.processo, comunicacaoId: deepLink.comunicacaoId });
     // Deps proposital: só `deepLink` -- é resolvido uma vez (o App zera o
     // estado depois via onDeepLinkConsumido pra não reabrir sozinho numa
-    // próxima visita à aba), não a cada mudança de toast/etc.
+    // próxima visita à aba), não a cada mudança de toast/mutation/etc.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLink]);
 
   function handleMudarTamanho(novoTamanho: number) {
@@ -83,10 +76,10 @@ export default function HistoricoPage({
     <>
       <div className="section-head">
         <h2>Histórico de e-mails enviados</h2>
-        <span className="section-count">{carregando ? "carregando…" : `${total} envio(s)`}</span>
+        <span className="section-count">{query.isPending ? "carregando…" : `${total} envio(s)`}</span>
       </div>
 
-      {carregando ? (
+      {query.isPending ? (
         <Skeleton linhas={4} />
       ) : historico.length === 0 ? (
         <div className="empty">Nenhuma notificação enviada ainda.</div>

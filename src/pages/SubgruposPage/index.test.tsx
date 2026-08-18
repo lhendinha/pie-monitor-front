@@ -1,0 +1,83 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderComProviders } from "../../test/queryTestUtils";
+
+const mocks = vi.hoisted(() => ({
+  listarSubgrupos: vi.fn(),
+  criarSubgrupo: vi.fn(),
+  removerSubgrupo: vi.fn(),
+  papelAtende: vi.fn(),
+}));
+
+vi.mock("../../services", () => mocks);
+
+import { ApiError } from "../../services/api/client";
+import SubgruposPage from "./index";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.papelAtende.mockReturnValue(true);
+});
+
+describe("SubgruposPage", () => {
+  it("mostra a lista depois de carregar", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }] });
+    renderComProviders(<SubgruposPage />);
+    expect(await screen.findByText("Cível")).toBeInTheDocument();
+  });
+
+  it("cria um subgrupo e reflete na lista via invalidateQueries", async () => {
+    mocks.listarSubgrupos
+      .mockResolvedValueOnce({ subgrupos: [] })
+      .mockResolvedValueOnce({ subgrupos: [{ subgrupo_id: "2", nome: "Trabalhista" }] });
+    mocks.criarSubgrupo.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Nenhum subgrupo ainda.");
+    await user.type(screen.getByLabelText("Novo subgrupo"), "Trabalhista");
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    expect(await screen.findByText("Trabalhista")).toBeInTheDocument();
+    expect(mocks.criarSubgrupo).toHaveBeenCalledWith("Trabalhista");
+    expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(2); // carga inicial + invalidate pós-criação
+  });
+
+  it("remove um subgrupo direto do cache (setQueryData), sem refazer o fetch", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }] });
+    mocks.removerSubgrupo.mockResolvedValue({});
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Cível");
+    await user.click(screen.getByTitle("Remover"));
+
+    await waitFor(() => expect(screen.queryByText("Cível")).not.toBeInTheDocument());
+    expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(1); // não refez o fetch pra remover
+  });
+
+  it("erro ao criar mostra a mensagem da ApiError e marca o campo inválido", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    mocks.criarSubgrupo.mockRejectedValue(new ApiError("Já existe um subgrupo com esse nome", 400));
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Nenhum subgrupo ainda.");
+    await user.type(screen.getByLabelText("Novo subgrupo"), "Cível");
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    expect(await screen.findByText("Já existe um subgrupo com esse nome")).toBeInTheDocument();
+  });
+
+  it("sem permissão (papelAtende falso), não mostra o form nem o botão de remover", async () => {
+    mocks.papelAtende.mockReturnValue(false);
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }] });
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Cível");
+    expect(screen.queryByLabelText("Novo subgrupo")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Remover")).not.toBeInTheDocument();
+  });
+});

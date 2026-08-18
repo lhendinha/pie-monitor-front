@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { listarMembrosDoSubgrupo, adicionarMembro, removerMembro, ApiError } from "../../services";
+import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { listarMembrosDoSubgrupo, adicionarMembro, removerMembro } from "../../services";
+import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { useToast } from "../../components";
 import type { Membro, Subgrupo } from "../../types";
 
@@ -9,51 +12,44 @@ interface SubgrupoMembrosProps {
 }
 
 export default function SubgrupoMembros({ subgrupo, apelidoPorEmail }: SubgrupoMembrosProps) {
-  const [membros, setMembros] = useState<Membro[] | null>(null);
   const [novoEmail, setNovoEmail] = useState("");
-  const [enviando, setEnviando] = useState(false);
   const toast = useToast();
+  const queryClient = useQueryClient();
+  const queryKey = qk.membrosDoSubgrupo(subgrupo.subgrupo_id);
 
-  const carregar = useCallback(() => {
-    listarMembrosDoSubgrupo(subgrupo.subgrupo_id)
-      .then((d: any) => setMembros(d.membros || []))
-      .catch(() => toast.erro("Não foi possível carregar os membros de " + subgrupo.nome));
-  }, [subgrupo, toast]);
+  const query = useQuery<{ membros: Membro[] }>({
+    queryKey,
+    queryFn: () => listarMembrosDoSubgrupo(subgrupo.subgrupo_id),
+  });
+  useToastOnQueryError(query.error, "Não foi possível carregar os membros de " + subgrupo.nome);
+  const membros = query.data?.membros ?? null;
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
-
-  async function handleAdicionar(e: FormEvent) {
-    e.preventDefault();
-    setEnviando(true);
-    try {
-      const resp = (await adicionarMembro(
-        subgrupo.subgrupo_id,
-        novoEmail.trim().toLowerCase()
-      )) as { mensagem: string; email: string };
+  const adicionarMutation = useMutation({
+    mutationFn: (email: string) => adicionarMembro(subgrupo.subgrupo_id, email) as Promise<{ mensagem: string; email: string }>,
+    onSuccess: (resp) => {
       setNovoEmail("");
-      carregar();
+      queryClient.invalidateQueries({ queryKey });
       toast.sucesso(
         resp.mensagem === "adicionado"
           ? `${resp.email} adicionado ao subgrupo.`
           : `${resp.email} já era membro desse subgrupo.`
       );
-    } catch (err) {
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível adicionar.");
-    } finally {
-      setEnviando(false);
-    }
-  }
+    },
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível adicionar."),
+  });
 
-  async function handleRemover(email: string) {
-    try {
-      await removerMembro(subgrupo.subgrupo_id, email);
-      carregar();
+  const removerMutation = useMutation({
+    mutationFn: (email: string) => removerMembro(subgrupo.subgrupo_id, email),
+    onSuccess: (_dados, email) => {
+      queryClient.invalidateQueries({ queryKey });
       toast.sucesso(`${email} removido do subgrupo.`);
-    } catch (err) {
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível remover.");
-    }
+    },
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível remover."),
+  });
+
+  function handleAdicionar(e: FormEvent) {
+    e.preventDefault();
+    adicionarMutation.mutate(novoEmail.trim().toLowerCase());
   }
 
   return (
@@ -73,7 +69,11 @@ export default function SubgrupoMembros({ subgrupo, apelidoPorEmail }: SubgrupoM
                   <div className="simple-row-title">{m.email}</div>
                   {apelido && <div className="simple-row-meta">{apelido}</div>}
                 </div>
-                <button className="icon-btn" title="Remover" onClick={() => handleRemover(m.email)}>
+                <button
+                  className="icon-btn"
+                  title="Remover"
+                  onClick={() => removerMutation.mutate(m.email)}
+                >
                   ✕
                 </button>
               </li>
@@ -90,7 +90,7 @@ export default function SubgrupoMembros({ subgrupo, apelidoPorEmail }: SubgrupoM
             placeholder="e-mail pra adicionar"
           />
         </div>
-        <button className="btn btn-ghost" type="submit" disabled={enviando || !novoEmail.trim()}>
+        <button className="btn btn-ghost" type="submit" disabled={adicionarMutation.isPending || !novoEmail.trim()}>
           + Adicionar
         </button>
       </form>

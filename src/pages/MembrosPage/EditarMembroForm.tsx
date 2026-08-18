@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { listarMembrosDoGrupo, listarSubgruposDoGrupo, atualizarMembro, getGrupoId, ApiError } from "../../services";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { listarMembrosDoGrupo, listarSubgruposDoGrupo, atualizarMembro, getGrupoId } from "../../services";
+import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { MultiSelect, useToast } from "../../components";
 import type { Membro, Subgrupo, Grupo, Papel } from "../../types";
 
@@ -21,9 +24,7 @@ export default function EditarMembroForm({
   const [grupoSelecionado, setGrupoSelecionado] = useState(grupoProprioId);
   const [papelSelecionado, setPapelSelecionado] = useState<Papel>((membro.papel as Papel) || "user");
   const [subgruposSelecionados, setSubgruposSelecionados] = useState<string[]>(membro.subgrupos || []);
-  const [subgruposDoGrupo, setSubgruposDoGrupo] = useState<Subgrupo[]>([]);
   const [subgruposCarregados, setSubgruposCarregados] = useState(false);
-  const [enviando, setEnviando] = useState(false);
   const grupoAlteradoRef = useRef(false);
   const toast = useToast();
 
@@ -31,7 +32,11 @@ export default function EditarMembroForm({
   // alguém mexeu nos subgrupos dessa pessoa via "Membros por subgrupo" sem
   // recarregar a página -- busca fresco antes de liberar o submit, senão a
   // reconciliação do back (que substitui pelo conjunto exato enviado)
-  // desfaria uma adição recente.
+  // desfaria uma adição recente. Fica de fora do React Query de propósito:
+  // precisa de uma resposta de rede genuína (não pode ser servida do cache
+  // compartilhado da query `membros`) e descarta o resultado via `ref`
+  // mutável se o usuário já trocou de grupo enquanto isso -- não se encaixa
+  // no modelo declarativo do useQuery.
   useEffect(() => {
     listarMembrosDoGrupo()
       .then((d: any) => {
@@ -42,11 +47,28 @@ export default function EditarMembroForm({
       .finally(() => setSubgruposCarregados(true));
   }, [membro.email]);
 
-  useEffect(() => {
-    listarSubgruposDoGrupo(grupoSelecionado)
-      .then((d: any) => setSubgruposDoGrupo(d.subgrupos || []))
-      .catch(() => toast.erro("Não foi possível carregar os subgrupos desse grupo."));
-  }, [grupoSelecionado, toast]);
+  const subgruposDoGrupoQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+    queryKey: qk.subgruposDoGrupo(grupoSelecionado),
+    queryFn: () => listarSubgruposDoGrupo(grupoSelecionado),
+  });
+  useToastOnQueryError(subgruposDoGrupoQuery.error, "Não foi possível carregar os subgrupos desse grupo.");
+  const subgruposDoGrupo = subgruposDoGrupoQuery.data?.subgrupos || [];
+
+  const atualizarMutation = useMutation({
+    mutationFn: () =>
+      atualizarMembro(membro.email, {
+        apelido: apelido.trim(),
+        grupo_id: grupoSelecionado,
+        papel: papelSelecionado,
+        subgrupos: subgruposSelecionados,
+      }),
+    onSuccess: () => {
+      toast.sucesso(`${membro.apelido || membro.email} atualizado.`);
+      onAtualizado();
+      onFechar();
+    },
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível atualizar."),
+  });
 
   function handleMudarGrupo(novoGrupoId: string) {
     grupoAlteradoRef.current = true;
@@ -54,24 +76,9 @@ export default function EditarMembroForm({
     setSubgruposSelecionados([]);
   }
 
-  async function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setEnviando(true);
-    try {
-      await atualizarMembro(membro.email, {
-        apelido: apelido.trim(),
-        grupo_id: grupoSelecionado,
-        papel: papelSelecionado,
-        subgrupos: subgruposSelecionados,
-      });
-      toast.sucesso(`${membro.apelido || membro.email} atualizado.`);
-      onAtualizado();
-      onFechar();
-    } catch (err) {
-      toast.erro(err instanceof ApiError ? err.message : "Não foi possível atualizar.");
-    } finally {
-      setEnviando(false);
-    }
+    atualizarMutation.mutate();
   }
 
   return (
@@ -132,9 +139,9 @@ export default function EditarMembroForm({
         <button
           className="btn"
           type="submit"
-          disabled={enviando || !subgruposCarregados || subgruposSelecionados.length === 0}
+          disabled={atualizarMutation.isPending || !subgruposCarregados || subgruposSelecionados.length === 0}
         >
-          {enviando ? "Salvando…" : "Salvar"}
+          {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
         </button>
       </div>
     </form>

@@ -1,45 +1,49 @@
-import { useCallback, useEffect, useState } from "react";
-import { listarMembrosDoGrupo, listarSubgrupos, listarGrupos, ehSuperAdmin, ApiError } from "../../services";
-import { Modal, Skeleton, useToast } from "../../components";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { listarMembrosDoGrupo, listarSubgrupos, listarGrupos, ehSuperAdmin } from "../../services";
+import { useToastOnQueryError } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
+import { Modal, Skeleton } from "../../components";
 import { NOME_PAPEL } from "../../constants";
 import SubgrupoMembros from "./SubgrupoMembros";
 import EditarMembroForm from "./EditarMembroForm";
 import type { Membro, Subgrupo, Grupo } from "../../types";
 
-interface MembrosPageProps {
-  onAutenticacaoInvalida: () => void;
-}
-
-export default function MembrosPage({ onAutenticacaoInvalida }: MembrosPageProps) {
-  const [pessoas, setPessoas] = useState<Membro[]>([]);
-  const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
-  const [grupos, setGrupos] = useState<Grupo[]>([]);
-  const [carregando, setCarregando] = useState(true);
+export default function MembrosPage() {
   const [membroEmEdicao, setMembroEmEdicao] = useState<Membro | null>(null);
-  const toast = useToast();
+  const queryClient = useQueryClient();
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    try {
-      const [dm, ds, dg] = await Promise.all([
-        listarMembrosDoGrupo() as Promise<{ membros: Membro[] }>,
-        listarSubgrupos() as Promise<{ subgrupos: Subgrupo[] }>,
-        (ehSuperAdmin() ? listarGrupos() : Promise.resolve({ grupos: [] })) as Promise<{ grupos: Grupo[] }>,
-      ]);
-      setPessoas(dm.membros || []);
-      setSubgrupos(ds.subgrupos || []);
-      setGrupos(dg.grupos || []);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
-      else toast.erro("Não foi possível carregar os membros.");
-    } finally {
-      setCarregando(false);
-    }
-  }, [onAutenticacaoInvalida, toast]);
+  const membrosQuery = useQuery<{ membros: Membro[] }>({
+    queryKey: qk.membros(),
+    queryFn: listarMembrosDoGrupo,
+  });
+  useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
+  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+    queryKey: qk.subgrupos(),
+    queryFn: listarSubgrupos,
+  });
+  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
+
+  const gruposQuery = useQuery<{ grupos: Grupo[] }>({
+    queryKey: qk.grupos(),
+    queryFn: listarGrupos,
+    enabled: ehSuperAdmin(),
+  });
+  useToastOnQueryError(gruposQuery.error, "Não foi possível carregar os grupos.");
+
+  const pessoas = membrosQuery.data?.membros || [];
+  const subgrupos = subgruposQuery.data?.subgrupos || [];
+  const grupos = gruposQuery.data?.grupos || [];
+  const carregando = membrosQuery.isPending;
+
+  // Mesmo escopo do `carregar()` de antes (Promise.all de membros +
+  // subgrupos + grupos) -- passado pro EditarMembroForm como `onAtualizado`.
+  function recarregarTudo() {
+    queryClient.invalidateQueries({ queryKey: qk.membros() });
+    queryClient.invalidateQueries({ queryKey: qk.subgrupos() });
+    if (ehSuperAdmin()) queryClient.invalidateQueries({ queryKey: qk.grupos() });
+  }
 
   // Lista de membros por subgrupo só devolve e-mail (sem apelido) -- monta um
   // mapa a partir da lista completa do grupo (que já tem os dois) em vez de
@@ -78,7 +82,7 @@ export default function MembrosPage({ onAutenticacaoInvalida }: MembrosPageProps
         <h2>Membros por subgrupo</h2>
       </div>
 
-      {!carregando &&
+      {!subgruposQuery.isPending &&
         subgrupos.map((s) => (
           <SubgrupoMembros key={s.subgrupo_id} subgrupo={s} apelidoPorEmail={apelidoPorEmail} />
         ))}
@@ -88,7 +92,7 @@ export default function MembrosPage({ onAutenticacaoInvalida }: MembrosPageProps
           <EditarMembroForm
             membro={membroEmEdicao}
             grupos={grupos}
-            onAtualizado={carregar}
+            onAtualizado={recarregarTudo}
             onFechar={() => setMembroEmEdicao(null)}
           />
         </Modal>
