@@ -70,12 +70,3 @@ export async function chamar<T = any>(path: string, opcoes: OpcoesRequisicao = {
   }
   return dados as T;
 }
-
-/** Pra super_admin: injeta grupo_id na query (GET) ou no corpo (POST/DELETE). */
-export function comGrupoAlvo(opcoes: OpcoesRequisicao, grupoIdAlvo?: string): OpcoesRequisicao {
-  if (!grupoIdAlvo) return opcoes;
-  if ((opcoes.method || "GET") === "GET") {
-    return { ...opcoes, query: { ...(opcoes.query || {}), grupo_id: grupoIdAlvo } };
-  }
-  return { ...opcoes, body: { ...(opcoes.body || {}), grupo_id: grupoIdAlvo } };
-}

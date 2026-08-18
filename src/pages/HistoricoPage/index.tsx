@@ -7,7 +7,6 @@ import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
 
 interface PageProps {
-  grupoAlvo: string;
   onAutenticacaoInvalida: () => void;
   deepLink?: DeepLinkHistorico | null;
   onDeepLinkConsumido?: () => void;
@@ -16,7 +15,6 @@ interface PageProps {
 const TAMANHO_PADRAO = 10;
 
 export default function HistoricoPage({
-  grupoAlvo,
   onAutenticacaoInvalida,
   deepLink,
   onDeepLinkConsumido,
@@ -32,7 +30,7 @@ export default function HistoricoPage({
 
   const carregar = useCallback(() => {
     setCarregando(true);
-    listarHistorico({ pagina, tamanhoPagina }, grupoAlvo)
+    listarHistorico({ pagina, tamanhoPagina })
       .then((d: any) => {
         setHistorico(d.historico || []);
         setTotal(d.total ?? 0);
@@ -43,7 +41,7 @@ export default function HistoricoPage({
         else toast.erro("Não foi possível carregar o histórico.");
       })
       .finally(() => setCarregando(false));
-  }, [grupoAlvo, pagina, tamanhoPagina, onAutenticacaoInvalida, toast]);
+  }, [pagina, tamanhoPagina, onAutenticacaoInvalida, toast]);
 
   useEffect(() => {
     carregar();
@@ -55,7 +53,7 @@ export default function HistoricoPage({
   // que bate com o comunicacao_id do link.
   useEffect(() => {
     if (!deepLink) return;
-    listarHistorico({ numeroProcesso: deepLink.processo }, grupoAlvo)
+    listarHistorico({ numeroProcesso: deepLink.processo })
       .then((d: any) => {
         const candidatos: HistoricoItem[] = d.historico || [];
         const encontrado = candidatos.find(
@@ -73,7 +71,7 @@ export default function HistoricoPage({
       });
     // Deps proposital: só `deepLink` -- é resolvido uma vez (o App zera o
     // estado depois via onDeepLinkConsumido pra não reabrir sozinho numa
-    // próxima visita à aba), não a cada mudança de grupoAlvo/toast/etc.
+    // próxima visita à aba), não a cada mudança de toast/etc.
   }, [deepLink]);
 
   function handleMudarTamanho(novoTamanho: number) {
@@ -126,7 +124,7 @@ export default function HistoricoPage({
 
       {itemAberto && (
         <Modal titulo="Detalhes do envio" onFechar={() => setItemAberto(null)}>
-          <DetalheHistorico item={itemAberto} grupoAlvo={grupoAlvo} />
+          <DetalheHistorico item={itemAberto} />
         </Modal>
       )}
     </>

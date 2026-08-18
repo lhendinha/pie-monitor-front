@@ -5,14 +5,12 @@ import type { Processo } from "../../types";
 
 interface EditarApelidoFormProps {
   processo: Processo;
-  grupoAlvo: string;
   onAtualizado: () => void;
   onFechar: () => void;
 }
 
 export default function EditarApelidoForm({
   processo,
-  grupoAlvo,
   onAtualizado,
   onFechar,
 }: EditarApelidoFormProps) {
@@ -29,8 +27,7 @@ export default function EditarApelidoForm({
       await atualizarApelidoProcesso(
         processo.subgrupo_id,
         processo.numero_processo,
-        apelido.trim(),
-        grupoAlvo
+        apelido.trim()
       );
       onAtualizado();
       onFechar();

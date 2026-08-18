@@ -39,11 +39,13 @@ automático a cada push).
 ### Modelo de domínio (espelha o backend)
 
 - Grupo (1) → Subgrupo (N) → Processo (N, único por subgrupo).
-- Usuário pertence a 1 grupo (exceto `super_admin`, que não pertence a
-  nenhum) e a N subgrupos.
+- Usuário pertence a 1 grupo, sem exceção -- inclusive `super_admin` -- e
+  a N subgrupos.
 - Papéis: `user < manager < admin < super_admin`.
-- `super_admin` precisa de um campo "Grupo alvo" na UI (não pertence a
-  nenhum grupo, precisa dizer em qual está agindo).
+- `super_admin` age no próprio grupo como um `admin` -- não tem campo
+  "Grupo alvo" na UI (removido de `App.tsx`). As diferenças ficam só nas
+  3 rotas cross-tenant do backend (ver `CONTEXT.md` do backend, seção
+  "Modelo de domínio").
 
 ### Estrutura de pastas (decisão explícita do usuário)
 
@@ -53,7 +55,7 @@ src/
   constants/roles.ts, index.ts       -- NOME_PAPEL, HIERARQUIA_PAPEIS
   services/
     auth.ts (+ auth.test.ts)
-    api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + index.ts)
+    api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + grupos.ts + index.ts)
     index.ts
   utils/mask.ts, date.ts, deepLink.ts, index.ts (+ *.test.ts pra cada um)
   components/
@@ -68,7 +70,7 @@ src/
     AceitarConvitePage/index.tsx
     ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, EditarApelidoForm.tsx, DetalheProcesso.tsx -- privados, não exportados)
     SubgruposPage/index.tsx
-    MembrosPage/index.tsx (+ SubgrupoMembros.tsx -- privado)
+    MembrosPage/index.tsx (+ SubgrupoMembros.tsx, EditarMembroForm.tsx -- privados)
     ConvidarPage/index.tsx
     HistoricoPage/index.tsx (+ DetalheHistorico.tsx -- privado)
     index.ts
@@ -124,7 +126,11 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
 
 - Cadastro de processo é um **modal** (botão "+ Novo Processo" abre), não
   formulário inline. Edição de apelido (`EditarApelidoForm.tsx`) também é
-  modal, aberto pelo ícone ✎ na listagem.
+  modal, aberto pelo ícone ✎ na listagem. `EditarMembroForm.tsx`
+  (`MembrosPage`) segue o mesmo padrão (modal + ✎), mas visível só pra
+  `super_admin` na lista "Pessoas do grupo" -- único ✎ do app com
+  visibilidade condicionada a papel, os outros (`ProcessosPage`) aparecem
+  pra qualquer nível que já acessa a página.
 - Aba Convidar usa `MultiSelect` (`components/MultiSelect`, dropdown
   fechado com checkboxes) pra escolher subgrupos -- **não** mais o
   `<select multiple>` nativo, cujo listbox sempre aberto destoava do resto
@@ -181,11 +187,9 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
    desenvolvimento/depuração do backend; se o backend for redeployado de um
    jeito que force recriação da Function URL, o `VITE_API_URL` do Vercel
    precisa ser atualizado manualmente de novo.
-2. Nenhuma tela de gestão para `super_admin` atribuir esse papel a alguém
-   (não existe no backend ainda, então também não tem no front).
-3. Testes cobrem `services/`/`utils/` (lógica pura); nenhum teste de
+2. Testes cobrem `services/`/`utils/` (lógica pura); nenhum teste de
    componente/página ainda (`pages/`, `components/Toast`, `MultiSelect`,
    `Pagination` sem cobertura própria).
-4. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
+3. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
    específico do Vercel, em vez de `"*"` (pendência do lado do backend, mas
    afeta o front se for feito).

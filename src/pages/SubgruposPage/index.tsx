@@ -4,11 +4,10 @@ import { Skeleton, useToast } from "../../components";
 import type { Subgrupo } from "../../types";
 
 interface PageProps {
-  grupoAlvo: string;
   onAutenticacaoInvalida: () => void;
 }
 
-export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: PageProps) {
+export default function SubgruposPage({ onAutenticacaoInvalida }: PageProps) {
   const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [nome, setNome] = useState("");
@@ -22,7 +21,7 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      const d = (await listarSubgrupos(grupoAlvo)) as { subgrupos: Subgrupo[] };
+      const d = (await listarSubgrupos()) as { subgrupos: Subgrupo[] };
       setSubgrupos(d.subgrupos || []);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
@@ -30,7 +29,7 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
     } finally {
       setCarregando(false);
     }
-  }, [grupoAlvo, onAutenticacaoInvalida, toast]);
+  }, [onAutenticacaoInvalida, toast]);
 
   useEffect(() => {
     carregar();
@@ -41,7 +40,7 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
     setCampoInvalido(false);
     setEnviando(true);
     try {
-      await criarSubgrupo(nome.trim(), grupoAlvo);
+      await criarSubgrupo(nome.trim());
       setNome("");
       await carregar();
     } catch (err) {
@@ -55,7 +54,7 @@ export default function SubgruposPage({ grupoAlvo, onAutenticacaoInvalida }: Pag
   async function handleRemover(id: string) {
     if (!window.confirm("Remover esse subgrupo? Só funciona se estiver vazio (0 membros).")) return;
     try {
-      await removerSubgrupo(id, grupoAlvo);
+      await removerSubgrupo(id);
       setSubgrupos((prev) => prev.filter((s) => s.subgrupo_id !== id));
     } catch (err) {
       toast.erro(err instanceof ApiError ? err.message : "Não foi possível remover.");

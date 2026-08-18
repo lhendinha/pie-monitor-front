@@ -6,14 +6,12 @@ import type { Subgrupo } from "../../types";
 
 interface NovoProcessoFormProps {
   subgrupos: Subgrupo[];
-  grupoAlvo: string;
   onCadastrado: () => void;
   onFechar: () => void;
 }
 
 export default function NovoProcessoForm({
   subgrupos,
-  grupoAlvo,
   onCadastrado,
   onFechar,
 }: NovoProcessoFormProps) {
@@ -31,7 +29,7 @@ export default function NovoProcessoForm({
     setCampoInvalido(false);
     setEnviando(true);
     try {
-      await criarProcesso(subgrupoId, numeroLimpo, apelido.trim(), grupoAlvo);
+      await criarProcesso(subgrupoId, numeroLimpo, apelido.trim());
       onCadastrado();
       onFechar();
     } catch (err) {

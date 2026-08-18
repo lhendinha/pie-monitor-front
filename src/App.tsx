@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { estaAutenticado, ehSuperAdmin, papelAtende, getEmail, getApelido, getPapel, limparTokens, logout } from "./services";
+import { estaAutenticado, papelAtende, getEmail, getApelido, getPapel, limparTokens, logout } from "./services";
 import { dataHojeExtenso, parseDeepLinkHistorico } from "./utils";
 import type { DeepLinkHistorico } from "./utils";
 import { NOME_PAPEL } from "./constants";
@@ -50,7 +50,6 @@ export default function App() {
     return encontrado;
   });
   const [abaAtiva, setAbaAtiva] = useState<AbaId>(() => (deepLinkHistorico ? "historico" : "processos"));
-  const [grupoAlvo, setGrupoAlvo] = useState("");
 
   function handleEntrar() {
     setAutenticado(true);
@@ -91,7 +90,6 @@ export default function App() {
   }
 
   const mostrarLogin = !autenticado || autenticacaoInvalida;
-  const superAdmin = ehSuperAdmin();
   const abas = TODAS_AS_ABAS.filter((a) => papelAtende(a.minimo));
   const papel = getPapel();
 
@@ -116,18 +114,6 @@ export default function App() {
           </>
         ) : (
           <>
-            {superAdmin && (
-              <div className="super-admin-bar">
-                <label htmlFor="grupo-alvo">Grupo alvo (super_admin)</label>
-                <input
-                  id="grupo-alvo"
-                  value={grupoAlvo}
-                  onChange={(e) => setGrupoAlvo(e.target.value)}
-                  placeholder="grupo_id"
-                />
-              </div>
-            )}
-
             <nav className="tabs">
               {abas.map((aba) => (
                 <button
@@ -141,20 +127,19 @@ export default function App() {
             </nav>
 
             {abaAtiva === "processos" && (
-              <ProcessosPage grupoAlvo={grupoAlvo} onAutenticacaoInvalida={handleAutenticacaoInvalida} />
+              <ProcessosPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
             )}
             {abaAtiva === "subgrupos" && (
-              <SubgruposPage grupoAlvo={grupoAlvo} onAutenticacaoInvalida={handleAutenticacaoInvalida} />
+              <SubgruposPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
             )}
             {abaAtiva === "membros" && (
-              <MembrosPage grupoAlvo={grupoAlvo} onAutenticacaoInvalida={handleAutenticacaoInvalida} />
+              <MembrosPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
             )}
             {abaAtiva === "convidar" && (
-              <ConvidarPage grupoAlvo={grupoAlvo} onAutenticacaoInvalida={handleAutenticacaoInvalida} />
+              <ConvidarPage onAutenticacaoInvalida={handleAutenticacaoInvalida} />
             )}
             {abaAtiva === "historico" && (
               <HistoricoPage
-                grupoAlvo={grupoAlvo}
                 onAutenticacaoInvalida={handleAutenticacaoInvalida}
                 deepLink={deepLinkHistorico}
                 onDeepLinkConsumido={() => setDeepLinkHistorico(null)}

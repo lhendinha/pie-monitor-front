@@ -13,14 +13,12 @@ import EditarApelidoForm from "./EditarApelidoForm";
 import type { Processo, Subgrupo } from "../../types";
 
 interface ProcessosPageProps {
-  grupoAlvo: string;
   onAutenticacaoInvalida: () => void;
 }
 
 const TAMANHO_PADRAO = 10;
 
 export default function ProcessosPage({
-  grupoAlvo,
   onAutenticacaoInvalida,
 }: ProcessosPageProps) {
   const [processos, setProcessos] = useState<Processo[]>([]);
@@ -58,13 +56,12 @@ export default function ProcessosPage({
       const [dp, ds] = await Promise.all([
         listarProcessos(
           busca ? { busca } : { pagina, tamanhoPagina },
-          grupoAlvo,
         ) as Promise<{
           processos: Processo[];
           total: number;
           total_paginas: number;
         }>,
-        listarSubgrupos(grupoAlvo) as Promise<{ subgrupos: Subgrupo[] }>,
+        listarSubgrupos() as Promise<{ subgrupos: Subgrupo[] }>,
       ]);
       setProcessos(dp.processos || []);
       setTotal(dp.total ?? 0);
@@ -77,7 +74,7 @@ export default function ProcessosPage({
     } finally {
       setCarregando(false);
     }
-  }, [grupoAlvo, onAutenticacaoInvalida, pagina, tamanhoPagina, busca, toast]);
+  }, [onAutenticacaoInvalida, pagina, tamanhoPagina, busca, toast]);
 
   useEffect(() => {
     carregar();
@@ -96,7 +93,7 @@ export default function ProcessosPage({
     )
       return;
     try {
-      await removerProcesso(p.subgrupo_id, p.numero_processo, grupoAlvo);
+      await removerProcesso(p.subgrupo_id, p.numero_processo);
       carregar();
     } catch {
       toast.erro("Não foi possível remover esse processo.");
@@ -206,7 +203,7 @@ export default function ProcessosPage({
           titulo={mascararNumeroProcesso(numeroAberto)}
           onFechar={() => setNumeroAberto(null)}
         >
-          <DetalheProcesso numero={numeroAberto} grupoAlvo={grupoAlvo} />
+          <DetalheProcesso numero={numeroAberto} />
         </Modal>
       )}
 
@@ -214,7 +211,6 @@ export default function ProcessosPage({
         <Modal titulo="Novo Processo" onFechar={() => setModalAberto(false)}>
           <NovoProcessoForm
             subgrupos={subgrupos}
-            grupoAlvo={grupoAlvo}
             onCadastrado={carregar}
             onFechar={() => setModalAberto(false)}
           />
@@ -225,7 +221,6 @@ export default function ProcessosPage({
         <Modal titulo="Editar apelido" onFechar={() => setProcessoEmEdicao(null)}>
           <EditarApelidoForm
             processo={processoEmEdicao}
-            grupoAlvo={grupoAlvo}
             onAtualizado={carregar}
             onFechar={() => setProcessoEmEdicao(null)}
           />

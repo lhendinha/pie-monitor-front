@@ -1,13 +1,13 @@
-import { chamar, comGrupoAlvo } from "./client";
+import { chamar } from "./client";
 
-export function listarSubgrupos(grupoIdAlvo?: string) {
-  return chamar("/subgrupos", comGrupoAlvo({}, grupoIdAlvo));
+export function listarSubgrupos() {
+  return chamar("/subgrupos");
 }
 
-export function criarSubgrupo(nome: string, grupoIdAlvo?: string) {
-  return chamar("/subgrupos", comGrupoAlvo({ method: "POST", body: { nome } }, grupoIdAlvo));
+export function criarSubgrupo(nome: string) {
+  return chamar("/subgrupos", { method: "POST", body: { nome } });
 }
 
-export function removerSubgrupo(subgrupoId: string, grupoIdAlvo?: string) {
-  return chamar(`/subgrupos/${subgrupoId}`, comGrupoAlvo({ method: "DELETE" }, grupoIdAlvo));
+export function removerSubgrupo(subgrupoId: string) {
+  return chamar(`/subgrupos/${subgrupoId}`, { method: "DELETE" });
 }

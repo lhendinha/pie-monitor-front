@@ -4,3 +4,4 @@ export * from "./membros";
 export * from "./processos";
 export * from "./convites";
 export * from "./historico";
+export * from "./grupos";

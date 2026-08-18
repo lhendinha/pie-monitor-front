@@ -7,7 +7,6 @@ import type { Comunicacao, HistoricoItem } from "../../types";
 
 interface DetalheHistoricoProps {
   item: HistoricoItem;
-  grupoAlvo: string;
 }
 
 /** Detalhe de UM envio específico -- diferente do modal de "Processos" (que
@@ -15,7 +14,7 @@ interface DetalheHistoricoProps {
  * que gerou essa notificação. Busca pela MESMA rota que o link do e-mail
  * já abre (GET /processos/{numero}/detalhes) e filtra pelo comunicacao_id
  * salvo no item -- sem endpoint novo, sem duplicar o texto no backend. */
-export default function DetalheHistorico({ item, grupoAlvo }: DetalheHistoricoProps) {
+export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
   const [comunicacao, setComunicacao] = useState<Comunicacao | null | undefined>(undefined);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -25,7 +24,7 @@ export default function DetalheHistorico({ item, grupoAlvo }: DetalheHistoricoPr
       return;
     }
     setComunicacao(undefined);
-    detalhesProcesso(item.numero_processo, grupoAlvo)
+    detalhesProcesso(item.numero_processo)
       .then((d: any) => {
         const encontrada = (d.comunicacoes || []).find(
           (c: Comunicacao) => String(c.comunicacao_id) === String(item.comunicacao_id)
@@ -33,7 +32,7 @@ export default function DetalheHistorico({ item, grupoAlvo }: DetalheHistoricoPr
         setComunicacao(encontrada || null);
       })
       .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar."));
-  }, [item.numero_processo, item.comunicacao_id, grupoAlvo]);
+  }, [item.numero_processo, item.comunicacao_id]);
 
   return (
     <div>

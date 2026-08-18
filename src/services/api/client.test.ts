@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../auth", () => mocks);
 
-import { ApiError, chamar, comGrupoAlvo } from "./client";
+import { ApiError, chamar } from "./client";
 
 function respostaFetch(status: number, corpo: unknown, ok = status >= 200 && status < 300) {
   return {
@@ -24,38 +24,6 @@ describe("ApiError", () => {
     expect(err.message).toBe("deu ruim");
     expect(err.status).toBe(403);
     expect(err).toBeInstanceOf(Error);
-  });
-});
-
-describe("comGrupoAlvo", () => {
-  it("sem grupoIdAlvo, devolve as opções inalteradas", () => {
-    const opcoes = { method: "GET" as const };
-    expect(comGrupoAlvo(opcoes, undefined)).toBe(opcoes);
-  });
-
-  it("GET injeta grupo_id na query", () => {
-    const resultado = comGrupoAlvo({ method: "GET" }, "g123");
-    expect(resultado.query).toEqual({ grupo_id: "g123" });
-  });
-
-  it("sem method explícito, trata como GET (injeta na query)", () => {
-    const resultado = comGrupoAlvo({}, "g123");
-    expect(resultado.query).toEqual({ grupo_id: "g123" });
-  });
-
-  it("POST injeta grupo_id no corpo, preservando os campos existentes", () => {
-    const resultado = comGrupoAlvo({ method: "POST", body: { nome: "X" } }, "g123");
-    expect(resultado.body).toEqual({ nome: "X", grupo_id: "g123" });
-  });
-
-  it("DELETE injeta grupo_id no corpo", () => {
-    const resultado = comGrupoAlvo({ method: "DELETE" }, "g123");
-    expect(resultado.body).toEqual({ grupo_id: "g123" });
-  });
-
-  it("preserva query existente ao injetar em GET", () => {
-    const resultado = comGrupoAlvo({ method: "GET", query: { busca: "abc" } }, "g123");
-    expect(resultado.query).toEqual({ busca: "abc", grupo_id: "g123" });
   });
 });
 

@@ -4,11 +4,10 @@ import { MultiSelect, useToast } from "../../components";
 import type { Papel, Subgrupo } from "../../types";
 
 interface PageProps {
-  grupoAlvo: string;
   onAutenticacaoInvalida: () => void;
 }
 
-export default function ConvidarPage({ grupoAlvo, onAutenticacaoInvalida }: PageProps) {
+export default function ConvidarPage({ onAutenticacaoInvalida }: PageProps) {
   const [subgrupos, setSubgrupos] = useState<Subgrupo[]>([]);
   const [email, setEmail] = useState("");
   const [papelInicial, setPapelInicial] = useState<Papel>("user");
@@ -18,19 +17,19 @@ export default function ConvidarPage({ grupoAlvo, onAutenticacaoInvalida }: Page
   const toast = useToast();
 
   useEffect(() => {
-    listarSubgrupos(grupoAlvo)
+    listarSubgrupos()
       .then((d: any) => setSubgrupos(d.subgrupos || []))
       .catch((err) => {
         if (err instanceof ApiError && err.status === 401) onAutenticacaoInvalida();
       });
-  }, [grupoAlvo, onAutenticacaoInvalida]);
+  }, [onAutenticacaoInvalida]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setCampoInvalido(false);
     setEnviando(true);
     try {
-      await criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados, grupoAlvo);
+      await criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados);
       toast.sucesso(`Convite enviado pra ${email}.`);
       setEmail("");
       setSubgruposSelecionados([]);

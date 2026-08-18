@@ -6,20 +6,19 @@ import type { Comunicacao } from "../../types";
 
 interface DetalheProcessoProps {
   numero: string;
-  grupoAlvo: string;
 }
 
-export default function DetalheProcesso({ numero, grupoAlvo }: DetalheProcessoProps) {
+export default function DetalheProcesso({ numero }: DetalheProcessoProps) {
   const [dados, setDados] = useState<{ comunicacoes: Comunicacao[] } | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    detalhesProcesso(numero, grupoAlvo)
+    detalhesProcesso(numero)
       .then(setDados)
       .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar."))
       .finally(() => setCarregando(false));
-  }, [numero, grupoAlvo]);
+  }, [numero]);
 
   if (carregando) return <Skeleton linhas={2} />;
   if (erro) return <div className="empty">{erro}</div>;

@@ -1,23 +1,24 @@
-import { chamar, comGrupoAlvo } from "./client";
+import { chamar } from "./client";
 
-export function listarMembrosDoGrupo(grupoIdAlvo?: string) {
-  return chamar("/grupos/membros", comGrupoAlvo({}, grupoIdAlvo));
+export function listarMembrosDoGrupo() {
+  return chamar("/grupos/membros");
 }
 
-export function listarMembrosDoSubgrupo(subgrupoId: string, grupoIdAlvo?: string) {
-  return chamar(`/subgrupos/${subgrupoId}/membros`, comGrupoAlvo({}, grupoIdAlvo));
+export function listarMembrosDoSubgrupo(subgrupoId: string) {
+  return chamar(`/subgrupos/${subgrupoId}/membros`);
 }
 
-export function adicionarMembro(subgrupoId: string, email: string, grupoIdAlvo?: string) {
-  return chamar(
-    `/subgrupos/${subgrupoId}/membros`,
-    comGrupoAlvo({ method: "POST", body: { email } }, grupoIdAlvo)
-  );
+export function adicionarMembro(subgrupoId: string, email: string) {
+  return chamar(`/subgrupos/${subgrupoId}/membros`, { method: "POST", body: { email } });
 }
 
-export function removerMembro(subgrupoId: string, email: string, grupoIdAlvo?: string) {
-  return chamar(
-    `/subgrupos/${subgrupoId}/membros/${encodeURIComponent(email)}`,
-    comGrupoAlvo({ method: "DELETE" }, grupoIdAlvo)
-  );
+export function removerMembro(subgrupoId: string, email: string) {
+  return chamar(`/subgrupos/${subgrupoId}/membros/${encodeURIComponent(email)}`, { method: "DELETE" });
+}
+
+export function atualizarMembro(
+  email: string,
+  dados: { apelido: string; grupo_id: string; papel: string; subgrupos: string[] }
+) {
+  return chamar(`/grupos/membros/${encodeURIComponent(email)}`, { method: "PATCH", body: dados });
 }

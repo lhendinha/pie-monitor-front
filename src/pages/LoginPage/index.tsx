@@ -32,7 +32,6 @@ export default function LoginPage({ onEntrar, onEsqueciSenha }: LoginPageProps) 
   return (
     <div className="gate">
       <h2>Entrar</h2>
-      <p>O cadastro é feito manualmente (bootstrap) ou por convite de um admin do grupo.</p>
       <form className="form-row" onSubmit={handleSubmit}>
         <div className={`field${campoInvalido ? " field-error" : ""}`}>
           <label htmlFor="email">E-mail</label>

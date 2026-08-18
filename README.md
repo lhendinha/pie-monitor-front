@@ -60,7 +60,7 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 | `user` | Processos, Subgrupos, Histórico |
 | `manager` | + Membros |
 | `admin` | + Convidar |
-| `super_admin` | Todas — mas precisa preencher o campo **"Grupo alvo"** que aparece no topo da tela (ele não pertence a nenhum grupo, então toda ação exige dizer em qual grupo está agindo) |
+| `super_admin` | Todas as abas do próprio grupo, como um `admin`. Na aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
 
 ## Sobre a autenticação
 
@@ -75,6 +75,10 @@ O e-mail de movimentação processual leva pra `/?processo={numero}&comunicacao=
 ## Notificações (toasts)
 
 Erros e confirmações usam um sistema de toast (`components/Toast`, `useToast()` dentro de `<ToastProvider>` montado em `App.tsx`) — substitui o antigo `<div className="banner">` pra feedback pontual de ação (ex: "Não foi possível carregar", convite enviado). O `banner` continua existindo só pra estados persistentes de tela inteira (sessão expirada, senha redefinida com sucesso).
+
+## Super_admin: editar pessoa de outro grupo
+
+Na aba Membros, `super_admin` vê um ícone ✎ em cada pessoa de "Pessoas do grupo" (`MembrosPage/EditarMembroForm.tsx`). O modal deixa trocar apelido, papel (inclusive promover a `super_admin` ou rebaixar/mover um `super_admin` existente, mesmo a própria conta) e mover a pessoa pra outro grupo, sempre escolhendo também os subgrupos de destino (obrigatório, já que subgrupo pertence a exatamente 1 grupo — os vínculos antigos não fazem sentido no grupo novo).
 
 ## Rodando os testes
 
@@ -120,6 +124,7 @@ src/
       processos.ts             -- listar/criar/remover processos + editar apelido + detalhes
       convites.ts              -- criar convite
       historico.ts             -- listar histórico de notificações (paginado ou por número)
+      grupos.ts                -- listar todos os grupos da plataforma (super_admin)
       index.ts                 -- reexporta tudo (importe de "../services/api")
 
   utils/
@@ -151,6 +156,7 @@ src/
     MembrosPage/
       index.tsx                  -- pessoas do grupo
       SubgrupoMembros.tsx         -- card de membros por subgrupo (privado da página)
+      EditarMembroForm.tsx        -- edição de apelido/papel/grupo+subgrupos, no modal (super_admin; privado da página)
     ConvidarPage/index.tsx       -- formulário de convite (MultiSelect de subgrupos)
     HistoricoPage/
       index.tsx                  -- lista paginada + resolve deep link do e-mail

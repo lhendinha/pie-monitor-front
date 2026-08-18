@@ -7,6 +7,11 @@ export interface Subgrupo {
   criado_em?: string;
 }
 
+export interface Grupo {
+  grupo_id: string;
+  nome: string;
+}
+
 export interface Processo {
   subgrupo_id: string;
   numero_processo: string;
@@ -23,6 +28,7 @@ export interface Membro {
   papel?: Papel;
   criado_em?: string;
   adicionado_em?: string;
+  subgrupos?: string[];
 }
 
 export interface Comunicacao {
