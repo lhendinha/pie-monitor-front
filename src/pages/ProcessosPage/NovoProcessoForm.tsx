@@ -44,14 +44,22 @@ export default function NovoProcessoForm({
   }
 
   if (subgrupos.length === 0) {
-    return <div className="empty">Cria um subgrupo primeiro (aba Subgrupos) antes de cadastrar processos.</div>;
+    return (
+      <div className="empty">
+        Cria um subgrupo primeiro (aba Subgrupos) antes de cadastrar processos.
+      </div>
+    );
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="subgrupo">Subgrupo</label>
-        <select id="subgrupo" value={subgrupoId} onChange={(e) => setSubgrupoId(e.target.value)}>
+        <select
+          id="subgrupo"
+          value={subgrupoId}
+          onChange={(e) => setSubgrupoId(e.target.value)}
+        >
           {subgrupos.map((s) => (
             <option key={s.subgrupo_id} value={s.subgrupo_id}>
               {s.nome}
@@ -59,7 +67,10 @@ export default function NovoProcessoForm({
           ))}
         </select>
       </div>
-      <div className={`field${campoInvalido ? " field-error" : ""}`} style={{ marginTop: 14 }}>
+      <div
+        className={`field${campoInvalido ? " field-error" : ""}`}
+        style={{ marginTop: 14 }}
+      >
         <label htmlFor="numero">Número do processo</label>
         <input
           id="numero"
@@ -68,20 +79,27 @@ export default function NovoProcessoForm({
             setNumeroMascarado(mascararNumeroProcesso(e.target.value));
             setCampoInvalido(false);
           }}
-          placeholder="0000266-87.2021.8.13.0559"
+          placeholder="0000366-97.2020.8.13.0145"
           inputMode="numeric"
           autoFocus
         />
       </div>
       <div className="field" style={{ marginTop: 14 }}>
         <label htmlFor="apelido">Apelido (opcional)</label>
-        <input id="apelido" value={apelido} onChange={(e) => setApelido(e.target.value)} maxLength={512} />
+        <input
+          id="apelido"
+          value={apelido}
+          onChange={(e) => setApelido(e.target.value)}
+          maxLength={512}
+        />
       </div>
       <div className="modal-actions">
         <button
           className="btn"
           type="submit"
-          disabled={criarMutation.isPending || numeroLimpo.length !== 20 || !subgrupoId}
+          disabled={
+            criarMutation.isPending || numeroLimpo.length !== 20 || !subgrupoId
+          }
         >
           {criarMutation.isPending ? "Cadastrando…" : "Cadastrar"}
         </button>
