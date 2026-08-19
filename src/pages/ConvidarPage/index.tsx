@@ -14,8 +14,9 @@ export default function ConvidarPage() {
   const toast = useToast();
 
   const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
-    queryKey: qk.subgrupos(),
-    queryFn: listarSubgrupos,
+    // MultiSelect precisa da lista inteira, não de 1 página.
+    queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
+    queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
   const subgrupos = subgruposQuery.data?.subgrupos || [];

@@ -1,35 +1,50 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { atualizarApelidoProcesso } from "../../services";
+import { atualizarProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { useToast } from "../../components";
+import CamposProcesso from "./CamposProcesso";
 import type { Processo } from "../../types";
+import type { CamposOpcionaisProcesso } from "../../services/api/processos";
 
-interface EditarApelidoFormProps {
+interface DetalheEditarProcessoProps {
   processo: Processo;
   onAtualizado: () => void;
   onFechar: () => void;
 }
 
-export default function EditarApelidoForm({
+/** Modal único de detalhe/edição -- substitui o antigo "editar apelido"
+ * (decisão 7 do plano): apelido vira só mais um campo aqui, junto com
+ * Cliente/Objeto/Próxima providência/datas/Observações/Fase/Situação. */
+export default function DetalheEditarProcesso({
   processo,
   onAtualizado,
   onFechar,
-}: EditarApelidoFormProps) {
+}: DetalheEditarProcessoProps) {
   const [apelido, setApelido] = useState(processo.apelido || "");
+  const [campos, setCampos] = useState<CamposOpcionaisProcesso>({
+    clienteIds: processo.cliente_ids || [],
+    objetoAssunto: processo.objeto_assunto || "",
+    proximaProvidencia: processo.proxima_providencia || "",
+    dataVerificar: processo.data_verificar || "",
+    prazoFinal: processo.prazo_final || "",
+    observacoes: processo.observacoes || "",
+    faseId: processo.fase_id || "",
+    situacaoId: processo.situacao_id || "",
+  });
   const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const atualizarMutation = useMutation({
     mutationFn: () =>
-      atualizarApelidoProcesso(processo.subgrupo_id, processo.numero_processo, apelido.trim()),
+      atualizarProcesso(processo.subgrupo_id, processo.numero_processo, apelido.trim(), campos),
     onSuccess: () => {
       onAtualizado();
       onFechar();
     },
     onError: (err) => {
       setCampoInvalido(true);
-      toastErroMutation(toast, err, "Não foi possível atualizar o apelido.");
+      toastErroMutation(toast, err, "Não foi possível atualizar o processo.");
     },
   });
 
@@ -54,6 +69,9 @@ export default function EditarApelidoForm({
           autoFocus
         />
       </div>
+
+      <CamposProcesso valores={campos} onMudar={setCampos} />
+
       <div className="modal-actions">
         <button className="btn" type="submit" disabled={atualizarMutation.isPending}>
           {atualizarMutation.isPending ? "Salvando…" : "Salvar"}

@@ -20,8 +20,10 @@ export default function MembrosPage() {
   useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
   const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
-    queryKey: qk.subgrupos(),
-    queryFn: listarSubgrupos,
+    // Precisa da lista inteira pra renderizar 1 <SubgrupoMembros> por
+    // subgrupo, não de 1 página.
+    queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
+    queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 

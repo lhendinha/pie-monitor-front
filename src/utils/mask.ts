@@ -17,3 +17,31 @@ export function mascararNumeroProcesso(valorComOuSemMascara: string | null | und
   if (d.length > 16) out += "." + d.slice(16, 20);
   return out;
 }
+
+/**
+ * Alterna CPF (000.000.000-00, até 11 dígitos) e CNPJ (00.000.000/0000-00,
+ * 12-14 dígitos) conforme a contagem de dígitos digitados.
+ */
+export function mascararCpfCnpj(valorComOuSemMascara: string | null | undefined): string {
+  const d = apenasDigitos(valorComOuSemMascara).slice(0, 14);
+  if (d.length <= 11) {
+    let out = d.slice(0, 3);
+    if (d.length > 3) out += "." + d.slice(3, 6);
+    if (d.length > 6) out += "." + d.slice(6, 9);
+    if (d.length > 9) out += "-" + d.slice(9, 11);
+    return out;
+  }
+  let out = d.slice(0, 2) + "." + d.slice(2, 5) + "." + d.slice(5, 8) + "/" + d.slice(8, 12);
+  if (d.length > 12) out += "-" + d.slice(12, 14);
+  return out;
+}
+
+/** (00) 00000-0000, progressivo conforme a pessoa digita. */
+export function mascararTelefone(valorComOuSemMascara: string | null | undefined): string {
+  const d = apenasDigitos(valorComOuSemMascara).slice(0, 11);
+  let out = d.slice(0, 2);
+  if (d.length >= 2) out = `(${out})`;
+  if (d.length > 2) out += " " + d.slice(2, 7);
+  if (d.length > 7) out += "-" + d.slice(7, 11);
+  return out;
+}

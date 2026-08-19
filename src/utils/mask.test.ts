@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apenasDigitos, mascararNumeroProcesso } from "./mask";
+import { apenasDigitos, mascararCpfCnpj, mascararNumeroProcesso, mascararTelefone } from "./mask";
 
 describe("apenasDigitos", () => {
   it("remove tudo que não é dígito", () => {
@@ -40,5 +40,53 @@ describe("mascararNumeroProcesso", () => {
   it("string vazia/nula vira string vazia", () => {
     expect(mascararNumeroProcesso("")).toBe("");
     expect(mascararNumeroProcesso(null)).toBe("");
+  });
+});
+
+describe("mascararCpfCnpj", () => {
+  it("aplica máscara de CPF com 11 dígitos", () => {
+    expect(mascararCpfCnpj("12345678901")).toBe("123.456.789-01");
+  });
+
+  it("aplica máscara de CPF progressivamente", () => {
+    expect(mascararCpfCnpj("123")).toBe("123");
+    expect(mascararCpfCnpj("123456")).toBe("123.456");
+    expect(mascararCpfCnpj("123456789")).toBe("123.456.789");
+  });
+
+  it("alterna pra máscara de CNPJ a partir do 12º dígito", () => {
+    expect(mascararCpfCnpj("123456789012")).toBe("12.345.678/9012");
+    expect(mascararCpfCnpj("12345678901234")).toBe("12.345.678/9012-34");
+  });
+
+  it("limita a 14 dígitos mesmo com mais", () => {
+    expect(apenasDigitos(mascararCpfCnpj("1".repeat(20)))).toHaveLength(14);
+  });
+
+  it("string vazia/nula vira string vazia", () => {
+    expect(mascararCpfCnpj("")).toBe("");
+    expect(mascararCpfCnpj(null)).toBe("");
+  });
+});
+
+describe("mascararTelefone", () => {
+  it("aplica a máscara completa em 11 dígitos", () => {
+    expect(mascararTelefone("11987654321")).toBe("(11) 98765-4321");
+  });
+
+  it("aplica a máscara progressivamente conforme a pessoa digita", () => {
+    expect(mascararTelefone("1")).toBe("1");
+    expect(mascararTelefone("11")).toBe("(11)");
+    expect(mascararTelefone("119876")).toBe("(11) 9876");
+    expect(mascararTelefone("1198765")).toBe("(11) 98765");
+  });
+
+  it("limita a 11 dígitos mesmo com mais", () => {
+    expect(apenasDigitos(mascararTelefone("1".repeat(20)))).toHaveLength(11);
+  });
+
+  it("string vazia/nula vira string vazia", () => {
+    expect(mascararTelefone("")).toBe("");
+    expect(mascararTelefone(null)).toBe("");
   });
 });

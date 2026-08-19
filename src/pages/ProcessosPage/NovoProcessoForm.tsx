@@ -4,7 +4,9 @@ import { criarProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { apenasDigitos, mascararNumeroProcesso } from "../../utils";
 import { Select, useToast } from "../../components";
+import CamposProcesso from "./CamposProcesso";
 import type { Subgrupo } from "../../types";
+import type { CamposOpcionaisProcesso } from "../../services/api/processos";
 
 interface NovoProcessoFormProps {
   subgrupos: Subgrupo[];
@@ -20,13 +22,14 @@ export default function NovoProcessoForm({
   const [subgrupoId, setSubgrupoId] = useState(subgrupos[0]?.subgrupo_id || "");
   const [numeroMascarado, setNumeroMascarado] = useState("");
   const [apelido, setApelido] = useState("");
+  const [campos, setCampos] = useState<CamposOpcionaisProcesso>({});
   const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const numeroLimpo = apenasDigitos(numeroMascarado);
 
   const criarMutation = useMutation({
-    mutationFn: () => criarProcesso(subgrupoId, numeroLimpo, apelido.trim()),
+    mutationFn: () => criarProcesso(subgrupoId, numeroLimpo, apelido.trim(), campos),
     onSuccess: () => {
       onCadastrado();
       onFechar();
@@ -88,6 +91,9 @@ export default function NovoProcessoForm({
           maxLength={512}
         />
       </div>
+
+      <CamposProcesso valores={campos} onMudar={setCampos} />
+
       <div className="modal-actions">
         <button
           className="btn"

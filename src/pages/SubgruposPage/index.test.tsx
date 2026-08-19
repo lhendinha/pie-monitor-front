@@ -21,16 +21,19 @@ beforeEach(() => {
 });
 
 describe("SubgruposPage", () => {
-  it("mostra a lista depois de carregar", async () => {
-    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }] });
+  it("mostra a lista depois de carregar, com pagina/tamanhoPagina", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+    });
     renderComProviders(<SubgruposPage />);
     expect(await screen.findByText("Cível")).toBeInTheDocument();
+    expect(mocks.listarSubgrupos).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
   });
 
   it("cria um subgrupo e reflete na lista via invalidateQueries", async () => {
     mocks.listarSubgrupos
-      .mockResolvedValueOnce({ subgrupos: [] })
-      .mockResolvedValueOnce({ subgrupos: [{ subgrupo_id: "2", nome: "Trabalhista" }] });
+      .mockResolvedValueOnce({ subgrupos: [], total: 0, total_paginas: 0 })
+      .mockResolvedValueOnce({ subgrupos: [{ subgrupo_id: "2", nome: "Trabalhista" }], total: 1, total_paginas: 1 });
     mocks.criarSubgrupo.mockResolvedValue({});
     const user = userEvent.setup();
     renderComProviders(<SubgruposPage />);
@@ -44,8 +47,10 @@ describe("SubgruposPage", () => {
     expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(2); // carga inicial + invalidate pós-criação
   });
 
-  it("remove um subgrupo direto do cache (setQueryData), sem refazer o fetch", async () => {
-    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }] });
+  it("remove um subgrupo -- invalida e refaz o fetch (splice otimista não é seguro com paginação real)", async () => {
+    mocks.listarSubgrupos
+      .mockResolvedValueOnce({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1 })
+      .mockResolvedValueOnce({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.removerSubgrupo.mockResolvedValue({});
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
@@ -55,11 +60,11 @@ describe("SubgruposPage", () => {
     await user.click(screen.getByTitle("Remover"));
 
     await waitFor(() => expect(screen.queryByText("Cível")).not.toBeInTheDocument());
-    expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(1); // não refez o fetch pra remover
+    expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(2); // carga inicial + invalidate pós-remoção
   });
 
   it("erro ao criar mostra a mensagem da ApiError e marca o campo inválido", async () => {
-    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.criarSubgrupo.mockRejectedValue(new ApiError("Já existe um subgrupo com esse nome", 400));
     const user = userEvent.setup();
     renderComProviders(<SubgruposPage />);
@@ -73,7 +78,9 @@ describe("SubgruposPage", () => {
 
   it("sem permissão (papelAtende falso), não mostra o form nem o botão de remover", async () => {
     mocks.papelAtende.mockReturnValue(false);
-    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }] });
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+    });
     renderComProviders(<SubgruposPage />);
 
     await screen.findByText("Cível");

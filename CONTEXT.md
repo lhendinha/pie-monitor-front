@@ -44,18 +44,27 @@ automático a cada push).
 - Papéis: `user < manager < admin < super_admin`.
 - `super_admin` age no próprio grupo como um `admin` -- não tem campo
   "Grupo alvo" na UI (removido de `App.tsx`). As diferenças ficam só nas
-  3 rotas cross-tenant do backend (ver `CONTEXT.md` do backend, seção
-  "Modelo de domínio").
+  4 rotas/grupos de rota cross-tenant do backend (ver `CONTEXT.md` do
+  backend, seção "Modelo de domínio").
+- `Cliente` é por grupo, associado a `Processo` via lista de ids embutida
+  no próprio processo (`cliente_ids`), sem entidade de associação própria
+  no front -- o `MultiSelect` de Cliente no form de processo resolve
+  `id -> nome` a partir de `GET /clientes` cacheado.
+- `Fase`/`Situação` de processo são uma lista GLOBAL da plataforma (não
+  por grupo) -- toda pessoa vê as mesmas opções no dropdown do processo
+  (piso `user`), só o CRUD da lista (aba "Fase/Situação") é exclusivo de
+  `super_admin`.
 
 ### Estrutura de pastas (decisão explícita do usuário)
 
 ```
 src/
-  types/index.ts
+  types/index.ts        -- inclui AbaId/TelaAuth/AbaConfig (abas de topo) e SubAbaId/SubAbaConfig
+                            (sub-abas de GrupoPage), movidos de dentro de App.tsx pra cá
   constants/roles.ts, index.ts       -- NOME_PAPEL, HIERARQUIA_PAPEIS
   services/
     auth.ts (+ auth.test.ts)
-    api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + grupos.ts + index.ts)
+    api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + grupos.ts + clientes.ts + opcoesProcesso.ts + index.ts)
     index.ts
   utils/mask.ts, date.ts, deepLink.ts, index.ts (+ *.test.ts pra cada um)
   components/
@@ -70,10 +79,18 @@ src/
     LoginPage/index.tsx
     EsqueciSenhaPage/index.tsx, RedefinirSenhaPage/index.tsx
     AceitarConvitePage/index.tsx
-    ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, EditarApelidoForm.tsx, DetalheProcesso.tsx -- privados, não exportados)
-    SubgruposPage/index.tsx
-    MembrosPage/index.tsx (+ SubgrupoMembros.tsx, EditarMembroForm.tsx -- privados)
-    ConvidarPage/index.tsx
+    ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, DetalheEditarProcesso.tsx, CamposProcesso.tsx,
+                              DetalheProcesso.tsx -- privados, não exportados; EditarApelidoForm.tsx
+                              descontinuado, apelido virou só mais um campo em DetalheEditarProcesso)
+    ClientesPage/index.tsx (+ NovoClienteForm.tsx, EditarClienteForm.tsx -- privados; criação por
+                              modal "+ Novo Cliente", lista paginada igual Processos/Histórico)
+    GrupoPage/index.tsx (+ OpcoesLista.tsx, EditarOpcaoForm.tsx -- privados; sub-navegação que
+                          agrupa Subgrupos/Membros/Convidar/Fases/Situações -- ver "Decisões de UX".
+                          OpcoesProcessoPage/ antigo foi descontinuado, OpcoesLista/EditarOpcaoForm
+                          mudaram de pasta pra cá)
+    SubgruposPage/index.tsx      -- renderizado como sub-aba dentro de GrupoPage, não mais no topo
+    MembrosPage/index.tsx (+ SubgrupoMembros.tsx, EditarMembroForm.tsx -- privados; idem, sub-aba)
+    ConvidarPage/index.tsx       -- idem, sub-aba
     HistoricoPage/index.tsx (+ DetalheHistorico.tsx -- privado)
     index.ts
   test/setup.ts        -- jest-dom matchers + TZ=America/Sao_Paulo fixo pros testes de data
@@ -127,12 +144,28 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
 ### Decisões de UX específicas
 
 - Cadastro de processo é um **modal** (botão "+ Novo Processo" abre), não
-  formulário inline. Edição de apelido (`EditarApelidoForm.tsx`) também é
-  modal, aberto pelo ícone ✎ na listagem. `EditarMembroForm.tsx`
-  (`MembrosPage`) segue o mesmo padrão (modal + ✎), mas visível só pra
-  `super_admin` na lista "Pessoas do grupo" -- único ✎ do app com
-  visibilidade condicionada a papel, os outros (`ProcessosPage`) aparecem
-  pra qualquer nível que já acessa a página.
+  formulário inline. Edição de processo (`DetalheEditarProcesso.tsx`) é
+  outro modal, mas aberto ao **clicar na linha inteira** do processo (não
+  um ícone ✎ dedicado -- esse botão foi descontinuado, apelido virou só
+  mais um campo junto com Cliente/Objeto-Assunto/datas/Observações/Fase/
+  Situação, todos editados juntos). Os 2 ícones que sobram na linha
+  (histórico, remover) chamam `event.stopPropagation()` no próprio
+  `onClick`, senão o clique neles também abriria o modal de edição junto.
+  `EditarMembroForm.tsx` (`MembrosPage`) segue o padrão de modal por ícone
+  ✎ ainda, mas visível só pra `super_admin` na lista "Pessoas do grupo".
+- Campos opcionais compartilhados entre cadastro e edição de processo
+  (Cliente, Objeto/Assunto, Próxima providência, datas, Observações, Fase,
+  Situação) ficam num componente único, `CamposProcesso.tsx`, controlado
+  por props e reaproveitado nos dois formulários -- inclusive é quem chama
+  `GET /clientes`/`/fases`/`/situacoes` (cache do React Query evita
+  refetch duplicado mesmo montando 2x). Dropdown de Fase/Situação mostra só
+  opções `ativo === true` como escolha nova, mas preserva o valor já
+  selecionado mesmo que ele aponte pra uma opção desativada depois.
+- `type="date"` nativo do browser pros campos "Data para verificar"/"Prazo
+  final" -- não existia campo de data no app antes disso, sem lib nova.
+- Máscara de CPF/CNPJ (`mascararCpfCnpj`, alterna formato pela contagem de
+  dígitos) e telefone (`mascararTelefone`) em `utils/mask.ts`, mesmo padrão
+  de `mascararNumeroProcesso` já existente -- usadas no form de Cliente.
 - Todo select do sistema (valor único ou múltiplo) passa por um wrapper
   único em `components/Select`, em cima do `react-select` (`unstyled` +
   `classNames`) pra manter a mesma aparência do `<input>` de texto --
@@ -152,6 +185,37 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   vem em HTML da API do PJe e é renderizado via `dangerouslySetInnerHTML`
   depois de passar por `DOMPurify.sanitize()` -- fonte externa, nunca
   confiar sem sanitizar.
+- Barra de abas do topo reduzida de até 7 pra 4 (`Processos`, `Clientes`,
+  `Histórico`, `Grupo`) -- `Grupo` (`GrupoPage`) agrupa Subgrupos, Membros,
+  Convidar, Fases e Situações como **sub-navegação própria**
+  (`<nav className="tabs tabs--sub">`, variante menor de `.tabs` em
+  `index.css`), cada sub-aba com seu próprio piso de papel (`SubAbaConfig[]`
+  filtrado por `papelAtende`, mesmo mecanismo de `TODAS_AS_ABAS`). Fases e
+  Situações são **2 sub-abas separadas** (não uma tela com as 2 listas lado
+  a lado), cada uma renderizando `OpcoesLista` com um `tipo` diferente.
+- `ClientesPage` cria cliente por **modal** ("+ Novo Cliente" abre
+  `NovoClienteForm.tsx`), não mais formulário inline -- mesmo padrão de
+  `NovoProcessoForm`. Lista usa paginação real (`components/Pagination`),
+  igual Processos/Histórico.
+- Paginação real foi estendida também pra **Subgrupos**, **Clientes**,
+  **Fases** e **Situações** -- as 4 listas de `GrupoPage`/`ClientesPage`
+  usam `components/Pagination`. Subgrupos/Clientes usam o mesmo mecanismo
+  de GSI + contador de sequência de Processos/Histórico; Fases/Situações
+  usam um mecanismo diferente (busca a partição do `tipo` inteira e pagina
+  em memória, ordenado por `ordem` -- ver `CONTEXT.md` do backend) porque
+  essa lista tem um rank editável pelo admin, e page-by-sequência
+  cortaria a ordem visual de forma inconsistente entre páginas. Removido
+  de um `subgrupo`/opção via `removerMutation` agora usa `invalidateQueries`
+  em vez de splice otimista no cache (`setQueryData`) -- splice local não é
+  seguro com paginação real, pois um item removido pode deslocar itens de
+  uma página pra outra. Membros **ainda não** tem paginação real (fica
+  pra depois).
+- Rótulo "(inativa)" de fase/situação desativada é exibido com a primeira
+  letra maiúscula: "(Inativa)".
+- Excluir um Cliente associado a algum processo (`cliente_ids`) dá `409` --
+  sem tratamento especial no front, cai no mesmo toast de erro genérico
+  (`toastErroMutation`) que qualquer outra `ApiError`, mostrando a
+  mensagem que o backend manda.
 - Link do e-mail de notificação (`?processo=&comunicacao=`) não abre mais
   um modal na aba Processos -- abre direto na aba **Histórico**, no item
   exato que gerou o e-mail (`utils/deepLink.ts` + `HistoricoPage`). Decisão

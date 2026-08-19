@@ -5,7 +5,7 @@ import { dataHojeExtenso, parseDeepLinkHistorico } from "./utils";
 import type { DeepLinkHistorico } from "./utils";
 import { NOME_PAPEL } from "./constants";
 import { ToastProvider } from "./components";
-import type { Papel } from "./types";
+import type { AbaConfig, AbaId, TelaAuth } from "./types";
 
 import {
   LoginPage,
@@ -13,27 +13,19 @@ import {
   EsqueciSenhaPage,
   RedefinirSenhaPage,
   ProcessosPage,
-  SubgruposPage,
-  MembrosPage,
-  ConvidarPage,
+  ClientesPage,
   HistoricoPage,
+  GrupoPage,
 } from "./pages";
-
-type AbaId = "processos" | "subgrupos" | "membros" | "convidar" | "historico";
-type TelaAuth = "login" | "esqueci-senha";
-
-interface AbaConfig {
-  id: AbaId;
-  label: string;
-  minimo: Papel;
-}
 
 const TODAS_AS_ABAS: AbaConfig[] = [
   { id: "processos", label: "Processos", minimo: "user" },
-  { id: "subgrupos", label: "Subgrupos", minimo: "user" },
-  { id: "membros", label: "Membros", minimo: "manager" },
-  { id: "convidar", label: "Convidar", minimo: "admin" },
+  { id: "clientes", label: "Clientes", minimo: "user" },
   { id: "historico", label: "Histórico", minimo: "user" },
+  // "Grupo" agrupa Subgrupos/Membros/Convidar/Fases/Situações como
+  // sub-navegação (GrupoPage) -- piso "user" aqui em cima porque Subgrupos
+  // sozinho já é "user"; cada sub-aba mantém o próprio piso mais alto.
+  { id: "grupo", label: "Grupo", minimo: "user" },
 ];
 
 export default function App() {
@@ -136,15 +128,14 @@ export default function App() {
             </nav>
 
             {abaAtiva === "processos" && <ProcessosPage />}
-            {abaAtiva === "subgrupos" && <SubgruposPage />}
-            {abaAtiva === "membros" && <MembrosPage />}
-            {abaAtiva === "convidar" && <ConvidarPage />}
+            {abaAtiva === "clientes" && <ClientesPage />}
             {abaAtiva === "historico" && (
               <HistoricoPage
                 deepLink={deepLinkHistorico}
                 onDeepLinkConsumido={() => setDeepLinkHistorico(null)}
               />
             )}
+            {abaAtiva === "grupo" && <GrupoPage />}
 
             <div className="footer-note">
               {getApelido() || getEmail()} · {(papel && NOME_PAPEL[papel]) || papel} ·{" "}

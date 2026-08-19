@@ -20,6 +20,36 @@ export interface Processo {
   grupo_id?: string;
   sequencia?: number;
   ultima_verificacao?: string | null;
+  cliente_ids?: string[];
+  objeto_assunto?: string | null;
+  proxima_providencia?: string | null;
+  data_verificar?: string | null;
+  prazo_final?: string | null;
+  observacoes?: string | null;
+  fase_id?: string | null;
+  situacao_id?: string | null;
+}
+
+export interface Cliente {
+  grupo_id: string;
+  cliente_id: string;
+  nome: string;
+  criado_por?: string;
+  criado_em?: string;
+  cpf_cnpj?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+}
+
+export type TipoOpcaoProcesso = "fase" | "situacao";
+
+export interface OpcaoProcesso {
+  tipo: TipoOpcaoProcesso;
+  opcao_id: string;
+  rotulo: string;
+  ordem: number;
+  ativo: boolean;
+  criado_em?: string;
 }
 
 export interface Membro {
@@ -90,3 +120,23 @@ export interface EnvelopePaginacao {
 
 export const TAMANHOS_PAGINA = [10, 20, 30, 50, 100] as const;
 export type TamanhoPagina = (typeof TAMANHOS_PAGINA)[number];
+
+/** Abas de topo do App.tsx. "grupo" agrupa Subgrupos/Membros/Convidar/
+ * Fases/Situações como sub-navegação (ver GrupoPage + SubAbaId). */
+export type AbaId = "processos" | "clientes" | "historico" | "grupo";
+export type TelaAuth = "login" | "esqueci-senha";
+
+export interface AbaConfig {
+  id: AbaId;
+  label: string;
+  minimo: Papel;
+}
+
+/** Sub-abas dentro de GrupoPage. */
+export type SubAbaId = "subgrupos" | "membros" | "convidar" | "fases" | "situacoes";
+
+export interface SubAbaConfig {
+  id: SubAbaId;
+  label: string;
+  minimo: Papel;
+}

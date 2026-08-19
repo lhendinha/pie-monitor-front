@@ -8,7 +8,7 @@
  * `subgrupo` passados pra cada <SubgrupoMembros>, o que já refaz o fetch de
  * cada um deles por causa da troca de referência nas deps do useCallback. */
 export const qk = {
-  subgrupos: () => ["subgrupos"] as const,
+  subgrupos: (params: { pagina?: number; tamanhoPagina?: number } = {}) => ["subgrupos", params] as const,
   subgruposDoGrupo: (grupoId: string) => ["subgrupos", "grupo", grupoId] as const,
   membros: () => ["membros"] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
@@ -17,4 +17,7 @@ export const qk = {
     ["processos", params] as const,
   historico: (params: { pagina?: number; tamanhoPagina?: number }) => ["historico", params] as const,
   detalhesProcesso: (numeroProcesso: string) => ["detalhesProcesso", numeroProcesso] as const,
+  clientes: (params: { pagina?: number; tamanhoPagina?: number } = {}) => ["clientes", params] as const,
+  opcoesProcesso: (tipo: "fase" | "situacao", params: { pagina?: number; tamanhoPagina?: number } = {}) =>
+    ["opcoesProcesso", tipo, params] as const,
 };

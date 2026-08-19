@@ -23,7 +23,7 @@ curl -X POST https://SUA_URL.lambda-url.sa-east-1.on.aws/usuarios \
   }'
 ```
 
-Todo mundo mais entra por **convite** (aba "Convidar", visível pra quem é `admin`) — a pessoa recebe um e-mail com um link `/convite/{token}`, válido por 24h.
+Todo mundo mais entra por **convite** (sub-aba "Convidar", dentro de "Grupo", visível pra quem é `admin`) — a pessoa recebe um e-mail com um link `/convite/{token}`, válido por 24h.
 
 ## Rodando localmente
 
@@ -55,12 +55,14 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 
 ## Papéis e o que cada um vê
 
-| Papel | Abas visíveis |
+4 abas no topo: Processos, Clientes, Histórico e **Grupo** -- essa última agrupa, como sub-navegação própria, Subgrupos/Membros/Convidar/Fases/Situações (cada sub-aba mantém o piso de papel de antes, só a organização visual mudou).
+
+| Papel | Abas / sub-abas visíveis |
 |---|---|
-| `user` | Processos, Subgrupos, Histórico |
-| `manager` | + Membros |
-| `admin` | + Convidar |
-| `super_admin` | Todas as abas do próprio grupo, como um `admin`. Na aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
+| `user` | Processos, Clientes, Histórico, Grupo (só a sub-aba Subgrupos) |
+| `manager` | + sub-aba Membros (dentro de Grupo) |
+| `admin` | + sub-aba Convidar (dentro de Grupo) |
+| `super_admin` | Todas as sub-abas do próprio grupo, como um `admin`, mais **Fases** e **Situações** (2 sub-abas separadas, cada uma paginada) -- CRUD da lista global de opções de fase/situação de processo, valendo pra todos os grupos da plataforma, não só o próprio. Na sub-aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
 
 ## Sobre a autenticação
 
@@ -104,7 +106,7 @@ Pra conferir que está rodando de verdade, o bundle final (`yarn build`) contém
 ```
 src/
   types/
-    index.ts                 -- tipos compartilhados (Papel, Processo, Subgrupo, Membro, Comunicacao, etc.)
+    index.ts                 -- tipos compartilhados (Papel, Processo, Cliente, OpcaoProcesso, Subgrupo, Membro, Comunicacao, AbaId, TelaAuth, AbaConfig, SubAbaId, SubAbaConfig, etc.)
   constants/
     roles.ts                  -- NOME_PAPEL, HIERARQUIA_PAPEIS (usado por services/ e pages/)
     index.ts                  -- reexporta tudo (importe de "../constants")
@@ -119,9 +121,11 @@ src/
     api/
       client.ts               -- núcleo HTTP compartilhado (chamar, ApiError, comGrupoAlvo)
       client.test.ts
-      subgrupos.ts             -- listar/criar/remover subgrupos
+      subgrupos.ts             -- listar (paginado) /criar/remover subgrupos
       membros.ts               -- listar/adicionar/remover membros
-      processos.ts             -- listar/criar/remover processos + editar apelido + detalhes
+      processos.ts             -- listar/criar/remover processos + editar (todos os campos) + detalhes
+      clientes.ts               -- listar (paginado) /criar/editar/remover clientes
+      opcoesProcesso.ts         -- listar (paginado) /criar/editar/desativar/reativar fase e situação
       convites.ts              -- criar convite
       historico.ts             -- listar histórico de notificações (paginado ou por número)
       grupos.ts                -- listar todos os grupos da plataforma (super_admin)
@@ -148,16 +152,25 @@ src/
     RedefinirSenhaPage/index.tsx -- define nova senha (/redefinir-senha/{token})
     AceitarConvitePage/index.tsx -- tela pública de aceite de convite (/convite/{token})
     ProcessosPage/
-      index.tsx                  -- lista + busca + aciona modal/detalhes/edição
+      index.tsx                  -- lista + busca + aciona modal de detalhe/edição, ao clicar na linha
       NovoProcessoForm.tsx        -- formulário de cadastro, no modal (privado da página)
-      EditarApelidoForm.tsx       -- formulário de edição de apelido, no modal (privado da página)
+      DetalheEditarProcesso.tsx   -- modal único de detalhe + edição de todos os campos (privado da página)
+      CamposProcesso.tsx          -- campos compartilhados entre cadastro e edição (privado da página)
       DetalheProcesso.tsx         -- painel de histórico de comunicações (privado da página)
-    SubgruposPage/index.tsx      -- lista + criação + exclusão de subgrupos
+    ClientesPage/
+      index.tsx                  -- lista paginada + botão "+ Novo Cliente" (modal)
+      NovoClienteForm.tsx         -- formulário de criação, no modal (privado da página)
+      EditarClienteForm.tsx       -- formulário de edição, no modal (privado da página)
+    GrupoPage/
+      index.tsx                  -- sub-navegação (Subgrupos/Membros/Convidar/Fases/Situações), cada sub-aba com seu próprio piso de papel
+      OpcoesLista.tsx             -- lista paginada de fase OU situação, com criar/editar/desativar/reativar (privado da página)
+      EditarOpcaoForm.tsx         -- formulário de edição de uma opção, no modal (privado da página)
+    SubgruposPage/index.tsx      -- lista paginada + criação + exclusão de subgrupos (renderizado dentro de GrupoPage)
     MembrosPage/
-      index.tsx                  -- pessoas do grupo
+      index.tsx                  -- pessoas do grupo (renderizado dentro de GrupoPage)
       SubgrupoMembros.tsx         -- card de membros por subgrupo (privado da página)
       EditarMembroForm.tsx        -- edição de apelido/papel/grupo+subgrupos, no modal (super_admin; privado da página)
-    ConvidarPage/index.tsx       -- formulário de convite (MultiSelect de subgrupos)
+    ConvidarPage/index.tsx       -- formulário de convite (MultiSelect de subgrupos; renderizado dentro de GrupoPage)
     HistoricoPage/
       index.tsx                  -- lista paginada + resolve deep link do e-mail
       DetalheHistorico.tsx        -- modal com a comunicação exata que gerou o envio (privado da página)

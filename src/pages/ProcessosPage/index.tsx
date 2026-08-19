@@ -8,7 +8,7 @@ import { Modal, Skeleton, Pagination, IconeHistorico, useToast } from "../../com
 import { TAMANHO_PAGINA_PADRAO, INTERVALO_POLLING_PROCESSOS_MS } from "../../constants";
 import DetalheProcesso from "./DetalheProcesso";
 import NovoProcessoForm from "./NovoProcessoForm";
-import EditarApelidoForm from "./EditarApelidoForm";
+import DetalheEditarProcesso from "./DetalheEditarProcesso";
 import type { Processo, Subgrupo } from "../../types";
 
 export default function ProcessosPage() {
@@ -48,8 +48,10 @@ export default function ProcessosPage() {
   const carregando = processosQuery.isPending;
 
   const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
-    queryKey: qk.subgrupos(),
-    queryFn: listarSubgrupos,
+    // Resolve subgrupo_id -> nome pra qualquer processo listado -- precisa
+    // do grupo inteiro, não de 1 página (GET /subgrupos agora é paginado).
+    queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
+    queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
   const subgrupos = subgruposQuery.data?.subgrupos || [];
@@ -130,6 +132,8 @@ export default function ProcessosPage() {
             <li
               className="docket"
               key={`${p.subgrupo_id}-${p.numero_processo}`}
+              onClick={() => setProcessoEmEdicao(p)}
+              style={{ cursor: "pointer" }}
             >
               <div className="docket-main">
                 <div className="docket-numero">
@@ -149,21 +153,20 @@ export default function ProcessosPage() {
                 <button
                   className="icon-btn"
                   title="Ver histórico"
-                  onClick={() => setNumeroAberto(p.numero_processo)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNumeroAberto(p.numero_processo);
+                  }}
                 >
                   <IconeHistorico />
                 </button>
                 <button
                   className="icon-btn"
-                  title="Editar apelido"
-                  onClick={() => setProcessoEmEdicao(p)}
-                >
-                  ✎
-                </button>
-                <button
-                  className="icon-btn"
                   title="Remover"
-                  onClick={() => handleRemover(p)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemover(p);
+                  }}
                 >
                   ✕
                 </button>
@@ -203,8 +206,11 @@ export default function ProcessosPage() {
       )}
 
       {processoEmEdicao && (
-        <Modal titulo="Editar apelido" onFechar={() => setProcessoEmEdicao(null)}>
-          <EditarApelidoForm
+        <Modal
+          titulo={mascararNumeroProcesso(processoEmEdicao.numero_processo)}
+          onFechar={() => setProcessoEmEdicao(null)}
+        >
+          <DetalheEditarProcesso
             processo={processoEmEdicao}
             onAtualizado={invalidarProcessos}
             onFechar={() => setProcessoEmEdicao(null)}

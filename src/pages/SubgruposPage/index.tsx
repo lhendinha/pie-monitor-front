@@ -3,30 +3,39 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Skeleton, useToast } from "../../components";
+import { Skeleton, Pagination, useToast } from "../../components";
+import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import type { Subgrupo } from "../../types";
 
 export default function SubgruposPage() {
   const [nome, setNome] = useState("");
   const [campoInvalido, setCampoInvalido] = useState(false);
+  const [pagina, setPagina] = useState(1);
+  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const podeCriar = papelAtende("manager");
   const podeExcluir = papelAtende("admin");
 
-  const query = useQuery<{ subgrupos: Subgrupo[] }>({
-    queryKey: qk.subgrupos(),
-    queryFn: listarSubgrupos,
+  const query = useQuery<{ subgrupos: Subgrupo[]; total: number; total_paginas: number }>({
+    queryKey: qk.subgrupos({ pagina, tamanhoPagina }),
+    queryFn: () => listarSubgrupos({ pagina, tamanhoPagina }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os subgrupos.");
   const subgrupos = query.data?.subgrupos || [];
+  const total = query.data?.total ?? 0;
+  const totalPaginas = query.data?.total_paginas ?? 0;
+
+  function invalidarSubgrupos() {
+    queryClient.invalidateQueries({ queryKey: qk.subgrupos() });
+  }
 
   const criarMutation = useMutation({
     mutationFn: (nomeNovo: string) => criarSubgrupo(nomeNovo),
     onSuccess: () => {
       setNome("");
-      queryClient.invalidateQueries({ queryKey: qk.subgrupos() });
+      invalidarSubgrupos();
     },
     onError: (err) => {
       setCampoInvalido(true);
@@ -36,11 +45,7 @@ export default function SubgruposPage() {
 
   const removerMutation = useMutation({
     mutationFn: (id: string) => removerSubgrupo(id),
-    onSuccess: (_dados, id) => {
-      queryClient.setQueryData<{ subgrupos: Subgrupo[] }>(qk.subgrupos(), (old) =>
-        old ? { subgrupos: old.subgrupos.filter((s) => s.subgrupo_id !== id) } : old
-      );
-    },
+    onSuccess: invalidarSubgrupos,
     onError: (err) => toastErroMutation(toast, err, "Não foi possível remover."),
   });
 
@@ -53,6 +58,11 @@ export default function SubgruposPage() {
   function handleRemover(id: string) {
     if (!window.confirm("Remover esse subgrupo? Só funciona se estiver vazio (0 membros).")) return;
     removerMutation.mutate(id);
+  }
+
+  function handleMudarTamanho(novoTamanho: number) {
+    setTamanhoPagina(novoTamanho);
+    setPagina(1);
   }
 
   return (
@@ -81,7 +91,7 @@ export default function SubgruposPage() {
 
       <div className="section-head">
         <h2>Subgrupos</h2>
-        <span className="section-count">{query.isPending ? "carregando…" : `${subgrupos.length}`}</span>
+        <span className="section-count">{query.isPending ? "carregando…" : `${total}`}</span>
       </div>
 
       {query.isPending ? (
@@ -89,20 +99,29 @@ export default function SubgruposPage() {
       ) : subgrupos.length === 0 ? (
         <div className="empty">Nenhum subgrupo ainda.</div>
       ) : (
-        <ul className="simple-list">
-          {subgrupos.map((s) => (
-            <li className="simple-row" key={s.subgrupo_id}>
-              <div className="simple-row-main">
-                <div className="simple-row-title">{s.nome}</div>
-              </div>
-              {podeExcluir && (
-                <button className="icon-btn" title="Remover" onClick={() => handleRemover(s.subgrupo_id)}>
-                  ✕
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="simple-list">
+            {subgrupos.map((s) => (
+              <li className="simple-row" key={s.subgrupo_id}>
+                <div className="simple-row-main">
+                  <div className="simple-row-title">{s.nome}</div>
+                </div>
+                {podeExcluir && (
+                  <button className="icon-btn" title="Remover" onClick={() => handleRemover(s.subgrupo_id)}>
+                    ✕
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          <Pagination
+            pagina={pagina}
+            totalPaginas={totalPaginas}
+            tamanhoPagina={tamanhoPagina}
+            onMudarPagina={setPagina}
+            onMudarTamanho={handleMudarTamanho}
+          />
+        </>
       )}
     </>
   );

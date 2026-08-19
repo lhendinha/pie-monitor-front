@@ -456,6 +456,19 @@ input {
   border-bottom-color: var(--oxblood);
 }
 
+/* Sub-navegação (ex.: dentro da aba "Grupo") -- mesmo padrão visual, só
+ * mais discreta: sem o respiro grande de topo, fonte um pouco menor. */
+.tabs--sub {
+  margin-top: 4px;
+  margin-bottom: 24px;
+}
+
+.tabs--sub .tab {
+  font-size: 11px;
+  padding: 8px 4px;
+  margin-right: 18px;
+}
+
 /* ---------- Linhas simples (e-mails / histórico) ---------- */
 
 .simple-list {
