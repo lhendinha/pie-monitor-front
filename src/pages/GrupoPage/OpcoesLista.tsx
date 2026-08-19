@@ -1,16 +1,27 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import {
   listarOpcoesProcesso,
   criarOpcaoProcesso,
+  atualizarOpcaoProcesso,
   desativarOpcaoProcesso,
   reativarOpcaoProcesso,
 } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Skeleton, Pagination, Modal, useToast } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
+import { Skeleton, Modal, useToast } from "../../components";
+import { TAMANHO_PAGINA_PICKER } from "../../constants";
 import EditarOpcaoForm from "./EditarOpcaoForm";
+import OpcaoRow from "./OpcaoRow";
 import type { OpcaoProcesso, TipoOpcaoProcesso } from "../../types";
 
 interface OpcoesListaProps {
@@ -20,24 +31,33 @@ interface OpcoesListaProps {
 
 /** CRUD de 1 lista (fase OU situação) -- ao contrário do dropdown do
  * processo (que só mostra ativas), essa tela lista TODAS as opções,
- * incluindo inativas, com ação de reativar (soft-delete via `ativo`). */
+ * incluindo inativas, com ação de reativar (soft-delete via `ativo`).
+ *
+ * A ordem é definida por drag and drop (não dá pra reordenar via drag
+ * através de páginas), então a lista busca tudo de uma vez com
+ * `TAMANHO_PAGINA_PICKER` em vez de paginar -- mesma premissa já usada
+ * pelo dropdown de Fase/Situação em `CamposProcesso`. */
 export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
   const [rotulo, setRotulo] = useState("");
   const [campoInvalido, setCampoInvalido] = useState(false);
   const [opcaoEmEdicao, setOpcaoEmEdicao] = useState<OpcaoProcesso | null>(null);
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
+  const [ordemLocal, setOrdemLocal] = useState<OpcaoProcesso[] | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const query = useQuery<{ opcoes: OpcaoProcesso[]; total: number; total_paginas: number }>({
-    queryKey: qk.opcoesProcesso(tipo, { pagina, tamanhoPagina }),
-    queryFn: () => listarOpcoesProcesso(tipo, { pagina, tamanhoPagina }),
+    queryKey: qk.opcoesProcesso(tipo, { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryFn: () => listarOpcoesProcesso(tipo, { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
   });
   useToastOnQueryError(query.error, `Não foi possível carregar ${titulo.toLowerCase()}.`);
-  const opcoes = [...(query.data?.opcoes || [])].sort((a, b) => a.ordem - b.ordem);
+  const opcoesServidor = [...(query.data?.opcoes || [])].sort((a, b) => a.ordem - b.ordem);
+  const opcoes = ordemLocal ?? opcoesServidor;
   const total = query.data?.total ?? 0;
-  const totalPaginas = query.data?.total_paginas ?? 0;
+
+  useEffect(() => {
+    setOrdemLocal(null);
+  }, [query.data]);
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: qk.opcoesProcesso(tipo) });
@@ -70,15 +90,47 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
     onError: (err) => toastErroMutation(toast, err, "Não foi possível reativar."),
   });
 
+  const reordenarMutation = useMutation({
+    mutationFn: (novaOrdem: OpcaoProcesso[]) => {
+      const alterados = novaOrdem
+        .map((opcao, i) => ({ opcao, novaOrdemValor: i + 1 }))
+        .filter(({ opcao, novaOrdemValor }) => opcao.ordem !== novaOrdemValor);
+      return Promise.all(
+        alterados.map(({ opcao, novaOrdemValor }) =>
+          atualizarOpcaoProcesso(tipo, opcao.opcao_id, opcao.rotulo, novaOrdemValor),
+        ),
+      );
+    },
+    onSuccess: invalidar,
+    onError: (err) => {
+      // Com `Promise.all`, um PATCH que falha rejeita o lote inteiro mesmo
+      // que outros já tenham sido persistidos -- `invalidar()` (em vez de só
+      // `setOrdemLocal(null)`) busca o estado real do servidor de novo, pra
+      // não deixar a lista visível divergindo do que já foi salvo.
+      setOrdemLocal(null);
+      invalidar();
+      toastErroMutation(toast, err, "Não foi possível reordenar.");
+    },
+  });
+
   function handleCriar(e: FormEvent) {
     e.preventDefault();
     setCampoInvalido(false);
     criarMutation.mutate();
   }
 
-  function handleMudarTamanho(novoTamanho: number) {
-    setTamanhoPagina(novoTamanho);
-    setPagina(1);
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = opcoes.findIndex((o) => o.opcao_id === active.id);
+    const newIndex = opcoes.findIndex((o) => o.opcao_id === over.id);
+    // `arrayMove` só reordena o array -- os objetos continuam com o `.ordem`
+    // antigo. Sem "carimbar" o valor novo aqui, editar o rótulo de um item
+    // logo após arrastá-lo (antes do refetch) reenviaria a `ordem` velha em
+    // `EditarOpcaoForm` e desfaria o reorder que acabou de ser salvo.
+    const movido = arrayMove(opcoes, oldIndex, newIndex);
+    setOrdemLocal(movido.map((o, i) => ({ ...o, ordem: i + 1 })));
+    reordenarMutation.mutate(movido);
   }
 
   return (
@@ -112,47 +164,21 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
       ) : opcoes.length === 0 ? (
         <div className="empty">Nenhuma opção ainda.</div>
       ) : (
-        <>
-          <ul className="simple-list">
-            {opcoes.map((o) => (
-              <li className="simple-row" key={o.opcao_id}>
-                <div className="simple-row-main">
-                  <div className="simple-row-title">
-                    {o.rotulo}
-                    {!o.ativo && <span className="muted"> (Inativa)</span>}
-                  </div>
-                </div>
-                <button className="icon-btn" title="Editar" onClick={() => setOpcaoEmEdicao(o)}>
-                  ✎
-                </button>
-                {o.ativo ? (
-                  <button
-                    className="icon-btn"
-                    title="Desativar"
-                    onClick={() => desativarMutation.mutate(o.opcao_id)}
-                  >
-                    ✕
-                  </button>
-                ) : (
-                  <button
-                    className="icon-btn"
-                    title="Reativar"
-                    onClick={() => reativarMutation.mutate(o.opcao_id)}
-                  >
-                    ↺
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-          <Pagination
-            pagina={pagina}
-            totalPaginas={totalPaginas}
-            tamanhoPagina={tamanhoPagina}
-            onMudarPagina={setPagina}
-            onMudarTamanho={handleMudarTamanho}
-          />
-        </>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={opcoes.map((o) => o.opcao_id)} strategy={verticalListSortingStrategy}>
+            <ul className="simple-list">
+              {opcoes.map((o) => (
+                <OpcaoRow
+                  key={o.opcao_id}
+                  opcao={o}
+                  onEditar={() => setOpcaoEmEdicao(o)}
+                  onDesativar={() => desativarMutation.mutate(o.opcao_id)}
+                  onReativar={() => reativarMutation.mutate(o.opcao_id)}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
 
       {opcaoEmEdicao && (

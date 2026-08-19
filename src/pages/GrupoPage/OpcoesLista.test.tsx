@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe("OpcoesLista", () => {
-  it("mostra a lista depois de carregar, com pagina/tamanhoPagina", async () => {
+  it("mostra a lista depois de carregar, buscando tudo de uma vez (sem paginação -- ordem é por drag and drop)", async () => {
     mocks.listarOpcoesProcesso.mockResolvedValue({
       opcoes: [{ tipo: "fase", opcao_id: "f1", rotulo: "Conhecimento", ordem: 1, ativo: true }],
       total: 1,
@@ -29,7 +29,7 @@ describe("OpcoesLista", () => {
     renderComProviders(<OpcoesLista tipo="fase" titulo="Fases" />);
 
     expect(await screen.findByText("Conhecimento")).toBeInTheDocument();
-    expect(mocks.listarOpcoesProcesso).toHaveBeenCalledWith("fase", { pagina: 1, tamanhoPagina: 10 });
+    expect(mocks.listarOpcoesProcesso).toHaveBeenCalledWith("fase", { tamanhoPagina: 100 });
   });
 
   it("cria uma opção nova usando o total real (não o tamanho da página atual) como ordem", async () => {
@@ -109,6 +109,6 @@ describe("OpcoesLista", () => {
     renderComProviders(<OpcoesLista tipo="situacao" titulo="Situações" />);
 
     await screen.findByText("Nenhuma opção ainda.");
-    expect(mocks.listarOpcoesProcesso).toHaveBeenCalledWith("situacao", { pagina: 1, tamanhoPagina: 10 });
+    expect(mocks.listarOpcoesProcesso).toHaveBeenCalledWith("situacao", { tamanhoPagina: 100 });
   });
 });

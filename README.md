@@ -62,7 +62,11 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 | `user` | Processos, Clientes, Histórico, Grupo (só a sub-aba Subgrupos) |
 | `manager` | + sub-aba Membros (dentro de Grupo) |
 | `admin` | + sub-aba Convidar (dentro de Grupo) |
-| `super_admin` | Todas as sub-abas do próprio grupo, como um `admin`, mais **Fases** e **Situações** (2 sub-abas separadas, cada uma paginada) -- CRUD da lista global de opções de fase/situação de processo, valendo pra todos os grupos da plataforma, não só o próprio. Na sub-aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
+| `super_admin` | Todas as sub-abas do próprio grupo, como um `admin`, mais **Fases** e **Situações** (2 sub-abas separadas) -- CRUD da lista global de opções de fase/situação de processo, valendo pra todos os grupos da plataforma, não só o próprio. Na sub-aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
+
+`admin`/`super_admin` também editam o **nome de um Subgrupo** (ícone ✎ na sub-aba Subgrupos, `PATCH /subgrupos/{id}`).
+
+A ordem de **Fase**/**Situação** é definida arrastando as linhas (drag and drop, `@dnd-kit`) -- não existe mais um campo "Ordem" editável no formulário.
 
 ## Sobre a autenticação
 
@@ -148,6 +152,8 @@ src/
     InfoTip/index.tsx             -- ícone "i" com tooltip -- explicação sob demanda ao lado de um
                                      label, em vez de texto sempre visível (usado nos campos de busca
                                      de Processos/Clientes)
+    Icons/                         -- ícones SVG custom, 1 arquivo por ícone (IconeHistorico.tsx,
+                                     IconeArrastar.tsx), index.tsx só reexporta
 
   pages/
     index.ts                    -- reexporta as páginas (importe de "./pages")
@@ -167,9 +173,12 @@ src/
       EditarClienteForm.tsx       -- formulário de edição, no modal (privado da página)
     GrupoPage/
       index.tsx                  -- sub-navegação (Subgrupos/Membros/Convidar/Fases/Situações), cada sub-aba com seu próprio piso de papel
-      OpcoesLista.tsx             -- lista paginada de fase OU situação, com criar/editar/desativar/reativar (privado da página)
-      EditarOpcaoForm.tsx         -- formulário de edição de uma opção, no modal (privado da página)
-    SubgruposPage/index.tsx      -- lista paginada + criação + exclusão de subgrupos (renderizado dentro de GrupoPage)
+      OpcoesLista.tsx             -- lista de fase OU situação (busca tudo de uma vez, sem paginação), com criar/editar/desativar/reativar/reordenar (privado da página)
+      EditarOpcaoForm.tsx         -- formulário de edição do rótulo de uma opção, no modal (privado da página) -- ordem não é mais editada aqui, é por drag and drop
+      OpcaoRow.tsx                -- linha arrastável da lista (@dnd-kit), com handle IconeArrastar (privado da página)
+    SubgruposPage/
+      index.tsx                  -- lista paginada + criação + edição + exclusão de subgrupos (renderizado dentro de GrupoPage)
+      EditarSubgrupoForm.tsx      -- formulário de edição do nome, no modal (admin/super_admin; privado da página)
     MembrosPage/
       index.tsx                  -- pessoas do grupo (renderizado dentro de GrupoPage)
       SubgrupoMembros.tsx         -- card de membros por subgrupo (privado da página)

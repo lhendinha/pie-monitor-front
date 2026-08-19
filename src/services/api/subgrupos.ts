@@ -20,6 +20,10 @@ export function criarSubgrupo(nome: string) {
   return chamar("/subgrupos", { method: "POST", body: { nome } });
 }
 
+export function atualizarSubgrupo(subgrupoId: string, nome: string) {
+  return chamar(`/subgrupos/${subgrupoId}`, { method: "PATCH", body: { nome } });
+}
+
 export function removerSubgrupo(subgrupoId: string) {
   return chamar(`/subgrupos/${subgrupoId}`, { method: "DELETE" });
 }

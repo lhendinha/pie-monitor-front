@@ -313,6 +313,11 @@ input {
   background: transparent;
   color: var(--ink-soft);
   border: 1px solid var(--paper-line);
+  height: 41px;
+  padding: 10px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
 }
 
 .btn-ghost.tem-filtro {
@@ -538,6 +543,15 @@ input {
 .icon-btn:hover {
   border-color: var(--oxblood);
   color: var(--oxblood);
+}
+
+.drag-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 /* ---------- Estados ---------- */

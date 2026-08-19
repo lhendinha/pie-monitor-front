@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Skeleton, Pagination, useToast } from "../../components";
+import { Skeleton, Pagination, Modal, useToast } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
+import EditarSubgrupoForm from "./EditarSubgrupoForm";
 import type { Subgrupo } from "../../types";
 
 export default function SubgruposPage() {
@@ -12,10 +13,12 @@ export default function SubgruposPage() {
   const [campoInvalido, setCampoInvalido] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
+  const [subgrupoEmEdicao, setSubgrupoEmEdicao] = useState<Subgrupo | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const podeCriar = papelAtende("manager");
+  const podeEditar = papelAtende("admin");
   const podeExcluir = papelAtende("admin");
 
   const query = useQuery<{ subgrupos: Subgrupo[]; total: number; total_paginas: number }>({
@@ -106,6 +109,11 @@ export default function SubgruposPage() {
                 <div className="simple-row-main">
                   <div className="simple-row-title">{s.nome}</div>
                 </div>
+                {podeEditar && (
+                  <button className="icon-btn" title="Editar" onClick={() => setSubgrupoEmEdicao(s)}>
+                    ✎
+                  </button>
+                )}
                 {podeExcluir && (
                   <button className="icon-btn" title="Remover" onClick={() => handleRemover(s.subgrupo_id)}>
                     ✕
@@ -122,6 +130,16 @@ export default function SubgruposPage() {
             onMudarTamanho={handleMudarTamanho}
           />
         </>
+      )}
+
+      {subgrupoEmEdicao && (
+        <Modal titulo="Editar subgrupo" onFechar={() => setSubgrupoEmEdicao(null)}>
+          <EditarSubgrupoForm
+            subgrupo={subgrupoEmEdicao}
+            onAtualizado={invalidarSubgrupos}
+            onFechar={() => setSubgrupoEmEdicao(null)}
+          />
+        </Modal>
       )}
     </>
   );

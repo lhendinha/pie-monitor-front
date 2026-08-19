@@ -6,6 +6,7 @@ import { renderComProviders } from "../../test/queryTestUtils";
 const mocks = vi.hoisted(() => ({
   listarSubgrupos: vi.fn(),
   criarSubgrupo: vi.fn(),
+  atualizarSubgrupo: vi.fn(),
   removerSubgrupo: vi.fn(),
   papelAtende: vi.fn(),
 }));
@@ -63,6 +64,25 @@ describe("SubgruposPage", () => {
     expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(2); // carga inicial + invalidate pós-remoção
   });
 
+  it("edita o nome de um subgrupo (admin/super_admin)", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+    });
+    mocks.atualizarSubgrupo.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Cível");
+    await user.click(screen.getByTitle("Editar"));
+
+    const nomeInput = await screen.findByLabelText("Nome");
+    await user.clear(nomeInput);
+    await user.type(nomeInput, "Cível (editado)");
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.atualizarSubgrupo).toHaveBeenCalledWith("1", "Cível (editado)"));
+  });
+
   it("erro ao criar mostra a mensagem da ApiError e marca o campo inválido", async () => {
     mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.criarSubgrupo.mockRejectedValue(new ApiError("Já existe um subgrupo com esse nome", 400));
@@ -85,6 +105,7 @@ describe("SubgruposPage", () => {
 
     await screen.findByText("Cível");
     expect(screen.queryByLabelText("Novo subgrupo")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Editar")).not.toBeInTheDocument();
     expect(screen.queryByTitle("Remover")).not.toBeInTheDocument();
   });
 });

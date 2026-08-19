@@ -82,6 +82,9 @@ src/
                                                 e o <select multiple>
     InfoTip/index.tsx                       -- ícone "i" com tooltip -- explicação sob demanda ao
                                                 lado de um label (busca de Processos/Clientes)
+    Icons/                                  -- ícones SVG custom, 1 arquivo por ícone
+                                                (IconeHistorico.tsx, IconeArrastar.tsx -- handle de
+                                                drag and drop, estilo fa-bars), index.tsx só reexporta
     index.ts
   pages/
     LoginPage/index.tsx
@@ -95,11 +98,13 @@ src/
     ClientesPage/index.tsx (+ NovoClienteForm.tsx, EditarClienteForm.tsx -- privados; criação por
                               modal "+ Novo Cliente", lista paginada igual Processos/Histórico, busca
                               por nome/CPF-CNPJ/telefone/e-mail que substitui a paginação enquanto ativa)
-    GrupoPage/index.tsx (+ OpcoesLista.tsx, EditarOpcaoForm.tsx -- privados; sub-navegação que
-                          agrupa Subgrupos/Membros/Convidar/Fases/Situações -- ver "Decisões de UX".
-                          OpcoesProcessoPage/ antigo foi descontinuado, OpcoesLista/EditarOpcaoForm
-                          mudaram de pasta pra cá)
-    SubgruposPage/index.tsx      -- renderizado como sub-aba dentro de GrupoPage, não mais no topo
+    GrupoPage/index.tsx (+ OpcoesLista.tsx, EditarOpcaoForm.tsx, OpcaoRow.tsx -- privados;
+                          sub-navegação que agrupa Subgrupos/Membros/Convidar/Fases/Situações -- ver
+                          "Decisões de UX". OpcoesProcessoPage/ antigo foi descontinuado,
+                          OpcoesLista/EditarOpcaoForm mudaram de pasta pra cá. Ordem de Fase/Situação
+                          agora é por drag and drop, OpcaoRow.tsx é a linha arrastável)
+    SubgruposPage/index.tsx (+ EditarSubgrupoForm.tsx -- privado; renderizado como sub-aba dentro de
+                              GrupoPage, não mais no topo)
     MembrosPage/index.tsx (+ SubgrupoMembros.tsx, EditarMembroForm.tsx -- privados; idem, sub-aba)
     ConvidarPage/index.tsx       -- idem, sub-aba
     HistoricoPage/index.tsx (+ DetalheHistorico.tsx -- privado)
@@ -208,19 +213,49 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   `NovoClienteForm.tsx`), não mais formulário inline -- mesmo padrão de
   `NovoProcessoForm`. Lista usa paginação real (`components/Pagination`),
   igual Processos/Histórico.
-- Paginação real foi estendida também pra **Subgrupos**, **Clientes**,
-  **Fases** e **Situações** -- as 4 listas de `GrupoPage`/`ClientesPage`
-  usam `components/Pagination`. Subgrupos/Clientes usam o mesmo mecanismo
-  de GSI + contador de sequência de Processos/Histórico; Fases/Situações
-  usam um mecanismo diferente (busca a partição do `tipo` inteira e pagina
-  em memória, ordenado por `ordem` -- ver `CONTEXT.md` do backend) porque
-  essa lista tem um rank editável pelo admin, e page-by-sequência
-  cortaria a ordem visual de forma inconsistente entre páginas. Removido
-  de um `subgrupo`/opção via `removerMutation` agora usa `invalidateQueries`
-  em vez de splice otimista no cache (`setQueryData`) -- splice local não é
-  seguro com paginação real, pois um item removido pode deslocar itens de
-  uma página pra outra. Membros **ainda não** tem paginação real (fica
-  pra depois).
+- Paginação real foi estendida também pra **Subgrupos** e **Clientes** --
+  essas 2 listas de `GrupoPage`/`ClientesPage` usam `components/Pagination`,
+  mesmo mecanismo de GSI + contador de sequência de Processos/Histórico.
+  Removido de um `subgrupo`/`cliente` via `removerMutation` usa
+  `invalidateQueries` em vez de splice otimista no cache (`setQueryData`)
+  -- splice local não é seguro com paginação real, pois um item removido
+  pode deslocar itens de uma página pra outra. Membros **ainda não** tem
+  paginação real (fica pra depois). Fases/Situações **não** usam
+  `Pagination` (ver bullet abaixo).
+- **Ordem de Fase/Situação por drag and drop**, não mais um campo numérico
+  "Ordem" editável no formulário -- `EditarOpcaoForm.tsx` agora só edita o
+  rótulo. `OpcoesLista.tsx` busca a lista inteira de uma vez
+  (`TAMANHO_PAGINA_PICKER`, teto de 100, mesmo usado pelo dropdown de
+  Fase/Situação em `CamposProcesso`) em vez de paginar -- não dá pra
+  arrastar um item de uma página pra outra sem carregar tudo. Implementado
+  com `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
+  (`OpcaoRow.tsx`, handle `IconeArrastar` de `components/Icons`). Ao soltar
+  um item, o front recalcula a ordem 1..N localmente (otimista, via
+  `arrayMove`) e dispara `PATCH /fases|situacoes/{id}` só pros itens cuja
+  posição realmente mudou -- não reescreve a lista inteira a cada drop.
+  **Limitação conhecida e aceita, não corrigida (achado na revisão
+  pré-deploy):** o teto de 100 é um corte silencioso -- se a lista GLOBAL
+  de Fase/Situação (soma de todos os grupos da plataforma, inclusive
+  opções desativadas, que nunca são removidas) um dia passar de 100 itens,
+  os itens além do 100º somem da tela sem aviso nenhum (diferente do
+  picker de Cliente/Subgrupo, que é por grupo e dificilmente chega perto
+  de 100). Avaliado e decidido não corrigir agora: paginação real
+  (Prev/Next, como Subgrupos/Clientes) quebraria o drag-and-drop entre
+  páginas (só reordenaria dentro da página carregada, não a lista
+  inteira); buscar todas as páginas em loop resolveria sem esse problema
+  (o backend já lê a partição inteira por chamada de qualquer forma --
+  `opcoes_processo_repository.listar_pagina_por_tipo`, sem ganho real em
+  paginar por request), mas foi adiado por ora -- 100 fases/situações é
+  uma lista grande pra uma taxonomia curada por poucos `super_admin`.
+- **Editar nome de Subgrupo** (`SubgruposPage/EditarSubgrupoForm.tsx`,
+  padrão Modal igual `EditarClienteForm`/`EditarOpcaoForm`): ícone ✎ por
+  linha, visível só pra `admin`/`super_admin` (`papelAtende("admin")`,
+  mesmo piso do ✕ Remover que já existia). `atualizarSubgrupo`
+  (`services/api/subgrupos.ts`) chama `PATCH /subgrupos/{id}` -- endpoint
+  implementado no backend na mesma sessão (ver `CONTEXT.md` da API,
+  mesmo padrão de `PATCH /clientes/{id}`: `ConditionExpression=
+  attribute_exists(...)` pra 404 em id inexistente/de outro grupo,
+  checagem de nome duplicado excluindo o próprio subgrupo).
 - Rótulo "(inativa)" de fase/situação desativada é exibido com a primeira
   letra maiúscula: "(Inativa)".
 - Excluir um Cliente associado a algum processo (`cliente_ids`) dá `409` --

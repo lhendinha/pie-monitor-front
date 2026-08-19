@@ -1,26 +1,23 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { atualizarOpcaoProcesso } from "../../services";
+import { atualizarSubgrupo } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { useToast } from "../../components";
-import type { OpcaoProcesso, TipoOpcaoProcesso } from "../../types";
+import type { Subgrupo } from "../../types";
 
-interface EditarOpcaoFormProps {
-  tipo: TipoOpcaoProcesso;
-  opcao: OpcaoProcesso;
+interface EditarSubgrupoFormProps {
+  subgrupo: Subgrupo;
   onAtualizado: () => void;
   onFechar: () => void;
 }
 
-export default function EditarOpcaoForm({ tipo, opcao, onAtualizado, onFechar }: EditarOpcaoFormProps) {
-  const [rotulo, setRotulo] = useState(opcao.rotulo || "");
+export default function EditarSubgrupoForm({ subgrupo, onAtualizado, onFechar }: EditarSubgrupoFormProps) {
+  const [nome, setNome] = useState(subgrupo.nome || "");
   const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const atualizarMutation = useMutation({
-    // ordem não é editável aqui -- ela agora é definida por drag and drop
-    // na lista (ver OpcoesLista), então mantemos o valor atual intacto.
-    mutationFn: () => atualizarOpcaoProcesso(tipo, opcao.opcao_id, rotulo.trim(), opcao.ordem),
+    mutationFn: () => atualizarSubgrupo(subgrupo.subgrupo_id, nome.trim()),
     onSuccess: () => {
       onAtualizado();
       onFechar();
@@ -40,19 +37,19 @@ export default function EditarOpcaoForm({ tipo, opcao, onAtualizado, onFechar }:
   return (
     <form onSubmit={handleSubmit}>
       <div className={`field${campoInvalido ? " field-error" : ""}`}>
-        <label htmlFor="rotulo-opcao-edicao">Rótulo</label>
+        <label htmlFor="nome-subgrupo-edicao">Nome</label>
         <input
-          id="rotulo-opcao-edicao"
-          value={rotulo}
+          id="nome-subgrupo-edicao"
+          value={nome}
           onChange={(e) => {
-            setRotulo(e.target.value);
+            setNome(e.target.value);
             setCampoInvalido(false);
           }}
           autoFocus
         />
       </div>
       <div className="modal-actions">
-        <button className="btn" type="submit" disabled={atualizarMutation.isPending || !rotulo.trim()}>
+        <button className="btn" type="submit" disabled={atualizarMutation.isPending || !nome.trim()}>
           {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
         </button>
       </div>
