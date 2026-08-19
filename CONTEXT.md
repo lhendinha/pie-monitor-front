@@ -62,7 +62,9 @@ src/
     Modal/index.tsx, Skeleton/index.tsx [+ index.test.tsx]
     Toast/index.tsx [+ index.test.tsx]     -- ToastProvider/useToast, substitui <div className="banner">
     Pagination/index.tsx                    -- números endereçáveis, não cursor
-    MultiSelect/index.tsx                   -- dropdown fechado com checkboxes, substitui <select multiple>
+    Select/index.tsx                        -- wrapper único (react-select) por trás de <Select> (valor
+                                                único) e <MultiSelect> (múltiplo, dropdown fechado com
+                                                checkboxes); substitui os <select> nativos e o <select multiple>
     index.ts
   pages/
     LoginPage/index.tsx
@@ -131,11 +133,14 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   `super_admin` na lista "Pessoas do grupo" -- único ✎ do app com
   visibilidade condicionada a papel, os outros (`ProcessosPage`) aparecem
   pra qualquer nível que já acessa a página.
-- Aba Convidar usa `MultiSelect` (`components/MultiSelect`, dropdown
-  fechado com checkboxes) pra escolher subgrupos -- **não** mais o
-  `<select multiple>` nativo, cujo listbox sempre aberto destoava do resto
-  do form.
-- `<select>` estilizado pra ter a mesma aparência visual do `<input>` de texto.
+- Todo select do sistema (valor único ou múltiplo) passa por um wrapper
+  único em `components/Select`, em cima do `react-select` (`unstyled` +
+  `classNames`) pra manter a mesma aparência do `<input>` de texto --
+  `<select>` nativo e o `MultiSelect` custom antigo tinham divergido
+  visualmente um do outro. Aba Convidar/EditarMembroForm usam `MultiSelect`
+  (dropdown fechado com checkboxes) pra escolher subgrupos -- **não** mais
+  o `<select multiple>` nativo, cujo listbox sempre aberto destoava do
+  resto do form.
 - Feedback de ação pontual (erro, sucesso) usa **toast** (`components/Toast`,
   `useToast()`), não mais `<div className="banner">` -- banner ficou restrito
   a estados persistentes de tela inteira (sessão expirada, senha redefinida).
@@ -188,7 +193,7 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
    jeito que force recriação da Function URL, o `VITE_API_URL` do Vercel
    precisa ser atualizado manualmente de novo.
 2. Testes cobrem `services/`/`utils/` (lógica pura); nenhum teste de
-   componente/página ainda (`pages/`, `components/Toast`, `MultiSelect`,
+   componente/página ainda (`pages/`, `components/Toast`, `Select`,
    `Pagination` sem cobertura própria).
 3. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
    específico do Vercel, em vez de `"*"` (pendência do lado do backend, mas

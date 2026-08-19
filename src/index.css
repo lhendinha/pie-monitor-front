@@ -172,7 +172,11 @@ input {
   align-items: flex-end;
 }
 
-.field input {
+/* Filho direto de propósito -- `input` genérico pegaria também o input
+   interno (oculto) do react-select dentro de `.select-control`, cujo
+   box de layout (pré-transform) infla a altura do controle mesmo sem
+   aparecer visualmente. */
+.field > input {
   border: 1px solid var(--paper-line);
   background: #fff;
   padding: 10px 12px;
@@ -180,31 +184,7 @@ input {
   color: var(--ink);
 }
 
-.field select {
-  border: 1px solid var(--paper-line);
-  background: #fff;
-  padding: 10px 12px;
-  font-size: 14px;
-  color: var(--ink);
-  font-family: inherit;
-  height: 41px;
-  /* remove a aparência nativa do sistema pra bater com o input de texto */
-  appearance: none;
-  -webkit-appearance: none;
-  border-radius: 0;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
-    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
-  background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 13px) calc(50% - 3px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  padding-right: 32px;
-}
-
-.field select:focus-visible {
-  border-color: var(--oxblood);
-}
-
-.field input:focus-visible {
+.field > input:focus-visible {
   border-color: var(--oxblood);
 }
 
@@ -217,8 +197,7 @@ input {
 /* Aplicada no wrapper .field quando o campo falhou validação -- circula o
    input/select em vermelho, a mensagem em si vai como toast agora. */
 .field.field-error input,
-.field.field-error select,
-.field.field-error .multi-select-trigger {
+.field.field-error .select-control {
   border-color: var(--oxblood);
 }
 
@@ -531,24 +510,6 @@ input {
   color: var(--brass);
 }
 
-/* ---------- Docket clicável (abre detalhes) ---------- */
-
-.docket-main-clickable {
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  flex: 1;
-  min-width: 0;
-}
-
-.docket-main-clickable:hover .docket-apelido {
-  color: var(--oxblood);
-}
-
 /* ---------- Painel de detalhes do processo ---------- */
 
 .detail-texto {
@@ -760,13 +721,9 @@ input {
   }
 }
 
-/* ---------- MultiSelect (dropdown fechado com checkboxes) ---------- */
+/* ---------- Select (react-select, valor único e múltiplo) ---------- */
 
-.multi-select {
-  position: relative;
-}
-
-.multi-select-trigger {
+.select-control {
   width: 100%;
   border: 1px solid var(--paper-line);
   background: #fff;
@@ -774,11 +731,8 @@ input {
   font-size: 14px;
   color: var(--ink);
   font-family: inherit;
-  height: 41px;
-  text-align: left;
+  min-height: 41px;
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
   border-radius: 0;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
     linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
@@ -786,30 +740,31 @@ input {
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
   padding-right: 32px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
-.multi-select-trigger:focus-visible {
+.select-control--focado {
   border-color: var(--oxblood);
 }
 
-.multi-select-painel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  width: 100%;
-  max-height: 240px;
-  overflow-y: auto;
+.select-control--compacto {
+  min-height: 0;
+  padding: 6px 28px 6px 10px;
+  font-size: 13px;
+  background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px);
+  background-size: 4px 4px, 4px 4px;
+}
+
+.select-menu {
   background: #fff;
   border: 1px solid var(--paper-line);
   box-shadow: 2px 2px 0 rgba(27, 42, 74, 0.1);
-  z-index: 50;
+}
+
+.select-menu-lista {
   padding: 6px;
 }
 
-.multi-select-opcao {
+.select-opcao {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -818,11 +773,15 @@ input {
   cursor: pointer;
 }
 
-.multi-select-opcao:hover {
+.select-opcao--focada {
   background: var(--paper-dim);
 }
 
-.multi-select-vazio {
+.select-opcao--selecionada {
+  background: var(--paper-line);
+}
+
+.select-vazio {
   padding: 8px;
 }
 
@@ -902,19 +861,6 @@ input {
   white-space: nowrap;
 }
 
-.pagination-tamanho select {
-  border: 1px solid var(--paper-line);
-  background: #fff;
-  padding: 6px 28px 6px 10px;
-  font-size: 13px;
-  color: var(--ink);
-  font-family: inherit;
-  appearance: none;
-  -webkit-appearance: none;
-  border-radius: 0;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
-    linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
-  background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px);
-  background-size: 4px 4px, 4px 4px;
-  background-repeat: no-repeat;
+.pagination-tamanho .select-control--compacto {
+  width: auto;
 }

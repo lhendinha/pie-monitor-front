@@ -1,5 +1,6 @@
 export { default as Modal } from "./Modal";
 export { default as Skeleton } from "./Skeleton";
 export { default as Pagination } from "./Pagination";
-export { default as MultiSelect } from "./MultiSelect";
+export { Select, MultiSelect } from "./Select";
 export { ToastProvider, useToast } from "./Toast";
+export { IconeHistorico } from "./Icons";

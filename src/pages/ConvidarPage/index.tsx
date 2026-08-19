@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { listarSubgrupos, criarConvite } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { MultiSelect, useToast } from "../../components";
+import { Select, MultiSelect, useToast } from "../../components";
 import type { Papel, Subgrupo } from "../../types";
 
 export default function ConvidarPage() {
@@ -61,15 +61,16 @@ export default function ConvidarPage() {
           </div>
           <div className="field">
             <label htmlFor="papel-convite">Papel inicial</label>
-            <select
+            <Select
               id="papel-convite"
-              value={papelInicial}
-              onChange={(e) => setPapelInicial(e.target.value as Papel)}
-            >
-              <option value="user">Usuário</option>
-              <option value="manager">Gerente</option>
-              <option value="admin">Admin</option>
-            </select>
+              opcoes={[
+                { value: "user", label: "Usuário" },
+                { value: "manager", label: "Gerente" },
+                { value: "admin", label: "Admin" },
+              ]}
+              valor={papelInicial}
+              onMudar={(v) => setPapelInicial(v as Papel)}
+            />
           </div>
         </div>
 

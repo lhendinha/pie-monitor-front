@@ -4,18 +4,12 @@ import { listarProcessos, removerProcesso, listarSubgrupos } from "../../service
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { mascararNumeroProcesso, apenasDigitos, formatarDataHoraAmPm } from "../../utils";
-import { Modal, Skeleton, Pagination, useToast } from "../../components";
+import { Modal, Skeleton, Pagination, IconeHistorico, useToast } from "../../components";
+import { TAMANHO_PAGINA_PADRAO, INTERVALO_POLLING_PROCESSOS_MS } from "../../constants";
 import DetalheProcesso from "./DetalheProcesso";
 import NovoProcessoForm from "./NovoProcessoForm";
 import EditarApelidoForm from "./EditarApelidoForm";
 import type { Processo, Subgrupo } from "../../types";
-
-const TAMANHO_PADRAO = 10;
-// ultima_verificacao muda por um job no backend, sem ação de usuário --
-// e um apelido editado por outra pessoa também só apareceria aqui ao
-// trocar de aba/foco. Revalida sozinho enquanto a aba estiver aberta e em
-// foco (o RQ já pausa o polling em background por padrão).
-const INTERVALO_POLLING_MS = 60_000;
 
 export default function ProcessosPage() {
   // O link do e-mail de notificação agora leva pra aba Histórico (ver
@@ -25,7 +19,7 @@ export default function ProcessosPage() {
   const [processoEmEdicao, setProcessoEmEdicao] = useState<Processo | null>(null);
 
   const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PADRAO);
+  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
 
   const [buscaInput, setBuscaInput] = useState("");
   const [busca, setBusca] = useState("");
@@ -45,7 +39,7 @@ export default function ProcessosPage() {
   const processosQuery = useQuery<{ processos: Processo[]; total: number; total_paginas: number }>({
     queryKey: qk.processos(parametrosBusca),
     queryFn: () => listarProcessos(parametrosBusca),
-    refetchInterval: INTERVALO_POLLING_MS,
+    refetchInterval: INTERVALO_POLLING_PROCESSOS_MS,
   });
   useToastOnQueryError(processosQuery.error, "Não foi possível carregar os processos.");
   const processos = processosQuery.data?.processos || [];
@@ -137,10 +131,7 @@ export default function ProcessosPage() {
               className="docket"
               key={`${p.subgrupo_id}-${p.numero_processo}`}
             >
-              <button
-                className="docket-main docket-main-clickable"
-                onClick={() => setNumeroAberto(p.numero_processo)}
-              >
+              <div className="docket-main">
                 <div className="docket-numero">
                   {mascararNumeroProcesso(p.numero_processo)}
                 </div>
@@ -153,8 +144,15 @@ export default function ProcessosPage() {
                     ? ` · Última verificação: ${formatarDataHoraAmPm(p.ultima_verificacao)}`
                     : " · Ainda não verificado"}
                 </div>
-              </button>
+              </div>
               <div className="docket-actions">
+                <button
+                  className="icon-btn"
+                  title="Ver histórico"
+                  onClick={() => setNumeroAberto(p.numero_processo)}
+                >
+                  <IconeHistorico />
+                </button>
                 <button
                   className="icon-btn"
                   title="Editar apelido"

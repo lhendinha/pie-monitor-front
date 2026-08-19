@@ -139,7 +139,7 @@ src/
     Skeleton/index.tsx, index.test.tsx -- placeholder de loading
     Toast/index.tsx, index.test.tsx    -- toasts de erro/sucesso (ToastProvider, useToast)
     Pagination/index.tsx         -- paginação com números endereçáveis (não cursor)
-    MultiSelect/index.tsx        -- dropdown fechado com checkboxes (seleção múltipla de subgrupos)
+    Select/index.tsx             -- wrapper único (react-select) pra valor único e múltiplo (checkboxes, seleção de subgrupos)
 
   pages/
     index.ts                    -- reexporta as páginas (importe de "./pages")

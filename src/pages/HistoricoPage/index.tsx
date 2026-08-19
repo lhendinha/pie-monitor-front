@@ -6,6 +6,7 @@ import { qk } from "../../services/queryKeys";
 import { mascararNumeroProcesso, formatarDataHora } from "../../utils";
 import type { DeepLinkHistorico } from "../../utils";
 import { Skeleton, Pagination, Modal, useToast } from "../../components";
+import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
 
@@ -14,11 +15,9 @@ interface PageProps {
   onDeepLinkConsumido?: () => void;
 }
 
-const TAMANHO_PADRAO = 10;
-
 export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: PageProps) {
   const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PADRAO);
+  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 

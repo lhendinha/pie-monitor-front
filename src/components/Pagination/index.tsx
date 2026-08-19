@@ -1,4 +1,5 @@
 import { TAMANHOS_PAGINA } from "../../types";
+import { Select } from "../Select";
 
 interface PaginationProps {
   pagina: number;
@@ -74,17 +75,13 @@ export default function Pagination({ pagina, totalPaginas, tamanhoPagina, onMuda
       )}
       <div className="pagination-tamanho">
         <label htmlFor="tamanho-pagina">Por página</label>
-        <select
+        <Select
           id="tamanho-pagina"
-          value={tamanhoPagina}
-          onChange={(e) => onMudarTamanho(Number(e.target.value))}
-        >
-          {TAMANHOS_PAGINA.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+          compacto
+          opcoes={TAMANHOS_PAGINA.map((t) => ({ value: String(t), label: String(t) }))}
+          valor={String(tamanhoPagina)}
+          onMudar={(v) => onMudarTamanho(Number(v))}
+        />
       </div>
     </div>
   );

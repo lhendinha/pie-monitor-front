@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { criarProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { apenasDigitos, mascararNumeroProcesso } from "../../utils";
-import { useToast } from "../../components";
+import { Select, useToast } from "../../components";
 import type { Subgrupo } from "../../types";
 
 interface NovoProcessoFormProps {
@@ -55,17 +55,12 @@ export default function NovoProcessoForm({
     <form onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="subgrupo">Subgrupo</label>
-        <select
+        <Select
           id="subgrupo"
-          value={subgrupoId}
-          onChange={(e) => setSubgrupoId(e.target.value)}
-        >
-          {subgrupos.map((s) => (
-            <option key={s.subgrupo_id} value={s.subgrupo_id}>
-              {s.nome}
-            </option>
-          ))}
-        </select>
+          opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
+          valor={subgrupoId}
+          onMudar={setSubgrupoId}
+        />
       </div>
       <div
         className={`field${campoInvalido ? " field-error" : ""}`}

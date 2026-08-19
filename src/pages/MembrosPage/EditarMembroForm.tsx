@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { listarMembrosDoGrupo, listarSubgruposDoGrupo, atualizarMembro, getGrupoId } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { MultiSelect, useToast } from "../../components";
+import { Select, MultiSelect, useToast } from "../../components";
 import type { Membro, Subgrupo, Grupo, Papel } from "../../types";
 
 interface EditarMembroFormProps {
@@ -97,30 +97,26 @@ export default function EditarMembroForm({
       <div className="form-row" style={{ marginTop: 16 }}>
         <div className="field">
           <label htmlFor="papel-membro">Papel</label>
-          <select
+          <Select
             id="papel-membro"
-            value={papelSelecionado}
-            onChange={(e) => setPapelSelecionado(e.target.value as Papel)}
-          >
-            <option value="user">Usuário</option>
-            <option value="manager">Gerente</option>
-            <option value="admin">Admin</option>
-            <option value="super_admin">Super Admin</option>
-          </select>
+            opcoes={[
+              { value: "user", label: "Usuário" },
+              { value: "manager", label: "Gerente" },
+              { value: "admin", label: "Admin" },
+              { value: "super_admin", label: "Super Admin" },
+            ]}
+            valor={papelSelecionado}
+            onMudar={(v) => setPapelSelecionado(v as Papel)}
+          />
         </div>
         <div className="field">
           <label htmlFor="grupo-membro">Grupo</label>
-          <select
+          <Select
             id="grupo-membro"
-            value={grupoSelecionado}
-            onChange={(e) => handleMudarGrupo(e.target.value)}
-          >
-            {grupos.map((g) => (
-              <option key={g.grupo_id} value={g.grupo_id}>
-                {g.nome}
-              </option>
-            ))}
-          </select>
+            opcoes={grupos.map((g) => ({ value: g.grupo_id, label: g.nome }))}
+            valor={grupoSelecionado}
+            onMudar={handleMudarGrupo}
+          />
         </div>
       </div>
 
