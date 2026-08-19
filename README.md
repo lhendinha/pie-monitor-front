@@ -143,7 +143,11 @@ src/
     Skeleton/index.tsx, index.test.tsx -- placeholder de loading
     Toast/index.tsx, index.test.tsx    -- toasts de erro/sucesso (ToastProvider, useToast)
     Pagination/index.tsx         -- paginação com números endereçáveis (não cursor)
-    Select/index.tsx             -- wrapper único (react-select) pra valor único e múltiplo (checkboxes, seleção de subgrupos)
+    Select/                       -- wrapper (react-select) pra valor único (Select.tsx) e múltiplo
+                                     (MultiSelect.tsx, checkboxes); index.tsx só reexporta
+    InfoTip/index.tsx             -- ícone "i" com tooltip -- explicação sob demanda ao lado de um
+                                     label, em vez de texto sempre visível (usado nos campos de busca
+                                     de Processos/Clientes)
 
   pages/
     index.ts                    -- reexporta as páginas (importe de "./pages")

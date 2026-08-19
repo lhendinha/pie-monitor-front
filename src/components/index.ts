@@ -5,3 +5,4 @@ export { Select, MultiSelect } from "./Select";
 export { ToastProvider, useToast } from "./Toast";
 export { IconeHistorico } from "./Icons";
 export { default as ComunicacaoCard } from "./ComunicacaoCard";
+export { default as InfoTip } from "./InfoTip";

@@ -52,6 +52,17 @@ export interface OpcaoProcesso {
   criado_em?: string;
 }
 
+/** Filtros estruturados do painel "Filtros" em ProcessosPage -- separado
+ * de `FiltrosProcessos` (services/api/processos.ts), que já inclui `busca`
+ * e usa nomes de campo iguais aos da query string. */
+export interface FiltrosEstruturadosProcessos {
+  clienteId: string;
+  faseId: string;
+  situacaoId: string;
+  dataVerificarAte: string;
+  prazoFinalAte: string;
+}
+
 export interface Membro {
   email: string;
   apelido?: string;

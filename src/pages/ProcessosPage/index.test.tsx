@@ -41,16 +41,23 @@ describe("ProcessosPage", () => {
     expect(mocks.listarProcessos).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
   });
 
-  it("busca troca os parâmetros pra {busca} (ignora pagina/tamanhoPagina), depois do debounce", async () => {
+  it("busca troca os parâmetros (ignora pagina/tamanhoPagina) -- texto livre, não só número", async () => {
     const user = userEvent.setup();
     renderComProviders(<ProcessosPage />);
     await screen.findByText("Meu processo");
 
-    await user.type(screen.getByLabelText("Buscar por número"), "1234");
+    await user.type(screen.getByLabelText("Buscar"), "cobrança de honorários");
 
-    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalledWith({ busca: "1234" }), {
-      timeout: 2000,
-    });
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenCalledWith({
+        busca: "cobrança de honorários",
+        clienteId: "",
+        faseId: "",
+        situacaoId: "",
+        dataVerificarAte: "",
+        prazoFinalAte: "",
+      })
+    );
   });
 
   it("remover um processo invalida só 'processos' -- não refaz o fetch de subgrupos", async () => {
@@ -161,5 +168,89 @@ describe("ProcessosPage", () => {
 
     await waitFor(() => expect(mocks.removerProcesso).toHaveBeenCalled());
     expect(screen.queryByLabelText("Apelido")).not.toBeInTheDocument();
+  });
+
+  it("mostra tags de fase/situação/data no card quando o processo tem esses campos", async () => {
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [{
+        ...PROCESSO,
+        fase_id: "fase-1", situacao_id: "sit-1", data_verificar: "2026-08-25", prazo_final: "2026-09-01",
+      }],
+      total: 1, total_paginas: 1,
+    });
+    mocks.listarOpcoesProcesso.mockImplementation((tipo: string) =>
+      Promise.resolve({
+        opcoes: tipo === "fase"
+          ? [{ opcao_id: "fase-1", tipo: "fase", rotulo: "Conhecimento (1º Grau)", ordem: 1, ativo: true }]
+          : [{ opcao_id: "sit-1", tipo: "situacao", rotulo: "Aguardando sentença", ordem: 1, ativo: true }],
+      })
+    );
+
+    renderComProviders(<ProcessosPage />);
+
+    expect(await screen.findByText("Conhecimento (1º Grau)")).toBeInTheDocument();
+    expect(screen.getByText("Aguardando sentença")).toBeInTheDocument();
+    expect(screen.getByText("Verificar 25/08/2026")).toBeInTheDocument();
+    expect(screen.getByText("Prazo 01/09/2026")).toBeInTheDocument();
+  });
+
+  it("painel de Filtros abre/fecha via classe 'aberto' ao clicar no botão", async () => {
+    const user = userEvent.setup();
+    const { container } = renderComProviders(<ProcessosPage />);
+    await screen.findByText("Meu processo");
+
+    const botaoFiltros = screen.getByRole("button", { name: "Filtros" });
+    const painel = container.querySelector(".filtros-painel");
+    expect(painel).not.toHaveClass("aberto");
+
+    await user.click(botaoFiltros);
+    expect(painel).toHaveClass("aberto");
+
+    await user.click(botaoFiltros);
+    expect(painel).not.toHaveClass("aberto");
+  });
+
+  it("aplicar filtro de data cria chip, filtra a lista e some ao remover o chip", async () => {
+    const user = userEvent.setup();
+    renderComProviders(<ProcessosPage />);
+    await screen.findByText("Meu processo");
+
+    await user.click(screen.getByRole("button", { name: "Filtros" }));
+    fireEvent.change(screen.getByLabelText("Data p/ verificar (até)"), { target: { value: "2026-08-31" } });
+    await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenCalledWith(
+        expect.objectContaining({ dataVerificarAte: "2026-08-31" })
+      )
+    );
+    expect(screen.getByRole("button", { name: "Filtros (1)" })).toBeInTheDocument();
+    expect(screen.getByText(/Verificar até: 31\/08\/2026/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Remover filtro Verificar até/ }));
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith({ pagina: 1, tamanhoPagina: 10 })
+    );
+    expect(screen.queryByText(/Verificar até:/)).not.toBeInTheDocument();
+  });
+
+  it("'Limpar' no painel zera todos os filtros aplicados", async () => {
+    const user = userEvent.setup();
+    renderComProviders(<ProcessosPage />);
+    await screen.findByText("Meu processo");
+
+    await user.click(screen.getByRole("button", { name: "Filtros" }));
+    fireEvent.change(screen.getByLabelText("Prazo final (até)"), { target: { value: "2026-09-01" } });
+    await user.click(screen.getByRole("button", { name: "Aplicar filtros" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Filtros (1)" })).toBeInTheDocument());
+
+    await user.click(screen.getByRole("button", { name: "Filtros (1)" }));
+    await user.click(screen.getByRole("button", { name: "Limpar" }));
+
+    expect(screen.getByRole("button", { name: "Filtros" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith({ pagina: 1, tamanhoPagina: 10 })
+    );
   });
 });

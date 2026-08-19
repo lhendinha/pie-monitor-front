@@ -172,6 +172,90 @@ input {
   align-items: flex-end;
 }
 
+/* Linha com o <label> + InfoTip lado a lado -- o ícone/tooltip fica FORA
+   do <label> de propósito (não dentro dele): texto dentro de <label for>
+   vira parte do nome acessível do campo pra leitor de tela, o que faria
+   o tooltip inteiro ser lido toda vez que o campo ganhasse foco. */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 14px;
+}
+
+.field-label-row label {
+  min-height: 0;
+}
+
+/* ---------- Tooltip de ajuda (ícone "i") ---------- */
+
+.info-tip {
+  position: relative;
+  display: inline-flex;
+}
+
+.info-tip-icone {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-soft);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.info-tip:hover .info-tip-icone,
+.info-tip:focus-within .info-tip-icone {
+  border-color: var(--oxblood);
+  color: var(--oxblood);
+}
+
+.info-tip-bolha {
+  position: absolute;
+  left: -8px;
+  bottom: calc(100% + 8px);
+  transform: translateY(4px);
+  width: max-content;
+  max-width: 220px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 10px 12px;
+  box-shadow: 2px 2px 0 rgba(27, 42, 74, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 20;
+}
+
+.info-tip-bolha::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  border: 5px solid transparent;
+  border-top-color: var(--ink);
+}
+
+.info-tip:hover .info-tip-bolha,
+.info-tip:focus-within .info-tip-bolha {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 /* Filho direto de propósito -- `input` genérico pegaria também o input
    interno (oculto) do react-select dentro de `.select-control`, cujo
    box de layout (pré-transform) infla a altura do controle mesmo sem
@@ -231,6 +315,11 @@ input {
   border: 1px solid var(--paper-line);
 }
 
+.btn-ghost.tem-filtro {
+  color: var(--oxblood);
+  border-color: var(--oxblood-soft);
+}
+
 .btn-ghost:hover {
   background: transparent;
   color: var(--oxblood);
@@ -261,6 +350,69 @@ input {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--ink-soft);
+}
+
+/* ---------- Busca + filtros (Processos/Clientes) ---------- */
+
+.busca-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.busca-row .field {
+  max-width: 360px;
+}
+
+.filtros-painel {
+  display: none;
+  margin-top: 6px;
+  padding: 18px 20px 20px;
+  background: var(--paper-dim);
+  border: 1px solid var(--paper-line);
+}
+
+.filtros-painel.aberto {
+  display: block;
+}
+
+.filtros-painel-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--oxblood);
+  border: 1px solid var(--oxblood-soft);
+  background: #fbeeee;
+  padding: 6px 8px 6px 10px;
+}
+
+.chip button {
+  background: none;
+  border: none;
+  color: var(--oxblood);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  line-height: 1;
+  font-family: inherit;
 }
 
 /* ---------- Process card (ficha de protocolo) ---------- */
@@ -331,6 +483,37 @@ input {
   font-size: 12px;
   color: var(--ink-soft);
   margin-top: 6px;
+}
+
+.docket-tags {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 7px;
+  border: 1px solid var(--paper-line);
+  color: var(--ink-soft);
+}
+
+.tag-fase {
+  border-color: var(--brass-soft);
+  color: var(--brass);
+}
+
+.tag-situacao {
+  border-color: var(--ink-soft);
+}
+
+.tag-alerta {
+  border-color: var(--oxblood-soft);
+  color: var(--oxblood);
 }
 
 .docket-actions {

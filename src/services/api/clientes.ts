@@ -10,16 +10,20 @@ interface CamposCliente {
 interface OpcoesListarClientes {
   pagina?: number;
   tamanhoPagina?: number;
+  busca?: string;
 }
 
 /** GET /clientes -- paginado de verdade. `CamposProcesso` (dropdown de
  * Cliente no processo) pede `tamanhoPagina: 100` pra cobrir a lista
- * inteira em vez de paginar de verdade. */
+ * inteira em vez de paginar de verdade. Se `busca` vier preenchido, ignora
+ * pagina/tamanhoPagina -- é uma busca pontual, não paginada (mesmo corte
+ * que clientes_router.py usa). */
 export function listarClientes(opcoes: OpcoesListarClientes = {}) {
-  const { pagina, tamanhoPagina } = opcoes;
-  return chamar("/clientes", {
-    query: { pagina: pagina ? String(pagina) : undefined, tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined },
-  });
+  const { pagina, tamanhoPagina, busca } = opcoes;
+  const query: Record<string, string | undefined> = busca
+    ? { busca }
+    : { pagina: pagina ? String(pagina) : undefined, tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined };
+  return chamar("/clientes", { query });
 }
 
 export function criarCliente(campos: CamposCliente) {

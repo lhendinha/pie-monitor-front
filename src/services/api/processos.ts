@@ -1,9 +1,24 @@
 import { chamar } from "./client";
 
-interface OpcoesListarProcessos {
+export interface FiltrosProcessos {
+  busca?: string;
+  clienteId?: string;
+  faseId?: string;
+  situacaoId?: string;
+  dataVerificarAte?: string;
+  prazoFinalAte?: string;
+}
+
+interface OpcoesListarProcessos extends FiltrosProcessos {
   pagina?: number;
   tamanhoPagina?: number;
-  busca?: string;
+}
+
+/** true se qualquer filtro estiver preenchido -- mesma checagem que o
+ * backend usa (processos_router.py) pra decidir entre listagem paginada
+ * por contador e busca/filtro (não paginado, ver `listarProcessos`). */
+export function temFiltroAtivo(f: FiltrosProcessos): boolean {
+  return Boolean(f.busca || f.clienteId || f.faseId || f.situacaoId || f.dataVerificarAte || f.prazoFinalAte);
 }
 
 /** Campos novos do processo, todos opcionais -- mesmo conjunto usado no
@@ -35,12 +50,20 @@ function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {
 }
 
 /** GET /processos -- paginado de verdade (backend faz Query por intervalo de
- * sequência, nunca carrega tudo). Se `busca` vier preenchido, ignora
- * pagina/tamanhoPagina -- é uma busca pontual, não paginada. */
+ * sequência, nunca carrega tudo). Se qualquer filtro vier preenchido
+ * (`temFiltroAtivo`), ignora pagina/tamanhoPagina -- é uma busca/filtro
+ * pontual, não paginado (mesmo corte que processos_router.py usa). */
 export function listarProcessos(opcoes: OpcoesListarProcessos = {}) {
-  const { pagina, tamanhoPagina, busca } = opcoes;
-  const query: Record<string, string | undefined> = busca
-    ? { busca }
+  const { pagina, tamanhoPagina, busca, clienteId, faseId, situacaoId, dataVerificarAte, prazoFinalAte } = opcoes;
+  const query: Record<string, string | undefined> = temFiltroAtivo(opcoes)
+    ? {
+        busca,
+        cliente_id: clienteId,
+        fase_id: faseId,
+        situacao_id: situacaoId,
+        data_verificar_ate: dataVerificarAte,
+        prazo_final_ate: prazoFinalAte,
+      }
     : { pagina: pagina ? String(pagina) : undefined, tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined };
   return chamar("/processos", { query });
 }

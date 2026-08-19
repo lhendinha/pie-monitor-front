@@ -59,9 +59,12 @@ automático a cada push).
 
 ```
 src/
-  types/index.ts        -- inclui AbaId/TelaAuth/AbaConfig (abas de topo) e SubAbaId/SubAbaConfig
-                            (sub-abas de GrupoPage), movidos de dentro de App.tsx pra cá
-  constants/roles.ts, index.ts       -- NOME_PAPEL, HIERARQUIA_PAPEIS
+  types/index.ts        -- inclui AbaId/TelaAuth/AbaConfig (abas de topo), SubAbaId/SubAbaConfig
+                            (sub-abas de GrupoPage) e FiltrosEstruturadosProcessos (painel de
+                            filtros de ProcessosPage), movidos/extraídos de dentro das páginas pra cá
+  constants/roles.ts, paginacao.ts (TAMANHO_PAGINA_PADRAO, TAMANHO_PAGINA_PICKER), processos.ts
+                            (INTERVALO_POLLING_PROCESSOS_MS, FILTROS_PROCESSOS_VAZIOS,
+                            LABEL_FILTRO_PROCESSOS), select.ts (Z_INDEX_MENU_PORTAL etc.), index.ts
   services/
     auth.ts (+ auth.test.ts)
     api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + grupos.ts + clientes.ts + opcoesProcesso.ts + index.ts)
@@ -71,9 +74,14 @@ src/
     Modal/index.tsx, Skeleton/index.tsx [+ index.test.tsx]
     Toast/index.tsx [+ index.test.tsx]     -- ToastProvider/useToast, substitui <div className="banner">
     Pagination/index.tsx                    -- números endereçáveis, não cursor
-    Select/index.tsx                        -- wrapper único (react-select) por trás de <Select> (valor
-                                                único) e <MultiSelect> (múltiplo, dropdown fechado com
-                                                checkboxes); substitui os <select> nativos e o <select multiple>
+    Select/                                 -- wrapper (react-select) por trás de <Select> (valor
+                                                único, Select.tsx) e <MultiSelect> (múltiplo,
+                                                MultiSelect.tsx, dropdown fechado com checkboxes,
+                                                OpcaoComCheckbox.tsx/ResumoSelecionados.tsx privados);
+                                                index.tsx só reexporta. Substitui os <select> nativos
+                                                e o <select multiple>
+    InfoTip/index.tsx                       -- ícone "i" com tooltip -- explicação sob demanda ao
+                                                lado de um label (busca de Processos/Clientes)
     index.ts
   pages/
     LoginPage/index.tsx
@@ -81,9 +89,12 @@ src/
     AceitarConvitePage/index.tsx
     ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, DetalheEditarProcesso.tsx, CamposProcesso.tsx,
                               DetalheProcesso.tsx -- privados, não exportados; EditarApelidoForm.tsx
-                              descontinuado, apelido virou só mais um campo em DetalheEditarProcesso)
+                              descontinuado, apelido virou só mais um campo em DetalheEditarProcesso.
+                              Busca ampla (texto livre) + painel de "Filtros" colapsável + chips
+                              removíveis + tags de fase/situação/data no card -- ver "Decisões de UX")
     ClientesPage/index.tsx (+ NovoClienteForm.tsx, EditarClienteForm.tsx -- privados; criação por
-                              modal "+ Novo Cliente", lista paginada igual Processos/Histórico)
+                              modal "+ Novo Cliente", lista paginada igual Processos/Histórico, busca
+                              por nome/CPF-CNPJ/telefone/e-mail que substitui a paginação enquanto ativa)
     GrupoPage/index.tsx (+ OpcoesLista.tsx, EditarOpcaoForm.tsx -- privados; sub-navegação que
                           agrupa Subgrupos/Membros/Convidar/Fases/Situações -- ver "Decisões de UX".
                           OpcoesProcessoPage/ antigo foi descontinuado, OpcoesLista/EditarOpcaoForm
@@ -221,6 +232,40 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   exato que gerou o e-mail (`utils/deepLink.ts` + `HistoricoPage`). Decisão
   trocada durante o desenvolvimento: fazia mais sentido levar pro registro
   da notificação em si do que pro processo genérico.
+- **Busca + filtros de Processos** (`ProcessosPage`): o campo "Buscar" fica
+  sempre visível e virou texto livre (número, apelido, objeto/assunto,
+  próxima providência, observações), não mais só número. Ao lado, um botão
+  "Filtros" abre/fecha um painel colapsável (`.filtros-painel`, toggle via
+  classe `aberto` -- mesmo padrão de progressive disclosure já usado no
+  modal de processo e nas sub-abas de Grupo) com Cliente/Fase/Situação
+  (`Select`) e Data para verificar/Prazo final ("até", não data exata --
+  `<input type="date">`). Os campos do painel ficam num **rascunho**
+  separado do que está de fato aplicado -- só viram filtro real ao clicar
+  "Aplicar filtros" (fecha o painel e dispara 1 fetch só, em vez de
+  refazer a busca a cada campo trocado). Filtros aplicados viram **chips**
+  removíveis individualmente abaixo do painel, e o botão "Filtros" ganha
+  uma contagem (`Filtros (2)`). Mesmo padrão de busca (texto livre, nome/
+  CPF-CNPJ/telefone/e-mail) na aba Clientes, sem o painel de filtros
+  estruturados (não faz sentido lá, só tem os 4 campos de identificação).
+- **`useDeferredValue` (React 18) em vez de debounce manual** nos 2 campos
+  de busca -- existia um `useEffect`+`setTimeout` próprio antes; trocado a
+  pedido do usuário por ser a forma nativa do React de adiar uma
+  atualização de baixa prioridade, sem precisar gerenciar timer/cleanup
+  na mão. Não faz o painel de Filtros (que não é digitação contínua, só
+  troca de campo) -- só a busca por texto livre.
+- **Tooltip de ajuda (`InfoTip`, ícone "i")** ao lado do label "Buscar" em
+  Processos/Clientes, explicando em 1 frase simples o que o campo busca --
+  troca um texto sempre visível (`.callout`, versão inicial, descartada)
+  por uma explicação sob demanda. O ícone fica **fora** do `<label
+  htmlFor>` de propósito: colocar o tooltip dentro do label faria o texto
+  inteiro virar parte do nome acessível do campo pra leitor de tela (lido
+  toda vez que o campo ganha foco) -- por isso `<label>` e `<InfoTip>`
+  ficam como irmãos dentro de um `.field-label-row`, não aninhados.
+- **Tags no card do processo** (`.docket-tags`, dentro de `ProcessosPage`):
+  Fase atual, Situação atual e (se preenchidos) "Verificar dd/mm/aaaa"/
+  "Prazo dd/mm/aaaa" aparecem como selos pequenos em maiúsculas, mesma
+  paleta de cores dos badges já usados em Membros/Histórico. Só renderiza
+  o bloco se pelo menos 1 desses 4 campos estiver preenchido.
 
 ## 4) Blocos de código essenciais
 

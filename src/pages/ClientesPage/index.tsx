@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarClientes, removerCliente, papelAtende } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Skeleton, Pagination, Modal, useToast } from "../../components";
+import { Skeleton, Pagination, Modal, InfoTip, useToast } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import NovoClienteForm from "./NovoClienteForm";
 import EditarClienteForm from "./EditarClienteForm";
@@ -14,15 +14,18 @@ export default function ClientesPage() {
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const [modalAberto, setModalAberto] = useState(false);
   const [clienteEmEdicao, setClienteEmEdicao] = useState<Cliente | null>(null);
+  const [buscaInput, setBuscaInput] = useState("");
+  const busca = useDeferredValue(buscaInput);
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const podeCriar = papelAtende("manager");
   const podeExcluir = papelAtende("admin");
 
+  const parametrosBusca = busca ? { busca } : { pagina, tamanhoPagina };
   const query = useQuery<{ clientes: Cliente[]; total: number; total_paginas: number }>({
-    queryKey: qk.clientes({ pagina, tamanhoPagina }),
-    queryFn: () => listarClientes({ pagina, tamanhoPagina }),
+    queryKey: qk.clientes(parametrosBusca),
+    queryFn: () => listarClientes(parametrosBusca),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os clientes.");
   const clientes = query.data?.clientes || [];
@@ -54,7 +57,9 @@ export default function ClientesPage() {
       <div className="section-head">
         <h2>Clientes</h2>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span className="section-count">{query.isPending ? "carregando…" : `${total}`}</span>
+          <span className="section-count">
+            {query.isPending ? "carregando…" : busca ? `${total} resultado(s)` : `${total}`}
+          </span>
           {podeCriar && (
             <button className="btn" type="button" onClick={() => setModalAberto(true)}>
               + Novo Cliente
@@ -63,10 +68,25 @@ export default function ClientesPage() {
         </div>
       </div>
 
+      <div className="busca-row">
+        <div className="field">
+          <span className="field-label-row">
+            <label htmlFor="busca-cliente">Buscar</label>
+            <InfoTip>Busca pelo nome, CPF/CNPJ, telefone ou e-mail do cliente.</InfoTip>
+          </span>
+          <input
+            id="busca-cliente"
+            value={buscaInput}
+            onChange={(e) => setBuscaInput(e.target.value)}
+            placeholder="Nome, CPF/CNPJ, telefone ou e-mail…"
+          />
+        </div>
+      </div>
+
       {query.isPending ? (
         <Skeleton linhas={2} />
       ) : clientes.length === 0 ? (
-        <div className="empty">Nenhum cliente ainda.</div>
+        <div className="empty">{busca ? "Nenhum cliente encontrado pra essa busca." : "Nenhum cliente ainda."}</div>
       ) : (
         <>
           <ul className="simple-list">
@@ -88,13 +108,15 @@ export default function ClientesPage() {
               </li>
             ))}
           </ul>
-          <Pagination
-            pagina={pagina}
-            totalPaginas={totalPaginas}
-            tamanhoPagina={tamanhoPagina}
-            onMudarPagina={setPagina}
-            onMudarTamanho={handleMudarTamanho}
-          />
+          {!busca && (
+            <Pagination
+              pagina={pagina}
+              totalPaginas={totalPaginas}
+              tamanhoPagina={tamanhoPagina}
+              onMudarPagina={setPagina}
+              onMudarTamanho={handleMudarTamanho}
+            />
+          )}
         </>
       )}
 

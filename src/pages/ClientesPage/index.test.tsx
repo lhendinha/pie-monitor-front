@@ -31,6 +31,37 @@ describe("ClientesPage", () => {
     expect(mocks.listarClientes).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
   });
 
+  it("busca troca os parâmetros pra {busca} (ignora pagina/tamanhoPagina) e some a paginação", async () => {
+    mocks.listarClientes.mockResolvedValue({
+      clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1,
+    });
+    const user = userEvent.setup();
+    renderComProviders(<ClientesPage />);
+    await screen.findByText("Fulano");
+
+    await user.type(screen.getByLabelText("Buscar"), "fulano");
+
+    await waitFor(() => expect(mocks.listarClientes).toHaveBeenCalledWith({ busca: "fulano" }));
+    expect(screen.queryByLabelText("Por página")).not.toBeInTheDocument();
+  });
+
+  it("busca sem resultado mostra a mensagem específica de busca vazia", async () => {
+    mocks.listarClientes.mockImplementation((opcoes: { busca?: string }) =>
+      Promise.resolve(
+        opcoes.busca
+          ? { clientes: [], total: 0, total_paginas: 0 }
+          : { clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1 }
+      )
+    );
+    const user = userEvent.setup();
+    renderComProviders(<ClientesPage />);
+    await screen.findByText("Fulano");
+
+    await user.type(screen.getByLabelText("Buscar"), "ninguem com esse nome");
+
+    expect(await screen.findByText("Nenhum cliente encontrado pra essa busca.")).toBeInTheDocument();
+  });
+
   it("botão '+ Novo Cliente' abre modal com máscara de CPF/CNPJ e telefone na digitação, mas envia só dígitos", async () => {
     mocks.listarClientes.mockResolvedValue({ clientes: [], total: 0, total_paginas: 0 });
     mocks.criarCliente.mockResolvedValue({});

@@ -3,6 +3,7 @@ import { listarClientes, listarOpcoesProcesso } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { Select, MultiSelect } from "../../components";
+import { TAMANHO_PAGINA_PICKER } from "../../constants";
 import type { Cliente, OpcaoProcesso } from "../../types";
 import type { CamposOpcionaisProcesso } from "../../services/api/processos";
 
@@ -14,14 +15,9 @@ interface CamposProcessoProps {
 /** Campos opcionais compartilhados entre cadastro (NovoProcessoForm) e
  * edição (DetalheEditarProcesso) de processo -- essa é quem chama
  * `GET /clientes`/`/fases`/`/situacoes` (cache do React Query evita refetch
- * duplicado mesmo montando em cadastro e edição). */
-// GET /clientes, /fases, /situacoes são paginados de verdade (10 por
-// página por padrão) -- pra popular o dropdown/multi-select inteiro aqui,
-// pede o teto de tamanho já usado pelo resto do app (100) em vez de
-// paginar de verdade. Grupos com >100 clientes/opções precisariam de
-// busca-conforme-digita no picker, não implementado ainda (não é o caso
-// hoje em nenhum grupo real).
-const TAMANHO_PAGINA_PICKER = 100;
+ * duplicado mesmo montando em cadastro e edição, e também compartilha com
+ * o painel de filtros de `ProcessosPage`, que pede o mesmo
+ * `TAMANHO_PAGINA_PICKER`). */
 
 export default function CamposProcesso({ valores, onMudar }: CamposProcessoProps) {
   const clientesQuery = useQuery<{ clientes: Cliente[] }>({

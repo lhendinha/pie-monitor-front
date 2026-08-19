@@ -13,11 +13,19 @@ export const qk = {
   membros: () => ["membros"] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
   grupos: () => ["grupos"] as const,
-  processos: (params: { pagina?: number; tamanhoPagina?: number; busca?: string }) =>
-    ["processos", params] as const,
+  processos: (params: {
+    pagina?: number;
+    tamanhoPagina?: number;
+    busca?: string;
+    clienteId?: string;
+    faseId?: string;
+    situacaoId?: string;
+    dataVerificarAte?: string;
+    prazoFinalAte?: string;
+  }) => ["processos", params] as const,
   historico: (params: { pagina?: number; tamanhoPagina?: number }) => ["historico", params] as const,
   detalhesProcesso: (numeroProcesso: string) => ["detalhesProcesso", numeroProcesso] as const,
-  clientes: (params: { pagina?: number; tamanhoPagina?: number } = {}) => ["clientes", params] as const,
+  clientes: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) => ["clientes", params] as const,
   opcoesProcesso: (tipo: "fase" | "situacao", params: { pagina?: number; tamanhoPagina?: number } = {}) =>
     ["opcoesProcesso", tipo, params] as const,
 };
