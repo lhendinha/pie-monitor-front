@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import DOMPurify from "dompurify";
 import { detalhesProcesso } from "../../services";
 import { qk } from "../../services/queryKeys";
-import { Skeleton } from "../../components";
+import { ComunicacaoCard } from "../../components";
 import { formatarDataHora, mascararNumeroProcesso } from "../../utils";
 import type { Comunicacao, HistoricoItem } from "../../types";
 
@@ -39,31 +38,23 @@ export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
         (c) => String(c.comunicacao_id) === String(item.comunicacao_id)
       ) ?? null);
 
-  return (
-    <div>
-      <div className="simple-row-title">{mascararNumeroProcesso(item.numero_processo)}</div>
-      <div className="simple-row-meta">
-        {formatarDataHora(item.enviado_em)}
-        {item.tipo_comunicacao ? ` · ${item.tipo_comunicacao}` : ""}
-        {item.nome_orgao ? ` · ${item.nome_orgao}` : ""}
-      </div>
-      {item.destinatarios && item.destinatarios.length > 0 && (
-        <div className="simple-row-meta">Pra: {item.destinatarios.join(", ")}</div>
-      )}
+  const meta = [
+    formatarDataHora(item.enviado_em),
+    item.tipo_comunicacao,
+    item.nome_orgao,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
-      {carregando && <Skeleton linhas={2} />}
-      {erro && <div className="empty">{erro}</div>}
-      {!carregando && !erro && comunicacao === null && item.mensagem && (
-        <p className="detail-texto" style={{ whiteSpace: "pre-wrap" }}>
-          {item.mensagem}
-        </p>
-      )}
-      {comunicacao && comunicacao.texto && (
-        <div
-          className="detail-texto"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comunicacao.texto) }}
-        />
-      )}
-    </div>
+  return (
+    <ComunicacaoCard
+      titulo={mascararNumeroProcesso(item.numero_processo)}
+      meta={meta}
+      destinatarios={item.destinatarios && item.destinatarios.length > 0 ? item.destinatarios.join(", ") : undefined}
+      carregando={carregando}
+      erro={erro}
+      html={comunicacao?.texto}
+      textoPlano={comunicacao === null ? item.mensagem : undefined}
+    />
   );
 }

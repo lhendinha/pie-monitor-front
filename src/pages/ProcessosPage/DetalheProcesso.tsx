@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import DOMPurify from "dompurify";
 import { detalhesProcesso } from "../../services";
 import { qk } from "../../services/queryKeys";
-import { Skeleton } from "../../components";
+import { Skeleton, ComunicacaoCard } from "../../components";
+import { formatarData } from "../../utils";
 import type { Comunicacao } from "../../types";
 
 interface DetalheProcessoProps {
@@ -33,22 +33,12 @@ export default function DetalheProcesso({ numero }: DetalheProcessoProps) {
   return (
     <ul className="simple-list">
       {comunicacoes.map((c, i) => (
-        <li className="simple-row simple-row-card" key={`${c.comunicacao_id}-${i}`}>
-          <div className="simple-row-title">{c.tipo_comunicacao || "Comunicação"}</div>
-          <div className="simple-row-meta">
-            {c.data_disponibilizacao} · {c.nome_orgao}
-          </div>
-          {c.texto && (
-            // O texto vem como HTML completo da API do PJe (às vezes um
-            // documento inteiro com <html>/<head>/<style>) -- sanitiza com
-            // DOMPurify antes de injetar (fonte externa, mesmo sendo órgão
-            // oficial) e usa <div>, não <p>, já que o conteúdo tem elementos
-            // de bloco (table, section) que quebrariam dentro de um <p>.
-            <div
-              className="detail-texto"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(c.texto) }}
-            />
-          )}
+        <li key={`${c.comunicacao_id}-${i}`}>
+          <ComunicacaoCard
+            titulo={c.tipo_comunicacao || "Comunicação"}
+            meta={`${formatarData(c.data_disponibilizacao)} · ${c.nome_orgao}`}
+            html={c.texto}
+          />
         </li>
       ))}
     </ul>

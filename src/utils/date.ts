@@ -8,6 +8,22 @@ export function dataHojeExtenso(): string {
   }).format(new Date());
 }
 
+/** Formata uma data (dd/mm/aaaa), sem hora -- pra campos como
+ * `data_disponibilizacao` da API do PJe, que representam só o dia, não um
+ * instante (a API manda algo como "2026-07-17", às vezes com sufixo de hora
+ * zerada tipo "T00:00:00Z"). Reorganiza os dígitos direto da string, sem
+ * passar por `Date`/`Intl` -- isso evita o bug clássico de fuso horário
+ * (`new Date("2026-07-17")` é interpretado como meia-noite UTC, que vira o
+ * dia anterior às 21h ao formatar em America/Sao_Paulo). Devolve a string
+ * original se não conseguir interpretar. */
+export function formatarData(data?: string): string {
+  if (!data) return "";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(data);
+  if (!match) return data;
+  const [, ano, mes, dia] = match;
+  return `${dia}/${mes}/${ano}`;
+}
+
 /** Formata um ISO 8601 no padrão brasileiro (dd/mm/aaaa hh:mm). Devolve a
  * string original se não conseguir interpretar (mais seguro que quebrar a UI). */
 export function formatarDataHora(iso?: string): string {

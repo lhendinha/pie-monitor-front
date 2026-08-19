@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { dataHojeExtenso, formatarDataHora, formatarDataHoraAmPm } from "./date";
+import { dataHojeExtenso, formatarData, formatarDataHora, formatarDataHoraAmPm } from "./date";
 
 // Timezone fixado em America/Sao_Paulo via vite.config.ts (test.env.TZ) --
 // os horários abaixo assumem isso.
+
+describe("formatarData", () => {
+  it("formata data pura (sem hora) em dd/mm/aaaa", () => {
+    expect(formatarData("2026-07-17")).toBe("17/07/2026");
+  });
+
+  it("ignora sufixo de hora/timezone, sem converter -- evita o bug de virar o dia anterior em America/Sao_Paulo", () => {
+    expect(formatarData("2026-07-17T00:00:00Z")).toBe("17/07/2026");
+  });
+
+  it("string vazia/undefined vira string vazia", () => {
+    expect(formatarData(undefined)).toBe("");
+    expect(formatarData("")).toBe("");
+  });
+
+  it("string fora do padrão aaaa-mm-dd devolve a original em vez de quebrar", () => {
+    expect(formatarData("isso-nao-e-data")).toBe("isso-nao-e-data");
+  });
+});
 
 describe("formatarDataHora", () => {
   it("formata ISO em dd/mm/aaaa, hh:mm -- Intl.DateTimeFormat pt-BR insere vírgula por padrão (diferente de formatarDataHoraAmPm, que monta a string na mão sem vírgula)", () => {
