@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { estaAutenticado, papelAtende, getEmail, getApelido, getPapel, limparTokens, logout } from "./services";
+import {
+  estaAutenticado,
+  papelAtende,
+  getEmail,
+  getApelido,
+  getPapel,
+  limparTokens,
+  logout,
+} from "./services";
 import { setAutenticacaoInvalidaListener } from "./services/authBridge";
 import { dataHojeExtenso, parseDeepLinkHistorico } from "./utils";
 import type { DeepLinkHistorico } from "./utils";
@@ -37,12 +45,16 @@ export default function App() {
   // Deep link do e-mail de notificação (?processo=&comunicacao=) -- lido
   // uma vez aqui, no mount, e limpo da URL imediatamente. Decide a aba
   // inicial e é repassado pra HistoricoPage abrir o modal certo sozinha.
-  const [deepLinkHistorico, setDeepLinkHistorico] = useState<DeepLinkHistorico | null>(() => {
-    const encontrado = parseDeepLinkHistorico(window.location.search);
-    if (encontrado) window.history.replaceState({}, "", window.location.pathname);
-    return encontrado;
-  });
-  const [abaAtiva, setAbaAtiva] = useState<AbaId>(() => (deepLinkHistorico ? "historico" : "processos"));
+  const [deepLinkHistorico, setDeepLinkHistorico] =
+    useState<DeepLinkHistorico | null>(() => {
+      const encontrado = parseDeepLinkHistorico(window.location.search);
+      if (encontrado)
+        window.history.replaceState({}, "", window.location.pathname);
+      return encontrado;
+    });
+  const [abaAtiva, setAbaAtiva] = useState<AbaId>(() =>
+    deepLinkHistorico ? "historico" : "processos",
+  );
 
   function handleEntrar() {
     setAutenticado(true);
@@ -82,7 +94,8 @@ export default function App() {
     );
   }
   if (pathname.startsWith("/redefinir-senha/")) {
-    const token = pathname.split("/redefinir-senha/")[1]?.replace(/\/$/, "") || "";
+    const token =
+      pathname.split("/redefinir-senha/")[1]?.replace(/\/$/, "") || "";
     return (
       <ToastProvider>
         <RedefinirSenhaPage token={token} />
@@ -100,15 +113,22 @@ export default function App() {
         <header className="masthead">
           <p className="masthead-eyebrow">Monitor de Processos</p>
           <h1 className="masthead-title">Diário de Acompanhamento</h1>
-          <p className="masthead-sub">Cadastro e verificação de movimentações processuais no PJe.</p>
+          <p className="masthead-sub">
+            Cadastro e verificação de movimentações processuais.
+          </p>
           <p className="masthead-date">{dataHojeExtenso()}</p>
         </header>
 
         {mostrarLogin ? (
           <>
-            {autenticacaoInvalida && <div className="banner">Sua sessão expirou. Entra de novo.</div>}
+            {autenticacaoInvalida && (
+              <div className="banner">Sua sessão expirou. Entra de novo.</div>
+            )}
             {telaAuth === "login" ? (
-              <LoginPage onEntrar={handleEntrar} onEsqueciSenha={() => setTelaAuth("esqueci-senha")} />
+              <LoginPage
+                onEntrar={handleEntrar}
+                onEsqueciSenha={() => setTelaAuth("esqueci-senha")}
+              />
             ) : (
               <EsqueciSenhaPage onVoltar={() => setTelaAuth("login")} />
             )}
@@ -138,7 +158,8 @@ export default function App() {
             {abaAtiva === "grupo" && <GrupoPage />}
 
             <div className="footer-note">
-              {getApelido() || getEmail()} · {(papel && NOME_PAPEL[papel]) || papel} ·{" "}
+              {getApelido() || getEmail()} ·{" "}
+              {(papel && NOME_PAPEL[papel]) || papel} ·{" "}
               <button onClick={handleSair}>Sair</button>
             </div>
           </>
