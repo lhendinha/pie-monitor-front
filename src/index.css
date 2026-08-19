@@ -533,7 +533,15 @@ input {
 
 .simple-row-block {
   display: block;
-  padding: 16px 4px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--paper-line);
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.simple-row-block:last-child {
+  margin-bottom: 0;
 }
 
 .simple-row-clickable {
@@ -560,7 +568,7 @@ input {
   border: 1px solid var(--paper-line);
 }
 
-.simple-row-card:last-child {
+.simple-list > li:last-child > .simple-row-card {
   margin-bottom: 0;
 }
 
