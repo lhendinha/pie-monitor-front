@@ -8,7 +8,13 @@ interface Opcao {
 
 /** Acima do `.modal-overlay` (100) e do `.toast-stack` (200) -- o menu é
  * portalado em `document.body`, então precisa vencer os dois em qualquer
- * ordem de montagem. */
+ * ordem de montagem. `menuPosition="fixed"` (abaixo, nos 2 componentes) é
+ * o pareamento recomendado do react-select com `menuPortalTarget`: sem
+ * isso (`"absolute"`, o default), o menu se posiciona somando o scroll da
+ * PÁGINA -- mas `.modal-card` rola por dentro de si mesma
+ * (`overflow-y: auto`, ver index.css), não a página, então o cálculo
+ * ficava errado e o menu abria pra baixo (ignorando `menuPlacement="auto"`)
+ * mesmo sem espaço, vazando pra fora do modal. */
 const Z_INDEX_MENU_PORTAL = 210;
 const ALTURA_MAXIMA_MENU = 240;
 
@@ -102,6 +108,7 @@ export function Select({ id, opcoes, valor, onMudar, placeholder = "Selecione", 
       isClearable={false}
       openMenuOnFocus
       menuPlacement="auto"
+      menuPosition="fixed"
       maxMenuHeight={ALTURA_MAXIMA_MENU}
       menuPortalTarget={document.body}
       styles={{ menuPortal: estilosMenuPortal }}
@@ -138,6 +145,7 @@ export function MultiSelect({ id, opcoes, selecionados, onMudar, placeholder = "
       hideSelectedOptions={false}
       openMenuOnFocus
       menuPlacement="auto"
+      menuPosition="fixed"
       maxMenuHeight={ALTURA_MAXIMA_MENU}
       menuPortalTarget={document.body}
       styles={{ menuPortal: estilosMenuPortal }}

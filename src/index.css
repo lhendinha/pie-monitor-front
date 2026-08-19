@@ -284,6 +284,12 @@ input {
   padding: 16px 20px 16px 28px;
 }
 
+/* Mesmo padrão de .simple-row-clickable:hover .simple-row-title (Histórico) --
+ * só o título muda de cor no hover, sem mexer em fundo/borda da linha. */
+.docket:hover .docket-numero {
+  color: var(--oxblood);
+}
+
 /* borda picotada, como o canhoto de uma ficha */
 .docket::before {
   content: "";

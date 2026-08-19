@@ -9,9 +9,9 @@ import type { SubAbaConfig, SubAbaId } from "../../types";
 const SUB_ABAS: SubAbaConfig[] = [
   { id: "subgrupos", label: "Subgrupos", minimo: "user" },
   { id: "membros", label: "Membros", minimo: "manager" },
-  { id: "convidar", label: "Convidar", minimo: "admin" },
   { id: "fases", label: "Fases", minimo: "super_admin" },
   { id: "situacoes", label: "Situações", minimo: "super_admin" },
+  { id: "convidar", label: "Convidar", minimo: "admin" },
 ];
 
 /** Agrupa Subgrupos/Membros/Convidar/Fases/Situações -- itens de gestão do
@@ -38,9 +38,9 @@ export default function GrupoPage() {
 
       {subAbaAtiva === "subgrupos" && <SubgruposPage />}
       {subAbaAtiva === "membros" && <MembrosPage />}
-      {subAbaAtiva === "convidar" && <ConvidarPage />}
       {subAbaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" />}
       {subAbaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" />}
+      {subAbaAtiva === "convidar" && <ConvidarPage />}
     </>
   );
 }
