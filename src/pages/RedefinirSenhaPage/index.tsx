@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { redefinirSenha } from "../../services";
+import { ApiError, redefinirSenha } from "../../services";
 import { useToast } from "../../components";
 
 interface RedefinirSenhaPageProps {
@@ -10,6 +10,7 @@ export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
   const [password, setPassword] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [campoInvalido, setCampoInvalido] = useState(false);
+  const [linkInvalido, setLinkInvalido] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const toast = useToast();
@@ -32,7 +33,14 @@ export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
         window.location.href = "/";
       }, 1500);
     } catch (err) {
-      setCampoInvalido(true);
+      // Achado 19: link já usado/expirado (410) não é "senha errada" --
+      // destacar os campos de senha nesse caso confundia o usuário, que
+      // tentava senhas diferentes sem nunca conseguir.
+      if (err instanceof ApiError && err.status === 410) {
+        setLinkInvalido(true);
+      } else {
+        setCampoInvalido(true);
+      }
       toast.erro(err instanceof Error ? err.message : "Não foi possível redefinir a senha.");
     } finally {
       setEnviando(false);
@@ -49,6 +57,10 @@ export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
 
       {sucesso ? (
         <div className="banner banner-ok">Senha redefinida! Redirecionando…</div>
+      ) : linkInvalido ? (
+        <div className="banner">
+          Esse link de recuperação é inválido ou já foi usado. Peça um novo em "Esqueci minha senha".
+        </div>
       ) : (
         <div className="gate">
           <form className="form-row" onSubmit={handleSubmit}>

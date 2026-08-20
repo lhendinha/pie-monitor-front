@@ -32,7 +32,6 @@ export default function DetalheEditarProcesso({
     faseId: processo.fase_id || "",
     situacaoId: processo.situacao_id || "",
   });
-  const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const atualizarMutation = useMutation({
@@ -43,28 +42,23 @@ export default function DetalheEditarProcesso({
       onFechar();
     },
     onError: (err) => {
-      setCampoInvalido(true);
       toastErroMutation(toast, err, "Não foi possível atualizar o processo.");
     },
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCampoInvalido(false);
     atualizarMutation.mutate();
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className={`field${campoInvalido ? " field-error" : ""}`}>
+      <div className="field">
         <label htmlFor="apelido-edicao">Apelido</label>
         <input
           id="apelido-edicao"
           value={apelido}
-          onChange={(e) => {
-            setApelido(e.target.value);
-            setCampoInvalido(false);
-          }}
+          onChange={(e) => setApelido(e.target.value)}
           maxLength={512}
           autoFocus
         />

@@ -36,12 +36,20 @@ export function mascararCpfCnpj(valorComOuSemMascara: string | null | undefined)
   return out;
 }
 
-/** (00) 00000-0000, progressivo conforme a pessoa digita. */
+/**
+ * (00) 0000-0000 (fixo, 10 dígitos) ou (00) 00000-0000 (celular, 11
+ * dígitos), progressivo conforme a pessoa digita. Achado 17: o prefixo do
+ * meio só vira 5 dígitos a partir do 9º dígito depois do DDD -- até lá,
+ * assume fixo (4 dígitos). Mesmo "reflow ao digitar o 9º dígito" usado pela
+ * maioria das máscaras de telefone BR.
+ */
 export function mascararTelefone(valorComOuSemMascara: string | null | undefined): string {
   const d = apenasDigitos(valorComOuSemMascara).slice(0, 11);
   let out = d.slice(0, 2);
   if (d.length >= 2) out = `(${out})`;
-  if (d.length > 2) out += " " + d.slice(2, 7);
-  if (d.length > 7) out += "-" + d.slice(7, 11);
+  if (d.length <= 2) return out;
+  const prefixoTamanho = d.length > 10 ? 5 : 4;
+  out += " " + d.slice(2, 2 + prefixoTamanho);
+  if (d.length > 2 + prefixoTamanho) out += "-" + d.slice(2 + prefixoTamanho, 11);
   return out;
 }

@@ -17,7 +17,6 @@ export default function EditarClienteForm({ cliente, onAtualizado, onFechar }: E
   const [cpfCnpj, setCpfCnpj] = useState(mascararCpfCnpj(cliente.cpf_cnpj));
   const [telefone, setTelefone] = useState(mascararTelefone(cliente.telefone));
   const [email, setEmail] = useState(cliente.email || "");
-  const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const atualizarMutation = useMutation({
@@ -34,28 +33,23 @@ export default function EditarClienteForm({ cliente, onAtualizado, onFechar }: E
       onFechar();
     },
     onError: (err) => {
-      setCampoInvalido(true);
       toastErroMutation(toast, err, "Não foi possível atualizar.");
     },
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCampoInvalido(false);
     atualizarMutation.mutate();
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className={`field${campoInvalido ? " field-error" : ""}`}>
+      <div className="field">
         <label htmlFor="nome-cliente-edicao">Nome</label>
         <input
           id="nome-cliente-edicao"
           value={nome}
-          onChange={(e) => {
-            setNome(e.target.value);
-            setCampoInvalido(false);
-          }}
+          onChange={(e) => setNome(e.target.value)}
           autoFocus
         />
       </div>

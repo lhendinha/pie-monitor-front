@@ -1,5 +1,7 @@
 import type { JwtPayload, Papel, TokensResponse } from "../types";
 import { HIERARQUIA_PAPEIS } from "../constants";
+import { ApiError } from "./api/client";
+import { dispararAutenticacaoInvalida } from "./authBridge";
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
@@ -81,6 +83,21 @@ export function estaAutenticado(): boolean {
   return Boolean(getAccessToken() && getRefreshToken());
 }
 
+// Achado 16: logout/expiração de sessão numa aba não se propagava pras
+// outras abas abertas -- elas só percebiam no próximo request que falhasse
+// com 401. O evento `storage` dispara nas OUTRAS abas (nunca na que fez a
+// mudança) sempre que `localStorage` muda -- `limparTokens()` removendo a
+// chave de access token é o sinal de que a sessão acabou em algum lugar.
+// `e.key === null` é o sinal de `localStorage.clear()` (não usado por
+// `limparTokens()` hoje, que remove chave por chave -- mas cobrir esse caso
+// também evita que um futuro refactor pra `.clear()` quebre silenciosamente
+// essa propagação entre abas, achado na revisão de consistência).
+window.addEventListener("storage", (e) => {
+  if (e.key === null || (e.key === KEYS.access && e.newValue === null)) {
+    dispararAutenticacaoInvalida();
+  }
+});
+
 /** POST /login -- credenciais -> salva o par de tokens. */
 export async function login(email: string, password: string): Promise<TokensResponse> {
   const resp = await fetch(`${API_URL}/login`, {
@@ -149,7 +166,7 @@ export async function aceitarConvite(
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.detail || "Não foi possível aceitar o convite.");
+    throw new ApiError(dados.detail || "Não foi possível aceitar o convite.", resp.status);
   }
   salvarTokens(dados);
   return dados;
@@ -178,7 +195,7 @@ export async function redefinirSenha(token: string, password: string): Promise<{
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.detail || "Não foi possível redefinir a senha.");
+    throw new ApiError(dados.detail || "Não foi possível redefinir a senha.", resp.status);
   }
   return dados;
 }

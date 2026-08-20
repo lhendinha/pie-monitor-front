@@ -3,12 +3,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   closestCenter,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import {
   listarOpcoesProcesso,
   criarOpcaoProcesso,
@@ -29,6 +35,20 @@ interface OpcoesListaProps {
   titulo: string;
 }
 
+/** `ordem` do item movido = ponto médio entre os vizinhos na posição de
+ * destino -- só esse 1 item precisa ser gravado (em vez de reindexar a
+ * lista inteira, N-1 PATCHs). Nas pontas (sem vizinho de um dos lados),
+ * usa o vizinho que existe ± 1. */
+export function calcularOrdemAposMover(
+  vizinhoAnterior: OpcaoProcesso | undefined,
+  vizinhoSeguinte: OpcaoProcesso | undefined,
+): number {
+  if (vizinhoAnterior && vizinhoSeguinte) return (vizinhoAnterior.ordem + vizinhoSeguinte.ordem) / 2;
+  if (vizinhoAnterior) return vizinhoAnterior.ordem + 1;
+  if (vizinhoSeguinte) return vizinhoSeguinte.ordem - 1;
+  return 1;
+}
+
 /** CRUD de 1 lista (fase OU situação) -- ao contrário do dropdown do
  * processo (que só mostra ativas), essa tela lista TODAS as opções,
  * incluindo inativas, com ação de reativar (soft-delete via `ativo`).
@@ -44,7 +64,10 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
   const [ordemLocal, setOrdemLocal] = useState<OpcaoProcesso[] | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const query = useQuery<{ opcoes: OpcaoProcesso[]; total: number; total_paginas: number }>({
     queryKey: qk.opcoesProcesso(tipo, { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
@@ -55,19 +78,16 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
   const opcoes = ordemLocal ?? opcoesServidor;
   const total = query.data?.total ?? 0;
 
-  useEffect(() => {
-    setOrdemLocal(null);
-  }, [query.data]);
-
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: qk.opcoesProcesso(tipo) });
   }
 
   const criarMutation = useMutation({
-    // `total` (contagem real, vinda do envelope de paginação), não
-    // `opcoes.length` -- esse é só o tamanho da página atual, usar ele
-    // aqui daria uma `ordem` errada a partir da 2ª página em diante.
-    mutationFn: () => criarOpcaoProcesso(tipo, rotulo.trim(), total + 1),
+    // Maior `ordem` já em memória (não `total`, a contagem) -- desde que
+    // `ordem` virou fracionário (Bloco H), um item já arrastado pro fim
+    // pode ter `ordem` maior que a contagem de itens, então `total + 1`
+    // podia nascer empatado ou atrás do que devia ser o último item.
+    mutationFn: () => criarOpcaoProcesso(tipo, rotulo.trim(), Math.max(0, ...opcoes.map((o) => o.ordem)) + 1),
     onSuccess: () => {
       setRotulo("");
       invalidar();
@@ -90,28 +110,38 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
     onError: (err) => toastErroMutation(toast, err, "Não foi possível reativar."),
   });
 
+  // 1 único PATCH por drag -- só o item movido precisa de uma `ordem` nova
+  // (o ponto médio entre os vizinhos no destino), os demais nem são tocados.
   const reordenarMutation = useMutation({
-    mutationFn: (novaOrdem: OpcaoProcesso[]) => {
-      const alterados = novaOrdem
-        .map((opcao, i) => ({ opcao, novaOrdemValor: i + 1 }))
-        .filter(({ opcao, novaOrdemValor }) => opcao.ordem !== novaOrdemValor);
-      return Promise.all(
-        alterados.map(({ opcao, novaOrdemValor }) =>
-          atualizarOpcaoProcesso(tipo, opcao.opcao_id, opcao.rotulo, novaOrdemValor),
-        ),
-      );
-    },
+    // Só `ordem` -- reenviar `opcao.rotulo` sobrescreveria uma edição de
+    // rótulo concorrente com um valor possivelmente desatualizado (achado
+    // na revisão de consistência).
+    mutationFn: (opcao: OpcaoProcesso) => atualizarOpcaoProcesso(tipo, opcao.opcao_id, undefined, opcao.ordem),
     onSuccess: invalidar,
     onError: (err) => {
-      // Com `Promise.all`, um PATCH que falha rejeita o lote inteiro mesmo
-      // que outros já tenham sido persistidos -- `invalidar()` (em vez de só
-      // `setOrdemLocal(null)`) busca o estado real do servidor de novo, pra
-      // não deixar a lista visível divergindo do que já foi salvo.
       setOrdemLocal(null);
       invalidar();
       toastErroMutation(toast, err, "Não foi possível reordenar.");
     },
   });
+
+  // Sem o guard de `isPending`, um refetch em segundo plano (de outra
+  // causa qualquer, não do PATCH desse próprio reorder) que atualize
+  // `query.data` enquanto o PATCH ainda está em voo apagaria o "carimbo"
+  // otimista de `ordemLocal` antes da confirmação -- a lista visualmente
+  // voltaria à ordem antiga por um instante. `isPending` NÃO entra nas deps
+  // de propósito: o efeito só precisa rodar de novo quando `query.data`
+  // mudar de verdade (inclusive quando essa mudança é o refetch disparado
+  // pelo próprio `onSuccess` do reorder, via `invalidar()`) -- nesse
+  // momento a closure já lê o `isPending` mais recente. Colocar `isPending`
+  // nas deps faria o efeito rodar de novo assim que ele virasse `false`
+  // (que acontece antes do refetch confirmado chegar, já que `invalidar()`
+  // não é aguardado dentro do `onSuccess`), apagando `ordemLocal` cedo
+  // demais -- exatamente a race que esse guard existe pra evitar.
+  useEffect(() => {
+    if (reordenarMutation.isPending) return;
+    setOrdemLocal(null);
+  }, [query.data]);
 
   function handleCriar(e: FormEvent) {
     e.preventDefault();
@@ -121,16 +151,22 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    // Sem esse guard, um 2º drag iniciado antes do PATCH do 1º confirmar
+    // reusaria a mesma `reordenarMutation` (1 só instância) -- se o 2º PATCH
+    // assentasse antes do 1º, `isPending` viraria `false` com o 1º ainda em
+    // voo, e um refetch concorrente nesse instante furaria o guard do efeito
+    // acima (`ordemLocal` seria apagado antes da confirmação do 1º drag).
+    if (!over || active.id === over.id || reordenarMutation.isPending) return;
     const oldIndex = opcoes.findIndex((o) => o.opcao_id === active.id);
     const newIndex = opcoes.findIndex((o) => o.opcao_id === over.id);
-    // `arrayMove` só reordena o array -- os objetos continuam com o `.ordem`
-    // antigo. Sem "carimbar" o valor novo aqui, editar o rótulo de um item
-    // logo após arrastá-lo (antes do refetch) reenviaria a `ordem` velha em
-    // `EditarOpcaoForm` e desfaria o reorder que acabou de ser salvo.
     const movido = arrayMove(opcoes, oldIndex, newIndex);
-    setOrdemLocal(movido.map((o, i) => ({ ...o, ordem: i + 1 })));
-    reordenarMutation.mutate(movido);
+    const novaOrdem = calcularOrdemAposMover(movido[newIndex - 1], movido[newIndex + 1]);
+    // "Carimba" o valor novo no item movido -- sem isso, editar o rótulo
+    // dele logo em seguida (antes do refetch) reenviaria a `ordem` velha em
+    // `EditarOpcaoForm` e desfaria o reorder que acabou de ser salvo.
+    const opcaoMovida = { ...movido[newIndex], ordem: novaOrdem };
+    setOrdemLocal(movido.map((o, i) => (i === newIndex ? opcaoMovida : o)));
+    reordenarMutation.mutate(opcaoMovida);
   }
 
   return (

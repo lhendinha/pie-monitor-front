@@ -15,7 +15,6 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
-  const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const criarMutation = useMutation({
@@ -34,28 +33,23 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
       onFechar();
     },
     onError: (err) => {
-      setCampoInvalido(true);
       toastErroMutation(toast, err, "Não foi possível cadastrar.");
     },
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCampoInvalido(false);
     criarMutation.mutate();
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className={`field${campoInvalido ? " field-error" : ""}`}>
+      <div className="field">
         <label htmlFor="nome-cliente">Nome</label>
         <input
           id="nome-cliente"
           value={nome}
-          onChange={(e) => {
-            setNome(e.target.value);
-            setCampoInvalido(false);
-          }}
+          onChange={(e) => setNome(e.target.value)}
           placeholder="Nome do cliente"
           autoFocus
         />

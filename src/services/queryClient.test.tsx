@@ -112,3 +112,57 @@ describe("queryClient -- bridge global de 401", () => {
     expect(queryFn).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("retry só em erro que pode se resolver sozinho (achado 15)", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("erro 4xx (ex: 404) é determinístico -- não tenta de novo", async () => {
+    const queryFn = vi.fn(() => {
+      throw new ApiError("não encontrado", 404);
+    });
+    await queryClient.fetchQuery({ queryKey: ["teste-404-retry"], queryFn }).catch(() => {});
+    expect(queryFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("erro 4xx (ex: 400 de validação) também não tenta de novo", async () => {
+    const queryFn = vi.fn(() => {
+      throw new ApiError("campo inválido", 400);
+    });
+    await queryClient.fetchQuery({ queryKey: ["teste-400-retry"], queryFn }).catch(() => {});
+    expect(queryFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("erro de rede (não é ApiError) continua tentando de novo", async () => {
+    let chamadas = 0;
+    const queryFn = vi.fn(() => {
+      chamadas += 1;
+      if (chamadas < 2) throw new TypeError("Failed to fetch");
+      return "ok";
+    });
+    const resultado = await queryClient.fetchQuery({
+      queryKey: ["teste-rede-retry"],
+      queryFn,
+      retryDelay: 0,
+    });
+    expect(resultado).toBe("ok");
+    expect(queryFn).toHaveBeenCalledTimes(2);
+  });
+
+  it("erro 5xx continua tentando de novo (pode ser transitório)", async () => {
+    let chamadas = 0;
+    const queryFn = vi.fn(() => {
+      chamadas += 1;
+      if (chamadas < 2) throw new ApiError("erro interno", 500);
+      return "ok";
+    });
+    const resultado = await queryClient.fetchQuery({
+      queryKey: ["teste-500-retry"],
+      queryFn,
+      retryDelay: 0,
+    });
+    expect(resultado).toBe("ok");
+    expect(queryFn).toHaveBeenCalledTimes(2);
+  });
+});

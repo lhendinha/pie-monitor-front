@@ -131,6 +131,10 @@ export default function EditarMembroForm({
         />
       </div>
 
+      {subgruposCarregados && subgruposSelecionados.length === 0 && (
+        <p className="field-hint">Selecione ao menos 1 subgrupo para salvar</p>
+      )}
+
       <div className="modal-actions">
         <button
           className="btn"

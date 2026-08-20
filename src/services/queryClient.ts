@@ -8,6 +8,16 @@ function ehSessaoExpirada(erro: unknown): boolean {
   return erro instanceof ApiError && erro.status === 401;
 }
 
+/** Achado 15: erro 4xx (400/403/404/409...) é determinístico -- tentar de
+ * novo nunca vai resolver sozinho, só atrasa em ~7s (backoff padrão de 3
+ * tentativas) mostrar o erro certo pro usuário. Erro de rede (não é
+ * `ApiError`, ex. `fetch` falhando) ou 5xx podem ser transitórios, esses
+ * continuam tentando de novo. */
+function podeSerTransitorio(erro: unknown): boolean {
+  if (!(erro instanceof ApiError)) return true;
+  return erro.status >= 500;
+}
+
 function tratarErroGlobal(erro: unknown) {
   if (ehSessaoExpirada(erro)) dispararAutenticacaoInvalida();
 }
@@ -18,7 +28,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 0,
-      retry: (failureCount, erro) => (ehSessaoExpirada(erro) ? false : failureCount < 3),
+      retry: (failureCount, erro) => podeSerTransitorio(erro) && failureCount < 3,
     },
   },
 });

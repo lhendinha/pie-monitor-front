@@ -152,7 +152,7 @@ describe("ClientesPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("erro ao criar mostra a mensagem da ApiError e marca o campo inválido", async () => {
+  it("erro ao criar mostra a mensagem da ApiError", async () => {
     mocks.listarClientes.mockResolvedValue({ clientes: [], total: 0, total_paginas: 0 });
     mocks.criarCliente.mockRejectedValue(new ApiError("Cliente inválido", 400));
     const user = userEvent.setup();

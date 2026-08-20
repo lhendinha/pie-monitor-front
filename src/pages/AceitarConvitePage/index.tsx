@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { aceitarConvite } from "../../services";
+import { ApiError, aceitarConvite } from "../../services";
 import { useToast } from "../../components";
 
 interface AceitarConvitePageProps {
@@ -10,6 +10,7 @@ export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
   const [apelido, setApelido] = useState("");
   const [password, setPassword] = useState("");
   const [campoInvalido, setCampoInvalido] = useState(false);
+  const [linkInvalido, setLinkInvalido] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const toast = useToast();
@@ -25,7 +26,14 @@ export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
         window.location.href = "/";
       }, 1500);
     } catch (err) {
-      setCampoInvalido(true);
+      // Achado 19: link já usado/expirado (410) não é "senha errada" --
+      // destacar os campos de senha nesse caso confundia o usuário, que
+      // tentava senhas diferentes sem nunca conseguir.
+      if (err instanceof ApiError && err.status === 410) {
+        setLinkInvalido(true);
+      } else {
+        setCampoInvalido(true);
+      }
       toast.erro(err instanceof Error ? err.message : "Não foi possível aceitar o convite.");
     } finally {
       setEnviando(false);
@@ -42,6 +50,10 @@ export default function AceitarConvitePage({ token }: AceitarConvitePageProps) {
 
       {sucesso ? (
         <div className="banner banner-ok">Conta criada! Redirecionando…</div>
+      ) : linkInvalido ? (
+        <div className="banner">
+          Esse link de convite é inválido ou já foi usado. Peça um novo convite pra quem te convidou.
+        </div>
       ) : (
         <div className="gate">
           <form className="form-row" onSubmit={handleSubmit}>

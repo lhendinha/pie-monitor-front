@@ -21,7 +21,13 @@ export function criarOpcaoProcesso(tipo: TipoOpcaoProcesso, rotulo: string, orde
   return chamar(RECURSO[tipo], { method: "POST", body: { rotulo, ordem } });
 }
 
-export function atualizarOpcaoProcesso(tipo: TipoOpcaoProcesso, opcaoId: string, rotulo: string, ordem: number) {
+// `rotulo` opcional -- o reorder por drag-and-drop (`OpcoesLista.reordenarMutation`)
+// só reenvia `ordem`, pra não sobrescrever uma edição de rótulo concorrente
+// com um valor `opcao.rotulo` já desatualizado (`JSON.stringify` descarta
+// chaves `undefined`, então o backend recebe o PATCH parcial de verdade).
+export function atualizarOpcaoProcesso(
+  tipo: TipoOpcaoProcesso, opcaoId: string, rotulo: string | undefined, ordem: number,
+) {
   return chamar(`${RECURSO[tipo]}/${opcaoId}`, { method: "PATCH", body: { rotulo, ordem } });
 }
 

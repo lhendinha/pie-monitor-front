@@ -34,6 +34,23 @@ interface RespostaCrua {
   dados: any;
 }
 
+// Achado 9: sem isso, 2+ requisições que tomam 401 ao mesmo tempo disparavam
+// cada uma seu próprio POST /refresh -- como o refresh token é rotacionado no
+// backend, a 2ª chamada usava um token já invalidado pela 1ª, falhava, e
+// `renovarToken()` apagava os tokens recém-salvos pela 1ª (deslogando no meio
+// do uso). Uma promise compartilhada garante que 401s concorrentes disparem
+// só 1 renovação, todos aguardando o mesmo resultado.
+let renovacaoEmAndamento: Promise<boolean> | null = null;
+
+function renovarTokenCompartilhado(): Promise<boolean> {
+  if (!renovacaoEmAndamento) {
+    renovacaoEmAndamento = renovarToken().finally(() => {
+      renovacaoEmAndamento = null;
+    });
+  }
+  return renovacaoEmAndamento;
+}
+
 async function requisicaoCrua(path: string, opcoes: OpcoesRequisicao = {}): Promise<RespostaCrua> {
   const { method = "GET", body, query } = opcoes;
   const resposta = await fetch(`${API_URL}${path}${montarQuery(query)}`, {
@@ -58,7 +75,7 @@ export async function chamar<T = any>(path: string, opcoes: OpcoesRequisicao = {
   let { ok, status, dados } = await requisicaoCrua(path, opcoes);
 
   if (!ok && status === 401) {
-    const renovou = await renovarToken();
+    const renovou = await renovarTokenCompartilhado();
     if (renovou) {
       ({ ok, status, dados } = await requisicaoCrua(path, opcoes));
     }

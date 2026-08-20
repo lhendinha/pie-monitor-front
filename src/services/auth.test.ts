@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { JwtPayload, TokensResponse } from "../types";
+import { setAutenticacaoInvalidaListener } from "./authBridge";
 import {
   ehSuperAdmin,
   estaAutenticado,
@@ -191,6 +192,56 @@ describe("logout", () => {
     vi.mocked(fetch).mockResolvedValueOnce({ ok: true, json: async () => ({}) } as Response);
     await logout();
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("sincronização entre abas (achado 16)", () => {
+  afterEach(() => {
+    setAutenticacaoInvalidaListener(null);
+  });
+
+  it("evento storage removendo o access token dispara autenticação inválida", () => {
+    const listener = vi.fn();
+    setAutenticacaoInvalidaListener(listener);
+
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: "pje-monitor-access-token", newValue: null })
+    );
+
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("evento storage de outra chave não dispara nada", () => {
+    const listener = vi.fn();
+    setAutenticacaoInvalidaListener(listener);
+
+    window.dispatchEvent(new StorageEvent("storage", { key: "pje-monitor-papel", newValue: null }));
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("evento storage do access token com valor novo (não removido) não dispara nada", () => {
+    const listener = vi.fn();
+    setAutenticacaoInvalidaListener(listener);
+
+    window.dispatchEvent(
+      new StorageEvent("storage", { key: "pje-monitor-access-token", newValue: "token-novo" })
+    );
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("achado na revisão de consistência: evento storage de localStorage.clear() (key null) também dispara", () => {
+    // `limparTokens()` hoje remove chave por chave, nunca chama `.clear()`
+    // -- mas o navegador dispara `storage` com `key: null` quando `.clear()`
+    // é usado, então cobrir esse caso evita que um futuro refactor quebre a
+    // propagação entre abas silenciosamente.
+    const listener = vi.fn();
+    setAutenticacaoInvalidaListener(listener);
+
+    window.dispatchEvent(new StorageEvent("storage", { key: null, newValue: null }));
+
+    expect(listener).toHaveBeenCalledTimes(1);
   });
 });
 

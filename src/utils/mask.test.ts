@@ -70,15 +70,28 @@ describe("mascararCpfCnpj", () => {
 });
 
 describe("mascararTelefone", () => {
-  it("aplica a máscara completa em 11 dígitos", () => {
+  it("aplica a máscara completa em 11 dígitos (celular)", () => {
     expect(mascararTelefone("11987654321")).toBe("(11) 98765-4321");
   });
 
-  it("aplica a máscara progressivamente conforme a pessoa digita", () => {
+  // Achado 17: fixo (10 dígitos) usava o mesmo corte do celular (prefixo de
+  // 5) e saía errado -- "(11) 33334-444" em vez de "(11) 3333-4444". Não
+  // tinha teste cobrindo esse tamanho, foi por isso que passou despercebido.
+  it("aplica a máscara completa em 10 dígitos (fixo)", () => {
+    expect(mascararTelefone("1133334444")).toBe("(11) 3333-4444");
+  });
+
+  it("aplica a máscara progressivamente conforme a pessoa digita, assumindo fixo (prefixo de 4) até o 9º dígito", () => {
     expect(mascararTelefone("1")).toBe("1");
     expect(mascararTelefone("11")).toBe("(11)");
-    expect(mascararTelefone("119876")).toBe("(11) 9876");
-    expect(mascararTelefone("1198765")).toBe("(11) 98765");
+    expect(mascararTelefone("111987")).toBe("(11) 1987");
+    expect(mascararTelefone("1119876")).toBe("(11) 1987-6");
+    expect(mascararTelefone("11198765")).toBe("(11) 1987-65");
+  });
+
+  it("o prefixo vira 5 dígitos assim que o 9º dígito (depois do DDD) é digitado -- reflow de fixo pra celular", () => {
+    expect(mascararTelefone("1119876543")).toBe("(11) 1987-6543"); // 10 dígitos, ainda fixo
+    expect(mascararTelefone("11198765432")).toBe("(11) 19876-5432"); // 11º dígito -- vira celular
   });
 
   it("limita a 11 dígitos mesmo com mais", () => {

@@ -229,10 +229,44 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   Fase/Situação em `CamposProcesso`) em vez de paginar -- não dá pra
   arrastar um item de uma página pra outra sem carregar tudo. Implementado
   com `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
-  (`OpcaoRow.tsx`, handle `IconeArrastar` de `components/Icons`). Ao soltar
-  um item, o front recalcula a ordem 1..N localmente (otimista, via
-  `arrayMove`) e dispara `PATCH /fases|situacoes/{id}` só pros itens cuja
-  posição realmente mudou -- não reescreve a lista inteira a cada drop.
+  (`OpcaoRow.tsx`, handle `IconeArrastar` de `components/Icons`).
+  **Resolvido (achado 14, revisão pós-deploy): `ordem` virou fracionário**
+  no backend (`float`, era `int`) -- ao soltar um item, o front calcula a
+  nova `ordem` como o **ponto médio entre os vizinhos na posição de
+  destino** (`calcularOrdemAposMover`, nas pontas usa o vizinho existente
+  ± 1) e dispara **1 único** `PATCH /fases|situacoes/{id}` pro item movido,
+  em vez de reindexar 1..N e mandar até N-1 PATCHs a cada drop (desenho
+  antigo, substituído). `criarMutation` calcula a `ordem` da opção nova a
+  partir do maior valor **em memória** (`Math.max(...opcoes.map(o =>
+  o.ordem)) + 1`), não mais da contagem (`total + 1`) -- depois de
+  reordenações, `ordem` deixou de ter relação direta com a posição/
+  contagem. `ordemLocal` (carimbo otimista) só é limpo quando `query.data`
+  muda **e** o PATCH do reorder não está mais em voo (`reordenarMutation.
+  isPending`) -- sem esse guard, um refetch em segundo plano concorrente
+  apagaria o carimbo antes da confirmação, e a lista "voltava" à ordem
+  antiga por um instante. **Bug corrigido na revisão de consistência
+  pós-implementação:** como `reordenarMutation` é 1 única instância
+  compartilhada, um 2º drag iniciado antes do PATCH do 1º confirmar
+  reusava essa mesma instância -- se o 2º PATCH assentasse antes do 1º,
+  `isPending` virava `false` com o 1º ainda em voo, furando o guard do
+  efeito acima bem nesse instante. `handleDragEnd` agora ignora um novo
+  drag enquanto `reordenarMutation.isPending` for `true` (só 1 reorder em
+  voo por vez). **Sem teste dedicado** pra esse guard nem pro anterior --
+  simular um drag de verdade via `@dnd-kit` em jsdom (posições/
+  `getBoundingClientRect` reais) não é viável com a infra de teste atual;
+  nenhum teste desse arquivo simula um drag de ponta a ponta, só a função
+  pura `calcularOrdemAposMover` e os efeitos colaterais de `criarMutation`.
+  Também nessa revisão: `reordenarMutation` deixou de reenviar
+  `opcao.rotulo` junto da `ordem` nova (`atualizarOpcaoProcesso` aceita
+  `rotulo: string | undefined` agora) -- reenviar o rótulo atual podia
+  sobrescrever uma edição de rótulo concorrente com um valor já
+  desatualizado. **Limitação aceita:** sem checagem de unicidade
+  de `ordem` (nunca existiu), bisecções repetidas entre os 2 mesmos vizinhos
+  podem eventualmente empatar por precisão de ponto flutuante -- irrelevante
+  na prática (dezenas de opções, não centenas de drags no mesmo par).
+  `KeyboardSensor` (`@dnd-kit/core`, com `sortableKeyboardCoordinates` de
+  `@dnd-kit/sortable`) foi adicionado ao lado do `PointerSensor` já
+  existente, pra reordenar via teclado (acessibilidade).
   **Limitação conhecida e aceita, não corrigida (achado na revisão
   pré-deploy):** o teto de 100 é um corte silencioso -- se a lista GLOBAL
   de Fase/Situação (soma de todos os grupos da plataforma, inclusive
@@ -301,6 +335,54 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   "Prazo dd/mm/aaaa" aparecem como selos pequenos em maiúsculas, mesma
   paleta de cores dos badges já usados em Membros/Histórico. Só renderiza
   o bloco se pelo menos 1 desses 4 campos estiver preenchido.
+- **Resolvido (achado 9): renovação de token concorrente vira mutex
+  compartilhado** -- `services/api/client.ts` guarda uma única promise em
+  módulo (`renovacaoEmAndamento`); vários 401 ao mesmo tempo esperam o
+  mesmo `renovarToken()` em vez de disparar 1 chamada a `/refresh` por
+  request que falhou (o backend rotaciona o refresh token a cada uso --
+  chamadas paralelas descartariam umas às outras).
+- **Resolvido (achado 16): logout/expiração se propaga entre abas** --
+  `services/auth.ts` escuta o evento `storage` (dispara só nas OUTRAS
+  abas) e chama `dispararAutenticacaoInvalida()` quando a chave do access
+  token some do `localStorage`, reaproveitando a mesma ponte que
+  `queryClient.ts` já usa pro 401. Também dispara quando `e.key === null`
+  (revisão de consistência pós-implementação) -- é o sinal de
+  `localStorage.clear()`, que `limparTokens()` não usa hoje (remove chave
+  por chave), mas cobrir esse caso evita que um futuro refactor pra
+  `.clear()` quebre essa propagação entre abas silenciosamente.
+- **Resolvido (achado 15): retry do React Query só em erro que pode se
+  resolver sozinho** -- `services/queryClient.ts`, `podeSerTransitorio(erro)`
+  substitui a regra antiga: `ApiError` com status < 500 (400/401/403/404/
+  409...) nunca é retentado (determinístico); erro de rede (não `ApiError`)
+  ou 5xx continua até 3x.
+- **Resolvido (achado 18): destaque de campo com erro (`field-error`/
+  `campoInvalido`) removido** de `NovoClienteForm`, `EditarClienteForm`,
+  `NovoProcessoForm` e `DetalheEditarProcesso` -- o toast com a mensagem
+  específica do backend já é o único sinal de erro; não valia o custo do
+  backend passar a apontar qual campo falhou só pra isso. A classe CSS
+  `.field-error` continua existindo (usada por outros pontos), só a
+  aplicação dela nesses 4 formulários foi removida.
+- **Resolvido (achado 19): link de convite/redefinição expirado (410) não
+  mais parece "senha errada"** -- `AceitarConvitePage`/`RedefinirSenhaPage`
+  checam `err instanceof ApiError && err.status === 410` no catch do
+  submit e trocam o formulário por um `.banner` dedicado ("link inválido
+  ou já foi usado"), em vez de destacar os campos de senha. Exigiu
+  `aceitarConvite`/`redefinirSenha` (`services/auth.ts`) passarem a
+  lançar `ApiError` (com `.status`) em vez de `Error` puro.
+- **Resolvido (achado 20): `EditarMembroForm` explica o Salvar
+  desabilitado** -- texto de apoio ("Selecione ao menos 1 subgrupo para
+  salvar", classe nova `.field-hint` em `index.css`) aparece quando
+  `subgruposSelecionados.length === 0` -- baseado na mensagem de
+  `SubgruposObrigatorios` no backend ("Selecione ao menos 1 subgrupo"), com
+  "para salvar" adicionado pelo contexto do botão.
+- **Resolvido (achado 17): máscara de telefone fixo (10 dígitos)** --
+  `mascararTelefone` (`utils/mask.ts`) assumia sempre o corte de celular
+  (prefixo de 5 dígitos: `XXXXX-XXXX`), errado pra fixo (`XXXX-XXXX`).
+  Agora decide o corte pelo tamanho já digitado depois do DDD: até 8
+  dígitos → prefixo de 4 (fixo); a partir do 9º → prefixo de 5 (celular) --
+  mesmo "reflow ao digitar o 9º dígito" usado pela maioria das máscaras de
+  telefone BR. Não havia teste cobrindo 10 dígitos, foi por isso que
+  passou despercebido.
 
 ## 4) Blocos de código essenciais
 

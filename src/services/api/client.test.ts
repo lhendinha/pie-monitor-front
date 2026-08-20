@@ -89,6 +89,49 @@ describe("chamar", () => {
     expect(mocks.limparTokens).toHaveBeenCalledTimes(1);
   });
 
+  it("achado 9: 2 chamadas concorrentes que tomam 401 disparam só 1 renovarToken", async () => {
+    let resolveRenovacao!: (v: boolean) => void;
+    mocks.renovarToken.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        resolveRenovacao = resolve;
+      })
+    );
+
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(respostaFetch(401, { detail: "x" }))
+      .mockResolvedValueOnce(respostaFetch(401, { detail: "x" }))
+      .mockResolvedValueOnce(respostaFetch(200, { a: 1 }))
+      .mockResolvedValueOnce(respostaFetch(200, { b: 2 }));
+
+    const p1 = chamar("/processos");
+    const p2 = chamar("/clientes");
+
+    // dá tempo das 2 chamadas baterem 401 e caírem no mutex de renovação
+    // antes de resolver -- sem isso, a 2ª nem teria chance de encontrar
+    // uma renovação já em andamento.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    resolveRenovacao(true);
+
+    await Promise.all([p1, p2]);
+    expect(mocks.renovarToken).toHaveBeenCalledTimes(1);
+  });
+
+  it("achado 9: depois da renovação compartilhada terminar, a próxima 401 dispara renovarToken de novo", async () => {
+    mocks.renovarToken.mockResolvedValueOnce(true);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(respostaFetch(401, { detail: "x" }))
+      .mockResolvedValueOnce(respostaFetch(200, {}));
+    await chamar("/processos");
+    expect(mocks.renovarToken).toHaveBeenCalledTimes(1);
+
+    mocks.renovarToken.mockResolvedValueOnce(true);
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(respostaFetch(401, { detail: "x" }))
+      .mockResolvedValueOnce(respostaFetch(200, {}));
+    await chamar("/clientes");
+    expect(mocks.renovarToken).toHaveBeenCalledTimes(2);
+  });
+
   it("em erro que não é 401 (ex: 403), não tenta renovar e não limpa tokens", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(respostaFetch(403, { detail: "Ação exige papel admin ou superior" }));
 

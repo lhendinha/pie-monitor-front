@@ -13,10 +13,33 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../services", () => mocks);
 
-import OpcoesLista from "./OpcoesLista";
+import OpcoesLista, { calcularOrdemAposMover } from "./OpcoesLista";
+import type { OpcaoProcesso } from "../../types";
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+function opcao(ordem: number): OpcaoProcesso {
+  return { tipo: "fase", opcao_id: `o${ordem}`, rotulo: `Opção ${ordem}`, ordem, ativo: true };
+}
+
+describe("calcularOrdemAposMover (Bloco H -- ordem fracionária)", () => {
+  it("com os dois vizinhos, usa o ponto médio", () => {
+    expect(calcularOrdemAposMover(opcao(1), opcao(3))).toBe(2);
+  });
+
+  it("movido pro início (sem vizinho anterior), usa o seguinte - 1", () => {
+    expect(calcularOrdemAposMover(undefined, opcao(5))).toBe(4);
+  });
+
+  it("movido pro fim (sem vizinho seguinte), usa o anterior + 1", () => {
+    expect(calcularOrdemAposMover(opcao(5), undefined)).toBe(6);
+  });
+
+  it("lista vazia (sem nenhum vizinho), usa 1", () => {
+    expect(calcularOrdemAposMover(undefined, undefined)).toBe(1);
+  });
 });
 
 describe("OpcoesLista", () => {
@@ -32,8 +55,29 @@ describe("OpcoesLista", () => {
     expect(mocks.listarOpcoesProcesso).toHaveBeenCalledWith("fase", { tamanhoPagina: 100 });
   });
 
-  it("cria uma opção nova usando o total real (não o tamanho da página atual) como ordem", async () => {
-    mocks.listarOpcoesProcesso.mockResolvedValue({ opcoes: [], total: 12, total_paginas: 2 });
+  it("cria uma opção nova usando a maior ordem em memória (não o total), 1 acima do maior valor existente", async () => {
+    // ordem fracionária (Bloco H): depois de reordenações, o maior `ordem`
+    // em memória pode já estar acima da contagem de itens (`total`) --
+    // usar `total + 1` nasceria empatado ou atrás do último item de verdade.
+    mocks.listarOpcoesProcesso.mockResolvedValue({
+      opcoes: [{ tipo: "fase", opcao_id: "f1", rotulo: "Conhecimento", ordem: 1, ativo: true },
+               { tipo: "fase", opcao_id: "f2", rotulo: "Recursal", ordem: 30, ativo: true }],
+      total: 2,
+      total_paginas: 1,
+    });
+    mocks.criarOpcaoProcesso.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderComProviders(<OpcoesLista tipo="fase" titulo="Fases" />);
+
+    await screen.findByText("Recursal");
+    await user.type(screen.getByLabelText("Nova opção"), "Nova");
+    await user.click(screen.getByRole("button", { name: "Criar" }));
+
+    await waitFor(() => expect(mocks.criarOpcaoProcesso).toHaveBeenCalledWith("fase", "Nova", 31));
+  });
+
+  it("cria a 1ª opção da lista com ordem 1", async () => {
+    mocks.listarOpcoesProcesso.mockResolvedValue({ opcoes: [], total: 0, total_paginas: 0 });
     mocks.criarOpcaoProcesso.mockResolvedValue({});
     const user = userEvent.setup();
     renderComProviders(<OpcoesLista tipo="fase" titulo="Fases" />);
@@ -42,10 +86,7 @@ describe("OpcoesLista", () => {
     await user.type(screen.getByLabelText("Nova opção"), "Recursal");
     await user.click(screen.getByRole("button", { name: "Criar" }));
 
-    // total=12 (não opcoes.length, que seria 0 nessa página) -- achado da
-    // revisão: usar o tamanho da página atual daria ordem errada a partir
-    // da 2ª página em diante.
-    await waitFor(() => expect(mocks.criarOpcaoProcesso).toHaveBeenCalledWith("fase", "Recursal", 13));
+    await waitFor(() => expect(mocks.criarOpcaoProcesso).toHaveBeenCalledWith("fase", "Recursal", 1));
   });
 
   it("desativa uma opção ativa", async () => {

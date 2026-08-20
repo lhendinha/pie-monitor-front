@@ -23,7 +23,6 @@ export default function NovoProcessoForm({
   const [numeroMascarado, setNumeroMascarado] = useState("");
   const [apelido, setApelido] = useState("");
   const [campos, setCampos] = useState<CamposOpcionaisProcesso>({});
-  const [campoInvalido, setCampoInvalido] = useState(false);
   const toast = useToast();
 
   const numeroLimpo = apenasDigitos(numeroMascarado);
@@ -35,14 +34,12 @@ export default function NovoProcessoForm({
       onFechar();
     },
     onError: (err) => {
-      setCampoInvalido(true);
       toastErroMutation(toast, err, "Não foi possível cadastrar.");
     },
   });
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCampoInvalido(false);
     criarMutation.mutate();
   }
 
@@ -65,18 +62,12 @@ export default function NovoProcessoForm({
           onMudar={setSubgrupoId}
         />
       </div>
-      <div
-        className={`field${campoInvalido ? " field-error" : ""}`}
-        style={{ marginTop: 14 }}
-      >
+      <div className="field" style={{ marginTop: 14 }}>
         <label htmlFor="numero">Número do processo</label>
         <input
           id="numero"
           value={numeroMascarado}
-          onChange={(e) => {
-            setNumeroMascarado(mascararNumeroProcesso(e.target.value));
-            setCampoInvalido(false);
-          }}
+          onChange={(e) => setNumeroMascarado(mascararNumeroProcesso(e.target.value))}
           placeholder="0000366-97.2020.8.13.0145"
           inputMode="numeric"
           autoFocus
