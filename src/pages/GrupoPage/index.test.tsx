@@ -61,6 +61,22 @@ describe("GrupoPage", () => {
     expect(mocks.listarMembrosDoGrupo).toHaveBeenCalled();
   });
 
+  it("papel 'admin' vê Fases e Situações -- o piso desceu de super_admin", async () => {
+    // Este caso não existia, e era exatamente o que estava quebrado: as rotas
+    // de Fase/Situação passaram a exigir `admin`, o `SUB_ABAS` continuou em
+    // `super_admin`, e o admin ficou com a permissão no servidor sem ver as
+    // abas. Ninguém tomava 403 -- a funcionalidade simplesmente sumia.
+    mocks.papelAtende.mockImplementation(
+      (minimo: string) => minimo !== "super_admin",
+    );
+    renderComProviders(<GrupoPage />);
+
+    await screen.findByRole("button", { name: "Subgrupos" });
+    for (const nome of ["Membros", "Convidar", "Fases", "Situações"]) {
+      expect(screen.getByRole("button", { name: nome })).toBeInTheDocument();
+    }
+  });
+
   it("papel 'super_admin' vê as 5 sub-abas, incluindo Fases/Situações", async () => {
     mocks.papelAtende.mockReturnValue(true);
     renderComProviders(<GrupoPage />);

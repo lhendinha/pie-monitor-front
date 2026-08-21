@@ -9,8 +9,13 @@ import type { SubAbaConfig, SubAbaId } from "../../types";
 const SUB_ABAS: SubAbaConfig[] = [
   { id: "subgrupos", label: "Subgrupos", minimo: "user" },
   { id: "membros", label: "Membros", minimo: "manager" },
-  { id: "fases", label: "Fases", minimo: "super_admin" },
-  { id: "situacoes", label: "Situações", minimo: "super_admin" },
+  // `admin`, não `super_admin`: o catálogo de Fase/Situação passou a ser por
+  // grupo, e o piso das rotas (POST/PATCH/DELETE /fases e /situacoes) desceu
+  // pra `admin`. Enquanto estas duas linhas ficaram em `super_admin`, um
+  // `admin` tinha a permissão no servidor e não via as abas -- funcionalidade
+  // entregue e invisível, sem 403 pra denunciar.
+  { id: "fases", label: "Fases", minimo: "admin" },
+  { id: "situacoes", label: "Situações", minimo: "admin" },
   { id: "convidar", label: "Convidar", minimo: "admin" },
 ];
 
