@@ -1,7 +1,7 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 
-import { EtiquetaDeMetadado, Skeleton } from "../../../../components";
+import { EtiquetaDeMetadado, Esqueleto } from "../../../../components";
 import { listarTarefas } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
@@ -26,7 +26,7 @@ export default function TarefasVinculadas({ numeroProcesso }: Props) {
   });
   useToastOnQueryError(query.error, "Não foi possível carregar as tarefas do processo.");
 
-  if (query.isPending) return <Skeleton linhas={2} />;
+  if (query.isPending) return <Esqueleto linhas={2} />;
 
   const tarefas = query.data?.tarefas || [];
   if (tarefas.length === 0) {

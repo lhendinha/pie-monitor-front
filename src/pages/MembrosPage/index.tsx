@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarMembrosDoGrupo, listarSubgrupos, listarGrupos, ehSuperAdmin } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Modal, Skeleton } from "../../components";
+import { Modal, Esqueleto } from "../../components";
 import { NOME_PAPEL } from "../../constants";
 import SubgrupoMembros from "./SubgrupoMembros";
 import EditarMembroForm from "./EditarMembroForm";
@@ -60,7 +60,7 @@ export default function MembrosPage() {
       </div>
 
       {carregando ? (
-        <Skeleton linhas={2} />
+        <Esqueleto linhas={2} />
       ) : (
         <ul className="simple-list">
           {pessoas.map((p) => (

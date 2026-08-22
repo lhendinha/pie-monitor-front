@@ -1,7 +1,7 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Skeleton } from "../../../../components";
+import { Esqueleto } from "../../../../components";
 import { useCatalogosDeProcesso } from "../../../../hooks/useCatalogosDeProcesso";
 import { listarProcessos } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
@@ -27,7 +27,7 @@ export default function ProcessosDoCliente({ clienteId }: Props) {
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os processos do cliente.");
 
-  if (query.isPending) return <Skeleton linhas={2} />;
+  if (query.isPending) return <Esqueleto linhas={2} />;
 
   const processos = query.data?.processos || [];
   if (processos.length === 0) {

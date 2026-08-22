@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import Skeleton from "../Skeleton";
+import Esqueleto from "../Esqueleto";
 
 interface ComunicacaoCardProps {
   titulo: string;
@@ -34,7 +34,7 @@ export default function ComunicacaoCard({
       <div className="simple-row-meta">{meta}</div>
       {destinatarios && <div className="simple-row-meta">Pra: {destinatarios}</div>}
 
-      {carregando && <Skeleton linhas={2} />}
+      {carregando && <Esqueleto linhas={2} />}
       {!carregando && erro && <div className="empty">{erro}</div>}
       {!carregando && !erro && html && (
         <div className="detail-texto" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />

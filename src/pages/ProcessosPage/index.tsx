@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { listarProcessos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { CartaoDeTabela, Pagination, Skeleton } from "../../components";
+import { CartaoDeTabela, Pagination, Esqueleto } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants/processos";
 import CabecalhoProcessos from "./components/CabecalhoProcessos";
@@ -88,7 +88,7 @@ export default function ProcessosPage() {
       />
 
       {carregando ? (
-        <Skeleton />
+        <Esqueleto />
       ) : (
         /* Tabela e paginação dentro do MESMO cartão, como no artifact: lá o
            `.table-card` só fecha depois da barra de páginas. Separados, a

@@ -154,6 +154,16 @@ export const system = createSystem(defaultConfig, {
           canvas: { value: "{colors.canvas}" },
           surface: { value: "{colors.surface}" },
           brand: { subtle: { value: "{colors.brand.tint}" } },
+          /** ⚠️ Estes quatro são do Chakra, não nossos -- e por padrão são
+           * zinco. Componentes DELE os usam por dentro: o `Skeleton`, por
+           * exemplo, pinta a barra com `bg.emphasized` e saía cinza-zinco
+           * (#e4e4e7) no meio de uma tela slate. Alinhar aqui conserta de
+           * uma vez qualquer componente da lib que venhamos a usar. */
+          DEFAULT: { value: "{colors.surface}" },
+          panel: { value: "{colors.surface}" },
+          subtle: { value: "{colors.canvas}" },
+          muted: { value: "{colors.line.soft}" },
+          emphasized: { value: "{colors.line}" },
         },
         border: {
           DEFAULT: { value: "{colors.line}" },

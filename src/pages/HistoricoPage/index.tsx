@@ -5,7 +5,7 @@ import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { mascararNumeroProcesso, formatarDataHora } from "../../utils";
 import type { DeepLinkHistorico } from "../../utils";
-import { Skeleton, Pagination, Modal, useToast } from "../../components";
+import { Esqueleto, Pagination, Modal, useToast } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
@@ -79,7 +79,7 @@ export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: PagePro
       </div>
 
       {query.isPending ? (
-        <Skeleton linhas={4} />
+        <Esqueleto linhas={4} />
       ) : historico.length === 0 ? (
         <div className="empty">Nenhuma notificação enviada ainda.</div>
       ) : (

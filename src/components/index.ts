@@ -1,5 +1,5 @@
 export { default as Modal } from "./Modal";
-export { default as Skeleton } from "./Skeleton";
+export { default as Esqueleto } from "./Esqueleto";
 export { default as Pagination } from "./Pagination";
 export { Select, MultiSelect } from "./Select";
 export { ToastProvider, useToast } from "./Toast";

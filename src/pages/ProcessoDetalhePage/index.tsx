@@ -2,7 +2,7 @@ import { Box, Stack, Text } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { BotaoDeTexto, Cartao, IconeSeta, Skeleton, useToast } from "../../components";
+import { BotaoDeTexto, Cartao, IconeSeta, Esqueleto, useToast } from "../../components";
 import { formatarDataHoraAmPm } from "../../utils";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { detalhesProcesso, removerProcesso } from "../../services";
@@ -50,7 +50,7 @@ export default function ProcessoDetalhePage() {
     navegar("/processos");
   }
 
-  if (query.isPending) return <Skeleton linhas={4} />;
+  if (query.isPending) return <Esqueleto linhas={4} />;
   if (query.isError) {
     return (
       <Stack gap="14px" align="flex-start">

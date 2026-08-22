@@ -1,7 +1,7 @@
 import { useDeferredValue, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CartaoDeTabela, Pagination, Skeleton } from "../../components";
+import { CartaoDeTabela, Pagination, Esqueleto } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { listarClientes, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -55,7 +55,7 @@ export default function ClientesPage() {
       />
 
       {carregando ? (
-        <Skeleton />
+        <Esqueleto />
       ) : (
         <CartaoDeTabela>
           <TabelaClientes

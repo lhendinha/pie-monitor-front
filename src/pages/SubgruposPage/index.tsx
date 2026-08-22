@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Skeleton, Pagination, Modal, useToast } from "../../components";
+import { Esqueleto, Pagination, Modal, useToast } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import EditarSubgrupoForm from "./EditarSubgrupoForm";
 import type { Subgrupo } from "../../types";
@@ -98,7 +98,7 @@ export default function SubgruposPage() {
       </div>
 
       {query.isPending ? (
-        <Skeleton linhas={2} />
+        <Esqueleto linhas={2} />
       ) : subgrupos.length === 0 ? (
         <div className="empty">Nenhum subgrupo ainda.</div>
       ) : (

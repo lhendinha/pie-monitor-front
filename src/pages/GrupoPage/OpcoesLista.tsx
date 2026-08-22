@@ -24,7 +24,7 @@ import {
 } from "../../services";
 import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Skeleton, Modal, useToast } from "../../components";
+import { Esqueleto, Modal, useToast } from "../../components";
 import { TAMANHO_PAGINA_PICKER } from "../../constants";
 import EditarOpcaoForm from "./EditarOpcaoForm";
 import OpcaoRow from "./OpcaoRow";
@@ -196,7 +196,7 @@ export default function OpcoesLista({ tipo, titulo }: OpcoesListaProps) {
       </div>
 
       {query.isPending ? (
-        <Skeleton linhas={2} />
+        <Esqueleto linhas={2} />
       ) : opcoes.length === 0 ? (
         <div className="empty">Nenhuma opção ainda.</div>
       ) : (
