@@ -12,9 +12,14 @@
   --brass-soft: #b99b52;
   --ok: #2f5d42;
 
-  --font-display: "Source Serif 4", Georgia, serif;
+  /* Fase 2: o `index.html` passou a carregar Manrope + IBM Plex Mono, e
+     parou de carregar Source Serif 4 e Inter. Sem apontar estas variáveis
+     pro Manrope, TODA tela ainda não migrada cairia em Georgia/system-ui --
+     regressão no app inteiro antes de migrar a primeira tela.
+     As três variáveis somem junto com este arquivo, no fim da fase. */
+  --font-display: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-body: "Inter", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 * {
