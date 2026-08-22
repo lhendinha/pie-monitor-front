@@ -143,6 +143,15 @@ export const system = createSystem(defaultConfig, {
      * passava a usar o cinza zinco dele (`#a1a1aa`) no lugar do slate do
      * artifact (`#8493a1`). Aninhado, os nomes coincidem e o meu vence. */
     semanticTokens: {
+      /** ⚠️ Mesma armadilha das cores: o Chakra tem `shadows.sm`/`md`
+       * SEMÂNTICOS, e o semântico vence o token cru declarado acima. Sem
+       * estas duas linhas, `boxShadow="sm"` desenhava a sombra dupla e
+       * escura da lib no lugar do `0 1px 2px rgba(15,32,45,.07)` do
+       * artifact -- todo cartão da aplicação saía mais pesado. */
+      shadows: {
+        sm: { value: sombras.sm },
+        md: { value: sombras.md },
+      },
       colors: {
         fg: {
           DEFAULT: { value: "{colors.ink}" },

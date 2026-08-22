@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-import { BotaoNu } from "../../BotaoNu";
+import { BotaoNu } from "../BotaoNu";
 
 interface Props {
   rotulo: string;

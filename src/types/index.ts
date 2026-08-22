@@ -5,6 +5,12 @@ export interface Subgrupo {
   grupo_id?: string;
   nome: string;
   criado_em?: string;
+  /** Contagens DERIVADAS, calculadas por `GET /subgrupos` só pra página
+   * pedida -- a linha mostra "N membros · N colunas". Opcionais porque
+   * outras rotas devolvem subgrupo sem elas (o seletor dos formulários,
+   * por exemplo, que só precisa de id e nome). */
+  membros?: number;
+  colunas?: number;
 }
 
 export interface Grupo {

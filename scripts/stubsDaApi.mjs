@@ -119,10 +119,14 @@ const RESPOSTAS = [
     /\/subgrupos|\/grupos/,
     () => ({
       grupos: [],
+      // `membros`/`colunas` vêm da própria listagem (contagens derivadas):
+      // a linha da tela de Grupo mostra "N membros · N colunas".
       subgrupos: [
-        { subgrupo_id: "sg-civel", nome: "Cível" },
-        { subgrupo_id: "sg-trab", nome: "Trabalhista" },
+        { subgrupo_id: "sg-civel", nome: "Cível", membros: 3, colunas: 3 },
+        { subgrupo_id: "sg-trab", nome: "Trabalhista", membros: 1, colunas: 4 },
       ],
+      total: 2,
+      total_paginas: 1,
     }),
   ],
 ];

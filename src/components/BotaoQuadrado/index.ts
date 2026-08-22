@@ -25,10 +25,23 @@ export const BotaoQuadrado = chakra("button", {
     _hover: { bg: "border.subtle", color: "fg" },
   },
   variants: {
+    /** `.btn-sq.danger` do artifact: em repouso é igual ao neutro -- é só
+     * no hover que ele fica vermelho. Ação destrutiva que já nasce vermelha
+     * chama atenção o tempo todo numa lista onde o normal é não excluir. */
+    tom: {
+      neutro: {},
+      perigo: {
+        _hover: {
+          bg: "status.bad.bg",
+          color: "status.bad",
+          borderColor: "status.bad",
+        },
+      },
+    },
     tamanho: {
       padrao: { width: "34px", height: "34px" },
       compacto: { width: "26px", height: "26px" },
     },
   },
-  defaultVariants: { tamanho: "padrao" },
+  defaultVariants: { tamanho: "padrao", tom: "neutro" },
 });

@@ -39,13 +39,21 @@ beforeEach(() => {
 });
 
 describe("GrupoPage", () => {
+  it("tem título e subtítulo próprios, como toda tela", async () => {
+    mocks.papelAtende.mockReturnValue(true);
+    renderComProviders(<GrupoPage />);
+
+    expect(screen.getByRole("heading", { name: "Grupo" })).toBeInTheDocument();
+    expect(screen.getByText("Gestão de definições do grupo.")).toBeInTheDocument();
+  });
+
   it("papel 'user' (só Subgrupos habilitado) mostra Subgrupos direto, sem sub-nav de outras abas", async () => {
     mocks.papelAtende.mockImplementation((minimo: string) => minimo === "user");
     renderComProviders(<GrupoPage />);
 
     await screen.findByText("Nenhum subgrupo ainda.");
-    expect(screen.queryByRole("button", { name: "Membros" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Fases" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Membros" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Fases" })).not.toBeInTheDocument();
   });
 
   it("papel 'manager' vê Subgrupos e Membros, clicar em Membros troca o conteúdo", async () => {
@@ -53,11 +61,11 @@ describe("GrupoPage", () => {
     const user = userEvent.setup();
     renderComProviders(<GrupoPage />);
 
-    await screen.findByRole("button", { name: "Subgrupos" });
-    expect(screen.getByRole("button", { name: "Membros" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Convidar" })).not.toBeInTheDocument();
+    await screen.findByRole("tab", { name: "Subgrupos" });
+    expect(screen.getByRole("tab", { name: "Membros" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Convidar" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Membros" }));
+    await user.click(screen.getByRole("tab", { name: "Membros" }));
     expect(mocks.listarMembrosDoGrupo).toHaveBeenCalled();
   });
 
@@ -71,9 +79,9 @@ describe("GrupoPage", () => {
     );
     renderComProviders(<GrupoPage />);
 
-    await screen.findByRole("button", { name: "Subgrupos" });
+    await screen.findByRole("tab", { name: "Subgrupos" });
     for (const nome of ["Membros", "Convidar", "Fases", "Situações"]) {
-      expect(screen.getByRole("button", { name: nome })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: nome })).toBeInTheDocument();
     }
   });
 
@@ -81,9 +89,9 @@ describe("GrupoPage", () => {
     mocks.papelAtende.mockReturnValue(true);
     renderComProviders(<GrupoPage />);
 
-    await screen.findByRole("button", { name: "Subgrupos" });
+    await screen.findByRole("tab", { name: "Subgrupos" });
     for (const nome of ["Membros", "Convidar", "Fases", "Situações"]) {
-      expect(screen.getByRole("button", { name: nome })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: nome })).toBeInTheDocument();
     }
   });
 });

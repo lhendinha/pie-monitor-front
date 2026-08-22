@@ -3,43 +3,14 @@ import type { ButtonProps } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
 import { BOTAO } from "../../theme/painelFiltro";
-
-/** As variantes de `.btn` do artifact que o sistema usa de fato. */
-export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
+import { CORES_DO_BOTAO } from "../../theme/botao";
+import type { VarianteBotao } from "../../theme/botao";
 
 interface Props extends Omit<ButtonProps, "variant"> {
   variante?: VarianteBotao;
   children: ReactNode;
 }
 
-const CORES: Record<VarianteBotao, ButtonProps> = {
-  primario: {
-    bg: "fg.brand",
-    color: "white",
-    borderColor: "transparent",
-    _hover: { bg: "brand.dark" },
-  },
-  ghost: {
-    bg: "transparent",
-    color: "fg",
-    borderColor: "border",
-    _hover: { bg: "border.subtle" },
-  },
-  perigo: {
-    bg: "status.bad",
-    color: "white",
-    borderColor: "transparent",
-    _hover: { bg: "#b93a44" },
-  },
-  /** Contorno neutro com texto vermelho: a ação destrutiva não grita na
-   * tela, mas o hover assume a cor. É o `.btn-danger-outline`. */
-  perigoContorno: {
-    bg: "transparent",
-    color: "status.bad",
-    borderColor: "border",
-    _hover: { bg: "status.bad.bg", borderColor: "status.bad" },
-  },
-};
 
 /** O botão do sistema (`.btn` do artifact): 9px 16px, raio 6, 13px/700.
  *
@@ -66,7 +37,7 @@ export default function Botao({ variante = "primario", children, ...resto }: Pro
          descendentes e vence o atributo `width` do próprio ícone -- a
          lixeira do Excluir saía com 20px. */
       css={{ "& svg": { width: "15px", height: "15px" } }}
-      {...CORES[variante]}
+      {...CORES_DO_BOTAO[variante]}
       {...resto}
     >
       {children}

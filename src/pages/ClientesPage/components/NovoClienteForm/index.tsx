@@ -1,5 +1,5 @@
 import { Input } from "@chakra-ui/react";
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { Botao, Campo, Modal, RodapeDeAcoes, useToast } from "../../../../components";
@@ -12,10 +12,14 @@ interface Props {
   onFechar: () => void;
 }
 
-/** Liga o botão do rodapé ao `<form>` do corpo pelo atributo `form`. */
-const ID_FORMULARIO = "form-novo-cliente";
 
 export default function NovoClienteForm({ onCadastrado, onFechar }: Props) {
+  /** Liga o botão do rodapé ao `<form>` do corpo pelo atributo `form` --
+   * eles são irmãos, não pai e filho, porque o rodapé fica fora da área que
+   * rola. `useId` e não uma constante: dois modais abertos ao mesmo tempo
+   * teriam o mesmo id literal, e o botão de um enviaria o formulário do
+   * outro. */
+  const idFormulario = useId();
   const [nome, setNome] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -60,7 +64,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: Props) {
           </Botao>
           <Botao
             type="submit"
-            form={ID_FORMULARIO}
+            form={idFormulario}
             disabled={criarMutation.isPending || !nome.trim() || emailInvalido}
           >
             {criarMutation.isPending ? "Cadastrando…" : "Cadastrar"}
@@ -68,7 +72,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: Props) {
         </RodapeDeAcoes>
       }
     >
-      <form id={ID_FORMULARIO} onSubmit={handleSubmit}>
+      <form id={idFormulario} onSubmit={handleSubmit}>
         <Campo rotulo="Nome" para="nome-cliente" obrigatorio>
           <Input
             id="nome-cliente"

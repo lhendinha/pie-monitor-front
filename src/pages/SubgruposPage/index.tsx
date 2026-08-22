@@ -1,19 +1,33 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { listarSubgrupos, criarSubgrupo, removerSubgrupo, papelAtende } from "../../services";
-import { useToastOnQueryError, toastErroMutation } from "../../services/queryClient";
-import { qk } from "../../services/queryKeys";
-import { Esqueleto, Pagination, Modal, useToast } from "../../components";
+
+import { CartaoDeTabela, Esqueleto, Pagination, useToast } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
-import EditarSubgrupoForm from "./EditarSubgrupoForm";
+import {
+  atualizarSubgrupo,
+  listarSubgrupos,
+  papelAtende,
+  removerSubgrupo,
+} from "../../services";
+import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
+import FormularioNovoSubgrupo from "./components/FormularioNovoSubgrupo";
+import ListaDeSubgrupos from "./components/ListaDeSubgrupos";
 import type { Subgrupo } from "../../types";
 
+/** Sub-aba "Subgrupos" da tela de Grupo.
+ *
+ * Não tem cabeçalho próprio: o título é o da página de Grupo, e as abas
+ * ficam logo acima. Repetir "Subgrupos" aqui seria dizer duas vezes.
+ *
+ * Criar, renomear e excluir acontecem todos DENTRO do cartão da lista, sem
+ * modal nenhum -- é o desenho do artifact, e cada ação aqui é de um campo
+ * só.
+ */
 export default function SubgruposPage() {
-  const [nome, setNome] = useState("");
-  const [campoInvalido, setCampoInvalido] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
-  const [subgrupoEmEdicao, setSubgrupoEmEdicao] = useState<Subgrupo | null>(null);
+  const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -26,122 +40,69 @@ export default function SubgruposPage() {
     queryFn: () => listarSubgrupos({ pagina, tamanhoPagina }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os subgrupos.");
+
   const subgrupos = query.data?.subgrupos || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
 
-  function invalidarSubgrupos() {
-    queryClient.invalidateQueries({ queryKey: qk.subgrupos() });
+  function invalidar() {
+    queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
   }
 
-  const criarMutation = useMutation({
-    mutationFn: (nomeNovo: string) => criarSubgrupo(nomeNovo),
+  const renomearMutation = useMutation({
+    mutationFn: ({ id, nome }: { id: string; nome: string }) => atualizarSubgrupo(id, nome),
     onSuccess: () => {
-      setNome("");
-      invalidarSubgrupos();
+      invalidar();
+      toast.sucesso("Subgrupo renomeado.");
     },
-    onError: (err) => {
-      setCampoInvalido(true);
-      toastErroMutation(toast, err, "Não foi possível criar.");
-    },
+    // O servidor recusa nome repetido dentro do grupo -- a mensagem dele já
+    // diz qual é o problema.
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível renomear."),
+    onSettled: () => setRenomeandoId(null),
   });
 
   const removerMutation = useMutation({
     mutationFn: (id: string) => removerSubgrupo(id),
-    onSuccess: invalidarSubgrupos,
+    onSuccess: invalidar,
+    // O servidor recusa remover subgrupo com membro dentro
+    // (`SubgrupoNaoVazio`) -- a mensagem dele já explica o motivo.
     onError: (err) => toastErroMutation(toast, err, "Não foi possível remover."),
   });
 
-  function handleCriar(e: FormEvent) {
-    e.preventDefault();
-    setCampoInvalido(false);
-    criarMutation.mutate(nome.trim());
+  function confirmarRemocao(s: Subgrupo) {
+    if (window.confirm(`Remover o subgrupo "${s.nome}"? Só funciona se estiver vazio.`)) {
+      removerMutation.mutate(s.subgrupo_id);
+    }
   }
 
-  function handleRemover(id: string) {
-    if (!window.confirm("Remover esse subgrupo? Só funciona se estiver vazio (0 membros).")) return;
-    removerMutation.mutate(id);
-  }
-
-  function handleMudarTamanho(novoTamanho: number) {
-    setTamanhoPagina(novoTamanho);
-    setPagina(1);
-  }
+  if (query.isPending) return <Esqueleto linhas={2} />;
 
   return (
-    <>
-      {podeCriar && (
-        <form onSubmit={handleCriar}>
-          <div className="form-row">
-            <div className={`field${campoInvalido ? " field-error" : ""}`} style={{ flex: 2 }}>
-              <label htmlFor="nome-subgrupo">Novo subgrupo</label>
-              <input
-                id="nome-subgrupo"
-                value={nome}
-                onChange={(e) => {
-                  setNome(e.target.value);
-                  setCampoInvalido(false);
-                }}
-                placeholder="Cível, Trabalhista..."
-              />
-            </div>
-            <button className="btn" type="submit" disabled={criarMutation.isPending || !nome.trim()}>
-              {criarMutation.isPending ? "Criando…" : "Criar"}
-            </button>
-          </div>
-        </form>
-      )}
+    <CartaoDeTabela>
+      {podeCriar && <FormularioNovoSubgrupo onCriado={invalidar} />}
 
-      <div className="section-head">
-        <h2>Subgrupos</h2>
-        <span className="section-count">{query.isPending ? "carregando…" : `${total}`}</span>
-      </div>
+      <ListaDeSubgrupos
+        subgrupos={subgrupos}
+        podeEditar={podeEditar}
+        podeExcluir={podeExcluir}
+        renomeandoId={renomeandoId}
+        onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
+        onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
+        onCancelarRenome={() => setRenomeandoId(null)}
+        onRemover={confirmarRemocao}
+      />
 
-      {query.isPending ? (
-        <Esqueleto linhas={2} />
-      ) : subgrupos.length === 0 ? (
-        <div className="empty">Nenhum subgrupo ainda.</div>
-      ) : (
-        <>
-          <ul className="simple-list">
-            {subgrupos.map((s) => (
-              <li className="simple-row" key={s.subgrupo_id}>
-                <div className="simple-row-main">
-                  <div className="simple-row-title">{s.nome}</div>
-                </div>
-                {podeEditar && (
-                  <button className="icon-btn" title="Editar" onClick={() => setSubgrupoEmEdicao(s)}>
-                    ✎
-                  </button>
-                )}
-                {podeExcluir && (
-                  <button className="icon-btn" title="Remover" onClick={() => handleRemover(s.subgrupo_id)}>
-                    ✕
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-          <Pagination
-            pagina={pagina}
-            totalPaginas={totalPaginas}
-          total={total}
-            tamanhoPagina={tamanhoPagina}
-            onMudarPagina={setPagina}
-            onMudarTamanho={handleMudarTamanho}
-          />
-        </>
-      )}
-
-      {subgrupoEmEdicao && (
-        <Modal titulo="Editar subgrupo" onFechar={() => setSubgrupoEmEdicao(null)}>
-          <EditarSubgrupoForm
-            subgrupo={subgrupoEmEdicao}
-            onAtualizado={invalidarSubgrupos}
-            onFechar={() => setSubgrupoEmEdicao(null)}
-          />
-        </Modal>
-      )}
-    </>
+      <Pagination
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+        total={total}
+        tamanhoPagina={tamanhoPagina}
+        onMudarPagina={setPagina}
+        onMudarTamanho={(t) => {
+          setTamanhoPagina(t);
+          setPagina(1);
+        }}
+      />
+    </CartaoDeTabela>
   );
 }

@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
+import { DURACAO_DO_AVISO_MS } from "../../constants/toast";
+
 interface ToastItem {
   id: number;
   tipo: "erro" | "sucesso";
@@ -13,7 +15,6 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const DURACAO_MS = 4500;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -27,7 +28,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (tipo: ToastItem["tipo"], mensagem: string) => {
       const id = proximoId.current++;
       setToasts((prev) => [...prev, { id, tipo, mensagem }]);
-      setTimeout(() => remover(id), DURACAO_MS);
+      setTimeout(() => remover(id), DURACAO_DO_AVISO_MS);
     },
     [remover]
   );

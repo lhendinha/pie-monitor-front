@@ -3,3 +3,4 @@ export * from "./paginacao";
 export * from "./select";
 export * from "./navegacao";
 export * from "./calendario";
+export * from "./abasDoGrupo";

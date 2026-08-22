@@ -1,51 +1,37 @@
 import { useState } from "react";
-import { papelAtende } from "../../services";
-import SubgruposPage from "../SubgruposPage";
-import MembrosPage from "../MembrosPage";
-import ConvidarPage from "../ConvidarPage";
-import OpcoesLista from "./OpcoesLista";
-import type { SubAbaConfig, SubAbaId } from "../../types";
 
-const SUB_ABAS: SubAbaConfig[] = [
-  { id: "subgrupos", label: "Subgrupos", minimo: "user" },
-  { id: "membros", label: "Membros", minimo: "manager" },
-  // `admin`, não `super_admin`: o catálogo de Fase/Situação passou a ser por
-  // grupo, e o piso das rotas (POST/PATCH/DELETE /fases e /situacoes) desceu
-  // pra `admin`. Enquanto estas duas linhas ficaram em `super_admin`, um
-  // `admin` tinha a permissão no servidor e não via as abas -- funcionalidade
-  // entregue e invisível, sem 403 pra denunciar.
-  { id: "fases", label: "Fases", minimo: "admin" },
-  { id: "situacoes", label: "Situações", minimo: "admin" },
-  { id: "convidar", label: "Convidar", minimo: "admin" },
-];
+import { Abas, CabecalhoDePagina } from "../../components";
+import { ABAS_DO_GRUPO } from "../../constants";
+import { papelAtende } from "../../services";
+import ConvidarPage from "../ConvidarPage";
+import MembrosPage from "../MembrosPage";
+import SubgruposPage from "../SubgruposPage";
+import OpcoesLista from "./OpcoesLista";
+import type { SubAbaId } from "../../types";
 
 /** Agrupa Subgrupos/Membros/Convidar/Fases/Situações -- itens de gestão do
  * grupo (menos usados no dia a dia que Processos/Clientes/Histórico) --
- * numa aba só, com sub-navegação própria. Cada sub-aba mantém exatamente
+ * numa tela só, com sub-navegação própria. Cada sub-aba mantém exatamente
  * o mesmo piso de papel que já tinha quando era aba de topo. */
 export default function GrupoPage() {
-  const subAbas = SUB_ABAS.filter((a) => papelAtende(a.minimo));
-  const [subAbaAtiva, setSubAbaAtiva] = useState<SubAbaId>(subAbas[0]?.id || "subgrupos");
+  const abas = ABAS_DO_GRUPO.filter((a) => papelAtende(a.minimo));
+  const [abaAtiva, setAbaAtiva] = useState<SubAbaId>(abas[0]?.id || "subgrupos");
 
   return (
     <>
-      <nav className="tabs tabs--sub">
-        {subAbas.map((aba) => (
-          <button
-            key={aba.id}
-            className={`tab ${subAbaAtiva === aba.id ? "active" : ""}`}
-            onClick={() => setSubAbaAtiva(aba.id)}
-          >
-            {aba.label}
-          </button>
-        ))}
-      </nav>
+      <CabecalhoDePagina titulo="Grupo" subtitulo="Gestão de definições do grupo." />
 
-      {subAbaAtiva === "subgrupos" && <SubgruposPage />}
-      {subAbaAtiva === "membros" && <MembrosPage />}
-      {subAbaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" />}
-      {subAbaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" />}
-      {subAbaAtiva === "convidar" && <ConvidarPage />}
+      <Abas
+        abas={abas.map((a) => ({ id: a.id, rotulo: a.label }))}
+        ativa={abaAtiva}
+        onMudar={setAbaAtiva}
+      />
+
+      {abaAtiva === "subgrupos" && <SubgruposPage />}
+      {abaAtiva === "membros" && <MembrosPage />}
+      {abaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" />}
+      {abaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" />}
+      {abaAtiva === "convidar" && <ConvidarPage />}
     </>
   );
 }

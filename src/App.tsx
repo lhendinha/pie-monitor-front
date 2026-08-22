@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { AppShell, RotaProtegida, ToastProvider } from "./components";
+import { AppShell, RotaPorPapel, RotaProtegida, ToastProvider } from "./components";
 import { SessaoProvider, useSessaoContexto } from "./contexts/SessaoContext";
 import {
   ClienteDetalhePage,
@@ -44,7 +44,12 @@ function Rotas() {
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/clientes/:clienteId" element={<ClienteDetalhePage />} />
           <Route path="/historico" element={<RotaHistorico />} />
-          <Route path="/grupo" element={<GrupoPage />} />
+          {/* `manager`, igual ao piso do item no menu lateral. Esconder do
+              menu sem fechar a rota era cosmético: bastava digitar o
+              endereço pra entrar. */}
+          <Route element={<RotaPorPapel minimo="manager" />}>
+            <Route path="/grupo" element={<GrupoPage />} />
+          </Route>
         </Route>
       </Route>
 
