@@ -43,9 +43,19 @@ export default function ModalDeAviso({ titulo, mensagem, itens, detalhe, onFecha
             {mensagem}
           </Text>
           {itens && itens.length > 0 && (
-            <List.Root ps="18px" fontSize="13.5px" lineHeight="1.5">
+            /* 26px de recuo: o artifact usa a indentação cheia do
+               navegador, que joga a lista longe demais da frase que a
+               apresenta. Aqui ela fica claramente recuada e ainda alinhada
+               com o parágrafo. */
+            <List.Root ps="26px" fontSize="13.5px" lineHeight="1.5">
               {itens.map((item) => (
-                <List.Item key={item}>{item}</List.Item>
+                /* ⚠️ A cor do marcador vem da receita do Chakra
+                   (`fg.subtle`), que é o cinza slate -- as bolinhas saíam
+                   quase apagadas ao lado do texto. No artifact o marcador é
+                   da cor do texto, porque lá é `<ul>` puro. */
+                <List.Item key={item} _marker={{ color: "fg" }}>
+                  {item}
+                </List.Item>
               ))}
             </List.Root>
           )}
