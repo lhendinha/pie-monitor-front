@@ -107,6 +107,7 @@ export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: PagePro
           <Pagination
             pagina={pagina}
             totalPaginas={totalPaginas}
+          total={total}
             tamanhoPagina={tamanhoPagina}
             onMudarPagina={setPagina}
             onMudarTamanho={handleMudarTamanho}

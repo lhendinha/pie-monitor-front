@@ -44,6 +44,11 @@ export interface Cliente {
   criado_por?: string;
   criado_em?: string;
   cpf_cnpj?: string | null;
+  /** Quantos processos do grupo referenciam este cliente. Campo DERIVADO,
+   * calculado pela API (22/08/2026) -- não está gravado no cliente. Conta
+   * a linha de processo, então o mesmo número em dois subgrupos conta
+   * duas vezes. */
+  processos?: number;
   telefone?: string | null;
   email?: string | null;
 }
@@ -158,4 +163,17 @@ export interface SubAbaConfig {
   id: SubAbaId;
   label: string;
   minimo: Papel;
+}
+
+/** Tarefa do Kanban. Aqui só os campos que o detalhe do processo usa -- o
+ * quadro completo entra na etapa dele. */
+export interface Tarefa {
+  subgrupo_id: string;
+  tarefa_id: string;
+  titulo: string;
+  data: string;
+  coluna_id: string;
+  prioridade: string;
+  responsavel_id?: string | null;
+  processo_numero?: string | null;
 }

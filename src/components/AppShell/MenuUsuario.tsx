@@ -1,10 +1,10 @@
 import { Box, Menu, Portal, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { NOME_PAPEL } from "../../constants";
-import { getApelido, getEmail, getPapel } from "../../services";
+import { getApelido, getEmail } from "../../services";
 import { iniciais } from "../../utils";
 import { BotaoNu } from "../BotaoNu";
+import IconeChevron from "../Icons/IconeChevron";
 
 
 interface Props {
@@ -24,47 +24,49 @@ interface Props {
 export default function MenuUsuario({ onSair }: Props) {
   const navegar = useNavigate();
   const nome = getApelido() || getEmail() || "";
-  const papel = getPapel();
 
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
+        {/* `.user-chip` do artifact: avatar de 22px, o nome em 700/13 e a
+            seta -- sem a linha do papel, que lá não existe. */}
         <BotaoNu
           type="button"
           display="flex"
           alignItems="center"
-          gap="8px"
-          px="8px"
-          py="6px"
-          borderRadius="md"
+          gap="9px"
+          p="5px 10px 5px 5px"
+          borderRadius="full"
+          ml="6px"
           cursor="pointer"
           _hover={{ bg: "border.subtle" }}
           _focusVisible={{ outline: "2px solid", outlineColor: "fg.brand", outlineOffset: "2px" }}
         >
           <Box
-            w="26px"
-            h="26px"
+            w="22px"
+            h="22px"
             borderRadius="full"
-            bg="bg.brand.subtle"
-            color="fg.brand"
-            fontSize="11px"
-            fontWeight="800"
+            bg="brand.tint2"
+            color="brand.darker"
+            fontSize="10px"
+            fontWeight="700"
             display="flex"
             alignItems="center"
             justifyContent="center"
+            flex="0 0 auto"
           >
             {iniciais(nome)}
           </Box>
-          <Box textAlign="left" display={{ base: "none", md: "block" }}>
-            <Text fontSize="13px" fontWeight="600" lineClamp={1}>
-              {nome}
-            </Text>
-            <Text fontSize="11px" color="fg.subtle">
-              {(papel && NOME_PAPEL[papel]) || papel}
-            </Text>
-          </Box>
-          <Box aria-hidden="true" color="fg.subtle" fontSize="10px">
-            ▾
+          <Text
+            fontSize="13px"
+            fontWeight="700"
+            lineClamp={1}
+            display={{ base: "none", md: "block" }}
+          >
+            {nome}
+          </Text>
+          <Box aria-hidden="true" color="fg.subtle" display="flex">
+            <IconeChevron tamanho={14} />
           </Box>
         </BotaoNu>
       </Menu.Trigger>

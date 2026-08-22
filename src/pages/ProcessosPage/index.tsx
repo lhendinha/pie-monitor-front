@@ -1,32 +1,37 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
-import { listarProcessos, removerProcesso } from "../../services";
-import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
+import { listarProcessos } from "../../services";
+import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { mascararNumeroProcesso } from "../../utils";
-import { Modal, Pagination, Skeleton, useToast } from "../../components";
-import { INTERVALO_POLLING_PROCESSOS_MS, TAMANHO_PAGINA_PADRAO } from "../../constants";
-import CabecalhoProcessos from "./CabecalhoProcessos";
-import DetalheEditarProcesso from "./DetalheEditarProcesso";
-import DetalheProcesso from "./DetalheProcesso";
-import TabelaProcessos from "./TabelaProcessos";
-import NovoProcessoForm from "./NovoProcessoForm";
-import { useDadosDeApoio } from "./useDadosDeApoio";
-import { useFiltrosProcessos } from "./useFiltrosProcessos";
+import { CartaoDeTabela, Pagination, Skeleton } from "../../components";
+import { TAMANHO_PAGINA_PADRAO } from "../../constants";
+import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants/processos";
+import CabecalhoProcessos from "./components/CabecalhoProcessos";
+import TabelaProcessos from "./components/TabelaProcessos";
+import NovoProcessoForm from "./components/NovoProcessoForm";
+import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
+import { useFiltrosProcessos } from "./hooks/useFiltrosProcessos";
 import type { Processo } from "../../types";
 
+/** Listagem de processos.
+ *
+ * O detalhe não vive mais aqui: clicar numa linha NAVEGA pra
+ * `/processos/{subgrupo}/{numero}`. Era um modal de edição mais um modal de
+ * comunicações, com um botão que fechava o primeiro pra abrir o segundo --
+ * e nenhum dos dois sobrevivia a um F5 ou a um link colado, que é
+ * exatamente o que o e-mail de lembrete manda.
+ */
 export default function ProcessosPage() {
-  const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
-  const [processoEmEdicao, setProcessoEmEdicao] = useState<Processo | null>(null);
+  const navegar = useNavigate();
 
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
 
   const f = useFiltrosProcessos();
-  const apoio = useDadosDeApoio();
-  const toast = useToast();
+  const apoio = useCatalogosDeProcesso();
   const queryClient = useQueryClient();
 
   const parametrosBusca = f.filtroAtivo ? f.filtros : { pagina, tamanhoPagina };
@@ -56,20 +61,9 @@ export default function ProcessosPage() {
   const totalPaginas = processosQuery.data?.total_paginas ?? 0;
   const carregando = processosQuery.isPending;
 
-  const removerMutation = useMutation({
-    mutationFn: (p: Processo) => removerProcesso(p.subgrupo_id, p.numero_processo),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["processos"] }),
-    onError: (err) => toastErroMutation(toast, err, "Não foi possível remover esse processo."),
-  });
-
   function handleMudarTamanho(novoTamanho: number) {
     setTamanhoPagina(novoTamanho);
     setPagina(1);
-  }
-
-  function handleRemover(p: Processo) {
-    if (!window.confirm(`Remover ${mascararNumeroProcesso(p.numero_processo)} desse subgrupo?`)) return;
-    removerMutation.mutate(p);
   }
 
   function invalidarProcessos() {
@@ -96,65 +90,41 @@ export default function ProcessosPage() {
       {carregando ? (
         <Skeleton />
       ) : (
-        <TabelaProcessos
-          processos={processos}
-          filtroAtivo={f.filtroAtivo}
-          onLimparFiltros={f.limpar}
-          subgrupoNome={apoio.subgrupoNome}
-          clientesNomes={apoio.clientesNomes}
-          faseRotulo={apoio.faseRotulo}
-          situacaoRotulo={apoio.situacaoRotulo}
-          onAbrir={setProcessoEmEdicao}
-        />
-      )}
-
-      {!f.filtroAtivo && !carregando && processos.length > 0 && (
-        <Pagination
-          pagina={pagina}
-          totalPaginas={totalPaginas}
-          tamanhoPagina={tamanhoPagina}
-          onMudarPagina={setPagina}
-          onMudarTamanho={handleMudarTamanho}
-        />
-      )}
-
-      {numeroAberto && (
-        <Modal titulo={mascararNumeroProcesso(numeroAberto)} onFechar={() => setNumeroAberto(null)}>
-          <DetalheProcesso numero={numeroAberto} />
-        </Modal>
+        /* Tabela e paginação dentro do MESMO cartão, como no artifact: lá o
+           `.table-card` só fecha depois da barra de páginas. Separados, a
+           paginação virava um bloco solto embaixo da tabela. */
+        <CartaoDeTabela>
+          <TabelaProcessos
+            processos={processos}
+            filtroAtivo={f.filtroAtivo}
+            onLimparFiltros={f.limpar}
+            subgrupoNome={apoio.subgrupoNome}
+            clientesNomes={apoio.clientesNomes}
+            faseRotulo={apoio.faseRotulo}
+            situacaoRotulo={apoio.situacaoRotulo}
+            onAbrir={(p) => navegar(`/processos/${p.subgrupo_id}/${p.numero_processo}`)}
+          />
+          {!f.filtroAtivo && processos.length > 0 && (
+            <Pagination
+              pagina={pagina}
+              totalPaginas={totalPaginas}
+              total={total}
+              tamanhoPagina={tamanhoPagina}
+              onMudarPagina={setPagina}
+              onMudarTamanho={handleMudarTamanho}
+            />
+          )}
+        </CartaoDeTabela>
       )}
 
       {modalAberto && (
-        <Modal titulo="Novo Processo" onFechar={() => setModalAberto(false)}>
-          <NovoProcessoForm
-            subgrupos={apoio.subgrupos}
-            onCadastrado={invalidarProcessos}
-            onFechar={() => setModalAberto(false)}
-          />
-        </Modal>
+        <NovoProcessoForm
+          subgrupos={apoio.subgrupos}
+          onCadastrado={invalidarProcessos}
+          onFechar={() => setModalAberto(false)}
+        />
       )}
 
-      {processoEmEdicao && (
-        <Modal
-          titulo={mascararNumeroProcesso(processoEmEdicao.numero_processo)}
-          onFechar={() => setProcessoEmEdicao(null)}
-        >
-          <DetalheEditarProcesso
-            processo={processoEmEdicao}
-            onAtualizado={invalidarProcessos}
-            onFechar={() => setProcessoEmEdicao(null)}
-            onRemover={() => {
-              const p = processoEmEdicao;
-              setProcessoEmEdicao(null);
-              handleRemover(p);
-            }}
-            onVerHistorico={() => {
-              setNumeroAberto(processoEmEdicao.numero_processo);
-              setProcessoEmEdicao(null);
-            }}
-          />
-        </Modal>
-      )}
     </>
   );
 }

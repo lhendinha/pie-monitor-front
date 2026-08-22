@@ -2,7 +2,13 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell, RotaProtegida, ToastProvider } from "./components";
 import { SessaoProvider, useSessaoContexto } from "./contexts/SessaoContext";
-import { ClientesPage, GrupoPage, ProcessosPage } from "./pages";
+import {
+  ClienteDetalhePage,
+  ClientesPage,
+  GrupoPage,
+  ProcessoDetalhePage,
+  ProcessosPage,
+} from "./pages";
 import RotaConvite from "./routes/RotaConvite";
 import RotaEsqueciSenha from "./routes/RotaEsqueciSenha";
 import RotaHistorico from "./routes/RotaHistorico";
@@ -28,7 +34,15 @@ function Rotas() {
         <Route element={<AppShell onSair={sair} />}>
           <Route index element={<RotaRaiz />} />
           <Route path="/processos" element={<ProcessosPage />} />
+          {/* Detalhe é rota: o e-mail de lembrete linka direto pra cá, e a
+              tela se hidrata sozinha pelo número. O subgrupo está no
+              caminho porque o mesmo número pode viver em mais de um. */}
+          <Route
+            path="/processos/:subgrupoId/:numero"
+            element={<ProcessoDetalhePage />}
+          />
           <Route path="/clientes" element={<ClientesPage />} />
+          <Route path="/clientes/:clienteId" element={<ClienteDetalhePage />} />
           <Route path="/historico" element={<RotaHistorico />} />
           <Route path="/grupo" element={<GrupoPage />} />
         </Route>

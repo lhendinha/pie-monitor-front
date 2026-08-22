@@ -26,7 +26,9 @@ vi.mock("./pages", () => ({
   AceitarConvitePage: ({ token }: { token: string }) => <div>convite {token}</div>,
   RedefinirSenhaPage: ({ token }: { token: string }) => <div>redefinir {token}</div>,
   ProcessosPage: () => <div>tela de processos</div>,
+  ProcessoDetalhePage: () => <div>detalhe do processo</div>,
   ClientesPage: () => <div>tela de clientes</div>,
+  ClienteDetalhePage: () => <div>detalhe do cliente</div>,
   GrupoPage: () => <div>tela de grupo</div>,
   HistoricoPage: ({ deepLink }: { deepLink: { comunicacaoId: string } | null }) => (
     <div>histórico {deepLink ? `deep:${deepLink.comunicacaoId}` : "sem deep"}</div>

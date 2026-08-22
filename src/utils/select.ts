@@ -1,27 +1,111 @@
-import type { ClassNamesConfig, GroupBase, StylesConfig } from "react-select";
+import type { GroupBase, StylesConfig } from "react-select";
 import { Z_INDEX_MENU_PORTAL } from "../constants/select";
+import { ALTURA_LISTA, MENSAGEM_VAZIA, OPCAO_CAIXA, OPCAO_LINHA, PAINEL } from "../theme/painelFiltro";
 import { PILULA, coresPilula } from "../theme/pilula";
 import { cores, raios, sombras } from "../theme/tokens";
 import type { Opcao } from "../components/Select/types";
+
+/** Como cada opção do painel se desenha. O artifact usa duas formas
+ * diferentes: caixa de seleção quando dá pra escolher várias (situação,
+ * fase) e linha inteira clicável quando é uma só (cliente). */
+export type FormaDaOpcao = "caixa" | "linha";
+
+function estiloDaOpcao(forma: FormaDaOpcao, selecionada: boolean, focada: boolean) {
+  if (forma === "linha") {
+    return {
+      gap: 0,
+      padding: OPCAO_LINHA.padding,
+      borderRadius: raios.sm,
+      fontSize: OPCAO_LINHA.fonte,
+      fontWeight: selecionada ? OPCAO_LINHA.pesoAtiva : OPCAO_LINHA.peso,
+      color: selecionada ? cores.brandDarker : cores.ink,
+      background: selecionada ? cores.brandTint : "transparent",
+      // Realce só no ponteiro, não em `isFocused`: o react-select foca a
+      // primeira opção ao abrir, e o artifact abre o painel sem nada
+      // realçado -- a primeira linha parecia pré-selecionada.
+      "&:hover": { background: selecionada ? cores.brandTint : cores.canvas },
+    };
+  }
+  return {
+    gap: OPCAO_CAIXA.gap,
+    padding: OPCAO_CAIXA.padding,
+    fontSize: OPCAO_CAIXA.fonte,
+    fontWeight: OPCAO_CAIXA.peso,
+    color: cores.ink,
+    background: focada ? cores.line2 : "transparent",
+  };
+}
 
 export function estilosMenuPortal(base: Record<string, unknown>) {
   return { ...base, zIndex: Z_INDEX_MENU_PORTAL };
 }
 
-export function criarClassNames(compacto: boolean): ClassNamesConfig<Opcao, boolean, GroupBase<Opcao>> {
+/** Estilos do select padrão (`.csel-trigger` / `.csel-panel` do artifact).
+ *
+ * Substitui o mapa de classes que apontava pro `index.css` -- era de lá que
+ * vinha a borda bege do "Por página", herdada da paleta antiga. Aqui os
+ * valores saem de `theme/tokens`, a única fonte de cor do projeto. */
+export function estilosSelect(
+  compacto: boolean,
+  /** Nada escolhido -- inclui o caso em que a opção escolhida é a "vazia"
+   * ("Nenhuma"/"Todos"). O artifact trata os dois igual: `.csel-trigger`
+   * ganha a classe `placeholder` e o texto vai pra cinza em peso 500, em
+   * vez do `ink` em 600 de um valor de verdade. Sem isso "Nenhuma" parecia
+   * uma escolha feita. */
+  semValor = false,
+): StylesConfig<Opcao, boolean, GroupBase<Opcao>> {
   return {
-    control: (state) =>
-      ["select-control", compacto && "select-control--compacto", state.isFocused && "select-control--focado"]
-        .filter(Boolean)
-        .join(" "),
-    menu: () => "select-menu",
-    menuList: () => "select-menu-lista",
-    option: (state) =>
-      ["select-opcao", state.isSelected && "select-opcao--selecionada", state.isFocused && "select-opcao--focada"]
-        .filter(Boolean)
-        .join(" "),
-    placeholder: () => "muted",
-    noOptionsMessage: () => "select-vazio muted",
+    control: (base, estado) => ({
+      ...base,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      minHeight: "auto",
+      padding: compacto ? "6px 8px" : "9px 12px",
+      border: `1px solid ${estado.isFocused ? cores.brand : cores.line}`,
+      borderRadius: raios.sm,
+      background: cores.surface,
+      fontWeight: semValor ? 500 : 600,
+      fontSize: compacto ? 12.5 : 13,
+      color: semValor ? cores.slate2 : cores.ink,
+      textAlign: "left" as const,
+      cursor: "pointer",
+      boxShadow: estado.isFocused ? `0 0 0 3px ${cores.brandTint}` : "none",
+      "&:hover": { borderColor: cores.brand },
+    }),
+    menu: (base) => ({
+      ...base,
+      marginTop: 4,
+      background: cores.surface,
+      border: `1px solid ${cores.line}`,
+      borderRadius: raios.md,
+      boxShadow: sombras.md,
+      overflow: "hidden",
+    }),
+    menuList: (base) => ({ ...base, maxHeight: 250, padding: 5 }),
+    option: (base, estado) => ({
+      ...base,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "8px 9px",
+      borderRadius: raios.sm,
+      fontSize: 13,
+      fontWeight: 600,
+      color: estado.isSelected ? cores.brandDarker : cores.ink,
+      background: estado.isSelected ? cores.brandTint : estado.isFocused ? cores.canvas : "transparent",
+      cursor: "pointer",
+    }),
+    placeholder: (base) => ({ ...base, color: cores.slate2, fontWeight: 500 }),
+    noOptionsMessage: (base) => ({
+      ...base,
+      padding: MENSAGEM_VAZIA.padding,
+      fontSize: MENSAGEM_VAZIA.fonte,
+      color: cores.slate,
+      textAlign: "center" as const,
+    }),
+    menuPortal: estilosMenuPortal,
   };
 }
 
@@ -46,7 +130,10 @@ export function rotuloResumo(selecionados: readonly Opcao[], placeholder: string
  * tags, que é o comportamento padrão do react-select em modo múltiplo e não
  * é o que o artifact mostra.
  */
-export function estilosChip(temSelecao: boolean): StylesConfig<Opcao, boolean, GroupBase<Opcao>> {
+export function estilosChip(
+  temSelecao: boolean,
+  formaDaOpcao: FormaDaOpcao = "caixa",
+): StylesConfig<Opcao, boolean, GroupBase<Opcao>> {
   return {
     control: (base) => ({
       ...base,
@@ -65,30 +152,38 @@ export function estilosChip(temSelecao: boolean): StylesConfig<Opcao, boolean, G
       textTransform: "uppercase",
       cursor: "pointer",
       whiteSpace: "nowrap",
+      // Mesmo realce da pílula de datas (`PilulaDeFiltro`): sem isto, três
+      // dos quatro chips não reagiam ao ponteiro e um reagia.
+      "&:hover": { borderColor: cores.brand },
     }),
     menu: (base) => ({
       ...base,
-      marginTop: 6,
-      minWidth: 216,
+      marginTop: PAINEL.margemTopo,
+      // 340px medido no artifact -- com menos que isso os rótulos de
+      // situação quebram em duas linhas.
+      width: PAINEL.largura,
       background: cores.surface,
       border: `1px solid ${cores.line}`,
       borderRadius: raios.md,
       boxShadow: sombras.md,
       overflow: "hidden",
     }),
+    menuList: (base) => ({ ...base, maxHeight: ALTURA_LISTA, padding: "0 2px" }),
     option: (base, estado) => ({
       ...base,
+      ...estiloDaOpcao(formaDaOpcao, estado.isSelected, estado.isFocused),
       display: "flex",
       alignItems: "center",
-      gap: 8,
-      padding: "8px 10px",
-      fontSize: 13,
-      fontWeight: 600,
-      color: cores.ink,
-      background: estado.isFocused ? cores.line2 : "transparent",
       cursor: "pointer",
     }),
     placeholder: (base) => ({ ...base, color: "inherit" }),
+    noOptionsMessage: (base) => ({
+      ...base,
+      padding: MENSAGEM_VAZIA.padding,
+      fontSize: MENSAGEM_VAZIA.fonte,
+      color: cores.slate,
+      textAlign: "center" as const,
+    }),
     menuPortal: estilosMenuPortal,
   };
 }

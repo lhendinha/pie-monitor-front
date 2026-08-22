@@ -49,7 +49,13 @@ export const system = createSystem(defaultConfig, {
           tint: { value: cores.badTint },
         },
       },
+      /** ⚠️ `heading` e `body` são os nomes que o Chakra já usa nas próprias
+       * receitas -- sem sobrescrevê-los, todo `Heading` saía em Inter (o
+       * default dele) enquanto o resto da tela ia de Manrope. Criar só um
+       * `fonts.ui` novo não alcança as receitas da lib. */
       fonts: {
+        heading: { value: fontes.ui },
+        body: { value: fontes.ui },
         ui: { value: fontes.ui },
         mono: { value: fontes.mono },
       },
@@ -64,26 +70,100 @@ export const system = createSystem(defaultConfig, {
       },
     },
 
+    /** Campos de texto do sistema (`.field input` / `.field textarea` do
+     * artifact): 9px 12px, raio 6, borda `line`, e no foco a borda da marca
+     * com um anel de 3px.
+     *
+     * Vai na receita e não em cada formulário: são dezenas de campos entre
+     * Processos, Clientes, Grupo e Login, e a única forma de eles não
+     * divergirem é existirem num lugar só. */
+    recipes: {
+      input: {
+        /* ⚠️ `px`/`py` na variante de tamanho, não `padding` no `base`: a
+           receita do Chakra define `px`/`py` em `size.md`, e tanto a
+           variante vence o base quanto a propriedade específica vence a
+           abreviada -- ficava 8px vertical no lugar dos 9px do artifact. */
+        variants: { size: { md: { px: "12px", py: "9px", height: "auto" } } },
+        base: {
+          width: "100%",
+          padding: "9px 12px",
+          borderWidth: "1px",
+          borderColor: "border",
+          borderRadius: "sm",
+          bg: "bg.surface",
+          fontSize: "14px",
+          /* Mesmo cinza que o artifact usa no placeholder dos selects
+             (`.csel-trigger.placeholder`). Lá os campos de texto ficaram com
+             o cinza padrão do navegador (#757575) por omissão -- aqui vale a
+             coerência com o resto do sistema. */
+          _placeholder: { color: "fg.subtle" },
+          _focusVisible: {
+            outline: "none",
+            borderColor: "fg.brand",
+            boxShadow: "0 0 0 3px {colors.brand.tint}",
+          },
+        },
+      },
+      textarea: {
+        /* ⚠️ `px`/`py` na variante de tamanho, não `padding` no `base`: a
+           receita do Chakra define `px`/`py` em `size.md`, e tanto a
+           variante vence o base quanto a propriedade específica vence a
+           abreviada -- ficava 8px vertical no lugar dos 9px do artifact. */
+        variants: { size: { md: { px: "12px", py: "9px", height: "auto" } } },
+        base: {
+          width: "100%",
+          padding: "9px 12px",
+          borderWidth: "1px",
+          borderColor: "border",
+          borderRadius: "sm",
+          bg: "bg.surface",
+          fontSize: "14px",
+          minHeight: "76px",
+          resize: "vertical",
+          _placeholder: { color: "fg.subtle" },
+          _focusVisible: {
+            outline: "none",
+            borderColor: "fg.brand",
+            boxShadow: "0 0 0 3px {colors.brand.tint}",
+          },
+        },
+      },
+    },
+
     /** O que os componentes consomem. A camada existe pra que uma tela peça
      * "a cor do texto secundário" e não "slate.muted" -- se o papel mudar de
-     * cor, muda aqui e não em 40 arquivos. */
+     * cor, muda aqui e não em 40 arquivos.
+     *
+     * ⚠️ ANINHADO, nunca com chave achatada (`"fg.subtle"`). A chave com
+     * ponto vira um token chamado literalmente `fg.subtle`, emitido como
+     * `--chakra-colors-fg\.subtle` -- variável DIFERENTE da
+     * `--chakra-colors-fg-subtle` que a prop `color="fg.subtle"` lê. O
+     * resultado é silencioso e feio: o Chakra já define `fg.muted`,
+     * `fg.subtle` e `border.subtle` por padrão, então a tela inteira
+     * passava a usar o cinza zinco dele (`#a1a1aa`) no lugar do slate do
+     * artifact (`#8493a1`). Aninhado, os nomes coincidem e o meu vence. */
     semanticTokens: {
       colors: {
-        "fg.default": { value: "{colors.ink}" },
-        "fg.muted": { value: "{colors.slate}" },
-        "fg.subtle": { value: "{colors.slate.muted}" },
-        "fg.brand": { value: "{colors.brand}" },
-        "bg.canvas": { value: "{colors.canvas}" },
-        "bg.surface": { value: "{colors.surface}" },
-        "bg.brand.subtle": { value: "{colors.brand.tint}" },
-        "border.default": { value: "{colors.line}" },
-        "border.subtle": { value: "{colors.line.soft}" },
-        "status.good": { value: "{colors.good}" },
-        "status.good.bg": { value: "{colors.good.tint}" },
-        "status.warn": { value: "{colors.warn}" },
-        "status.warn.bg": { value: "{colors.warn.tint}" },
-        "status.bad": { value: "{colors.bad}" },
-        "status.bad.bg": { value: "{colors.bad.tint}" },
+        fg: {
+          DEFAULT: { value: "{colors.ink}" },
+          muted: { value: "{colors.slate}" },
+          subtle: { value: "{colors.slate.muted}" },
+          brand: { value: "{colors.brand}" },
+        },
+        bg: {
+          canvas: { value: "{colors.canvas}" },
+          surface: { value: "{colors.surface}" },
+          brand: { subtle: { value: "{colors.brand.tint}" } },
+        },
+        border: {
+          DEFAULT: { value: "{colors.line}" },
+          subtle: { value: "{colors.line.soft}" },
+        },
+        status: {
+          good: { DEFAULT: { value: "{colors.good}" }, bg: { value: "{colors.good.tint}" } },
+          warn: { DEFAULT: { value: "{colors.warn}" }, bg: { value: "{colors.warn.tint}" } },
+          bad: { DEFAULT: { value: "{colors.bad}" }, bg: { value: "{colors.bad.tint}" } },
+        },
       },
     },
   },
@@ -119,10 +199,37 @@ export const system = createSystem(defaultConfig, {
     "p, h1, h2, h3, h4, h5, h6, figure, blockquote, dl, dd": { margin: 0 },
     "ul, ol": { margin: 0, padding: 0 },
     "button, input, select, textarea": { font: "inherit", color: "inherit" },
+
+    /** ⚠️ A regra que mais faltava do preflight, e que mordeu quatro vezes
+     * em componentes diferentes.
+     *
+     * `border-style` nasce `none` (e `inset` nos campos), e largura sem
+     * estilo **computa zero**. Ou seja: `borderWidth="1px"` vindo de prop
+     * do Chakra simplesmente não desenha nada, sem erro nenhum. Foi assim
+     * que sumiram a borda da pílula de datas, a do campo de data, a da
+     * busca (que saía chanfrada) e a divisória direita do menu lateral.
+     *
+     * Largura zero + estilo sólido: nada ganha borda sozinho, e qualquer
+     * `borderWidth` posterior funciona. É exatamente o que o preflight do
+     * Tailwind faz, e o Chakra faria se o dele estivesse ligado.
+     *
+     * Seletor universal tem especificidade 0, então qualquer regra por
+     * classe do `index.css` continua vencendo. */
+    "*, *::before, *::after": { borderWidth: 0, borderStyle: "solid" },
+
     // Sem `padding` de propósito: `.icon-btn` do index.css não define o
     // próprio e seria achatado. Componente Chakra que quer zero padding
     // define explicitamente.
-    button: { background: "none", border: 0, cursor: "pointer" },
+    button: { background: "none", cursor: "pointer" },
     fieldset: { margin: 0, padding: 0, border: 0 },
+    /** Terceiro caso da mesma família do `<p>` e do `<button>`: sem
+     * preflight, o navegador sublinha todo `<a>`. Os itens do menu lateral
+     * são `<Link>` do router, e apareciam sublinhados -- no artifact eles
+     * são `<button>`, sem sublinhado nenhum.
+     *
+     * Conferido: as duas regras de `text-decoration: underline` do
+     * `index.css` são de `button` (`.link-button`, `.footer-note button`),
+     * então nada aqui as atropela. */
+    a: { color: "inherit", textDecoration: "none" },
   },
 });

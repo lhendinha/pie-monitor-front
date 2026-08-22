@@ -3,6 +3,8 @@ export { default as AceitarConvitePage } from "./AceitarConvitePage";
 export { default as EsqueciSenhaPage } from "./EsqueciSenhaPage";
 export { default as RedefinirSenhaPage } from "./RedefinirSenhaPage";
 export { default as ProcessosPage } from "./ProcessosPage";
+export { default as ProcessoDetalhePage } from "./ProcessoDetalhePage";
 export { default as ClientesPage } from "./ClientesPage";
+export { default as ClienteDetalhePage } from "./ClienteDetalhePage";
 export { default as HistoricoPage } from "./HistoricoPage";
 export { default as GrupoPage } from "./GrupoPage";

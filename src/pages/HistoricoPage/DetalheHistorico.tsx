@@ -14,7 +14,7 @@ interface DetalheHistoricoProps {
  * que gerou essa notificação. Busca pela MESMA rota que o link do e-mail
  * já abre (GET /processos/{numero}/detalhes) e filtra pelo comunicacao_id
  * salvo no item -- sem endpoint novo, sem duplicar o texto no backend.
- * Mesma query key que DetalheProcesso, pra compartilhar cache. */
+ * Mesma query key que a `ProcessoDetalhePage`, pra compartilhar cache. */
 export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
   const habilitado = item.comunicacao_id != null;
 

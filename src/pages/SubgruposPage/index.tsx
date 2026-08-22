@@ -125,6 +125,7 @@ export default function SubgruposPage() {
           <Pagination
             pagina={pagina}
             totalPaginas={totalPaginas}
+          total={total}
             tamanhoPagina={tamanhoPagina}
             onMudarPagina={setPagina}
             onMudarTamanho={handleMudarTamanho}

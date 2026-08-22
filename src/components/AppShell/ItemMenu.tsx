@@ -24,19 +24,37 @@ export default function ItemMenu({ item }: Props) {
   return (
     <NavLink to={item.caminho} end={item.caminho === "/"} style={{ display: "block" }}>
       {({ isActive }) => (
+        /* `.nav-item` do artifact: 9px 10px, gap 11, 13.5px/600. O ativo
+           ganha, além do fundo, uma barra de 3px encostada na borda da
+           barra lateral -- é o `::before` de lá, em `left: -12px`, que só
+           funciona porque a lista tem 12px de padding. */
         <HStack
-          gap="10px"
-          px="12px"
-          py="9px"
-          mx="10px"
-          borderRadius="md"
-          color={isActive ? "fg.brand" : "fg.muted"}
+          position="relative"
+          gap="11px"
+          p="9px 10px"
+          mb="2px"
+          borderRadius="sm"
+          color={isActive ? "brand.darker" : "fg.muted"}
           bg={isActive ? "bg.brand.subtle" : "transparent"}
-          fontWeight={isActive ? "700" : "500"}
-          _hover={{ bg: isActive ? "bg.brand.subtle" : "border.subtle" }}
+          fontWeight="600"
+          _hover={{ bg: isActive ? "bg.brand.subtle" : "border.subtle", color: isActive ? "brand.darker" : "fg" }}
+          _before={
+            isActive
+              ? {
+                  content: '""',
+                  position: "absolute",
+                  left: "-12px",
+                  top: "6px",
+                  bottom: "6px",
+                  width: "3px",
+                  borderRadius: "2px",
+                  bg: "fg.brand",
+                }
+              : undefined
+          }
         >
           {Icone && (
-            <Box aria-hidden="true" display="flex">
+            <Box aria-hidden="true" display="flex" color={isActive ? "fg.brand" : "fg.subtle"}>
               <Icone />
             </Box>
           )}

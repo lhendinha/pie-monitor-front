@@ -1,0 +1,58 @@
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+
+import { Botao, CampoDeBusca } from "../../../../components";
+import { contar } from "../../../../utils";
+
+interface Props {
+  carregando: boolean;
+  total: number;
+  busca: string;
+  onBuscar: (valor: string) => void;
+  podeCriar: boolean;
+  onNovoCliente: () => void;
+}
+
+/** Cabeçalho da tela de Clientes: título, ação, busca e contagem -- mesma
+ * estrutura do cabeçalho de Processos. */
+export default function CabecalhoClientes({
+  carregando,
+  total,
+  busca,
+  onBuscar,
+  podeCriar,
+  onNovoCliente,
+}: Props) {
+  return (
+    <Box mb="14px">
+      <Flex align="flex-start" justify="space-between" gap="16px" mb="18px">
+        <Box>
+          <Heading as="h1" fontSize="23px" fontWeight="800" letterSpacing="-0.01em">
+            Clientes
+          </Heading>
+          <Text fontSize="13px" color="fg.muted" mt="2px">
+            Contatos e partes vinculadas aos processos.
+          </Text>
+        </Box>
+        {podeCriar && (
+          <Box flexShrink={0}>
+            <Botao onClick={onNovoCliente}>+ Novo cliente</Botao>
+          </Box>
+        )}
+      </Flex>
+
+      <Flex gap="10px" mb="10px">
+        <CampoDeBusca
+          rotulo="Pesquisar cliente"
+          placeholder="Pesquisar cliente"
+          valor={busca}
+          onMudar={onBuscar}
+          larguraMaxima="420px"
+        />
+      </Flex>
+
+      <Text fontSize="11.5px" color="fg.subtle" className="num">
+        {carregando ? "carregando…" : contar(total, "cliente", "clientes")}
+      </Text>
+    </Box>
+  );
+}

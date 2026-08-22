@@ -13,6 +13,8 @@ export const qk = {
   membros: () => ["membros"] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
   grupos: () => ["grupos"] as const,
+  tarefasDoProcesso: (numeroProcesso: string) =>
+    ["tarefas", "processo", numeroProcesso] as const,
   processos: (params: {
     pagina?: number;
     tamanhoPagina?: number;
@@ -25,6 +27,7 @@ export const qk = {
   }) => ["processos", params] as const,
   historico: (params: { pagina?: number; tamanhoPagina?: number }) => ["historico", params] as const,
   detalhesProcesso: (numeroProcesso: string) => ["detalhesProcesso", numeroProcesso] as const,
+  detalheCliente: (clienteId: string) => ["cliente", clienteId] as const,
   clientes: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) => ["clientes", params] as const,
   opcoesProcesso: (tipo: "fase" | "situacao", params: { pagina?: number; tamanhoPagina?: number } = {}) =>
     ["opcoesProcesso", tipo, params] as const,

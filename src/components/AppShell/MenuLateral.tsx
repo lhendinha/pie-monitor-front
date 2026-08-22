@@ -1,8 +1,9 @@
-import { Box, HStack, Stack, Text } from "@chakra-ui/react";
+import { Box, Stack } from "@chakra-ui/react";
 
 import { ITENS_NAVEGACAO } from "../../constants";
 import { papelAtende } from "../../services";
 import ItemMenu from "./ItemMenu";
+import MarcaArgos from "./MarcaArgos";
 
 /** Menu lateral fixo: marca e navegação.
  *
@@ -21,21 +22,20 @@ export default function MenuLateral() {
       flex="0 0 236px"
       bg="bg.surface"
       borderRightWidth="1px"
-      borderColor="border.default"
+      borderColor="border"
       position="sticky"
-      top="0"
-      h="100vh"
+      /* Logo abaixo da faixa de 3px da marca, que é fixa -- é o
+         `top: 3px; height: calc(100vh - 3px)` do artifact. Sem isso a barra
+         lateral passa por baixo da faixa e a divisória dela não encosta no
+         topo. */
+      top="3px"
+      h="calc(100vh - 3px)"
       display="flex"
       flexDirection="column"
     >
-      <HStack gap="10px" px="20px" pt="20px" pb="16px">
-        <Box w="22px" h="22px" borderRadius="7px" bg="fg.brand" />
-        <Text fontSize="17px" fontWeight="800" letterSpacing="-0.01em">
-          Argos
-        </Text>
-      </HStack>
+      <MarcaArgos />
 
-      <Stack as="nav" aria-label="Navegação principal" gap="2px" flex="1" overflowY="auto">
+      <Stack as="nav" aria-label="Navegação principal" gap="0" flex="1" overflowY="auto" p="6px 12px">
         {itens.map((item) => (
           <ItemMenu key={item.caminho} item={item} />
         ))}

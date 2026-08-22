@@ -34,7 +34,10 @@ export default function AppShell({ onSair }: Props) {
         <MenuLateral />
         <Box flex="1" minW="0" display="flex" flexDirection="column">
           <Topbar onSair={onSair} />
-          <Box as="main" flex="1" px="28px" py="24px">
+          {/* `.content` do artifact: 26px 32px 60px, centralizado e com
+              teto de 1400px -- em tela larga o conteúdo para de esticar em
+              vez de acompanhar o monitor. */}
+          <Box as="main" flex="1" w="100%" maxW="1400px" mx="auto" p="26px 32px 60px">
             <Outlet />
           </Box>
         </Box>

@@ -1,13 +1,13 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   listarClientes: vi.fn(),
   criarCliente: vi.fn(),
-  atualizarCliente: vi.fn(),
-  removerCliente: vi.fn(),
   papelAtende: vi.fn(),
 }));
 
@@ -16,166 +16,194 @@ vi.mock("../../services", () => mocks);
 import { ApiError } from "../../services/api/client";
 import ClientesPage from "./index";
 
+/** Marca onde a navegação parou, sem montar o detalhe inteiro -- o que este
+ * arquivo testa é a listagem. */
+function EspiaoDeRota() {
+  const { clienteId } = useParams();
+  return <div>{`detalhe ${clienteId}`}</div>;
+}
+
+function montar() {
+  return renderComProviders(
+    <MemoryRouter initialEntries={["/clientes"]}>
+      <Routes>
+        <Route path="/clientes" element={<ClientesPage />} />
+        <Route path="/clientes/:clienteId" element={<EspiaoDeRota />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.papelAtende.mockReturnValue(true);
+  mocks.listarClientes.mockResolvedValue({
+    clientes: [
+      {
+        cliente_id: "1",
+        nome: "Fulano",
+        cpf_cnpj: "12345678901",
+        processos: 3,
+      },
+    ],
+    total: 1,
+    total_paginas: 1,
+  });
 });
 
 describe("ClientesPage", () => {
   it("mostra a lista depois de carregar, com pagina/tamanhoPagina", async () => {
-    mocks.listarClientes.mockResolvedValue({
-      clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1,
-    });
-    renderComProviders(<ClientesPage />);
+    montar();
+
     expect(await screen.findByText("Fulano")).toBeInTheDocument();
-    expect(mocks.listarClientes).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
+    expect(mocks.listarClientes).toHaveBeenCalledWith({
+      pagina: 1,
+      tamanhoPagina: 10,
+    });
   });
 
-  it("busca troca os parâmetros pra {busca} (ignora pagina/tamanhoPagina) e some a paginação", async () => {
-    mocks.listarClientes.mockResolvedValue({
-      clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1,
-    });
+  it("mostra quantos processos cada cliente tem", async () => {
+    // Campo derivado, calculado pela API -- sem ele a tela teria que pedir
+    // `GET /processos?cliente_id=X` por linha.
+    montar();
+
+    expect(await screen.findByText("3")).toBeInTheDocument();
+  });
+
+  it("deduz pessoa física ou jurídica pelo tamanho do documento", async () => {
+    montar();
+
+    expect(await screen.findByText("Pessoa física")).toBeInTheDocument();
+  });
+
+  it("busca troca os parâmetros pra {busca} e some a paginação", async () => {
     const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
+    montar();
     await screen.findByText("Fulano");
 
-    await user.type(screen.getByLabelText("Buscar"), "fulano");
+    await user.type(screen.getByLabelText("Pesquisar cliente"), "ciclana");
 
-    await waitFor(() => expect(mocks.listarClientes).toHaveBeenCalledWith({ busca: "fulano" }));
-    expect(screen.queryByLabelText("Por página")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.listarClientes).toHaveBeenCalledWith({ busca: "ciclana" }),
+    );
+    expect(screen.queryByText("Por página")).not.toBeInTheDocument();
   });
 
   it("busca sem resultado mostra a mensagem específica de busca vazia", async () => {
-    mocks.listarClientes.mockImplementation((opcoes: { busca?: string }) =>
-      Promise.resolve(
-        opcoes.busca
-          ? { clientes: [], total: 0, total_paginas: 0 }
-          : { clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1 }
-      )
-    );
     const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
+    montar();
     await screen.findByText("Fulano");
 
-    await user.type(screen.getByLabelText("Buscar"), "ninguem com esse nome");
-
-    expect(await screen.findByText("Nenhum cliente encontrado pra essa busca.")).toBeInTheDocument();
-  });
-
-  it("botão '+ Novo Cliente' abre modal com máscara de CPF/CNPJ e telefone na digitação, mas envia só dígitos", async () => {
-    mocks.listarClientes.mockResolvedValue({ clientes: [], total: 0, total_paginas: 0 });
-    mocks.criarCliente.mockResolvedValue({});
-    const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
-
-    await screen.findByText("Nenhum cliente ainda.");
-    await user.click(screen.getByRole("button", { name: "+ Novo Cliente" }));
-
-    await user.type(screen.getByLabelText("Nome"), "Beltrano");
-    const cpfInput = screen.getByLabelText("CPF/CNPJ (opcional)");
-    await user.type(cpfInput, "12345678901");
-    expect(cpfInput).toHaveValue("123.456.789-01"); // mascarado na tela...
-    const telefoneInput = screen.getByLabelText("Telefone (opcional)");
-    await user.type(telefoneInput, "11987654321");
-    expect(telefoneInput).toHaveValue("(11) 98765-4321");
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
-
-    // ...mas o backend recebe só dígitos (mesmo padrão de mascararNumeroProcesso).
-    await waitFor(() =>
-      expect(mocks.criarCliente).toHaveBeenCalledWith({
-        nome: "Beltrano",
-        cpfCnpj: "12345678901",
-        telefone: "11987654321",
-        email: "",
-      })
-    );
-  });
-
-  it("edita um cliente existente, reaplicando a máscara ao abrir e enviando só dígitos ao salvar", async () => {
     mocks.listarClientes.mockResolvedValue({
-      clientes: [{ cliente_id: "1", nome: "Fulano", cpf_cnpj: "12345678901", telefone: "11987654321" }],
-      total: 1, total_paginas: 1,
+      clientes: [],
+      total: 0,
+      total_paginas: 0,
     });
-    mocks.atualizarCliente.mockResolvedValue({});
-    const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
-
-    await screen.findByText("Fulano");
-    await user.click(screen.getByTitle("Editar"));
-
-    const nomeInput = await screen.findByLabelText("Nome");
-    expect(screen.getByLabelText("CPF/CNPJ")).toHaveValue("123.456.789-01"); // mascarado a partir do dado salvo
-    expect(screen.getByLabelText("Telefone")).toHaveValue("(11) 98765-4321");
-    await user.clear(nomeInput);
-    await user.type(nomeInput, "Fulano Editado");
-    await user.click(screen.getByRole("button", { name: "Salvar" }));
-
-    await waitFor(() =>
-      expect(mocks.atualizarCliente).toHaveBeenCalledWith(
-        "1",
-        expect.objectContaining({ nome: "Fulano Editado", cpfCnpj: "12345678901", telefone: "11987654321" })
-      )
-    );
-  });
-
-  it("remove um cliente e invalida a listagem", async () => {
-    mocks.listarClientes.mockResolvedValue({
-      clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1,
-    });
-    mocks.removerCliente.mockResolvedValue({});
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
-
-    await screen.findByText("Fulano");
-    await user.click(screen.getByTitle("Remover"));
-
-    await waitFor(() => expect(mocks.removerCliente).toHaveBeenCalledWith("1"));
-  });
-
-  it("erro ao remover cliente em uso por um processo mostra a mensagem da ApiError", async () => {
-    mocks.listarClientes.mockResolvedValue({
-      clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1,
-    });
-    mocks.removerCliente.mockRejectedValue(
-      new ApiError("Cliente está associado a pelo menos 1 processo -- remova essa associação antes de excluir", 409)
-    );
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-    const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
-
-    await screen.findByText("Fulano");
-    await user.click(screen.getByTitle("Remover"));
+    await user.type(screen.getByLabelText("Pesquisar cliente"), "zzz");
 
     expect(
-      await screen.findByText("Cliente está associado a pelo menos 1 processo -- remova essa associação antes de excluir")
+      await screen.findByText("Nenhum cliente para “zzz”."),
     ).toBeInTheDocument();
   });
 
-  it("erro ao criar mostra a mensagem da ApiError", async () => {
-    mocks.listarClientes.mockResolvedValue({ clientes: [], total: 0, total_paginas: 0 });
-    mocks.criarCliente.mockRejectedValue(new ApiError("Cliente inválido", 400));
+  it("clicar na linha NAVEGA pro detalhe", async () => {
+    // O detalhe deixou de ser modal: é rota, pelo mesmo motivo do detalhe
+    // de processo -- precisa sobreviver a um F5 e a um link colado.
     const user = userEvent.setup();
-    renderComProviders(<ClientesPage />);
+    montar();
 
-    await screen.findByText("Nenhum cliente ainda.");
-    await user.click(screen.getByRole("button", { name: "+ Novo Cliente" }));
-    await user.type(screen.getByLabelText("Nome"), "X");
-    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+    await user.click(await screen.findByText("Fulano"));
 
-    expect(await screen.findByText("Cliente inválido")).toBeInTheDocument();
+    expect(await screen.findByText("detalhe 1")).toBeInTheDocument();
   });
 
-  it("sem permissão (papelAtende falso), não mostra o botão de criar nem os ícones de editar/remover", async () => {
-    mocks.papelAtende.mockReturnValue(false);
-    mocks.listarClientes.mockResolvedValue({
-      clientes: [{ cliente_id: "1", nome: "Fulano" }], total: 1, total_paginas: 1,
-    });
-    renderComProviders(<ClientesPage />);
-
+  it("a linha abre pelo teclado -- Enter na linha focada", async () => {
+    const user = userEvent.setup();
+    montar();
     await screen.findByText("Fulano");
-    expect(screen.queryByRole("button", { name: "+ Novo Cliente" })).not.toBeInTheDocument();
-    expect(screen.queryByTitle("Editar")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("Remover")).not.toBeInTheDocument();
+
+    screen.getByText("Fulano").closest("tr")!.focus();
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByText("detalhe 1")).toBeInTheDocument();
+  });
+
+  it("cadastra com máscara na digitação, mas envia só dígitos", async () => {
+    mocks.criarCliente.mockResolvedValue({});
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Fulano");
+
+    await user.click(screen.getByRole("button", { name: "+ Novo cliente" }));
+    await user.type(await screen.findByLabelText(/Nome/), "Ciclano");
+    await user.type(screen.getByLabelText(/CPF\/CNPJ/), "12345678901");
+    await user.type(screen.getByLabelText(/Telefone/), "31988887777");
+
+    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+
+    await waitFor(() =>
+      expect(mocks.criarCliente).toHaveBeenCalledWith({
+        nome: "Ciclano",
+        cpfCnpj: "12345678901",
+        telefone: "31988887777",
+        email: "",
+      }),
+    );
+  });
+
+  it("e-mail malformado bloqueia o cadastro e avisa na hora", async () => {
+    // O servidor recusa do mesmo jeito (`EmailInvalido`); isto é pra a
+    // pessoa não preencher o formulário inteiro pra tomar erro no fim.
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Fulano");
+
+    await user.click(screen.getByRole("button", { name: "+ Novo cliente" }));
+    await user.type(await screen.findByLabelText(/Nome/), "Ciclano");
+    await user.type(screen.getByLabelText(/E-mail/), "isso-nao-e-email");
+
+    expect(await screen.findByText("E-mail inválido.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cadastrar" })).toBeDisabled();
+    expect(mocks.criarCliente).not.toHaveBeenCalled();
+  });
+
+  it("e-mail vazio não é erro -- o campo é opcional", async () => {
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Fulano");
+
+    await user.click(screen.getByRole("button", { name: "+ Novo cliente" }));
+    await user.type(await screen.findByLabelText(/Nome/), "Ciclano");
+
+    expect(screen.queryByText("E-mail inválido.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cadastrar" })).toBeEnabled();
+  });
+
+  it("erro ao criar mostra a mensagem da ApiError", async () => {
+    mocks.criarCliente.mockRejectedValue(
+      // `ApiError(mensagem, status)` -- nessa ordem.
+      new ApiError("Esse CPF/CNPJ já é de outro cliente", 409),
+    );
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Fulano");
+
+    await user.click(screen.getByRole("button", { name: "+ Novo cliente" }));
+    await user.type(await screen.findByLabelText(/Nome/), "Ciclano");
+    await user.click(screen.getByRole("button", { name: "Cadastrar" }));
+
+    expect(
+      await screen.findByText("Esse CPF/CNPJ já é de outro cliente"),
+    ).toBeInTheDocument();
+  });
+
+  it("sem permissão de manager, não mostra o botão de criar", async () => {
+    mocks.papelAtende.mockReturnValue(false);
+    montar();
+    await screen.findByText("Fulano");
+
+    expect(
+      screen.queryByRole("button", { name: "+ Novo cliente" }),
+    ).not.toBeInTheDocument();
   });
 });

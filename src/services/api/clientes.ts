@@ -26,6 +26,12 @@ export function listarClientes(opcoes: OpcoesListarClientes = {}) {
   return chamar("/clientes", { query });
 }
 
+/** Um cliente por id -- é o que hidrata a página de detalhe num F5 ou num
+ * link colado. Devolve também `processos`, a contagem derivada. */
+export function detalheCliente(clienteId: string) {
+  return chamar(`/clientes/${clienteId}`);
+}
+
 export function criarCliente(campos: CamposCliente) {
   return chamar("/clientes", {
     method: "POST",

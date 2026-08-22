@@ -33,8 +33,13 @@ body {
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
+  /* Fundo e cor do texto saem dos tokens do Chakra, não da paleta antiga.
+     Esta regra é unlayered e vence o Chakra em toda a aplicação: enquanto
+     apontasse pro `--ink` antigo (#1b2a4a), TODO texto migrado que não
+     declarasse cor própria herdava o azul-escuro errado no lugar do
+     #152029 do artifact -- inclusive as células da tabela. */
+  background: var(--chakra-colors-canvas, #f5f7f9);
+  color: var(--chakra-colors-ink, #152029);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
@@ -52,7 +57,11 @@ input {
 }
 
 :focus-visible {
-  outline: 2px solid var(--oxblood);
+  /* Azul da marca, não o vinho da paleta antiga. Esta regra é unlayered e
+     por isso vence o Chakra em TODA a aplicação -- enquanto ela apontasse
+     pro `--oxblood`, nenhum campo migrado conseguia mostrar o foco certo.
+     Lê o token do Chakra pra não haver duas definições da mesma cor. */
+  outline: 2px solid var(--chakra-colors-brand, #008fd5);
   outline-offset: 2px;
 }
 
@@ -274,7 +283,7 @@ input {
 }
 
 .field > input:focus-visible {
-  border-color: var(--oxblood);
+  border-color: var(--chakra-colors-brand, #008fd5);
 }
 
 .field-error {

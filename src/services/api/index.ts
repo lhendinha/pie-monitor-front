@@ -7,3 +7,4 @@ export * from "./historico";
 export * from "./grupos";
 export * from "./clientes";
 export * from "./opcoesProcesso";
+export * from "./tarefas";

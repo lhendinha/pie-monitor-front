@@ -9,3 +9,16 @@ import { afterEach } from "vitest";
 afterEach(() => {
   cleanup();
 });
+
+/** O jsdom não implementa `ResizeObserver`, e os componentes do Chakra que
+ * se posicionam sozinhos (Popover, DatePicker) instanciam um. Sem este
+ * substituto o teste ainda passa, mas cospe `ResizeObserver is not defined`
+ * no meio da saída -- e um erro de infraestrutura no log esconde o erro de
+ * verdade quando algo quebra. */
+if (!("ResizeObserver" in globalThis)) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

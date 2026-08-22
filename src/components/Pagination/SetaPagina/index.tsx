@@ -1,0 +1,38 @@
+import { BotaoNu } from "../../BotaoNu";
+
+interface Props {
+  direcao: "anterior" | "proxima";
+  desabilitado: boolean;
+  onClick: () => void;
+}
+
+/** Seta de página (`.pagination-seta` do artifact): quadrado de 30px com
+ * borda, glifo de 16px. */
+export default function SetaPagina({ direcao, desabilitado, onClick }: Props) {
+  const anterior = direcao === "anterior";
+  return (
+    <BotaoNu
+      type="button"
+      disabled={desabilitado}
+      onClick={onClick}
+      title={anterior ? "Página anterior" : "Próxima página"}
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      w="30px"
+      h="30px"
+      borderWidth="1px"
+      borderStyle="solid"
+      borderColor="border"
+      borderRadius="sm"
+      bg="bg.surface"
+      color="fg.muted"
+      fontSize="16px"
+      lineHeight="1"
+      _hover={{ bg: "border.subtle", color: "fg" }}
+      _disabled={{ opacity: 0.4, cursor: "default", _hover: { bg: "bg.surface" } }}
+    >
+      {anterior ? "‹" : "›"}
+    </BotaoNu>
+  );
+}
