@@ -1,13 +1,3 @@
-/** Data de hoje por extenso, em português (ex: "quinta-feira, 13 de agosto de 2026"). */
-export function dataHojeExtenso(): string {
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
-}
-
 /** Formata uma data (dd/mm/aaaa), sem hora -- pra campos como
  * `data_disponibilizacao` da API do PJe, que representam só o dia, não um
  * instante (a API manda algo como "2026-07-17", às vezes com sufixo de hora

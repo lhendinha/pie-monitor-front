@@ -7,3 +7,12 @@
 
 export { default as IconeHistorico } from "./IconeHistorico";
 export { default as IconeArrastar } from "./IconeArrastar";
+
+// Ícones do menu lateral (Fase 2). `IconeHistorico` acima já servia.
+export { default as IconeWorkspace } from "./IconeWorkspace";
+export { default as IconeKanban } from "./IconeKanban";
+export { default as IconeAgenda } from "./IconeAgenda";
+export { default as IconeAtendimentos } from "./IconeAtendimentos";
+export { default as IconeProcessos } from "./IconeProcessos";
+export { default as IconeClientes } from "./IconeClientes";
+export { default as IconeGrupo } from "./IconeGrupo";

@@ -134,14 +134,7 @@ export type TamanhoPagina = (typeof TAMANHOS_PAGINA)[number];
 
 /** Abas de topo do App.tsx. "grupo" agrupa Subgrupos/Membros/Convidar/
  * Fases/Situações como sub-navegação (ver GrupoPage + SubAbaId). */
-export type AbaId = "processos" | "clientes" | "historico" | "grupo";
-export type TelaAuth = "login" | "esqueci-senha";
 
-export interface AbaConfig {
-  id: AbaId;
-  label: string;
-  minimo: Papel;
-}
 
 /** Sub-abas dentro de GrupoPage. */
 export type SubAbaId = "subgrupos" | "membros" | "convidar" | "fases" | "situacoes";

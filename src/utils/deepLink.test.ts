@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDeepLinkHistorico } from "./deepLink";
+import { parseDeepLinkHistorico, parseProcessoAvulso } from "./deepLink";
 
 describe("parseDeepLinkHistorico", () => {
   it("os dois parâmetros presentes -- devolve o objeto", () => {
@@ -30,5 +30,20 @@ describe("parseDeepLinkHistorico", () => {
       processo: "123",
       comunicacaoId: "456",
     });
+  });
+});
+
+describe("parseProcessoAvulso", () => {
+  it("devolve o número quando só veio ?processo=", () => {
+    expect(parseProcessoAvulso("?processo=123")).toBe("123");
+  });
+
+  it("devolve null quando o link está completo -- aí quem manda é o de Histórico", () => {
+    expect(parseProcessoAvulso("?processo=123&comunicacao=9")).toBeNull();
+  });
+
+  it("devolve null sem nenhum parâmetro", () => {
+    expect(parseProcessoAvulso("")).toBeNull();
+    expect(parseProcessoAvulso("?comunicacao=9")).toBeNull();
   });
 });

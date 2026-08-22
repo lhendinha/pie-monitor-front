@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dataHojeExtenso, formatarData, formatarDataHora, formatarDataHoraAmPm } from "./date";
+import { formatarData, formatarDataHora, formatarDataHoraAmPm } from "./date";
 
 // Timezone fixado em America/Sao_Paulo via vite.config.ts (test.env.TZ) --
 // os horários abaixo assumem isso.
@@ -66,10 +66,3 @@ describe("formatarDataHoraAmPm", () => {
   });
 });
 
-describe("dataHojeExtenso", () => {
-  it("devolve uma string não vazia no formato por extenso em português", () => {
-    const resultado = dataHojeExtenso();
-    expect(resultado).toMatch(/\d{4}/); // contém o ano
-    expect(resultado.length).toBeGreaterThan(10);
-  });
-});

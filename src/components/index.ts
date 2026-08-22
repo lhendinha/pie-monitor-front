@@ -6,3 +6,5 @@ export { ToastProvider, useToast } from "./Toast";
 export { IconeHistorico, IconeArrastar } from "./Icons";
 export { default as ComunicacaoCard } from "./ComunicacaoCard";
 export { default as InfoTip } from "./InfoTip";
+export { default as AppShell } from "./AppShell";
+export { default as RotaProtegida } from "./RotaProtegida";
