@@ -1,6 +1,6 @@
 import ReactSelect from "react-select";
 import { ALTURA_MAXIMA_MENU, SEM_INDICADORES } from "../../constants/select";
-import { criarClassNames, estilosMenuPortal, semOpcoesDisponiveis } from "../../utils/select";
+import { criarClassNames, estilosChip, estilosMenuPortal, semOpcoesDisponiveis } from "../../utils/select";
 import { OpcaoComCheckbox } from "./OpcaoComCheckbox";
 import { ResumoSelecionados } from "./ResumoSelecionados";
 import type { Opcao } from "./types";
@@ -11,11 +11,26 @@ interface MultiSelectProps {
   selecionados: string[];
   onMudar: (valores: string[]) => void;
   placeholder?: string;
+  /** "chip" desenha o controle como a pílula de filtro do artifact.
+   *
+   * O rótulo mostra a seleção -- é o `ResumoSelecionados` (ValueContainer
+   * já existente no projeto) que troca as tags padrão por texto: um nome
+   * quando é um só, "N selecionados" quando são muitos. É por isso que o
+   * artifact não precisa de chips removíveis embaixo da barra. */
+  variante?: "padrao" | "chip";
 }
 
 /** Dropdown fechado com checkboxes -- mesmo visual do `Select` de valor
  * único, mas permitindo múltipla seleção. */
-export function MultiSelect({ id, opcoes, selecionados, onMudar, placeholder = "Selecione" }: MultiSelectProps) {
+export function MultiSelect({
+  id,
+  opcoes,
+  selecionados,
+  onMudar,
+  placeholder = "Selecione",
+  variante = "padrao",
+}: MultiSelectProps) {
+  const chip = variante === "chip";
   return (
     <ReactSelect<Opcao, true>
       isMulti
@@ -34,8 +49,8 @@ export function MultiSelect({ id, opcoes, selecionados, onMudar, placeholder = "
       menuPosition="fixed"
       maxMenuHeight={ALTURA_MAXIMA_MENU}
       menuPortalTarget={document.body}
-      styles={{ menuPortal: estilosMenuPortal }}
-      classNames={criarClassNames(false)}
+      styles={chip ? estilosChip(selecionados.length > 0) : { menuPortal: estilosMenuPortal }}
+      classNames={chip ? undefined : criarClassNames(false)}
       components={{ ...SEM_INDICADORES, Option: OpcaoComCheckbox, ValueContainer: ResumoSelecionados }}
       noOptionsMessage={semOpcoesDisponiveis}
     />

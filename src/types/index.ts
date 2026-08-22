@@ -62,10 +62,16 @@ export interface OpcaoProcesso {
 /** Filtros estruturados do painel "Filtros" em ProcessosPage -- separado
  * de `FiltrosProcessos` (services/api/processos.ts), que já inclui `busca`
  * e usa nomes de campo iguais aos da query string. */
-export interface FiltrosEstruturadosProcessos {
+/** Filtros estruturados da tela de Processos.
+ *
+ * Fase e situação são LISTAS: a tela usa seleção múltipla (como o artifact)
+ * e o backend aceita o parâmetro repetido -- "aguardando contestação OU
+ * audiência" é pergunta de todo dia num escritório. Cliente segue único,
+ * também como no artifact. */
+export interface FiltrosProcessos {
   clienteId: string;
-  faseId: string;
-  situacaoId: string;
+  faseIds: string[];
+  situacaoIds: string[];
   dataVerificarAte: string;
   prazoFinalAte: string;
 }
@@ -125,7 +131,9 @@ export interface JwtPayload {
 export interface OpcoesRequisicao {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: Record<string, unknown>;
-  query?: Record<string, string | undefined>;
+  /** Array vira parâmetro repetido (`?fase_id=a&fase_id=b`), que é como o
+   * FastAPI lê lista. Ver `montarQuery` em services/api/client.ts. */
+  query?: Record<string, string | string[] | undefined>;
 }
 
 /** Campos comuns do envelope de paginação real (backend: shared/paginacao.py). */

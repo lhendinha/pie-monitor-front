@@ -1,15 +1,21 @@
 import { chamar } from "./client";
+import type { ValorQuery } from "./client";
 
-export interface FiltrosProcessos {
+/** Parâmetros de busca do `GET /processos`.
+ *
+ * Nome diferente do `FiltrosProcessos` de `types/` de propósito: aquele é o
+ * ESTADO da tela, este é o que vai na query string. Chamar os dois igual
+ * fazia o import errado passar despercebido. */
+export interface FiltrosBuscaProcessos {
   busca?: string;
   clienteId?: string;
-  faseId?: string;
-  situacaoId?: string;
+  faseIds?: string[];
+  situacaoIds?: string[];
   dataVerificarAte?: string;
   prazoFinalAte?: string;
 }
 
-interface OpcoesListarProcessos extends FiltrosProcessos {
+interface OpcoesListarProcessos extends FiltrosBuscaProcessos {
   pagina?: number;
   tamanhoPagina?: number;
 }
@@ -17,8 +23,15 @@ interface OpcoesListarProcessos extends FiltrosProcessos {
 /** true se qualquer filtro estiver preenchido -- mesma checagem que o
  * backend usa (processos_router.py) pra decidir entre listagem paginada
  * por contador e busca/filtro (não paginado, ver `listarProcessos`). */
-export function temFiltroAtivo(f: FiltrosProcessos): boolean {
-  return Boolean(f.busca || f.clienteId || f.faseId || f.situacaoId || f.dataVerificarAte || f.prazoFinalAte);
+export function temFiltroAtivo(f: FiltrosBuscaProcessos): boolean {
+  return Boolean(
+    f.busca ||
+      f.clienteId ||
+      f.faseIds?.length ||
+      f.situacaoIds?.length ||
+      f.dataVerificarAte ||
+      f.prazoFinalAte,
+  );
 }
 
 /** Campos novos do processo, todos opcionais -- mesmo conjunto usado no
@@ -54,13 +67,14 @@ function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {
  * (`temFiltroAtivo`), ignora pagina/tamanhoPagina -- é uma busca/filtro
  * pontual, não paginado (mesmo corte que processos_router.py usa). */
 export function listarProcessos(opcoes: OpcoesListarProcessos = {}) {
-  const { pagina, tamanhoPagina, busca, clienteId, faseId, situacaoId, dataVerificarAte, prazoFinalAte } = opcoes;
-  const query: Record<string, string | undefined> = temFiltroAtivo(opcoes)
+  const { pagina, tamanhoPagina, busca, clienteId, faseIds, situacaoIds, dataVerificarAte, prazoFinalAte } = opcoes;
+  const query: Record<string, ValorQuery> = temFiltroAtivo(opcoes)
     ? {
         busca,
         cliente_id: clienteId,
-        fase_id: faseId,
-        situacao_id: situacaoId,
+        // Repetidos: `?fase_id=a&fase_id=b`. Ver `montarQuery`.
+        fase_id: faseIds,
+        situacao_id: situacaoIds,
         data_verificar_ate: dataVerificarAte,
         prazo_final_ate: prazoFinalAte,
       }

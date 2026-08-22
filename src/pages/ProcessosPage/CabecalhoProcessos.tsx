@@ -1,74 +1,141 @@
-import { InfoTip } from "../../components";
+import { Box, Button, Flex, Heading, Input, Text, Wrap } from "@chakra-ui/react";
+
+import { IconeBusca, MultiSelect, Select } from "../../components";
+import FiltroDatas from "./FiltroDatas";
+import { contar } from "../../utils";
+import type { Cliente, FiltrosProcessos, OpcaoProcesso } from "../../types";
 
 interface Props {
   carregando: boolean;
   total: number;
-  filtroAtivo: boolean;
+  /** Total do grupo, ignorando filtros -- é o "de Y" da contagem. Sem ele a
+   * frase não diz de quanto o resultado foi recortado. */
+  totalSemFiltro: number;
   busca: string;
   onBuscar: (valor: string) => void;
-  quantidadeFiltros: number;
-  onAlternarPainel: () => void;
+  filtros: FiltrosProcessos;
+  onMudarFiltro: (parcial: Partial<FiltrosProcessos>) => void;
+  clientes: Cliente[];
+  fases: OpcaoProcesso[];
+  situacoes: OpcaoProcesso[];
   onNovoProcesso: () => void;
 }
 
-/** Título, contador, botão de novo processo e a linha de busca.
+/** Cabeçalho da tela de Processos: título, ação, filtros e contagem.
  *
- * O contador muda de palavra conforme o estado: com filtro é "resultado",
- * sem filtro é "ativo". São coisas diferentes -- 3 resultados de uma busca
- * não querem dizer 3 processos ativos no escritório.
+ * Os filtros são **chips inline**, como no artifact -- não um painel que
+ * abre. Cada chip mostra no próprio rótulo o que está selecionado, e é por
+ * isso que não existe uma fileira de chips removíveis embaixo: o estado do
+ * filtro mora no controle que o define, em vez de em dois lugares que podem
+ * discordar.
  */
 export default function CabecalhoProcessos({
   carregando,
   total,
-  filtroAtivo,
+  totalSemFiltro,
   busca,
   onBuscar,
-  quantidadeFiltros,
-  onAlternarPainel,
+  filtros,
+  onMudarFiltro,
+  clientes,
+  fases,
+  situacoes,
   onNovoProcesso,
 }: Props) {
-  const contagem = carregando
-    ? "carregando…"
-    : filtroAtivo
-      ? `${total} resultado(s)`
-      : `${total} ativo(s)`;
-
   return (
-    <>
-      <div className="section-head" style={{ marginTop: 28 }}>
-        <h2>Processos monitorados</h2>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span className="section-count">{contagem}</span>
-          <button className="btn" type="button" onClick={onNovoProcesso}>
-            + Novo Processo
-          </button>
-        </div>
-      </div>
+    <Box mb="14px">
+      <Flex align="flex-start" justify="space-between" gap="16px" mb="18px">
+        <Box>
+          {/* 23px / -0.01em / 13px: medidos no artifact, não estimados. */}
+          <Heading as="h1" fontSize="23px" fontWeight="800" letterSpacing="-0.01em">
+            Processos
+          </Heading>
+          <Text fontSize="13px" color="fg.muted" mt="2px">
+            Monitoramento automático de movimentações no PJe.
+          </Text>
+        </Box>
+        <Button
+          bg="fg.brand"
+          color="white"
+          fontWeight="700"
+          px="18px"
+          flexShrink={0}
+          _hover={{ bg: "brand.dark" }}
+          onClick={onNovoProcesso}
+        >
+          + Novo processo
+        </Button>
+      </Flex>
 
-      <div className="busca-row">
-        <div className="field">
-          <span className="field-label-row">
-            <label htmlFor="busca-processo">Buscar</label>
-            <InfoTip>
-              Busca pelo número do processo, apelido, objeto/assunto, próxima providência ou
-              observações.
-            </InfoTip>
-          </span>
-          <input
-            id="busca-processo"
+      <Wrap gap="10px" mb="10px">
+        {/* Situação e fase aceitam VÁRIOS valores (é o que o artifact faz,
+            e o backend passou a suportar em 21/08). Cliente é valor único --
+            no artifact o painel dele usa botões, não caixas. */}
+        <MultiSelect
+          variante="chip"
+          placeholder="Todas as situações"
+          opcoes={situacoes.map((s) => ({ value: s.opcao_id, label: s.rotulo }))}
+          selecionados={filtros.situacaoIds}
+          onMudar={(v) => onMudarFiltro({ situacaoIds: v })}
+        />
+        <MultiSelect
+          variante="chip"
+          placeholder="Todas as fases"
+          opcoes={fases.map((f) => ({ value: f.opcao_id, label: f.rotulo }))}
+          selecionados={filtros.faseIds}
+          onMudar={(v) => onMudarFiltro({ faseIds: v })}
+        />
+        <Select
+          variante="chip"
+          placeholder="Todos os clientes"
+          opcoes={[
+            { value: "", label: "Todos os clientes" },
+            ...clientes.map((c) => ({ value: c.cliente_id, label: c.nome })),
+          ]}
+          valor={filtros.clienteId}
+          onMudar={(v) => onMudarFiltro({ clienteId: v })}
+        />
+        <FiltroDatas
+          dataVerificarAte={filtros.dataVerificarAte}
+          prazoFinalAte={filtros.prazoFinalAte}
+          onMudar={onMudarFiltro}
+        />
+        {/* A busca NÃO é pílula: raio 6px e lupa dentro, à esquerda -- foi
+            medido no artifact. `flex` + `minW` mantém o campo utilizável
+            quando os chips quebram pra segunda linha em tela estreita. */}
+        <Box position="relative" flex="1" minW="220px" maxW="420px">
+          <Box
+            position="absolute"
+            left="11px"
+            top="50%"
+            transform="translateY(-50%)"
+            color="fg.subtle"
+            pointerEvents="none"
+          >
+            <IconeBusca />
+          </Box>
+          <Input
+            aria-label="Pesquisar processo por número, cliente ou apelido"
+            h="37px"
+            fontSize="14px"
+            bg="bg.surface"
+            borderColor="border.default"
+            borderRadius="sm"
+            pl="34px"
             value={busca}
             onChange={(e) => onBuscar(e.target.value)}
-            placeholder="Número, apelido, assunto, providência ou observações…"
+            placeholder="Pesquisar número, cliente ou apelido"
           />
-        </div>
-        <button
-          className={`btn-ghost${quantidadeFiltros > 0 ? " tem-filtro" : ""}`}
-          type="button"
-          onClick={onAlternarPainel}
-        >
-          Filtros{quantidadeFiltros > 0 ? ` (${quantidadeFiltros})` : ""}
-        </button>
-      </div>
-    </>
+        </Box>
+      </Wrap>
+
+      {/* Contagem embaixo dos filtros, como no artifact: ela descreve o
+          RESULTADO do que os chips acima definiram. */}
+      <Text fontSize="11.5px" color="fg.subtle" className="num">
+        {carregando
+          ? "carregando…"
+          : `Mostrando ${total} de ${contar(totalSemFiltro, "processo", "processos")}`}
+      </Text>
+    </Box>
   );
 }

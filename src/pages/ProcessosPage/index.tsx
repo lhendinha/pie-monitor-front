@@ -4,19 +4,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listarProcessos, removerProcesso } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { formatarData, mascararNumeroProcesso } from "../../utils";
+import { mascararNumeroProcesso } from "../../utils";
 import { Modal, Pagination, Skeleton, useToast } from "../../components";
 import { INTERVALO_POLLING_PROCESSOS_MS, TAMANHO_PAGINA_PADRAO } from "../../constants";
 import CabecalhoProcessos from "./CabecalhoProcessos";
-import ChipsFiltros from "./ChipsFiltros";
 import DetalheEditarProcesso from "./DetalheEditarProcesso";
 import DetalheProcesso from "./DetalheProcesso";
 import TabelaProcessos from "./TabelaProcessos";
 import NovoProcessoForm from "./NovoProcessoForm";
-import PainelFiltros from "./PainelFiltros";
 import { useDadosDeApoio } from "./useDadosDeApoio";
 import { useFiltrosProcessos } from "./useFiltrosProcessos";
-import type { FiltrosEstruturadosProcessos, Processo } from "../../types";
+import type { Processo } from "../../types";
 
 export default function ProcessosPage() {
   const [numeroAberto, setNumeroAberto] = useState<string | null>(null);
@@ -44,6 +42,15 @@ export default function ProcessosPage() {
   });
   useToastOnQueryError(processosQuery.error, "Não foi possível carregar os processos.");
 
+  /** Total do grupo sem filtro nenhum -- é o "de Y" da contagem
+   * ("Mostrando 3 de 11 processos"). Uma página de tamanho 1: só o `total`
+   * do envelope interessa, e o React Query mantém em cache. */
+  const totalQuery = useQuery<{ total: number }>({
+    queryKey: qk.processos({ pagina: 1, tamanhoPagina: 1 }),
+    queryFn: () => listarProcessos({ pagina: 1, tamanhoPagina: 1 }),
+  });
+  const totalSemFiltro = totalQuery.data?.total ?? 0;
+
   const processos = processosQuery.data?.processos || [];
   const total = processosQuery.data?.total ?? 0;
   const totalPaginas = processosQuery.data?.total_paginas ?? 0;
@@ -69,38 +76,22 @@ export default function ProcessosPage() {
     queryClient.invalidateQueries({ queryKey: ["processos"] });
   }
 
-  function rotuloFiltro(chave: keyof FiltrosEstruturadosProcessos, valor: string): string {
-    if (chave === "clienteId") return apoio.clienteNome(valor);
-    if (chave === "faseId") return apoio.faseRotulo(valor);
-    if (chave === "situacaoId") return apoio.situacaoRotulo(valor);
-    return formatarData(valor);
-  }
 
   return (
     <>
       <CabecalhoProcessos
         carregando={carregando}
         total={total}
-        filtroAtivo={f.filtroAtivo}
+        totalSemFiltro={totalSemFiltro}
         busca={f.buscaInput}
         onBuscar={f.setBuscaInput}
-        quantidadeFiltros={f.quantidadeAplicados}
-        onAlternarPainel={f.alternarPainel}
-        onNovoProcesso={() => setModalAberto(true)}
-      />
-
-      <PainelFiltros
-        aberto={f.painelAberto}
-        rascunho={f.rascunho}
-        onMudar={(parcial) => f.setRascunho((r) => ({ ...r, ...parcial }))}
+        filtros={f.aplicados}
+        onMudarFiltro={f.mudar}
         clientes={apoio.clientes}
         fases={apoio.fases}
         situacoes={apoio.situacoes}
-        onAplicar={f.aplicar}
-        onLimpar={f.limpar}
+        onNovoProcesso={() => setModalAberto(true)}
       />
-
-      <ChipsFiltros aplicados={f.aplicados} rotuloDe={rotuloFiltro} onRemover={f.remover} />
 
       {carregando ? (
         <Skeleton />

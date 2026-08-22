@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { NOME_PAPEL } from "../../constants";
 import { getApelido, getEmail, getPapel } from "../../services";
 import { iniciais } from "../../utils";
-import { ChipBotao } from "./ChipBotao";
+import { BotaoNu } from "../BotaoNu";
+
 
 interface Props {
   onSair: () => void;
@@ -28,7 +29,7 @@ export default function MenuUsuario({ onSair }: Props) {
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <ChipBotao
+        <BotaoNu
           type="button"
           display="flex"
           alignItems="center"
@@ -65,7 +66,7 @@ export default function MenuUsuario({ onSair }: Props) {
           <Box aria-hidden="true" color="fg.subtle" fontSize="10px">
             ▾
           </Box>
-        </ChipBotao>
+        </BotaoNu>
       </Menu.Trigger>
 
       <Portal>

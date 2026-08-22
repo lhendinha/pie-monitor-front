@@ -16,3 +16,4 @@ export { default as IconeAtendimentos } from "./IconeAtendimentos";
 export { default as IconeProcessos } from "./IconeProcessos";
 export { default as IconeClientes } from "./IconeClientes";
 export { default as IconeGrupo } from "./IconeGrupo";
+export { default as IconeBusca } from "./IconeBusca";

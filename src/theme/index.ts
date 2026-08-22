@@ -88,9 +88,6 @@ export const system = createSystem(defaultConfig, {
     },
   },
 
-  /** Só o mínimo que o `index.css` ainda NÃO cobre, pra não duplicar regra
-   * enquanto os dois convivem. O resto do estilo base continua vindo de lá
-   * até a tela ser migrada. */
   globalCss: {
     body: {
       fontFamily: "ui",
@@ -98,5 +95,34 @@ export const system = createSystem(defaultConfig, {
       lineHeight: tipografia.alturaLinha,
     },
     ".num": { fontVariantNumeric: "tabular-nums" },
+
+    /** ⚠️ Reset mínimo por TAG -- a parte do preflight que não dá pra adiar.
+     *
+     * Com `preflight: false`, todo elemento nativo mantém o estilo padrão do
+     * navegador **por baixo** das props do Chakra. Isso já mordeu duas vezes
+     * em dois componentes:
+     *
+     * - `<button>` renderizando com o cinza e a borda do navegador;
+     * - `<p>` (que é o que o `Text` do Chakra emite) carregando
+     *   `margin: 1em 0`, o que inflava cada item do menu lateral de 38px pra
+     *   65px. O espaçamento parecia escolha de design; era margem default.
+     *
+     * Conferido antes de adicionar: o `index.css` **não estiliza nenhuma
+     * destas tags diretamente** -- ele trabalha só por classe. Então não há
+     * conflito, mesmo com ele sendo unlayered (o que o faria vencer o
+     * Chakra, que emite em camadas).
+     *
+     * Isto NÃO é o preflight: continua sem tocar em cores, bordas de input,
+     * `box-sizing` global nem nada que desconfigure tela ainda não migrada.
+     * É só a margem/aparência que o navegador injeta sozinho.
+     */
+    "p, h1, h2, h3, h4, h5, h6, figure, blockquote, dl, dd": { margin: 0 },
+    "ul, ol": { margin: 0, padding: 0 },
+    "button, input, select, textarea": { font: "inherit", color: "inherit" },
+    // Sem `padding` de propósito: `.icon-btn` do index.css não define o
+    // próprio e seria achatado. Componente Chakra que quer zero padding
+    // define explicitamente.
+    button: { background: "none", border: 0, cursor: "pointer" },
+    fieldset: { margin: 0, padding: 0, border: 0 },
   },
 });

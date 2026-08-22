@@ -18,11 +18,20 @@ export class ApiError extends Error {
   }
 }
 
-function montarQuery(query?: Record<string, string | undefined>): string {
+/** Valor de um parâmetro de query. Array vira **parâmetro repetido**
+ * (`?fase_id=a&fase_id=b`), que é o formato que o FastAPI lê como lista --
+ * usado pelos filtros de seleção múltipla. */
+export type ValorQuery = string | string[] | undefined;
+
+function montarQuery(query?: Record<string, ValorQuery>): string {
   if (!query || Object.keys(query).length === 0) return "";
   const params = new URLSearchParams();
   Object.entries(query).forEach(([k, v]) => {
-    if (v !== undefined && v !== null && v !== "") params.set(k, v);
+    if (v === undefined || v === null || v === "") return;
+    // `append`, não `set`: `set` sobrescreveria e só o último valor da
+    // lista chegaria ao servidor -- filtro múltiplo virando filtro de um.
+    if (Array.isArray(v)) v.filter(Boolean).forEach((item) => params.append(k, item));
+    else params.set(k, v);
   });
   const qs = params.toString();
   return qs ? `?${qs}` : "";
