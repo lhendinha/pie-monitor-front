@@ -17,3 +17,17 @@ export const LABEL_FILTRO_PROCESSOS: Record<keyof FiltrosEstruturadosProcessos, 
   dataVerificarAte: "Verificar até",
   prazoFinalAte: "Prazo até",
 };
+
+/** Cabeçalhos da tabela de Processos, na ordem do artifact.
+ *
+ * Aqui e não dentro do componente: é dado, e dado tem lugar. Quando a
+ * tabela ganhar ordenação por coluna, é esta lista que vira a fonte da
+ * chave de ordenação -- e ela precisa ser legível sem montar React. */
+export const COLUNAS_PROCESSOS = [
+  "Processo",
+  "Cliente",
+  "Subgrupo",
+  "Situação",
+  "Última movimentação",
+  "Prazo final",
+] as const;

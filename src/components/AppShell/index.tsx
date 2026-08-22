@@ -2,6 +2,7 @@ import { Box, Flex } from "@chakra-ui/react";
 import { Outlet } from "react-router-dom";
 
 import MenuLateral from "./MenuLateral";
+import Topbar from "./Topbar";
 
 interface Props {
   onSair: () => void;
@@ -30,9 +31,12 @@ export default function AppShell({ onSair }: Props) {
         gradientTo="brand.darker"
       />
       <Flex minH="100vh" pt="3px" bg="bg.canvas">
-        <MenuLateral onSair={onSair} />
-        <Box as="main" flex="1" minW="0" px="28px" py="24px">
-          <Outlet />
+        <MenuLateral />
+        <Box flex="1" minW="0" display="flex" flexDirection="column">
+          <Topbar onSair={onSair} />
+          <Box as="main" flex="1" px="28px" py="24px">
+            <Outlet />
+          </Box>
         </Box>
       </Flex>
     </>

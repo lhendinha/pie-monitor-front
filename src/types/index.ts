@@ -28,6 +28,13 @@ export interface Processo {
   observacoes?: string | null;
   fase_id?: string | null;
   situacao_id?: string | null;
+  /** Resumo da comunicação mais recente, gravado pela lambda `check` junto
+   * com `ultima_verificacao`. A coluna "Última movimentação" da tabela junta
+   * os três: o tipo em cima, e embaixo a data em que o TRIBUNAL publicou
+   * (`ultima_mov_data`) mais quando o ROBÔ olhou (`ultima_verificacao`).
+   * Vem `null` em processo que ainda não teve nenhuma comunicação. */
+  ultima_mov_tipo?: string | null;
+  ultima_mov_data?: string | null;
 }
 
 export interface Cliente {

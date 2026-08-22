@@ -11,6 +11,10 @@ interface DetalheEditarProcessoProps {
   processo: Processo;
   onAtualizado: () => void;
   onFechar: () => void;
+  /** Excluir vive AQUI, não na linha da tabela -- é onde o artifact põe, e
+   * evita botão destrutivo a um clique de distância numa lista. */
+  onRemover: () => void;
+  onVerHistorico: () => void;
 }
 
 /** Modal único de detalhe/edição -- substitui o antigo "editar apelido"
@@ -20,6 +24,8 @@ export default function DetalheEditarProcesso({
   processo,
   onAtualizado,
   onFechar,
+  onRemover,
+  onVerHistorico,
 }: DetalheEditarProcessoProps) {
   const [apelido, setApelido] = useState(processo.apelido || "");
   const [campos, setCampos] = useState<CamposOpcionaisProcesso>({
@@ -66,7 +72,15 @@ export default function DetalheEditarProcesso({
 
       <CamposProcesso valores={campos} onMudar={setCampos} />
 
-      <div className="modal-actions">
+      <div className="modal-actions" style={{ justifyContent: "space-between" }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="btn-ghost" type="button" onClick={onVerHistorico}>
+            Ver movimentações
+          </button>
+          <button className="btn-ghost btn-danger-outline" type="button" onClick={onRemover}>
+            Excluir
+          </button>
+        </div>
         <button className="btn" type="submit" disabled={atualizarMutation.isPending}>
           {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
         </button>

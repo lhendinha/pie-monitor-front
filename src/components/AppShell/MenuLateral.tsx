@@ -1,19 +1,18 @@
-import { Box, Button, HStack, Stack, Text } from "@chakra-ui/react";
+import { Box, HStack, Stack, Text } from "@chakra-ui/react";
 
-import { ITENS_NAVEGACAO, NOME_PAPEL } from "../../constants";
-import { getApelido, getEmail, getPapel, papelAtende } from "../../services";
+import { ITENS_NAVEGACAO } from "../../constants";
+import { papelAtende } from "../../services";
 import ItemMenu from "./ItemMenu";
 
-interface Props {
-  onSair: () => void;
-}
-
-/** Menu lateral fixo: marca, navegação e o rodapé com quem está logado. */
-export default function MenuLateral({ onSair }: Props) {
+/** Menu lateral fixo: marca e navegação.
+ *
+ * Quem está logado e o "Sair" ficam no menu do usuário, na topbar -- o
+ * rodapé daqui era solução provisória da Fase 0, quando ainda não havia
+ * topbar. Duas portas pra mesma ação em telas diferentes é confusão. */
+export default function MenuLateral() {
   const itens = ITENS_NAVEGACAO.filter(
     (i) => !i.pendente && (!i.minimo || papelAtende(i.minimo)),
   );
-  const papel = getPapel();
 
   return (
     <Box
@@ -42,17 +41,6 @@ export default function MenuLateral({ onSair }: Props) {
         ))}
       </Stack>
 
-      <Box borderTopWidth="1px" borderColor="border.subtle" px="20px" py="14px">
-        <Text fontSize="13px" fontWeight="600" lineClamp={1}>
-          {getApelido() || getEmail()}
-        </Text>
-        <Text fontSize="12px" color="fg.subtle" mb="8px">
-          {(papel && NOME_PAPEL[papel]) || papel}
-        </Text>
-        <Button size="xs" variant="outline" onClick={onSair}>
-          Sair
-        </Button>
-      </Box>
     </Box>
   );
 }

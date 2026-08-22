@@ -66,10 +66,12 @@ describe("ProcessosPage", () => {
     const user = userEvent.setup();
     renderComProviders(<ProcessosPage />);
 
-    await screen.findByText("Meu processo");
+    await user.click(await screen.findByText("Meu processo"));
     const chamadasSubgruposAntes = mocks.listarSubgrupos.mock.calls.length;
 
-    await user.click(screen.getByTitle("Remover"));
+    // Excluir vive no detalhe, não na linha -- é onde o artifact põe, e
+    // evita botão destrutivo a um clique de distância numa lista.
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
 
     await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalledTimes(2)); // inicial + invalidate pós-remoção
     expect(mocks.listarSubgrupos.mock.calls.length).toBe(chamadasSubgruposAntes);
@@ -147,30 +149,44 @@ describe("ProcessosPage", () => {
     );
   });
 
-  it("clicar em 'Ver histórico' não abre o modal de edição junto (clique não borbulha)", async () => {
+  it("clicar na linha abre o detalhe", async () => {
+    const user = userEvent.setup();
+    renderComProviders(<ProcessosPage />);
+
+    await user.click(await screen.findByText("Meu processo"));
+
+    expect(await screen.findByLabelText("Apelido")).toBeInTheDocument();
+  });
+
+  it("a linha abre pelo teclado -- Enter na linha focada", async () => {
+    // A linha inteira é clicável e não é <button>. Sem tratar Enter, quem
+    // navega por Tab não conseguiria abrir processo nenhum: as ações saíram
+    // da linha e foram pro detalhe, então não há outro caminho.
     const user = userEvent.setup();
     renderComProviders(<ProcessosPage />);
     await screen.findByText("Meu processo");
 
-    await user.click(screen.getByTitle("Ver histórico"));
+    const linha = screen.getByText("Meu processo").closest("tr")!;
+    linha.focus();
+    await user.keyboard("{Enter}");
 
-    expect(screen.queryByLabelText("Apelido")).not.toBeInTheDocument();
+    expect(await screen.findByLabelText("Apelido")).toBeInTheDocument();
   });
 
-  it("clicar em 'Remover' não abre o modal de edição junto (clique não borbulha)", async () => {
+  it("excluir pelo detalhe fecha o detalhe", async () => {
     mocks.removerProcesso.mockResolvedValue({});
     vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     renderComProviders(<ProcessosPage />);
-    await screen.findByText("Meu processo");
 
-    await user.click(screen.getByTitle("Remover"));
+    await user.click(await screen.findByText("Meu processo"));
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
 
     await waitFor(() => expect(mocks.removerProcesso).toHaveBeenCalled());
     expect(screen.queryByLabelText("Apelido")).not.toBeInTheDocument();
   });
 
-  it("mostra tags de fase/situação/data no card quando o processo tem esses campos", async () => {
+  it("mostra situação, fase e prazo nas colunas da tabela", async () => {
     mocks.listarProcessos.mockResolvedValue({
       processos: [{
         ...PROCESSO,
@@ -188,10 +204,13 @@ describe("ProcessosPage", () => {
 
     renderComProviders(<ProcessosPage />);
 
-    expect(await screen.findByText("Conhecimento (1º Grau)")).toBeInTheDocument();
-    expect(screen.getByText("Aguardando sentença")).toBeInTheDocument();
-    expect(screen.getByText("Verificar 25/08/2026")).toBeInTheDocument();
-    expect(screen.getByText("Prazo 01/09/2026")).toBeInTheDocument();
+    // Situação em cima, fase como linha secundária -- é o par da coluna
+    // "Situação" no artifact.
+    expect(await screen.findByText("Aguardando sentença")).toBeInTheDocument();
+    expect(screen.getByText("Conhecimento (1º Grau)")).toBeInTheDocument();
+    // Prazo final é a data; `data_verificar` deixou de aparecer na tabela
+    // (continua editável no detalhe e continua disparando lembrete).
+    expect(screen.getByText("01/09/2026")).toBeInTheDocument();
   });
 
   it("painel de Filtros abre/fecha via classe 'aberto' ao clicar no botão", async () => {

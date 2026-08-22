@@ -57,6 +57,13 @@ export function useDadosDeApoio() {
     situacoes,
     subgrupoNome: (id: string) => subgrupos.find((s) => s.subgrupo_id === id)?.nome || id,
     clienteNome: (id: string) => clientes.find((c) => c.cliente_id === id)?.nome || id,
+    /** Nomes dos clientes de um processo, já juntos pra caber numa célula.
+     * Processo sem cliente devolve string vazia -- quem chama decide o que
+     * mostrar no lugar. */
+    clientesNomes: (p: { cliente_ids?: string[] }) =>
+      (p.cliente_ids || [])
+        .map((id) => clientes.find((c) => c.cliente_id === id)?.nome || id)
+        .join(", "),
     faseRotulo: (id?: string | null) => rotuloOpcao(fases, id),
     situacaoRotulo: (id?: string | null) => rotuloOpcao(situacoes, id),
   };

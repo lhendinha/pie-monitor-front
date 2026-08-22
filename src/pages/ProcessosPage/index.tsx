@@ -11,7 +11,7 @@ import CabecalhoProcessos from "./CabecalhoProcessos";
 import ChipsFiltros from "./ChipsFiltros";
 import DetalheEditarProcesso from "./DetalheEditarProcesso";
 import DetalheProcesso from "./DetalheProcesso";
-import ItemProcesso from "./ItemProcesso";
+import TabelaProcessos from "./TabelaProcessos";
 import NovoProcessoForm from "./NovoProcessoForm";
 import PainelFiltros from "./PainelFiltros";
 import { useDadosDeApoio } from "./useDadosDeApoio";
@@ -104,27 +104,17 @@ export default function ProcessosPage() {
 
       {carregando ? (
         <Skeleton />
-      ) : processos.length === 0 ? (
-        <div className="empty">
-          {f.filtroAtivo
-            ? "Nenhum processo encontrado com esses filtros."
-            : "Nenhum processo cadastrado ainda."}
-        </div>
       ) : (
-        <ul className="docket-list">
-          {processos.map((p) => (
-            <ItemProcesso
-              key={`${p.subgrupo_id}-${p.numero_processo}`}
-              processo={p}
-              subgrupoNome={apoio.subgrupoNome}
-              faseRotulo={apoio.faseRotulo}
-              situacaoRotulo={apoio.situacaoRotulo}
-              onAbrir={setProcessoEmEdicao}
-              onVerHistorico={setNumeroAberto}
-              onRemover={handleRemover}
-            />
-          ))}
-        </ul>
+        <TabelaProcessos
+          processos={processos}
+          filtroAtivo={f.filtroAtivo}
+          onLimparFiltros={f.limpar}
+          subgrupoNome={apoio.subgrupoNome}
+          clientesNomes={apoio.clientesNomes}
+          faseRotulo={apoio.faseRotulo}
+          situacaoRotulo={apoio.situacaoRotulo}
+          onAbrir={setProcessoEmEdicao}
+        />
       )}
 
       {!f.filtroAtivo && !carregando && processos.length > 0 && (
@@ -162,6 +152,15 @@ export default function ProcessosPage() {
             processo={processoEmEdicao}
             onAtualizado={invalidarProcessos}
             onFechar={() => setProcessoEmEdicao(null)}
+            onRemover={() => {
+              const p = processoEmEdicao;
+              setProcessoEmEdicao(null);
+              handleRemover(p);
+            }}
+            onVerHistorico={() => {
+              setNumeroAberto(processoEmEdicao.numero_processo);
+              setProcessoEmEdicao(null);
+            }}
           />
         </Modal>
       )}
