@@ -1,8 +1,8 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderComProviders } from "../../test/queryTestUtils";
-import type { Grupo, Membro, Subgrupo } from "../../types";
+import { renderComProviders } from "../../../../test/queryTestUtils";
+import type { Grupo, Membro, Subgrupo } from "../../../../types";
 
 const mocks = vi.hoisted(() => ({
   listarMembrosDoGrupo: vi.fn(),
@@ -11,9 +11,9 @@ const mocks = vi.hoisted(() => ({
   getGrupoId: vi.fn(),
 }));
 
-vi.mock("../../services", () => mocks);
+vi.mock("../../../../services", () => mocks);
 
-import EditarMembroForm from "./EditarMembroForm";
+import EditarMembroForm from "./index";
 
 const grupos: Grupo[] = [{ grupo_id: "g1", nome: "Grupo 1" }];
 const subgrupos: Subgrupo[] = [{ subgrupo_id: "s1", nome: "Subgrupo 1", grupo_id: "g1" }];
@@ -36,7 +36,7 @@ describe("EditarMembroForm", () => {
       <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
-    expect(await screen.findByText("Selecione ao menos 1 subgrupo para salvar")).toBeInTheDocument();
+    expect(await screen.findByText("Escolha ao menos um subgrupo.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
   });
 
@@ -48,7 +48,7 @@ describe("EditarMembroForm", () => {
     );
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).not.toBeDisabled());
-    expect(screen.queryByText("Selecione ao menos 1 subgrupo para salvar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Escolha ao menos um subgrupo.")).not.toBeInTheDocument();
   });
 
   it("submete a atualização com os campos do formulário", async () => {

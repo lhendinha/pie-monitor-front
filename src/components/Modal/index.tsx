@@ -1,4 +1,4 @@
-import { Box, Flex, Heading } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
@@ -6,6 +6,10 @@ import { BotaoNu } from "../BotaoNu";
 
 interface Props {
   titulo: string;
+  /** Uma linha de contexto embaixo do título -- tipicamente uma contagem.
+   * Fica no cabeçalho porque ele não rola: assim a informação continua
+   * visível quando o corpo do modal já rolou pra longe dela. */
+  subtitulo?: string;
   onFechar: () => void;
   /** `wide` (760px) para os modais de formulário longo -- é a variante
    * `.modal.wide` do artifact. */
@@ -23,7 +27,7 @@ interface Props {
  * mais alto que a janela precisa rolar por fora, senão o rodapé com os
  * botões fica inalcançável em tela baixa.
  */
-export default function Modal({ titulo, onFechar, largo, rodape, children }: Props) {
+export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, children }: Props) {
   // Esc fecha -- é o que se espera de qualquer diálogo, e sem isso quem
   // navega por teclado fica preso dentro dele.
   useEffect(() => {
@@ -65,9 +69,16 @@ export default function Modal({ titulo, onFechar, largo, rodape, children }: Pro
           borderBottomWidth="1px"
           borderBottomColor="border.subtle"
         >
-          <Heading as="h2" fontSize="16.5px" fontWeight="800">
-            {titulo}
-          </Heading>
+          <Box>
+            <Heading as="h2" fontSize="16.5px" fontWeight="800">
+              {titulo}
+            </Heading>
+            {subtitulo && (
+              <Text fontSize="12px" color="fg.subtle" mt="2px">
+                {subtitulo}
+              </Text>
+            )}
+          </Box>
           <BotaoNu
             type="button"
             title="Fechar"

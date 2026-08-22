@@ -1,7 +1,7 @@
 import { Table, Text } from "@chakra-ui/react";
 
 import { formatarData, formatarDataHoraAmPm, mascararNumeroProcesso } from "../../../../utils";
-import CelulaComSub from "../CelulaComSub";
+import { CelulaComSub } from "../../../../components";
 import type { Processo } from "../../../../types";
 
 interface Props {

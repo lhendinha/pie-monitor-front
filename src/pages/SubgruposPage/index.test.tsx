@@ -9,6 +9,10 @@ const mocks = vi.hoisted(() => ({
   atualizarSubgrupo: vi.fn(),
   removerSubgrupo: vi.fn(),
   conteudoDoSubgrupo: vi.fn(),
+  listarMembrosDoSubgrupo: vi.fn(),
+  listarMembrosDoGrupo: vi.fn(),
+  adicionarMembro: vi.fn(),
+  removerMembro: vi.fn(),
   papelAtende: vi.fn(),
 }));
 
@@ -23,6 +27,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.papelAtende.mockReturnValue(true);
   mocks.conteudoDoSubgrupo.mockResolvedValue(VAZIO);
+  mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [{ email: "ana@argos.local" }] });
+  mocks.listarMembrosDoGrupo.mockResolvedValue({
+    membros: [{ email: "ana@argos.local", apelido: "Ana Paula", papel: "admin" }],
+  });
 });
 
 describe("SubgruposPage", () => {
@@ -173,7 +181,96 @@ describe("SubgruposPage", () => {
     });
     renderComProviders(<SubgruposPage />);
 
-    expect(await screen.findByText("1 membro · 3 colunas")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Ver membros de Cível" })).toHaveTextContent(
+      "1 membro",
+    );
+    expect(screen.getByText("· 3 colunas")).toBeInTheDocument();
+  });
+
+  it("a contagem de membros abre quem está no subgrupo", async () => {
+    // "3 membros" responde quantos; clicar responde quem. Sob demanda: uma
+    // requisição quando alguém pergunta, em vez de uma por subgrupo ao abrir
+    // a aba.
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+
+    expect(await screen.findByText("Membros do Cível")).toBeInTheDocument();
+    // Apelido e papel vêm da lista do grupo -- a lista por subgrupo só traz
+    // o e-mail.
+    expect(screen.getByText("Ana Paula")).toBeInTheDocument();
+    expect(screen.getByText("Admin")).toBeInTheDocument();
+    expect(mocks.listarMembrosDoSubgrupo).toHaveBeenCalledWith("1");
+  });
+
+  it("subgrupo sem ninguém diz isso em vez de lista vazia", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 0, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+
+    expect(await screen.findByText("Ninguém neste subgrupo ainda.")).toBeInTheDocument();
+  });
+
+  it("adiciona alguém ao subgrupo pelo modal", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    mocks.adicionarMembro.mockResolvedValue({ mensagem: "adicionado", email: "novo@x.com" });
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+    await user.type(await screen.findByLabelText("Adicionar alguém a Cível"), "novo@x.com");
+    await user.click(screen.getByRole("button", { name: "Adicionar" }));
+
+    await waitFor(() => expect(mocks.adicionarMembro).toHaveBeenCalledWith("1", "novo@x.com"));
+  });
+
+  it("e-mail malformado não chega a ser enviado", async () => {
+    // O servidor recusa do mesmo jeito -- isto é pra a pessoa não descobrir
+    // o erro de digitação só depois de mandar.
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+    await user.type(await screen.findByLabelText("Adicionar alguém a Cível"), "isso-nao-e-email");
+
+    expect(await screen.findByText("E-mail inválido.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Adicionar" })).toBeDisabled();
+    expect(mocks.adicionarMembro).not.toHaveBeenCalled();
+  });
+
+  it("remove alguém do subgrupo", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    mocks.removerMembro.mockResolvedValue({});
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+    await user.click(await screen.findByRole("button", { name: "Remover Ana Paula de Cível" }));
+
+    await waitFor(() =>
+      expect(mocks.removerMembro).toHaveBeenCalledWith("1", "ana@argos.local"),
+    );
   });
 
   it("erro ao criar mostra a mensagem da ApiError e marca o campo inválido", async () => {

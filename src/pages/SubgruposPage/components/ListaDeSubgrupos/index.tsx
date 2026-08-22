@@ -1,7 +1,9 @@
 import { Text } from "@chakra-ui/react";
 
 import {
+  BotaoNu,
   BotaoQuadrado,
+  EstadoVazio,
   IconeGrupo,
   IconeLapis,
   IconeLixeira,
@@ -20,6 +22,7 @@ interface Props {
   onIniciarRenome: (s: Subgrupo) => void;
   onRenomear: (s: Subgrupo, nome: string) => void;
   onCancelarRenome: () => void;
+  onVerMembros: (s: Subgrupo) => void;
   onRemover: (s: Subgrupo) => void;
 }
 
@@ -31,15 +34,10 @@ export default function ListaDeSubgrupos({
   onIniciarRenome,
   onRenomear,
   onCancelarRenome,
+  onVerMembros,
   onRemover,
 }: Props) {
-  if (subgrupos.length === 0) {
-    return (
-      <Text py="34px" px="10px" textAlign="center" color="fg.subtle">
-        Nenhum subgrupo ainda.
-      </Text>
-    );
-  }
+  if (subgrupos.length === 0) return <EstadoVazio mensagem="Nenhum subgrupo ainda." />;
 
   return (
     <>
@@ -84,12 +82,30 @@ export default function ListaDeSubgrupos({
             onConfirmar={(nome) => onRenomear(s, nome)}
             onCancelar={onCancelarRenome}
           />
-          {/* "3 membros · 3 colunas": contagens que a API já devolve. Sem
-              elas a linha seria só um nome, e a tela não diria nada sobre o
-              que existe dentro de cada subgrupo. */}
+          {/* A contagem de membros é a PORTA: "3 membros" responde quantos,
+              e clicar responde quem. O sublinhado pontilhado anuncia isso
+              antes de o mouse chegar -- num toque não há hover, e quem varre
+              a tela com o olho não descobre o que só aparece depois.
+
+              Só ela é clicável: "· 3 colunas" fica como texto até o quadro
+              Kanban existir, quando vira o link pro quadro. Alvo tem que ser
+              exatamente o que ele faz. */}
+          <BotaoNu
+            type="button"
+            aria-label={`Ver membros de ${s.nome}`}
+            onClick={() => onVerMembros(s)}
+            fontSize="12px"
+            color="fg.subtle"
+            py="2px"
+            textDecoration="underline dotted"
+            textDecorationColor="border"
+            style={{ textUnderlineOffset: "3px" }}
+            _hover={{ color: "brand.dark", textDecoration: "underline", textDecorationColor: "currentColor" }}
+          >
+            {contar(s.membros ?? 0, "membro", "membros")}
+          </BotaoNu>
           <Text fontSize="12px" color="fg.subtle">
-            {contar(s.membros ?? 0, "membro", "membros")} ·{" "}
-            {contar(s.colunas ?? 0, "coluna", "colunas")}
+            · {contar(s.colunas ?? 0, "coluna", "colunas")}
           </Text>
         </LinhaDeLista>
       ))}

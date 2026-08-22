@@ -4,10 +4,12 @@ import type { ReactNode } from "react";
 interface Props {
   principal: ReactNode;
   sub?: ReactNode;
-  /** Coluna "Processo": a linha de cima é `.proc-num` (mono, 700, 12.5px) e
-   * a de baixo `.cell-sub.mono`. Vale mesmo quando a linha de cima é o
-   * apelido -- é assim no artifact. */
-  variante?: "padrao" | "processo";
+  /** - `processo`: coluna "Processo", onde a linha de cima é `.proc-num`
+   *   (mono, 700, 12.5px) e a de baixo `.cell-sub.mono`. Vale mesmo quando
+   *   a linha de cima é o apelido -- é assim no artifact.
+   * - `destaque`: a primeira coluna de uma tabela de lista, que o artifact
+   *   escreve como `<td style="font-weight:700">`. */
+  variante?: "padrao" | "processo" | "destaque";
 }
 
 /** Célula de duas linhas: o valor e um detalhe menor embaixo.
@@ -21,6 +23,7 @@ interface Props {
  */
 export default function CelulaComSub({ principal, sub, variante = "padrao" }: Props) {
   const processo = variante === "processo";
+  const forte = processo || variante === "destaque";
   return (
     <Table.Cell
       verticalAlign="top"
@@ -32,7 +35,7 @@ export default function CelulaComSub({ principal, sub, variante = "padrao" }: Pr
     >
       <Box
         fontFamily={processo ? "mono" : undefined}
-        fontWeight={processo ? "700" : undefined}
+        fontWeight={forte ? "700" : undefined}
         fontSize={processo ? "12.5px" : undefined}
         color="fg"
       >

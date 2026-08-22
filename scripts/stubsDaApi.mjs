@@ -116,6 +116,24 @@ const RESPOSTAS = [
     }),
   ],
   [
+    /\/grupos\/membros/,
+    () => ({
+      membros: [
+        { email: "ana@argos.local", apelido: "Ana Paula", papel: "admin", subgrupos: ["sg-civel"] },
+        { email: "joao@argos.local", apelido: "João Meireles", papel: "manager", subgrupos: ["sg-civel"] },
+        { email: "marina@argos.local", apelido: "Marina Duarte", papel: "user", subgrupos: ["sg-civel", "sg-trab"] },
+      ],
+    }),
+  ],
+  [
+    /\/subgrupos\/sg-civel\/membros/,
+    () => ({ membros: [{ email: "ana@argos.local" }, { email: "joao@argos.local" }, { email: "marina@argos.local" }] }),
+  ],
+  [
+    /\/subgrupos\/[^/]+\/membros/,
+    () => ({ membros: [] }),
+  ],
+  [
     /\/subgrupos\/sg-civel\/conteudo/,
     () => ({ membros: 3, processos: 6, tarefas: 11, atendimentos: 8 }),
   ],

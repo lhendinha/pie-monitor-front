@@ -26,3 +26,4 @@ export { default as IconeLapis } from "./IconeLapis";
 export { default as IconePlus } from "./IconePlus";
 export { default as IconeCheck } from "./IconeCheck";
 export { default as IconeAlerta } from "./IconeAlerta";
+export { default as IconeCadeado } from "./IconeCadeado";

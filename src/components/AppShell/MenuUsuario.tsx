@@ -2,7 +2,7 @@ import { Box, Menu, Portal, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
 import { getApelido, getEmail } from "../../services";
-import { iniciais } from "../../utils";
+import Avatar from "../Avatar";
 import { BotaoNu } from "../BotaoNu";
 import IconeChevron from "../Icons/IconeChevron";
 
@@ -42,21 +42,7 @@ export default function MenuUsuario({ onSair }: Props) {
           _hover={{ bg: "border.subtle" }}
           _focusVisible={{ outline: "2px solid", outlineColor: "fg.brand", outlineOffset: "2px" }}
         >
-          <Box
-            w="22px"
-            h="22px"
-            borderRadius="full"
-            bg="brand.tint2"
-            color="brand.darker"
-            fontSize="10px"
-            fontWeight="700"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            flex="0 0 auto"
-          >
-            {iniciais(nome)}
-          </Box>
+          <Avatar nome={nome} tamanho="pequeno" />
           <Text
             fontSize="13px"
             fontWeight="700"

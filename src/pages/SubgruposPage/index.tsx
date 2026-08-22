@@ -20,6 +20,7 @@ import { toastErroMutation, useToastOnQueryError } from "../../services/queryCli
 import { qk } from "../../services/queryKeys";
 import FormularioNovoSubgrupo from "./components/FormularioNovoSubgrupo";
 import ListaDeSubgrupos from "./components/ListaDeSubgrupos";
+import MembrosDoSubgrupo from "./components/MembrosDoSubgrupo";
 import {
   impedimentosDoSubgrupo,
   useConteudoDoSubgrupo,
@@ -35,6 +36,10 @@ import type { Subgrupo } from "../../types";
  * uma é um campo só, e abrir uma janela pra isso é atrito. Excluir é a
  * exceção: é irreversível, então passa pelo diálogo de confirmação como
  * toda exclusão do sistema.
+ *
+ * A contagem de membros de cada linha abre quem está lá dentro. É aqui, e
+ * não na aba Membros, porque a pergunta é sobre o SUBGRUPO -- lá a tabela
+ * responde sobre pessoas. Cada aba com um assunto.
  */
 export default function SubgruposPage() {
   const [pagina, setPagina] = useState(1);
@@ -44,6 +49,8 @@ export default function SubgruposPage() {
    * servidor o que ainda tem dentro -- e só então decide se mostra o
    * "tem certeza?" ou o "não dá ainda". */
   const [pedido, setPedido] = useState<Subgrupo | null>(null);
+  /** De quem se está vendo os membros. A contagem da linha é a porta. */
+  const [vendoMembrosDe, setVendoMembrosDe] = useState<Subgrupo | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -107,6 +114,7 @@ export default function SubgruposPage() {
         onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
         onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
         onCancelarRenome={() => setRenomeandoId(null)}
+        onVerMembros={setVendoMembrosDe}
         onRemover={setPedido}
       />
 
@@ -121,6 +129,10 @@ export default function SubgruposPage() {
           setPagina(1);
         }}
       />
+
+      {vendoMembrosDe && (
+        <MembrosDoSubgrupo subgrupo={vendoMembrosDe} onFechar={() => setVendoMembrosDe(null)} />
+      )}
 
       {/* Enquanto a contagem não chega, nenhum diálogo: abrir o "tem
           certeza?" e trocá-lo pelo "não dá ainda" meio segundo depois é

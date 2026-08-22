@@ -1,17 +1,30 @@
+import { Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { listarMembrosDoGrupo, listarSubgrupos, listarGrupos, ehSuperAdmin } from "../../services";
+
+import { CartaoDeTabela, Esqueleto, Pagination } from "../../components";
+import { TAMANHO_PAGINA_PADRAO } from "../../constants";
+import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo, listarSubgrupos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Modal, Esqueleto } from "../../components";
-import { NOME_PAPEL } from "../../constants";
-import SubgrupoMembros from "./SubgrupoMembros";
-import EditarMembroForm from "./EditarMembroForm";
-import type { Membro, Subgrupo, Grupo } from "../../types";
+import EditarMembroForm from "./components/EditarMembroForm";
+import TabelaDeMembros from "./components/TabelaDeMembros";
+import type { Grupo, Membro, Subgrupo } from "../../types";
 
+/** Sub-aba "Membros" da tela de Grupo.
+ *
+ * Uma tabela só, como no artifact. Esta tela é sobre PESSOAS: quem é, o que
+ * pode, e em que subgrupos está. A pergunta do outro lado -- "quem está no
+ * subgrupo X?" -- é respondida na aba Subgrupos, clicando na contagem de
+ * membros da linha. Cada aba com um assunto.
+ */
 export default function MembrosPage() {
   const [membroEmEdicao, setMembroEmEdicao] = useState<Membro | null>(null);
+  const [pagina, setPagina] = useState(1);
+  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const queryClient = useQueryClient();
+
+  const podeEditar = ehSuperAdmin();
 
   const membrosQuery = useQuery<{ membros: Membro[] }>({
     queryKey: qk.membros(),
@@ -20,8 +33,9 @@ export default function MembrosPage() {
   useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
   const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
-    // Precisa da lista inteira pra renderizar 1 <SubgrupoMembros> por
-    // subgrupo, não de 1 página.
+    // A lista inteira, e não uma página: os nomes daqui resolvem os ids
+    // que vêm em `membro.subgrupos`, e qualquer pessoa pode estar em
+    // qualquer subgrupo do grupo.
     queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
   });
@@ -30,75 +44,72 @@ export default function MembrosPage() {
   const gruposQuery = useQuery<{ grupos: Grupo[] }>({
     queryKey: qk.grupos(),
     queryFn: listarGrupos,
-    enabled: ehSuperAdmin(),
+    enabled: podeEditar,
   });
   useToastOnQueryError(gruposQuery.error, "Não foi possível carregar os grupos.");
 
   const pessoas = membrosQuery.data?.membros || [];
   const subgrupos = subgruposQuery.data?.subgrupos || [];
   const grupos = gruposQuery.data?.grupos || [];
-  const carregando = membrosQuery.isPending;
 
-  // Mesmo escopo do `carregar()` de antes (Promise.all de membros +
-  // subgrupos + grupos) -- passado pro EditarMembroForm como `onAtualizado`.
+  /** `GET /grupos/membros` devolve o grupo inteiro de uma vez -- não é rota
+   * paginada. A página é recortada aqui mesmo; num grupo com dezenas de
+   * pessoas, a tabela sem corte viraria uma rolagem sem fim. */
+  const inicio = (pagina - 1) * tamanhoPagina;
+  const pessoasDaPagina = pessoas.slice(inicio, inicio + tamanhoPagina);
+  const totalPaginas = Math.ceil(pessoas.length / tamanhoPagina);
+
+  /** `membro.subgrupos` traz ids, e id não diz nada pra quem lê. */
+  const nomePorSubgrupoId = new Map(subgrupos.map((s) => [s.subgrupo_id, s.nome]));
+
   function recarregarTudo() {
     queryClient.invalidateQueries({ queryKey: qk.membros() });
-    queryClient.invalidateQueries({ queryKey: qk.subgrupos() });
-    if (ehSuperAdmin()) queryClient.invalidateQueries({ queryKey: qk.grupos() });
+    queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
+    if (podeEditar) queryClient.invalidateQueries({ queryKey: qk.grupos() });
   }
 
-  // Lista de membros por subgrupo só devolve e-mail (sem apelido) -- monta um
-  // mapa a partir da lista completa do grupo (que já tem os dois) em vez de
-  // pedir um join novo no backend.
-  const apelidoPorEmail = new Map(pessoas.map((p) => [p.email, p.apelido]));
-
   return (
-    <>
-      <div className="section-head">
-        <h2>Pessoas do grupo</h2>
-        <span className="section-count">{carregando ? "carregando…" : `${pessoas.length}`}</span>
-      </div>
-
-      {carregando ? (
-        <Esqueleto linhas={2} />
-      ) : (
-        <ul className="simple-list">
-          {pessoas.map((p) => (
-            <li className="simple-row" key={p.email}>
-              <div className="simple-row-main">
-                <div className="simple-row-title">{p.email}</div>
-                {p.apelido && <div className="simple-row-meta">{p.apelido}</div>}
-              </div>
-              {ehSuperAdmin() && (
-                <button className="icon-btn" title="Editar" onClick={() => setMembroEmEdicao(p)}>
-                  ✎
-                </button>
-              )}
-              <span className={`role-badge role-${p.papel}`}>{(p.papel && NOME_PAPEL[p.papel]) || p.papel}</span>
-            </li>
-          ))}
-        </ul>
+    <Stack gap="16px">
+      {!podeEditar && (
+        /* Dizer por que a linha não abre é melhor que uma tabela que
+           simplesmente não reage ao clique. */
+        <Text fontSize="11.5px" color="fg.subtle">
+          Só super admin pode editar membros.
+        </Text>
       )}
 
-      <div className="section-head">
-        <h2>Membros por subgrupo</h2>
-      </div>
-
-      {!subgruposQuery.isPending &&
-        subgrupos.map((s) => (
-          <SubgrupoMembros key={s.subgrupo_id} subgrupo={s} apelidoPorEmail={apelidoPorEmail} />
-        ))}
+      {membrosQuery.isPending ? (
+        <Esqueleto linhas={3} />
+      ) : (
+        <CartaoDeTabela>
+          <TabelaDeMembros
+            membros={pessoasDaPagina}
+            nomeDoSubgrupo={(id) => nomePorSubgrupoId.get(id) || ""}
+            podeEditar={podeEditar}
+            onEditar={setMembroEmEdicao}
+          />
+          <Pagination
+            pagina={pagina}
+            totalPaginas={totalPaginas}
+            total={pessoas.length}
+            tamanhoPagina={tamanhoPagina}
+            onMudarPagina={setPagina}
+            onMudarTamanho={(t) => {
+              setTamanhoPagina(t);
+              setPagina(1);
+            }}
+          />
+        </CartaoDeTabela>
+      )}
 
       {membroEmEdicao && (
-        <Modal titulo="Editar pessoa" onFechar={() => setMembroEmEdicao(null)}>
-          <EditarMembroForm
-            membro={membroEmEdicao}
-            grupos={grupos}
-            onAtualizado={recarregarTudo}
-            onFechar={() => setMembroEmEdicao(null)}
-          />
-        </Modal>
+        <EditarMembroForm
+          membro={membroEmEdicao}
+          grupos={grupos}
+          onAtualizado={recarregarTudo}
+          onFechar={() => setMembroEmEdicao(null)}
+        />
       )}
-    </>
+    </Stack>
   );
 }
