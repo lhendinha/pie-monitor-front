@@ -1,13 +1,10 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
 
 import { Esqueleto } from "../../../../components";
 import { useCatalogosDeProcesso } from "../../../../hooks/useCatalogosDeProcesso";
-import { listarProcessos } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
-import { qk } from "../../../../services/queryKeys";
 import { mascararNumeroProcesso } from "../../../../utils";
-import type { Processo } from "../../../../types";
+import { useProcessosDoCliente } from "../../hooks/useProcessosDoCliente";
 
 interface Props {
   clienteId: string;
@@ -21,10 +18,7 @@ interface Props {
  */
 export default function ProcessosDoCliente({ clienteId }: Props) {
   const apoio = useCatalogosDeProcesso();
-  const query = useQuery<{ processos: Processo[] }>({
-    queryKey: qk.processos({ clienteId }),
-    queryFn: () => listarProcessos({ clienteId }),
-  });
+  const query = useProcessosDoCliente(clienteId);
   useToastOnQueryError(query.error, "Não foi possível carregar os processos do cliente.");
 
   if (query.isPending) return <Esqueleto linhas={2} />;

@@ -1,12 +1,9 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
 
 import { EtiquetaDeMetadado, Esqueleto } from "../../../../components";
-import { listarTarefas } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
-import { qk } from "../../../../services/queryKeys";
 import { formatarData } from "../../../../utils";
-import type { Tarefa } from "../../../../types";
+import { useTarefasDoProcesso } from "../../hooks/useTarefasDoProcesso";
 
 interface Props {
   numeroProcesso: string;
@@ -20,10 +17,7 @@ interface Props {
  * 22/08/2026 justamente pra isto.
  */
 export default function TarefasVinculadas({ numeroProcesso }: Props) {
-  const query = useQuery<{ tarefas: Tarefa[] }>({
-    queryKey: qk.tarefasDoProcesso(numeroProcesso),
-    queryFn: () => listarTarefas({ processoNumero: numeroProcesso, tamanhoPagina: 100 }),
-  });
+  const query = useTarefasDoProcesso(numeroProcesso);
   useToastOnQueryError(query.error, "Não foi possível carregar as tarefas do processo.");
 
   if (query.isPending) return <Esqueleto linhas={2} />;

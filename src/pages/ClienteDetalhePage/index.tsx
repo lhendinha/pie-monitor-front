@@ -1,11 +1,21 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { BotaoDeTexto, Cartao, IconeSeta, Esqueleto, useToast } from "../../components";
+import {
+  BotaoDeTexto,
+  Cartao,
+  IconeSeta,
+  Esqueleto,
+  ModalDeConfirmacao,
+  useToast,
+} from "../../components";
 import { detalheCliente, papelAtende, removerCliente } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
+import { contar } from "../../utils";
+import { useProcessosDoCliente } from "./hooks/useProcessosDoCliente";
 import FormularioCliente from "./components/FormularioCliente";
 import ProcessosDoCliente from "./components/ProcessosDoCliente";
 import type { Cliente } from "../../types";
@@ -23,6 +33,12 @@ export default function ClienteDetalhePage() {
   const toast = useToast();
 
   const podeExcluir = papelAtende("admin");
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
+
+  /** Mesma consulta do cartão de processos -- serve pra dizer, na hora de
+   * excluir, quantos processos perdem este cliente. */
+  const processosQuery = useProcessosDoCliente(clienteId);
+  const processosLigados = processosQuery.data?.processos.length ?? 0;
 
   const query = useQuery<Cliente>({
     queryKey: qk.detalheCliente(clienteId),
@@ -60,10 +76,6 @@ export default function ClienteDetalhePage() {
     );
   }
 
-  function confirmarRemocao() {
-    if (window.confirm(`Excluir o cliente "${query.data?.nome}"?`)) removerMutation.mutate();
-  }
-
   return (
     <Box>
       <Box mb="14px">
@@ -81,7 +93,7 @@ export default function ClienteDetalhePage() {
           queryClient.invalidateQueries({ queryKey: ["clientes"] });
           toast.sucesso("Cliente atualizado.");
         }}
-        onRemover={confirmarRemocao}
+        onRemover={() => setConfirmandoRemocao(true)}
       />
 
       <Box mt="16px">
@@ -89,6 +101,31 @@ export default function ClienteDetalhePage() {
           <ProcessosDoCliente clienteId={clienteId} />
         </Cartao>
       </Box>
+
+      {confirmandoRemocao && (
+        <ModalDeConfirmacao
+          titulo="Excluir cliente"
+          mensagem={
+            <>
+              O cliente <strong>{query.data.nome}</strong> será removido.
+            </>
+          }
+          /* Lista só o que existe: "0 processos" é ruído. E o recado é que
+             os processos NÃO somem junto -- eles perdem o cliente. */
+          aviso={
+            processosLigados
+              ? `Está vinculado a ${contar(processosLigados, "processo", "processos")}, que ${
+                  processosLigados === 1
+                    ? "continua existindo, mas perde"
+                    : "continuam existindo, mas perdem"
+                } esse cliente.`
+              : undefined
+          }
+          confirmando={removerMutation.isPending}
+          onConfirmar={() => removerMutation.mutate()}
+          onFechar={() => setConfirmandoRemocao(false)}
+        />
+      )}
     </Box>
   );
 }

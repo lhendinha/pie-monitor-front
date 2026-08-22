@@ -109,26 +109,63 @@ describe("ProcessoDetalhePage", () => {
     );
   });
 
-  it("excluir pede confirmação e volta pra listagem", async () => {
+  it("excluir pede confirmação no diálogo do sistema e volta pra listagem", async () => {
+    // `window.confirm` não serve: é do navegador, não dá pra pôr o número
+    // do processo em destaque nem avisar sobre as tarefas, e em alguns
+    // navegadores dá pra silenciá-lo -- aí "Excluir" vira um clique sem
+    // volta e sem pergunta.
     mocks.removerProcesso.mockResolvedValue({});
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     montar();
 
     await user.click(await screen.findByRole("button", { name: "Excluir" }));
+    const dialogo = within(await screen.findByRole("dialog"));
+    await user.click(dialogo.getByRole("button", { name: "Excluir" }));
 
     await waitFor(() => expect(mocks.removerProcesso).toHaveBeenCalledWith("sg1", NUMERO));
     expect(await screen.findByText("lista de processos")).toBeInTheDocument();
   });
 
-  it("excluir sem confirmar não chama a API", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("cancelar no diálogo não chama a API", async () => {
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
+    const dialogo = within(await screen.findByRole("dialog"));
+    await user.click(dialogo.getByRole("button", { name: "Cancelar" }));
+
+    expect(mocks.removerProcesso).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("o diálogo avisa que as tarefas ficam sem processo", async () => {
+    // Elas não somem junto -- e isso é surpresa se ninguém disser.
+    mocks.listarTarefas.mockResolvedValue({
+      tarefas: [
+        { tarefa_id: "t1", subgrupo_id: "sg1", titulo: "Protocolar réplica", data: "2026-09-01", coluna_id: "c1", prioridade: "Alta" },
+      ],
+    });
     const user = userEvent.setup();
     montar();
 
     await user.click(await screen.findByRole("button", { name: "Excluir" }));
 
-    expect(mocks.removerProcesso).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText("1 tarefa vinculada a ele continua existindo, mas fica sem processo."),
+    ).toBeInTheDocument();
+  });
+
+  it("sem tarefa, o diálogo não mostra aviso nenhum", async () => {
+    // Controle: "0 tarefas vinculadas" é ruído.
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
+    // Escopado ao diálogo: a página em si diz "Nenhuma tarefa vinculada a
+    // este processo" logo atrás dele.
+    const dialogo = within(await screen.findByRole("dialog"));
+
+    expect(dialogo.queryByText(/tarefa/)).not.toBeInTheDocument();
   });
 
   it("'Voltar' devolve pra listagem", async () => {

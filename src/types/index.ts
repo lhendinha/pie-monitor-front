@@ -13,6 +13,15 @@ export interface Subgrupo {
   colunas?: number;
 }
 
+/** O que existe dentro de um subgrupo -- o que impede excluí-lo.
+ * `GET /subgrupos/{id}/conteudo`. */
+export interface ConteudoDoSubgrupo {
+  membros: number;
+  processos: number;
+  tarefas: number;
+  atendimentos: number;
+}
+
 export interface Grupo {
   grupo_id: string;
   nome: string;

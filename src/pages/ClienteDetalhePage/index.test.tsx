@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -100,16 +100,39 @@ describe("ClienteDetalhePage", () => {
     expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
   });
 
-  it("excluir pede confirmação e volta pra listagem", async () => {
+  it("excluir pede confirmação no diálogo do sistema e volta pra listagem", async () => {
+    // `window.confirm` não serve: é do navegador, não dá pra pôr o nome do
+    // cliente em destaque nem avisar sobre os processos vinculados, e em
+    // alguns navegadores dá pra silenciá-lo.
     mocks.removerCliente.mockResolvedValue({});
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
+    const dialogo = within(await screen.findByRole("dialog"));
+    await user.click(dialogo.getByRole("button", { name: "Excluir" }));
+
+    await waitFor(() => expect(mocks.removerCliente).toHaveBeenCalledWith("c1"));
+    expect(await screen.findByText("lista de clientes")).toBeInTheDocument();
+  });
+
+  it("o diálogo avisa que os processos perdem o cliente", async () => {
+    // Eles não somem junto -- ficam sem esse cliente.
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [
+        { subgrupo_id: "sg1", numero_processo: "00002668720218130559", apelido: "x" },
+      ],
+    });
     const user = userEvent.setup();
     montar();
 
     await user.click(await screen.findByRole("button", { name: "Excluir" }));
 
-    await waitFor(() => expect(mocks.removerCliente).toHaveBeenCalledWith("c1"));
-    expect(await screen.findByText("lista de clientes")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Está vinculado a 1 processo, que continua existindo, mas perde esse cliente.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("cliente em uso por processo mostra a mensagem que a API deu", async () => {
@@ -118,11 +141,12 @@ describe("ClienteDetalhePage", () => {
     mocks.removerCliente.mockRejectedValue(
       new ApiError("Cliente ainda vinculado a um processo", 409),
     );
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     montar();
 
     await user.click(await screen.findByRole("button", { name: "Excluir" }));
+    const dialogo = within(await screen.findByRole("dialog"));
+    await user.click(dialogo.getByRole("button", { name: "Excluir" }));
 
     expect(await screen.findByText("Cliente ainda vinculado a um processo")).toBeInTheDocument();
   });

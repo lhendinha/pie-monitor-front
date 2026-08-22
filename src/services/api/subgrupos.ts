@@ -27,3 +27,13 @@ export function atualizarSubgrupo(subgrupoId: string, nome: string) {
 export function removerSubgrupo(subgrupoId: string) {
   return chamar(`/subgrupos/${subgrupoId}`, { method: "DELETE" });
 }
+
+/** GET /subgrupos/{id}/conteudo -- o que ainda existe dentro do subgrupo.
+ *
+ * A tela pergunta ANTES de confirmar a exclusão: sem isso ela só
+ * descobriria os impedimentos depois de mandar o DELETE e tomar 409, ou
+ * seja, depois de perguntar "tem certeza?" pra uma exclusão que nunca ia
+ * acontecer. */
+export function conteudoDoSubgrupo(subgrupoId: string) {
+  return chamar(`/subgrupos/${subgrupoId}/conteudo`);
+}

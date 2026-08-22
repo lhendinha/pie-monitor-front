@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ToastProvider } from "../components";
+import { renderComProviders } from "../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   dispararAutenticacaoInvalida: vi.fn(),
@@ -23,29 +23,17 @@ afterEach(() => {
 
 describe("useToastOnQueryError", () => {
   it("mostra o toast pra erro que não é 401", () => {
-    render(
-      <ToastProvider>
-        <ComponenteDeErro erro={new ApiError("falhou", 500)} mensagem="Não foi possível carregar." />
-      </ToastProvider>
-    );
+    renderComProviders(<ComponenteDeErro erro={new ApiError("falhou", 500)} mensagem="Não foi possível carregar." />);
     expect(screen.getByText("Não foi possível carregar.")).toBeInTheDocument();
   });
 
   it("não mostra toast em 401 -- já tratado globalmente", () => {
-    render(
-      <ToastProvider>
-        <ComponenteDeErro erro={new ApiError("expirou", 401)} mensagem="Não foi possível carregar." />
-      </ToastProvider>
-    );
+    renderComProviders(<ComponenteDeErro erro={new ApiError("expirou", 401)} mensagem="Não foi possível carregar." />);
     expect(screen.queryByText("Não foi possível carregar.")).not.toBeInTheDocument();
   });
 
   it("não mostra nada quando não há erro", () => {
-    render(
-      <ToastProvider>
-        <ComponenteDeErro erro={null} mensagem="Não foi possível carregar." />
-      </ToastProvider>
-    );
+    renderComProviders(<ComponenteDeErro erro={null} mensagem="Não foi possível carregar." />);
     expect(screen.queryByText("Não foi possível carregar.")).not.toBeInTheDocument();
   });
 });

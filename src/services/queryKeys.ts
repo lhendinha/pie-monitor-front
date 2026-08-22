@@ -10,6 +10,7 @@
 export const qk = {
   subgrupos: (params: { pagina?: number; tamanhoPagina?: number } = {}) => ["subgrupos", params] as const,
   subgruposDoGrupo: (grupoId: string) => ["subgrupos", "grupo", grupoId] as const,
+  conteudoDoSubgrupo: (subgrupoId: string) => ["subgrupos", "conteudo", subgrupoId] as const,
   membros: () => ["membros"] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
   grupos: () => ["grupos"] as const,

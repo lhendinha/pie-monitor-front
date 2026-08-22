@@ -116,6 +116,14 @@ const RESPOSTAS = [
     }),
   ],
   [
+    /\/subgrupos\/sg-civel\/conteudo/,
+    () => ({ membros: 3, processos: 6, tarefas: 11, atendimentos: 8 }),
+  ],
+  [
+    /\/subgrupos\/[^/]+\/conteudo/,
+    () => ({ membros: 0, processos: 0, tarefas: 0, atendimentos: 0 }),
+  ],
+  [
     /\/subgrupos|\/grupos/,
     () => ({
       grupos: [],

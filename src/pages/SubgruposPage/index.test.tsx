@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   criarSubgrupo: vi.fn(),
   atualizarSubgrupo: vi.fn(),
   removerSubgrupo: vi.fn(),
+  conteudoDoSubgrupo: vi.fn(),
   papelAtende: vi.fn(),
 }));
 
@@ -16,9 +17,12 @@ vi.mock("../../services", () => mocks);
 import { ApiError } from "../../services/api/client";
 import SubgruposPage from "./index";
 
+const VAZIO = { membros: 0, processos: 0, tarefas: 0, atendimentos: 0 };
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.papelAtende.mockReturnValue(true);
+  mocks.conteudoDoSubgrupo.mockResolvedValue(VAZIO);
 });
 
 describe("SubgruposPage", () => {
@@ -48,12 +52,11 @@ describe("SubgruposPage", () => {
     expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(2); // carga inicial + invalidate pós-criação
   });
 
-  it("remove um subgrupo -- invalida e refaz o fetch (splice otimista não é seguro com paginação real)", async () => {
+  it("remove um subgrupo vazio -- invalida e refaz o fetch (splice otimista não é seguro com paginação real)", async () => {
     mocks.listarSubgrupos
       .mockResolvedValueOnce({ subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1 })
       .mockResolvedValueOnce({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.removerSubgrupo.mockResolvedValue({});
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     const user = userEvent.setup();
     renderComProviders(<SubgruposPage />);
 
@@ -61,9 +64,53 @@ describe("SubgruposPage", () => {
     // O rótulo carrega o nome ("Remover Cível"): com cinco linhas, cinco
     // botões "Remover" idênticos não dizem qual é qual pra quem usa leitor.
     await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+    const dialogo = within(await screen.findByRole("dialog"));
+    await user.click(dialogo.getByRole("button", { name: "Excluir" }));
 
     await waitFor(() => expect(screen.getByText("Nenhum subgrupo ainda.")).toBeInTheDocument());
     expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(2); // carga inicial + invalidate pós-remoção
+  });
+
+  it("subgrupo com conteúdo NÃO chega a perguntar 'tem certeza?'", async () => {
+    // A tela pergunta ao servidor o que tem dentro ANTES de confirmar: sem
+    // isso ela mostraria o diálogo de exclusão pra uma exclusão que o
+    // servidor ia recusar, e os impedimentos só apareceriam depois, como
+    // erro.
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+    });
+    mocks.conteudoDoSubgrupo.mockResolvedValue({
+      membros: 6, processos: 6, tarefas: 11, atendimentos: 8,
+    });
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Cível");
+    await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+
+    expect(await screen.findByText("Não dá pra excluir ainda")).toBeInTheDocument();
+    // Lista, e não frase corrida: quatro impedimentos com vírgula viram um
+    // parágrafo que ninguém conta.
+    for (const item of ["6 membros", "6 processos", "11 tarefas", "8 atendimentos"]) {
+      expect(screen.getByText(item)).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+    expect(mocks.removerSubgrupo).not.toHaveBeenCalled();
+  });
+
+  it("o aviso lista só o que existe -- '0 processos' é ruído", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+    });
+    mocks.conteudoDoSubgrupo.mockResolvedValue({ ...VAZIO, membros: 1 });
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Cível");
+    await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+
+    expect(await screen.findByText("1 membro")).toBeInTheDocument();
+    expect(screen.queryByText(/processo/)).not.toBeInTheDocument();
   });
 
   it("renomeia NA PRÓPRIA LINHA, sem modal -- Enter confirma", async () => {

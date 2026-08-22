@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ToastProvider, useToast } from "./index";
+import { renderComProviders } from "../../test/queryTestUtils";
+import { useToast } from "./index";
 
 function Gatilhos() {
   const toast = useToast();
@@ -36,11 +37,7 @@ describe("useToast fora de ToastProvider", () => {
 describe("ToastProvider", () => {
   it("mostra a mensagem de erro/sucesso disparada", async () => {
     const user = userEvent.setup();
-    render(
-      <ToastProvider>
-        <Gatilhos />
-      </ToastProvider>
-    );
+    renderComProviders(<Gatilhos />);
 
     await user.click(screen.getByText("disparar erro"));
     expect(screen.getByText("Deu errado")).toBeInTheDocument();
@@ -49,25 +46,23 @@ describe("ToastProvider", () => {
     expect(screen.getByText("Deu certo")).toBeInTheDocument();
   });
 
-  it("aplica a classe certa por tipo (erro/sucesso)", async () => {
+  it("marca o tipo do aviso -- erro e sucesso não se confundem", async () => {
+    // O que separa os dois na tela é o ÍCONE (triângulo vermelho x tique
+    // verde), e ícone decorativo não aparece pro teste. O `data-tipo` é o
+    // nome desse estado.
     const user = userEvent.setup();
-    render(
-      <ToastProvider>
-        <Gatilhos />
-      </ToastProvider>
-    );
+    renderComProviders(<Gatilhos />);
 
     await user.click(screen.getByText("disparar erro"));
-    expect(screen.getByText("Deu errado")).toHaveClass("toast-erro");
+    expect(screen.getByText("Deu errado")).toHaveAttribute("data-tipo", "erro");
+
+    await user.click(screen.getByText("disparar sucesso"));
+    expect(screen.getByText("Deu certo")).toHaveAttribute("data-tipo", "sucesso");
   });
 
   it("some sozinho depois de 4.5s", () => {
     vi.useFakeTimers();
-    render(
-      <ToastProvider>
-        <Gatilhos />
-      </ToastProvider>
-    );
+    renderComProviders(<Gatilhos />);
 
     fireEvent.click(screen.getByText("disparar erro"));
     expect(screen.getByText("Deu errado")).toBeInTheDocument();
@@ -80,11 +75,7 @@ describe("ToastProvider", () => {
   });
 
   it("clicar no toast remove ele antes do tempo", () => {
-    render(
-      <ToastProvider>
-        <Gatilhos />
-      </ToastProvider>
-    );
+    renderComProviders(<Gatilhos />);
 
     fireEvent.click(screen.getByText("disparar erro"));
     fireEvent.click(screen.getByText("Deu errado"));
@@ -92,11 +83,7 @@ describe("ToastProvider", () => {
   });
 
   it("várias mensagens acumulam ao mesmo tempo", () => {
-    render(
-      <ToastProvider>
-        <Gatilhos />
-      </ToastProvider>
-    );
+    renderComProviders(<Gatilhos />);
 
     fireEvent.click(screen.getByText("disparar erro"));
     fireEvent.click(screen.getByText("disparar sucesso"));

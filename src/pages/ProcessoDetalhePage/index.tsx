@@ -1,13 +1,22 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { BotaoDeTexto, Cartao, IconeSeta, Esqueleto, useToast } from "../../components";
-import { formatarDataHoraAmPm } from "../../utils";
+import {
+  BotaoDeTexto,
+  Cartao,
+  IconeSeta,
+  Esqueleto,
+  ModalDeConfirmacao,
+  useToast,
+} from "../../components";
+import { contar, formatarDataHoraAmPm, mascararNumeroProcesso } from "../../utils";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { detalhesProcesso, removerProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
+import { useTarefasDoProcesso } from "./hooks/useTarefasDoProcesso";
 import FormularioProcesso from "./components/FormularioProcesso";
 import Movimentacoes from "./components/Movimentacoes";
 import TarefasVinculadas from "./components/TarefasVinculadas";
@@ -29,6 +38,12 @@ export default function ProcessoDetalhePage() {
   const queryClient = useQueryClient();
   const apoio = useCatalogosDeProcesso();
   const toast = useToast();
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
+
+  /** Mesma consulta do cartão de tarefas -- serve pra dizer, na hora de
+   * excluir, quantas tarefas ficam sem processo. */
+  const tarefasQuery = useTarefasDoProcesso(numero);
+  const tarefasLigadas = tarefasQuery.data?.tarefas.length ?? 0;
 
   const query = useQuery<{ comunicacoes: Comunicacao[]; processos: Processo[] }>({
     queryKey: qk.detalhesProcesso(numero),
@@ -81,10 +96,6 @@ export default function ProcessoDetalhePage() {
     );
   }
 
-  function confirmarRemocao() {
-    if (window.confirm("Excluir este processo do subgrupo?")) removerMutation.mutate();
-  }
-
   return (
     <Box>
       <Box mb="14px">
@@ -104,7 +115,7 @@ export default function ProcessoDetalhePage() {
           queryClient.invalidateQueries({ queryKey: ["processos"] });
           toast.sucesso("Processo atualizado.");
         }}
-        onRemover={confirmarRemocao}
+        onRemover={() => setConfirmandoRemocao(true)}
       />
 
       <Box mt="16px">
@@ -131,6 +142,41 @@ export default function ProcessoDetalhePage() {
           <Movimentacoes comunicacoes={query.data.comunicacoes} />
         </Cartao>
       </Box>
+
+      {confirmandoRemocao && (
+        <ModalDeConfirmacao
+          titulo="Excluir processo"
+          mensagem={
+            <>
+              O processo <ProcessoEmDestaque numero={numero} /> deixa de ser monitorado e sai
+              deste subgrupo.
+            </>
+          }
+          /* O aviso só aparece quando há o que avisar: "0 tarefas
+             vinculadas" é ruído. As tarefas não são apagadas junto -- elas
+             ficam sem processo, e isso é surpresa se ninguém disser. */
+          aviso={
+            tarefasLigadas
+              ? `${contar(tarefasLigadas, "tarefa vinculada", "tarefas vinculadas")} a ele ${
+                  tarefasLigadas === 1 ? "continua existindo, mas fica" : "continuam existindo, mas ficam"
+                } sem processo.`
+              : undefined
+          }
+          confirmando={removerMutation.isPending}
+          onConfirmar={() => removerMutation.mutate()}
+          onFechar={() => setConfirmandoRemocao(false)}
+        />
+      )}
     </Box>
+  );
+}
+
+/** O número no diálogo vai mascarado e em mono, como em toda a aplicação --
+ * 20 dígitos corridos no meio de uma frase não se leem. */
+function ProcessoEmDestaque({ numero }: { numero: string }) {
+  return (
+    <Text as="strong" fontFamily="mono" fontWeight="700">
+      {mascararNumeroProcesso(numero)}
+    </Text>
   );
 }

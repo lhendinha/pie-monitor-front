@@ -24,3 +24,5 @@ export { default as IconeSino } from "./IconeSino";
 export { default as IconeLixeira } from "./IconeLixeira";
 export { default as IconeLapis } from "./IconeLapis";
 export { default as IconePlus } from "./IconePlus";
+export { default as IconeCheck } from "./IconeCheck";
+export { default as IconeAlerta } from "./IconeAlerta";

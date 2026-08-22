@@ -16,6 +16,16 @@ import { cores, fontes, raios, sombras, tipografia } from "./tokens";
 export const system = createSystem(defaultConfig, {
   preflight: false,
   theme: {
+    /** A entrada do aviso (`@keyframes toastin` do artifact). Fica no tema
+     * e não no componente porque `@keyframes` é global por definição: o
+     * nome precisa existir no documento pra a animação encontrá-lo. */
+    keyframes: {
+      "aviso-entrar": {
+        from: { opacity: 0, transform: "translateY(6px)" },
+        to: { opacity: 1, transform: "none" },
+      },
+    },
+
     tokens: {
       colors: {
         brand: {

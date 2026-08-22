@@ -1,0 +1,40 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { conteudoDoSubgrupo } from "../../../services";
+import { qk } from "../../../services/queryKeys";
+import { contar } from "../../../utils";
+import type { ConteudoDoSubgrupo } from "../../../types";
+
+/** O que ainda existe dentro do subgrupo, perguntado só quando alguém pede
+ * pra excluir -- `id` nulo mantém a consulta desligada.
+ *
+ * Existe pra a tela saber ANTES de confirmar. Sem isso ela mostraria
+ * "tem certeza?" pra uma exclusão que o servidor ia recusar, e os
+ * impedimentos só apareceriam depois, em forma de erro.
+ */
+export function useConteudoDoSubgrupo(id: string | null) {
+  return useQuery<ConteudoDoSubgrupo>({
+    queryKey: qk.conteudoDoSubgrupo(id || ""),
+    queryFn: () => conteudoDoSubgrupo(id || ""),
+    enabled: Boolean(id),
+    /** Nada de cache velho aqui: entre uma tentativa e outra a pessoa pode
+     * ter esvaziado o subgrupo, e um número desatualizado a impediria de
+     * excluir algo que já está vazio. */
+    staleTime: 0,
+  });
+}
+
+/** As contagens viram a lista que o diálogo mostra -- só o que existe.
+ * "0 processos" no meio da lista é ruído. */
+export function impedimentosDoSubgrupo(conteudo?: ConteudoDoSubgrupo): string[] {
+  if (!conteudo) return [];
+  const linhas: [number, string, string][] = [
+    [conteudo.membros, "membro", "membros"],
+    [conteudo.processos, "processo", "processos"],
+    [conteudo.tarefas, "tarefa", "tarefas"],
+    [conteudo.atendimentos, "atendimento", "atendimentos"],
+  ];
+  return linhas
+    .filter(([quantidade]) => quantidade > 0)
+    .map(([quantidade, singular, plural]) => contar(quantidade, singular, plural));
+}
