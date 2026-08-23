@@ -282,3 +282,26 @@ export interface AtendimentoResumido {
   assunto: string;
   status: string;
 }
+
+/** Um item vinculável achado na busca.
+ *
+ * `rotulo` e `detalhe` são só pra tela; o que sai daqui pro servidor é o
+ * `id`, no campo que o `tipo` indica.
+ */
+export interface Vinculo {
+  tipo: "processo" | "atendimento";
+  id: string;
+  rotulo: string;
+  detalhe?: string;
+}
+
+/** Os vínculos de uma tarefa: até um de cada tipo.
+ *
+ * Duas fatias, e não uma lista, porque é o formato do backend --
+ * `processo_numero` e `atendimento_id` são campos independentes, um valor
+ * cada. Escolher um processo novo TROCA o anterior; não empilha.
+ */
+export interface VinculosDaTarefa {
+  processo: Vinculo | null;
+  atendimento: Vinculo | null;
+}

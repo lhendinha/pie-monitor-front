@@ -6,6 +6,7 @@ import {
   ClienteDetalhePage,
   ClientesPage,
   GrupoPage,
+  AgendaPage,
   KanbanPage,
   PerfilPage,
   ProcessoDetalhePage,
@@ -37,6 +38,7 @@ function Rotas() {
         <Route element={<AppShell onSair={sair} />}>
           <Route index element={<RotaRaiz />} />
           <Route path="/kanban" element={<KanbanPage />} />
+          <Route path="/agenda" element={<AgendaPage />} />
           {/* O link do lembrete de prazo. Abre o quadro do subgrupo com o
               modal da tarefa já carregado -- ver `RotaTarefa`. */}
           <Route path="/tarefas/:subgrupoId/:tarefaId" element={<RotaTarefa />} />

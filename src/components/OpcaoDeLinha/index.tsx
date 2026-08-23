@@ -11,8 +11,10 @@ interface Props {
 
 /** Linha de opção que ocupa a largura toda do painel (`.period-opt`).
  *
- * É a "Todas as situações" no topo dos painéis de múltipla escolha -- a
- * mesma forma que o artifact usa, e por isso mora fora do `MenuDeFiltro`.
+ * É a "Todas as situações" no topo dos painéis de múltipla escolha e cada
+ * opção do seletor de visão da Agenda -- a mesma forma (`.period-opt`) que o
+ * artifact usa nos dois. Subiu de `Select/` pra cá quando ganhou o segundo
+ * consumidor, fora do Select.
  */
 export function OpcaoDeLinha({ ativa, onClick, children }: Props) {
   return (

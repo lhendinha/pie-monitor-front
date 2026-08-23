@@ -117,6 +117,9 @@ export function MultiSelect({
       }}
       {...(chip
         ? {
+            /* Diz ao `ResumoSelecionados` pra NÃO pintar o texto de
+               placeholder: na pílula, quem manda na cor é o control. */
+            ehPilula: true,
             rotuloTodas: placeholder,
             nenhumSelecionado: rascunho.length === 0,
             onTodas: () => setRascunho([]),

@@ -1,7 +1,12 @@
 import { Flex } from "@chakra-ui/react";
 
-import { CampoDeBusca, PilulaDeFiltro, SeletorDePeriodo } from "../../../../components";
-import PilulaDeMenu from "../PilulaDeMenu";
+import {
+  CampoDeBusca,
+  PilulaDeFiltro,
+  PilulaDeMenu,
+  SeletorDePeriodo,
+} from "../../../../components";
+
 import type { FiltrosDoQuadro } from "../../types";
 import type { Membro, Subgrupo } from "../../../../types";
 

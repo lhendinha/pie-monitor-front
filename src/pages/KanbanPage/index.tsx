@@ -19,6 +19,7 @@ import {
   EstadoDeErro,
   Esqueleto,
   IconePlus,
+  ModalDeTarefa,
   useToast,
 } from "../../components";
 import { PERIODO_TODOS, TETO_POR_PAGINA } from "../../constants";
@@ -36,7 +37,7 @@ import { intervaloDoPeriodo } from "../../utils";
 import ColunaDoQuadro from "./components/ColunaDoQuadro";
 import { moverTarefaNaLista } from "./helpers/cacheDoQuadro";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
-import ModalDeTarefa from "./components/ModalDeTarefa";
+
 import ModalDoQuadro from "./components/ModalDoQuadro";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";

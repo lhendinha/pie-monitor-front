@@ -112,3 +112,40 @@ describe("MultiSelect — estado de carregando", () => {
     expect(onMudar).toHaveBeenCalledWith(["a"]);
   });
 });
+
+describe("MultiSelect — cor do texto da pílula", () => {
+  /* O artifact dá a `.chip-btn` UM `color` (`--slate`), valha ou não filtro,
+   * e quem o define é o `control` de `estilosChip`. Pintar o texto de
+   * placeholder por cima deixava só Fase e Situação -- os dois MultiSelect
+   * da barra de Processos -- mais claros que Clientes e Datas, que chegam na
+   * cor por outro caminho. */
+  const corDoRotulo = (texto: string) =>
+    (screen.getByText(texto) as HTMLElement).style.color;
+
+  it("na pílula, HERDA a cor do controle em vez de pintar de placeholder", () => {
+    renderComProviders(
+      <MultiSelect
+        variante="chip"
+        opcoes={OPCOES}
+        selecionados={[]}
+        onMudar={vi.fn()}
+        placeholder="Todas as fases"
+      />,
+    );
+    expect(corDoRotulo("Todas as fases")).toBe("");
+  });
+
+  it("no formulário, segue pintando de placeholder", () => {
+    // Controle do teste acima: sem escolha, campo de formulário mostra
+    // placeholder, e placeholder tem cor própria como todo campo do sistema.
+    renderComProviders(
+      <MultiSelect
+        opcoes={OPCOES}
+        selecionados={[]}
+        onMudar={vi.fn()}
+        placeholder="Selecione os subgrupos"
+      />,
+    );
+    expect(corDoRotulo("Selecione os subgrupos")).toBe("var(--chakra-colors-fg-subtle)");
+  });
+});

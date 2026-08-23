@@ -6,6 +6,8 @@ export * from "./calendario";
 export * from "./abasDoGrupo";
 export * from "./subgrupos";
 export * from "./suporte";
+export * from "./prioridade";
+export * from "./vinculoDaTarefa";
 export * from "./senha";
 export * from "./periodos";
 export * from "./busca";

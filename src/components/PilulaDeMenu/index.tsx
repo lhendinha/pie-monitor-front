@@ -1,7 +1,9 @@
 import { Menu, Portal } from "@chakra-ui/react";
 
-import { PilulaDeFiltro } from "../../../../components";
-import { OPCAO_DE_MENU, OPCAO_DE_MENU_ATIVA, PAINEL_DE_MENU } from "../../../../theme/menu";
+/* Irmão direto, não pelo índice: este componente é exportado por ele, e
+   importar de lá criaria um ciclo. */
+import { PilulaDeFiltro } from "../PilulaDeFiltro";
+import { OPCAO_DE_MENU, OPCAO_DE_MENU_ATIVA, PAINEL_DE_MENU } from "../../theme/menu";
 
 interface Opcao {
   /** Não pode ser vazio: item de menu com `value=""` o zag não registra, e

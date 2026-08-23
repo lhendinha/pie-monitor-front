@@ -5,7 +5,12 @@ interface OpcoesListarTarefas {
    * usa. Sem ele, a única saída seria paginar a lista inteira do grupo e
    * peneirar no cliente. */
   processoNumero?: string;
-  subgrupoId?: string;
+  /** Um subgrupo, ou vários -- a Agenda escolhe um subconjunto.
+   *
+   * Array vira parâmetro repetido (`?subgrupo_id=a&subgrupo_id=b`), que é
+   * como o FastAPI lê lista. Omitir continua significando "todos os
+   * visíveis"; o servidor confere a permissão de CADA um. */
+  subgrupoId?: string | string[];
   /** `"eu"` resolve pro e-mail do token, no servidor. */
   responsavel?: string;
   semResponsavel?: boolean;

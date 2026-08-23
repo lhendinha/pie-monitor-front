@@ -2,18 +2,18 @@ import { Box, Input, Stack, Text, chakra } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Z_INDEX_CALENDARIO } from "../../../../../constants/camadaFlutuante";
-import { listarAtendimentos, listarProcessos } from "../../../../../services";
-import { OPCAO_LINHA } from "../../../../../theme/painelFiltro";
-import { mascararNumeroProcesso } from "../../../../../utils";
-import { ESPERA_DA_BUSCA_MS } from "../../../../../constants/busca";
-import { useValorComEspera } from "../../../../../hooks/useValorComEspera";
+import { Z_INDEX_CALENDARIO } from "../../../constants/camadaFlutuante";
+import { listarAtendimentos, listarProcessos } from "../../../services";
+import { OPCAO_LINHA } from "../../../theme/painelFiltro";
+import { mascararNumeroProcesso } from "../../../utils";
+import { ESPERA_DA_BUSCA_MS } from "../../../constants/busca";
+import { useValorComEspera } from "../../../hooks/useValorComEspera";
 import {
   MINIMO_PRA_BUSCAR,
   RESULTADOS_POR_TIPO,
 } from "../../../constants/vinculoDaTarefa";
 import EtiquetaDeVinculo from "../EtiquetaDeVinculo";
-import type { AtendimentoResumido, Processo } from "../../../../../types";
+import type { AtendimentoResumido, Processo } from "../../../types";
 import type { Vinculo, VinculosDaTarefa } from "../../../types";
 
 interface Props {

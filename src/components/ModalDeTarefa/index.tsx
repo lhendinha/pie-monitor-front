@@ -2,24 +2,31 @@ import { Stack, Textarea } from "@chakra-ui/react";
 import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import {
-  Botao,
-  Campo,
-  LinhaDeCampos,
-  Modal,
-  ModalDeConfirmacao,
-  RodapeDeAcoes,
-  Select,
-  SeletorData,
-  useToast,
-} from "../../../../components";
-import { criarTarefa, atualizarTarefa, removerTarefa } from "../../../../services";
-import { toastErroMutation } from "../../../../services/queryClient";
-import { hojeISO, mascararNumeroProcesso } from "../../../../utils";
-import { PRIORIDADES } from "../../constants/kanban";
+/* Irmãos importados um a um, e não pelo índice de `components`: este
+   componente É exportado por aquele índice, e importar dele criaria um ciclo
+   -- mesmo padrão do `SeletorDePeriodo`. */
+import Botao from "../Botao";
+import Campo from "../Campo";
+import LinhaDeCampos from "../LinhaDeCampos";
+import Modal from "../Modal";
+import ModalDeConfirmacao from "../ModalDeConfirmacao";
+import RodapeDeAcoes from "../RodapeDeAcoes";
+import { Select } from "../Select";
+import SeletorData from "../SeletorData";
+import { useToast } from "../Toast";
+import { criarTarefa, atualizarTarefa, removerTarefa } from "../../services";
+import { toastErroMutation } from "../../services/queryClient";
+import { hojeISO, mascararNumeroProcesso } from "../../utils";
+import { PRIORIDADES } from "../../constants";
 import VinculoDaTarefa from "./VinculoDaTarefa";
-import type { VinculosDaTarefa } from "../../types";
-import type { ColunaDoQuadro, Membro, Subgrupo, Tarefa } from "../../../../types";
+
+import type {
+  ColunaDoQuadro,
+  Membro,
+  Subgrupo,
+  Tarefa,
+  VinculosDaTarefa,
+} from "../../types";
 
 interface Props {
   /** Ausente = criando. */
@@ -35,6 +42,12 @@ interface Props {
   membros: Membro[];
   /** Coluna pré-escolhida, quando veio do "+ Nova atividade" de uma coluna. */
   colunaInicial?: string;
+  /** Data pré-escolhida ao CRIAR -- é o dia que a Agenda tem à vista.
+   *
+   * Sem isto a tarefa criada na Agenda nasceria com a data de hoje e
+   * sumiria da tela em que foi criada, se a pessoa estivesse olhando outro
+   * mês. Ignorada ao editar: ali a data é a da tarefa. */
+  dataInicial?: string;
   onSalvo: () => void;
   onFechar: () => void;
 }
@@ -66,6 +79,7 @@ export default function ModalDeTarefa({
   carregandoColunas,
   membros,
   colunaInicial,
+  dataInicial,
   onSalvo,
   onFechar,
 }: Props) {
@@ -73,7 +87,7 @@ export default function ModalDeTarefa({
   const editando = Boolean(tarefa);
 
   const [titulo, setTitulo] = useState(tarefa?.titulo ?? "");
-  const [data, setData] = useState(tarefa?.data ?? hojeISO());
+  const [data, setData] = useState(tarefa?.data ?? dataInicial ?? hojeISO());
   const [subgrupoId, setSubgrupoId] = useState(tarefa?.subgrupo_id ?? subgrupoAtual);
   const [colunaId, setColunaId] = useState(
     tarefa?.coluna_id ?? colunaInicial ?? colunas[0]?.coluna_id ?? "",

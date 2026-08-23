@@ -32,6 +32,7 @@ vi.mock("./pages", () => ({
   GrupoPage: () => <div>tela de grupo</div>,
   WorkspacePage: () => <div>área de trabalho</div>,
   KanbanPage: () => <div>quadro kanban</div>,
+  AgendaPage: () => <div>tela de agenda</div>,
   PerfilPage: () => <div>tela de perfil</div>,
   HistoricoPage: ({ deepLink }: { deepLink: { comunicacaoId: string } | null }) => (
     <div>histórico {deepLink ? `deep:${deepLink.comunicacaoId}` : "sem deep"}</div>
@@ -125,14 +126,14 @@ describe("menu lateral", () => {
 
   it("não mostra item de tela ainda não construída", () => {
     renderComProviders(<App />);
-    for (const pendente of ["Agenda", "Atendimentos"]) {
+    for (const pendente of ["Atendimentos"]) {
       expect(screen.queryByRole("link", { name: pendente })).not.toBeInTheDocument();
     }
   });
 
   it("mostra as telas que deixaram de ser pendentes", () => {
     renderComProviders(<App />);
-    for (const pronta of ["Área de trabalho", "Gestão kanban"]) {
+    for (const pronta of ["Área de trabalho", "Gestão kanban", "Agenda"]) {
       expect(screen.getByRole("link", { name: pronta })).toBeInTheDocument();
     }
   });

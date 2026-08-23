@@ -5,7 +5,7 @@ import type { GroupBase, MenuProps } from "react-select";
 import { MARCA_CAMADA_FLUTUANTE } from "../../constants/camadaFlutuante";
 import { DIVISORIA, PAINEL } from "../../theme/painelFiltro";
 import RodapeDeFiltro from "../RodapeDeFiltro";
-import { OpcaoDeLinha } from "./OpcaoDeLinha";
+import { OpcaoDeLinha } from "../OpcaoDeLinha";
 import type { Opcao } from "./types";
 
 /** Props que o `Select`/`MultiSelect` na variante "chip" injeta via
