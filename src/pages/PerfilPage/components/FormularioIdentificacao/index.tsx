@@ -66,7 +66,7 @@ export default function FormularioIdentificacao({ onAlterarSenha }: Props) {
       <Campo
         rotulo="E-mail"
         para="email-perfil"
-        dica="O e-mail é o identificador da sua conta."
+        dica="O e-mail é o identificador da sua conta e não pode ser alterado."
       >
         <Box position="relative">
           <Input id="email-perfil" value={email} disabled pr="38px" />
