@@ -5,6 +5,11 @@ export interface Subgrupo {
   grupo_id?: string;
   nome: string;
   criado_em?: string;
+  /** E-mail de quem criou. É o que libera um `manager` a excluir o próprio
+   * subgrupo -- ver `podeExcluirSubgrupo`. Vem vazio nos subgrupos criados
+   * antes do campo existir, e ausente nas rotas que devolvem subgrupo
+   * enxuto. */
+  criado_por?: string;
   /** Contagens DERIVADAS, calculadas por `GET /subgrupos` só pra página
    * pedida -- a linha mostra "N membros · N colunas". Opcionais porque
    * outras rotas devolvem subgrupo sem elas (o seletor dos formulários,

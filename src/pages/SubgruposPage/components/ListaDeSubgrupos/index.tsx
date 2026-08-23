@@ -16,7 +16,10 @@ import type { Subgrupo } from "../../../../types";
 interface Props {
   subgrupos: Subgrupo[];
   podeEditar: boolean;
-  podeExcluir: boolean;
+  /** Por LINHA, e não por papel: um manager exclui o subgrupo que ele mesmo
+   * criou e nenhum outro, então a lixeira aparece em algumas linhas e não
+   * em outras da mesma lista. */
+  podeExcluir: (s: Subgrupo) => boolean;
   /** Qual linha está com o nome em edição -- só uma por vez. */
   renomeandoId: string | null;
   onIniciarRenome: (s: Subgrupo) => void;
@@ -57,7 +60,7 @@ export default function ListaDeSubgrupos({
                   <IconeLapis />
                 </BotaoQuadrado>
               )}
-              {podeExcluir && (
+              {podeExcluir(s) && (
                 <BotaoQuadrado
                   type="button"
                   tom="perigo"

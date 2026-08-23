@@ -21,6 +21,7 @@ import { qk } from "../../services/queryKeys";
 import FormularioNovoSubgrupo from "./components/FormularioNovoSubgrupo";
 import ListaDeSubgrupos from "./components/ListaDeSubgrupos";
 import MembrosDoSubgrupo from "./components/MembrosDoSubgrupo";
+import { podeExcluirSubgrupo } from "./helpers/podeExcluirSubgrupo";
 import {
   impedimentosDoSubgrupo,
   useConteudoDoSubgrupo,
@@ -56,7 +57,6 @@ export default function SubgruposPage() {
 
   const podeCriar = papelAtende("manager");
   const podeEditar = papelAtende("admin");
-  const podeExcluir = papelAtende("admin");
 
   const query = useQuery<{ subgrupos: Subgrupo[]; total: number; total_paginas: number }>({
     queryKey: qk.subgrupos({ pagina, tamanhoPagina }),
@@ -70,6 +70,17 @@ export default function SubgruposPage() {
   const subgrupos = query.data?.subgrupos || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
+
+  /** O servidor recusa excluir o ÚLTIMO subgrupo de quem não é `admin`+ --
+   * a pessoa ficaria com o app inteiro vazio, porque o escopo de
+   * `user`/`manager` é a participação dela.
+   *
+   * `total` responde isso porque a listagem já vem escopada: pra quem não é
+   * admin, os subgrupos visíveis SÃO os que a pessoa participa. Sem este
+   * aviso a regra apareceria como um toast de 409 escrito "é o último
+   * subgrupo dessa pessoa" -- frase da tela de Membros, que aqui soa como
+   * se falasse de outra pessoa. */
+  const ehMeuUnicoSubgrupo = !papelAtende("admin") && total === 1;
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
@@ -109,7 +120,7 @@ export default function SubgruposPage() {
       <ListaDeSubgrupos
         subgrupos={subgrupos}
         podeEditar={podeEditar}
-        podeExcluir={podeExcluir}
+        podeExcluir={podeExcluirSubgrupo}
         renomeandoId={renomeandoId}
         onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
         onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
@@ -142,7 +153,23 @@ export default function SubgruposPage() {
           pré-teste é conveniência, e quem decide de verdade é o DELETE.
           Sem esta saída, um erro na contagem deixaria a lixeira sem
           resposta nenhuma. */}
-      {pedido && !conteudoQuery.isPending && impedimentos.length === 0 && (
+      {/* Vem ANTES da confirmação: perguntar "tem certeza?" pra uma exclusão
+          que o servidor vai recusar é pedir uma decisão que não existe. */}
+      {pedido && ehMeuUnicoSubgrupo && (
+        <ModalDeAviso
+          titulo="Não dá pra excluir ainda"
+          mensagem={
+            <>
+              <strong>{pedido.nome}</strong> é o seu único subgrupo. Sem nenhum, você ficaria sem
+              ver processos, tarefas e atendimentos.
+            </>
+          }
+          detalhe="Crie ou entre em outro subgrupo antes de excluir este."
+          onFechar={() => setPedido(null)}
+        />
+      )}
+
+      {pedido && !ehMeuUnicoSubgrupo && !conteudoQuery.isPending && impedimentos.length === 0 && (
         <ModalDeConfirmacao
           titulo="Excluir subgrupo"
           mensagem={
@@ -156,7 +183,7 @@ export default function SubgruposPage() {
         />
       )}
 
-      {pedido && conteudoQuery.isSuccess && impedimentos.length > 0 && (
+      {pedido && !ehMeuUnicoSubgrupo && conteudoQuery.isSuccess && impedimentos.length > 0 && (
         <ModalDeAviso
           titulo="Não dá pra excluir ainda"
           mensagem={

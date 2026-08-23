@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   adicionarMembro: vi.fn(),
   removerMembro: vi.fn(),
   papelAtende: vi.fn(),
+  getEmail: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -119,6 +120,74 @@ describe("SubgruposPage", () => {
 
     expect(await screen.findByText("1 membro")).toBeInTheDocument();
     expect(screen.queryByText(/processo/)).not.toBeInTheDocument();
+  });
+
+  describe("manager excluindo o próprio subgrupo", () => {
+    /** Sem hierarquia de verdade, `papelAtende` mockado com `true` faria o
+     * manager passar por admin -- e estes testes provariam nada. */
+    function comoManager() {
+      mocks.papelAtende.mockImplementation((minimo: string) => minimo !== "admin");
+      mocks.getEmail.mockReturnValue("ana@argos.local");
+    }
+
+    it("a lixeira aparece no que ele criou e some no que é de outra pessoa", async () => {
+      comoManager();
+      mocks.listarSubgrupos.mockResolvedValue({
+        subgrupos: [
+          { subgrupo_id: "1", nome: "Cível", criado_por: "ana@argos.local" },
+          { subgrupo_id: "2", nome: "Trabalhista", criado_por: "bruno@argos.local" },
+        ],
+        total: 2,
+        total_paginas: 1,
+      });
+      renderComProviders(<SubgruposPage />);
+
+      await screen.findByText("Cível");
+      expect(screen.getByRole("button", { name: /Remover Cível/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Remover Trabalhista/ })).not.toBeInTheDocument();
+    });
+
+    it("avisa em vez de confirmar quando é o único subgrupo dele", async () => {
+      comoManager();
+      mocks.listarSubgrupos.mockResolvedValue({
+        subgrupos: [{ subgrupo_id: "1", nome: "Cível", criado_por: "ana@argos.local" }],
+        total: 1,
+        total_paginas: 1,
+      });
+      const user = userEvent.setup();
+      renderComProviders(<SubgruposPage />);
+
+      await screen.findByText("Cível");
+      await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+
+      expect(await screen.findByText("Não dá pra excluir ainda")).toBeInTheDocument();
+      expect(screen.getByText(/é o seu único subgrupo/)).toBeInTheDocument();
+      // O ponto do aviso: não pedir uma decisão que o servidor vai recusar.
+      expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+      expect(mocks.removerSubgrupo).not.toHaveBeenCalled();
+    });
+
+    it("confirma normalmente quando ele tem outro subgrupo", async () => {
+      comoManager();
+      mocks.listarSubgrupos.mockResolvedValue({
+        subgrupos: [
+          { subgrupo_id: "1", nome: "Cível", criado_por: "ana@argos.local" },
+          { subgrupo_id: "2", nome: "Outro", criado_por: "ana@argos.local" },
+        ],
+        total: 2,
+        total_paginas: 1,
+      });
+      mocks.removerSubgrupo.mockResolvedValue({});
+      const user = userEvent.setup();
+      renderComProviders(<SubgruposPage />);
+
+      await screen.findByText("Cível");
+      await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+      const dialogo = within(await screen.findByRole("dialog"));
+      await user.click(dialogo.getByRole("button", { name: "Excluir" }));
+
+      await waitFor(() => expect(mocks.removerSubgrupo).toHaveBeenCalledWith("1"));
+    });
   });
 
   it("renomeia NA PRÓPRIA LINHA, sem modal -- Enter confirma", async () => {
