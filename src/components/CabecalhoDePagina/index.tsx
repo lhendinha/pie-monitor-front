@@ -32,7 +32,15 @@ export default function CabecalhoDePagina({ titulo, subtitulo, acoes }: Props) {
           </Text>
         )}
       </Box>
-      {acoes && <Box flexShrink={0}>{acoes}</Box>}
+      {/* `.page-head-actions` do artifact: flex com 8px de intervalo. Era um
+          `Box` seco, e com DUAS ações elas ficavam coladas -- só apareceu
+          quando o Kanban ganhou o "Editar quadro" ao lado do "Nova
+          tarefa". */}
+      {acoes && (
+        <Flex align="center" gap="8px" flexShrink={0}>
+          {acoes}
+        </Flex>
+      )}
     </Flex>
   );
 }

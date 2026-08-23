@@ -36,7 +36,7 @@ import {
 } from "../../../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import { calcularOrdemAposMover } from "../../helpers/opcoes";
+import { calcularOrdemAposMover } from "../../../../utils";
 import FormularioNovaOpcao from "../FormularioNovaOpcao";
 import LinhaDeOpcao from "../LinhaDeOpcao";
 import type { OpcaoProcesso, TipoOpcaoProcesso } from "../../../../types";

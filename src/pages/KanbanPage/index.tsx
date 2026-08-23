@@ -37,6 +37,7 @@ import ColunaDoQuadro from "./components/ColunaDoQuadro";
 import { moverTarefaNaLista } from "./helpers/cacheDoQuadro";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
 import ModalDeTarefa from "./components/ModalDeTarefa";
+import ModalDoQuadro from "./components/ModalDoQuadro";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type {
@@ -46,11 +47,21 @@ import type {
   Tarefa,
 } from "../../types";
 
-/** O quadro ABRE no mês, como no artifact (`PERIODS = { kanban: 'mes' }`)
- * -- carregar o histórico inteiro por padrão seriam milhares de cartões,
- * já que tarefa concluída não some, só muda de coluna. */
+/** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
+ * (`PERIODS = { kanban: 'mes' }`).
+ *
+ * O mês só fazia sentido enquanto a janela limitava uma ponta só. Desde que
+ * ela passou a limitar as DUAS (necessário pros períodos passados, como
+ * "Ontem" e "Últimos 7 dias"), "Este mês" ESCONDE tarefa vencida do mês
+ * anterior -- num quadro, exatamente o que mais precisa de atenção.
+ *
+ * O custo conhecido: tarefa concluída não some, só muda de coluna, então a
+ * coluna de conclusão acumula com o tempo. Preferimos um quadro cheio a um
+ * quadro que mente sobre o que está em aberto -- e a separação certa
+ * (aberta × concluída, que a API sabe fazer com `apenas_abertas`) fica pra
+ * quando o desenho da coluna de conclusão for decidido. */
 const FILTROS_VAZIOS = {
-  periodoId: "mes",
+  periodoId: PERIODO_TODOS,
   intervaloPersonalizado: undefined,
   pessoa: "todas",
   busca: "",
@@ -84,6 +95,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
   /** O link já foi consumido -- fechar o modal não pode reabri-lo. */
   const [linkConsumido, setLinkConsumido] = useState(false);
   const [criandoNaColuna, setCriandoNaColuna] = useState<string | null>(null);
+  const [editandoQuadro, setEditandoQuadro] = useState(false);
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -260,10 +272,20 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
         subtitulo="Cada subgrupo tem seu próprio quadro. Arraste os cartões entre colunas ou abra pra editar."
         acoes={
           subgrupos.length > 0 && (
-            <Botao onClick={() => setCriandoNaColuna(colunas[0]?.coluna_id ?? "")}>
-              <IconePlus />
-              Nova tarefa
-            </Botao>
+            <>
+              {/* O quadro é configuração do escritório -- `admin`, como o
+                  servidor exige. A tarefa é trabalho do dia e fica aberta a
+                  qualquer membro. */}
+              {papelAtende("admin") && (
+                <Botao variante="ghost" onClick={() => setEditandoQuadro(true)}>
+                  Editar quadro
+                </Botao>
+              )}
+              <Botao onClick={() => setCriandoNaColuna(colunas[0]?.coluna_id ?? "")}>
+                <IconePlus />
+                Nova tarefa
+              </Botao>
+            </>
           )
         }
       />
@@ -328,6 +350,15 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
             </DndContext>
           )}
         </>
+      )}
+
+      {editandoQuadro && (
+        <ModalDoQuadro
+          subgrupoId={subgrupoId}
+          subgrupoNome={subgrupos.find((s) => s.subgrupo_id === subgrupoId)?.nome ?? ""}
+          colunas={colunas}
+          onFechar={() => setEditandoQuadro(false)}
+        />
       )}
 
       {(tarefaAberta || criandoNaColuna !== null) && (
