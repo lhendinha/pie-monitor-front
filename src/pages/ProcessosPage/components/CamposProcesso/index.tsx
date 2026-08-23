@@ -8,7 +8,7 @@ import {
   Select,
   SeletorData,
 } from "../../../../components";
-import { TAMANHO_PAGINA_PICKER } from "../../../../constants";
+import { TETO_POR_PAGINA } from "../../../../constants";
 import { listarClientes, listarOpcoesProcesso } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
@@ -26,29 +26,29 @@ interface Props {
  * É quem chama `GET /clientes`/`/fases`/`/situacoes` -- o cache do React
  * Query evita refetch duplicado mesmo montando em cadastro e edição, e
  * também compartilha com os filtros de `ProcessosPage`, que pedem o mesmo
- * `TAMANHO_PAGINA_PICKER`.
+ * `TETO_POR_PAGINA`.
  *
  * A ordem dos campos é a do artifact: identificação, partes, classificação
  * (fase/situação), prazos e por fim as anotações.
  */
 export default function CamposProcesso({ valores, onMudar }: Props) {
   const clientesQuery = useQuery<{ clientes: Cliente[] }>({
-    queryKey: qk.clientes({ tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarClientes({ tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(clientesQuery.error, "Não foi possível carregar os clientes.");
   const clientes = clientesQuery.data?.clientes || [];
 
   const fasesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
-    queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(fasesQuery.error, "Não foi possível carregar as fases.");
   const fases = fasesQuery.data?.opcoes || [];
 
   const situacoesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
-    queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(situacoesQuery.error, "Não foi possível carregar as situações.");
   const situacoes = situacoesQuery.data?.opcoes || [];

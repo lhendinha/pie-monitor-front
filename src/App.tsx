@@ -6,6 +6,7 @@ import {
   ClienteDetalhePage,
   ClientesPage,
   GrupoPage,
+  KanbanPage,
   PerfilPage,
   ProcessoDetalhePage,
   ProcessosPage,
@@ -34,6 +35,7 @@ function Rotas() {
       <Route element={<RotaProtegida />}>
         <Route element={<AppShell onSair={sair} />}>
           <Route index element={<RotaRaiz />} />
+          <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/processos" element={<ProcessosPage />} />
           {/* Detalhe é rota: o e-mail de lembrete linka direto pra cá, e a
               tela se hidrata sozinha pelo número. O subgrupo está no

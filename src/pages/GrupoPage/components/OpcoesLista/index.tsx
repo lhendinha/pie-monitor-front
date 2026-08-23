@@ -24,7 +24,7 @@ import {
   ModalDeConfirmacao,
   useToast,
 } from "../../../../components";
-import { TAMANHO_PAGINA_PICKER } from "../../../../constants";
+import { TETO_POR_PAGINA } from "../../../../constants";
 import {
   atualizarOpcaoProcesso,
   criarOpcaoProcesso,
@@ -56,7 +56,7 @@ interface Props {
  * é soft delete (`ativo`), e não exclusão.
  *
  * A ordem é por arrastar, e não dá pra arrastar entre páginas: a lista vem
- * inteira com `TAMANHO_PAGINA_PICKER` em vez de paginar. Mesma premissa do
+ * inteira com `TETO_POR_PAGINA` em vez de paginar. Mesma premissa do
  * seletor de Fase/Situação do formulário de processo.
  */
 export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
@@ -75,8 +75,8 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
   );
 
   const query = useQuery<{ opcoes: OpcaoProcesso[]; total: number; total_paginas: number }>({
-    queryKey: qk.opcoesProcesso(tipo, { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarOpcoesProcesso(tipo, { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.opcoesProcesso(tipo, { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarOpcoesProcesso(tipo, { tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(query.error, `Não foi possível carregar ${titulo.toLowerCase()}.`);
   const opcoesServidor = [...(query.data?.opcoes || [])].sort((a, b) => a.ordem - b.ordem);

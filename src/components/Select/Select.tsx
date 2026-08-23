@@ -27,6 +27,11 @@ interface SelectProps {
   /** Largura fixa quando o contexto exige (72px no "Por página" do
    * artifact). Sem ela o controle acompanha o container. */
   largura?: string;
+  /** Campo que existe pra ser LIDO, não escolhido -- o subgrupo de uma
+   * tarefa já criada, por exemplo, que faz parte da chave e não muda.
+   * Mostrar desabilitado diz onde a coisa está; esconder deixaria a pessoa
+   * sem saber. */
+  desabilitado?: boolean;
 }
 
 /** Substitui o `<select>` nativo -- mesmo visual do `Select`/`MultiSelect`,
@@ -40,6 +45,7 @@ export function Select({
   compacto = false,
   largura,
   variante = "padrao",
+  desabilitado = false,
 }: SelectProps) {
   const chip = variante === "chip";
   /** Mesmo motivo do `MultiSelect`: com o menu controlado, o `onMenuClose`
@@ -64,6 +70,7 @@ export function Select({
       placeholder={placeholder}
       isSearchable={false}
       isClearable={false}
+      isDisabled={desabilitado}
       openMenuOnFocus
       menuPlacement="auto"
       menuPosition="fixed"

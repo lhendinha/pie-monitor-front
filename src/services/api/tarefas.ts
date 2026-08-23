@@ -10,13 +10,18 @@ interface OpcoesListarTarefas {
   responsavel?: string;
   semResponsavel?: boolean;
   apenasAbertas?: boolean;
+  /** Intervalo de `data`, inclusivo nas duas pontas. */
+  dataDe?: string;
+  dataAte?: string;
   pagina?: number;
   tamanhoPagina?: number;
 }
 
 export function listarTarefas(opcoes: OpcoesListarTarefas = {}) {
-  const { processoNumero, subgrupoId, responsavel, semResponsavel, apenasAbertas, pagina, tamanhoPagina } =
-    opcoes;
+  const {
+    processoNumero, subgrupoId, responsavel, semResponsavel, apenasAbertas,
+    dataDe, dataAte, pagina, tamanhoPagina,
+  } = opcoes;
   return chamar("/tarefas", {
     query: {
       processo_numero: processoNumero,
@@ -24,6 +29,8 @@ export function listarTarefas(opcoes: OpcoesListarTarefas = {}) {
       responsavel: responsavel,
       sem_responsavel: semResponsavel ? "true" : undefined,
       apenas_abertas: apenasAbertas ? "true" : undefined,
+      data_de: dataDe,
+      data_ate: dataAte,
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
     },
@@ -38,7 +45,30 @@ export function listarTarefas(opcoes: OpcoesListarTarefas = {}) {
 export function atualizarTarefa(
   subgrupoId: string,
   tarefaId: string,
-  campos: { coluna_id?: string; responsavel_id?: string | null },
+  campos: Partial<Omit<NovaTarefa, "subgrupo_id">>,
 ) {
   return chamar(`/subgrupos/${subgrupoId}/tarefas/${tarefaId}`, { method: "PATCH", body: campos });
+}
+
+interface NovaTarefa {
+  subgrupo_id: string;
+  titulo: string;
+  data: string;
+  coluna_id: string;
+  prioridade: string;
+  responsavel_id?: string | null;
+  processo_numero?: string | null;
+  observacoes?: string | null;
+}
+
+/** POST /tarefas.
+ *
+ * `subgrupo_id` vai no corpo, e não no caminho: é aqui que ele é ESCOLHIDO.
+ * Depois de criada ele nunca mais muda -- faz parte da chave. */
+export function criarTarefa(tarefa: NovaTarefa) {
+  return chamar("/tarefas", { method: "POST", body: { ...tarefa } });
+}
+
+export function removerTarefa(subgrupoId: string, tarefaId: string) {
+  return chamar(`/subgrupos/${subgrupoId}/tarefas/${tarefaId}`, { method: "DELETE" });
 }

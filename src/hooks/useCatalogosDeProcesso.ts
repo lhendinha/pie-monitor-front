@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { listarClientes, listarOpcoesProcesso, listarSubgrupos } from "../services";
 import { useToastOnQueryError } from "../services/queryClient";
 import { qk } from "../services/queryKeys";
-import { TAMANHO_PAGINA_PICKER } from "../constants";
+import { TETO_POR_PAGINA } from "../constants";
 import type { Cliente, OpcaoProcesso, Subgrupo } from "../types";
 
 /** As quatro listas que a tela de Processos usa pra traduzir id em nome:
  * subgrupos, clientes, fases e situações.
  *
- * Todas com `TAMANHO_PAGINA_PICKER` e **as mesmas queryKeys** que os
+ * Todas com `TETO_POR_PAGINA` e **as mesmas queryKeys** que os
  * formulários usam -- é isso que faz o cache ser compartilhado em vez de
  * refazer o fetch só porque outra tela montou.
  *
@@ -19,24 +19,24 @@ import type { Cliente, OpcaoProcesso, Subgrupo } from "../types";
  */
 export function useCatalogosDeProcesso() {
   const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
-    queryKey: qk.subgrupos({ tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
   const clientesQuery = useQuery<{ clientes: Cliente[] }>({
-    queryKey: qk.clientes({ tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarClientes({ tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),
   });
 
   const fasesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
-    queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
   });
 
   const situacoesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
-    queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
-    queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TAMANHO_PAGINA_PICKER }),
+    queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
   });
 
   const subgrupos = subgruposQuery.data?.subgrupos || [];
