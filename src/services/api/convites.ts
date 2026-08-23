@@ -7,3 +7,12 @@ export function criarConvite(email: string, papelInicial: Papel, subgruposInicia
     body: { email, papel_inicial: papelInicial, subgrupos_iniciais: subgruposIniciais },
   });
 }
+
+/** O convite ainda vale? Consultado quando a página do link ABRE.
+ *
+ * Devolve só `{ valido }` -- quem consulta ainda não provou ser o
+ * destinatário, então o e-mail convidado e o papel não vêm junto.
+ */
+export function verificarConvite(token: string) {
+  return chamar(`/convites/${encodeURIComponent(token)}`) as Promise<{ valido: boolean }>;
+}

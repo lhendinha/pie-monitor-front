@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-import { Cartao, Esqueleto } from "../../../../components";
+import { Cartao, EstadoDeErro, Esqueleto } from "../../../../components";
 import { emDias, hojeISO } from "../../../../utils";
 import GrupoDeNumeros from "../GrupoDeNumeros";
 import type { NumeroDoResumo } from "../../types";
@@ -9,6 +9,15 @@ import type { ResumoDaAreaDeTrabalho } from "../../../../types";
 interface Props {
   resumo?: ResumoDaAreaDeTrabalho;
   carregando: boolean;
+  /** A consulta falhou.
+   *
+   * Sem isto, os `?? 0` espalhados aqui transformavam a falha em ZERO:
+   * "Tarefas atrasadas: 0", com barra desenhada e tudo. É o número que a
+   * pessoa abre o app pra ver, e zero é a resposta que ela mais quer --
+   * então a mentira passa sem ser questionada. */
+  falhou?: boolean;
+  onTentarDeNovo?: () => void;
+  tentando?: boolean;
 }
 
 /** Os números do dia, cada um levando à lista que o gerou.
@@ -18,7 +27,13 @@ interface Props {
  * **até** hoje" -- o filtro de Processos é `<= data`, então o número inclui
  * os atrasados, e "em hoje" seria mentira.
  */
-export default function ResumoRapido({ resumo, carregando }: Props) {
+export default function ResumoRapido({
+  resumo,
+  carregando,
+  falhou,
+  onTentarDeNovo,
+  tentando,
+}: Props) {
   const navegar = useNavigate();
 
   function irParaProcessos(filtros: Record<string, string>) {
@@ -68,7 +83,13 @@ export default function ResumoRapido({ resumo, carregando }: Props) {
 
   return (
     <Cartao titulo="Resumo rápido">
-      {carregando ? (
+      {falhou ? (
+        <EstadoDeErro
+          mensagem="Não foi possível carregar o resumo."
+          onTentarDeNovo={() => onTentarDeNovo?.()}
+          tentando={tentando}
+        />
+      ) : carregando ? (
         <Esqueleto linhas={3} />
       ) : (
         <>

@@ -106,8 +106,20 @@ export default function WorkspacePage() {
         </Stack>
 
         <Stack gap="20px">
-          <MinhasAtividades resumo={resumoQuery.data} carregando={resumoQuery.isPending} />
-          <ResumoRapido resumo={resumoQuery.data} carregando={resumoQuery.isPending} />
+          <MinhasAtividades
+            resumo={resumoQuery.data}
+            carregando={resumoQuery.isPending}
+            falhou={resumoQuery.isError}
+            onTentarDeNovo={() => resumoQuery.refetch()}
+            tentando={resumoQuery.isFetching}
+          />
+          <ResumoRapido
+            resumo={resumoQuery.data}
+            carregando={resumoQuery.isPending}
+            falhou={resumoQuery.isError}
+            onTentarDeNovo={() => resumoQuery.refetch()}
+            tentando={resumoQuery.isFetching}
+          />
         </Stack>
       </Grid>
     </>

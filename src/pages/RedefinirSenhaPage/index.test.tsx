@@ -29,7 +29,7 @@ describe("RedefinirSenhaPage", () => {
   it("em sucesso, mostra a confirmação", async () => {
     mocks.redefinirSenha.mockResolvedValue({});
     const user = userEvent.setup();
-    renderComProviders(<RedefinirSenhaPage token="token-valido" />);
+    renderComProviders(<RedefinirSenhaPage token="token-valido" onConcluido={vi.fn()} />);
 
     await preencherEEnviar(user);
 
@@ -39,7 +39,7 @@ describe("RedefinirSenhaPage", () => {
   it("achado 19: link expirado/já usado (410) mostra aviso de link inválido, não destaca a senha", async () => {
     mocks.redefinirSenha.mockRejectedValue(new ApiError("Link de recuperação inválido ou expirado", 410));
     const user = userEvent.setup();
-    renderComProviders(<RedefinirSenhaPage token="token-expirado" />);
+    renderComProviders(<RedefinirSenhaPage token="token-expirado" onConcluido={vi.fn()} />);
 
     await preencherEEnviar(user);
 
@@ -53,7 +53,7 @@ describe("RedefinirSenhaPage", () => {
   it("erro que não é 410 mantém o formulário e não mostra o aviso de link inválido", async () => {
     mocks.redefinirSenha.mockRejectedValue(new ApiError("Senha muito curta", 400));
     const user = userEvent.setup();
-    renderComProviders(<RedefinirSenhaPage token="token-outro-erro" />);
+    renderComProviders(<RedefinirSenhaPage token="token-outro-erro" onConcluido={vi.fn()} />);
 
     await preencherEEnviar(user);
 
@@ -64,7 +64,7 @@ describe("RedefinirSenhaPage", () => {
 
   it("senhas diferentes bloqueiam o envio antes de chamar a API", async () => {
     const user = userEvent.setup();
-    renderComProviders(<RedefinirSenhaPage token="token-x" />);
+    renderComProviders(<RedefinirSenhaPage token="token-x" onConcluido={vi.fn()} />);
 
     await user.type(screen.getByLabelText(/^Nova senha/), "senha-forte-123");
     await user.type(screen.getByLabelText(/^Confirmar senha/), "outra-senha-456");

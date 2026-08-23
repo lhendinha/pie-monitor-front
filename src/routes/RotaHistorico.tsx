@@ -11,11 +11,23 @@ import type { DeepLinkHistorico } from "../utils";
  * `location.state` a cada render faria exatamente isso. */
 export default function RotaHistorico() {
   const local = useLocation();
+  const estado = local.state as
+    | { deepLink?: DeepLinkHistorico; tipoEnvio?: string }
+    | null;
   const [deepLink, setDeepLink] = useState<DeepLinkHistorico | null>(
-    () => (local.state as { deepLink?: DeepLinkHistorico } | null)?.deepLink || null,
+    () => estado?.deepLink || null,
   );
 
   return (
-    <HistoricoPage deepLink={deepLink} onDeepLinkConsumido={() => setDeepLink(null)} />
+    <HistoricoPage
+      deepLink={deepLink}
+      /* ⚠️ A Área de trabalho MANDAVA `tipoEnvio` e ninguém lia. Clicar em
+         "Envios com falha" esperava o carregamento e entregava a lista de
+         Movimentações -- onde o número não bate com o que foi clicado, e
+         nada explica por quê. Só na primeira montagem: depois disso quem
+         manda é o filtro da própria tela. */
+      tipoEnvioInicial={estado?.tipoEnvio}
+      onDeepLinkConsumido={() => setDeepLink(null)}
+    />
   );
 }

@@ -20,6 +20,7 @@ import {
 import {
   CartaoDeTabela,
   EstadoVazio,
+  EstadoDeErro,
   Esqueleto,
   ModalDeConfirmacao,
   useToast,
@@ -176,6 +177,17 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
   }
 
   if (query.isPending) return <Esqueleto linhas={3} />;
+  if (query.isError) {
+    return (
+      <CartaoDeTabela>
+        <EstadoDeErro
+          mensagem={`Não foi possível carregar ${titulo.toLowerCase()}.`}
+          onTentarDeNovo={() => query.refetch()}
+          tentando={query.isFetching}
+        />
+      </CartaoDeTabela>
+    );
+  }
 
   return (
     <>

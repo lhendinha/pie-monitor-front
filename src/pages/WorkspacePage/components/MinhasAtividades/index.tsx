@@ -1,11 +1,20 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 
-import { Cartao, Esqueleto } from "../../../../components";
+import { Cartao, EstadoDeErro, Esqueleto } from "../../../../components";
 import type { ResumoDaAreaDeTrabalho } from "../../../../types";
 
 interface Props {
   resumo?: ResumoDaAreaDeTrabalho;
   carregando: boolean;
+  /** A consulta falhou.
+   *
+   * Sem isto, os `?? 0` espalhados aqui transformavam a falha em ZERO:
+   * "Tarefas atrasadas: 0", com barra desenhada e tudo. É o número que a
+   * pessoa abre o app pra ver, e zero é a resposta que ela mais quer --
+   * então a mentira passa sem ser questionada. */
+  falhou?: boolean;
+  onTentarDeNovo?: () => void;
+  tentando?: boolean;
 }
 
 /** Concluídas, atrasadas e a concluir -- das MINHAS tarefas.
@@ -15,7 +24,13 @@ interface Props {
  * teria que buscar o quadro de cada subgrupo em que a pessoa tem tarefa. E
  * são contagens sobre a coleção inteira, que a paginação não entrega.
  */
-export default function MinhasAtividades({ resumo, carregando }: Props) {
+export default function MinhasAtividades({
+  resumo,
+  carregando,
+  falhou,
+  onTentarDeNovo,
+  tentando,
+}: Props) {
   const barras = [
     { rotulo: "Concluídas", valor: resumo?.minhas_concluidas ?? 0, cor: "status.good" },
     { rotulo: "Atrasadas", valor: resumo?.minhas_atrasadas ?? 0, cor: "status.bad" },
@@ -27,7 +42,13 @@ export default function MinhasAtividades({ resumo, carregando }: Props) {
 
   return (
     <Cartao titulo="Minhas atividades">
-      {carregando ? (
+      {falhou ? (
+        <EstadoDeErro
+          mensagem="Não foi possível carregar seus números."
+          onTentarDeNovo={() => onTentarDeNovo?.()}
+          tentando={tentando}
+        />
+      ) : carregando ? (
         <Esqueleto linhas={2} />
       ) : (
         <>

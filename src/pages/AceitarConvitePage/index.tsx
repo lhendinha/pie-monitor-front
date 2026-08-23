@@ -1,5 +1,6 @@
 import { Input, Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   Botao,
@@ -7,17 +8,32 @@ import {
   Campo,
   CampoDeSenha,
   CartaoDeAutenticacao,
+  Esqueleto,
   Faixa,
   useToast,
 } from "../../components";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
-import { ApiError, aceitarConvite } from "../../services";
+import { ApiError, aceitarConvite, verificarConvite } from "../../services";
 
 interface Props {
   token: string;
+  /** Chamado quando a conta é criada e os tokens já estão salvos. Quem
+   * navega é a rota -- a página segue pura, como a de login. */
+  onEntrar: () => void;
 }
 
-export default function AceitarConvitePage({ token }: Props) {
+export default function AceitarConvitePage({ token, onEntrar }: Props) {
+  /** Confere o link ao ABRIR. Sem isto, a pessoa preenchia apelido e senha,
+   * clicava, esperava o round-trip e SÓ ENTÃO lia "Convite expirado" -- uma
+   * recusa que já era conhecida quando a página carregou. */
+  const conviteQuery = useQuery<{ valido: boolean }>({
+    queryKey: ["convite", token],
+    queryFn: () => verificarConvite(token),
+    enabled: Boolean(token),
+    /* Sem retentativa: link inválido não vira válido tentando de novo, e
+       cada tentativa segura a tela. */
+    retry: false,
+  });
   const [apelido, setApelido] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -35,9 +51,12 @@ export default function AceitarConvitePage({ token }: Props) {
     try {
       await aceitarConvite(token, senha, apelido.trim() || undefined);
       setSucesso(true);
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1500);
+      /* ⚠️ Era `window.location.href = "/"`, que faz RELOAD COMPLETO do
+         SPA: 1,5s parado, depois tela branca enquanto o bundle reparseia,
+         e só então a Área de trabalho começa a buscar os dados dela. Com
+         `onEntrar` a transição é imediata e a sessão já está no
+         localStorage -- é o mesmo caminho do login normal. */
+      onEntrar();
     } catch (err) {
       /** Convite já usado ou expirado (410) NÃO é senha inválida. Marcar o
        * campo nesse caso fazia a pessoa tentar senhas diferentes sem nunca
@@ -53,6 +72,19 @@ export default function AceitarConvitePage({ token }: Props) {
     }
   }
 
+  if (conviteQuery.isPending) {
+    return (
+      <CartaoDeAutenticacao titulo="Criar sua conta">
+        <Stack gap="14px">
+          <Text fontSize="13.5px" color="fg.subtle">
+            Carregando…
+          </Text>
+          <Esqueleto linhas={2} altura="38px" />
+        </Stack>
+      </CartaoDeAutenticacao>
+    );
+  }
+
   if (sucesso) {
     return (
       <CartaoDeAutenticacao titulo="Criar sua conta">
@@ -61,7 +93,16 @@ export default function AceitarConvitePage({ token }: Props) {
     );
   }
 
-  if (linkInvalido) {
+  /* Derivado, e não `setState` no render: o link é inválido se a consulta
+     de abertura disse isso OU se o envio tomou 410.
+
+     A consulta FALHAR não é o mesmo que o convite ser inválido -- erro de
+     rede não pode virar "convite expirado". Só um `valido: false`
+     explícito antecipa o recado; no resto, o formulário abre e quem decide
+     é o envio, como antes. */
+  const conviteInvalido = linkInvalido || conviteQuery.data?.valido === false;
+
+  if (conviteInvalido) {
     return (
       <CartaoDeAutenticacao titulo="Convite expirado">
         <Faixa tom="aviso" aEsquerda>

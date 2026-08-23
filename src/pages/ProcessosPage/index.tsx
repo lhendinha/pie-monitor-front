@@ -1,11 +1,17 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { listarProcessos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { CartaoDeTabela, Pagination, Esqueleto } from "../../components";
+import {
+  AreaAtualizando,
+  CartaoDeTabela,
+  EstadoDeErro,
+  Pagination,
+  Esqueleto,
+} from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants/processos";
 import CabecalhoProcessos from "./components/CabecalhoProcessos";
@@ -31,12 +37,15 @@ export default function ProcessosPage() {
    * número. Vem por `state` da navegação, e não por query string, porque é
    * um atalho interno: não é URL pra compartilhar. */
   const { state } = useLocation();
-  const filtrosIniciais = (state as { filtros?: Partial<FiltrosProcessos> } | null)?.filtros;
+  const navegacao = state as
+    | { filtros?: Partial<FiltrosProcessos>; processoEmDestaque?: string }
+    | null;
+  const filtrosIniciais = navegacao?.filtros;
 
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
 
-  const f = useFiltrosProcessos(filtrosIniciais);
+  const f = useFiltrosProcessos(filtrosIniciais, navegacao?.processoEmDestaque);
   const apoio = useCatalogosDeProcesso();
   const queryClient = useQueryClient();
 
@@ -48,6 +57,12 @@ export default function ProcessosPage() {
     total_paginas: number;
   }>({
     queryKey: qk.processos(parametrosBusca),
+    /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
+       `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
+       tabela DESMONTA -- pisca a cada página, a cada filtro e a cada tecla
+       da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
+       visível ainda é o antigo. */
+    placeholderData: keepPreviousData,
     queryFn: () => listarProcessos(parametrosBusca),
     refetchInterval: INTERVALO_POLLING_PROCESSOS_MS,
   });
@@ -82,6 +97,9 @@ export default function ProcessosPage() {
       <CabecalhoProcessos
         carregando={carregando}
         carregandoCatalogos={apoio.carregandoCatalogos}
+        /* Espera entre teclas OU consulta em voo -- as duas são "o que você
+           vê não é o que você escreveu". */
+        buscando={f.buscaInput !== f.filtros.busca || processosQuery.isPlaceholderData}
         total={total}
         totalSemFiltro={totalSemFiltro}
         busca={f.buscaInput}
@@ -96,21 +114,38 @@ export default function ProcessosPage() {
 
       {carregando ? (
         <Esqueleto />
+      ) : processosQuery.isError ? (
+        /* Erro NÃO pode cair no caminho de sucesso: `data?.processos || []`
+           deixava a tabela vazia e o `EstadoVazio` então AFIRMAVA "Nenhum
+           processo cadastrado ainda" pra quem tem duzentos. O toast que
+           dizia a verdade some em 4,5s; a mentira ficava. */
+        <CartaoDeTabela>
+          <EstadoDeErro
+            mensagem="Não foi possível carregar os processos."
+            onTentarDeNovo={() => processosQuery.refetch()}
+            tentando={processosQuery.isFetching}
+          />
+        </CartaoDeTabela>
       ) : (
         /* Tabela e paginação dentro do MESMO cartão, como no artifact: lá o
            `.table-card` só fecha depois da barra de páginas. Separados, a
            paginação virava um bloco solto embaixo da tabela. */
         <CartaoDeTabela>
-          <TabelaProcessos
-            processos={processos}
-            filtroAtivo={f.filtroAtivo}
-            onLimparFiltros={f.limpar}
-            subgrupoNome={apoio.subgrupoNome}
-            clientesNomes={apoio.clientesNomes}
-            faseRotulo={apoio.faseRotulo}
-            situacaoRotulo={apoio.situacaoRotulo}
-            onAbrir={(p) => navegar(`/processos/${p.subgrupo_id}/${p.numero_processo}`)}
-          />
+          <AreaAtualizando atualizando={processosQuery.isPlaceholderData}>
+            <TabelaProcessos
+              processos={processos}
+              filtroAtivo={f.filtroAtivo}
+              onLimparFiltros={f.limpar}
+              subgrupoNome={apoio.subgrupoNome}
+              clientesNomes={apoio.clientesNomes}
+              faseRotulo={apoio.faseRotulo}
+              situacaoRotulo={apoio.situacaoRotulo}
+              onAbrir={(p) => navegar(`/processos/${p.subgrupo_id}/${p.numero_processo}`)}
+            />
+          </AreaAtualizando>
+          {/* A paginação fica FORA do apagado: é o controle que a pessoa
+              acabou de usar, e apagá-lo junto sugeriria que ele também
+              parou de funcionar. */}
           {!f.filtroAtivo && processos.length > 0 && (
             <Pagination
               pagina={pagina}

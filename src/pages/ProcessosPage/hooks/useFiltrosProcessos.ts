@@ -1,5 +1,6 @@
-import { useDeferredValue, useState } from "react";
+import { useState } from "react";
 
+import { useValorComEspera } from "../../../hooks/useValorComEspera";
 import { FILTROS_PROCESSOS_VAZIOS } from "../constants/processos";
 import { temFiltroAtivo } from "../../../services/api/processos";
 import type { FiltrosProcessos } from "../../../types";
@@ -11,13 +12,22 @@ import type { FiltrosProcessos } from "../../../types";
  * fazia sentido num painel com cinco campos abertos ao mesmo tempo, e virou
  * atrito quando cada filtro é um clique isolado.
  *
- * `useDeferredValue` na busca, em vez de debounce com `setTimeout`: o React
- * adia o valor derivado enquanto a digitação está rápida, sem `useEffect`
- * nem timer pra limpar.
+ * ⚠️ A busca usa DEBOUNCE (`useValorComEspera`), não `useDeferredValue`.
+ * Aquele estava aqui como se fosse debounce e não é: não tem componente de
+ * tempo, só pula valores intermediários quando o render é lento. Nesta
+ * tabela ele é rápido, então cada tecla virava uma `queryKey` nova, uma
+ * requisição e uma piscada.
  */
-export function useFiltrosProcessos(iniciais?: Partial<FiltrosProcessos>) {
-  const [buscaInput, setBuscaInput] = useState("");
-  const busca = useDeferredValue(buscaInput);
+export function useFiltrosProcessos(
+  iniciais?: Partial<FiltrosProcessos>,
+  buscaInicial?: string,
+) {
+  /** `buscaInicial` vem do link `?processo=X` do e-mail. Sem ele, quem
+   * clicava naquele link esperava o carregamento e chegava numa listagem
+   * genérica, sem filtro e sem destaque, sem entender por que estava ali --
+   * o número do processo ia junto na navegação e ninguém lia. */
+  const [buscaInput, setBuscaInput] = useState(buscaInicial ?? "");
+  const busca = useValorComEspera(buscaInput);
   /** Os iniciais só valem na PRIMEIRA montagem, de propósito: eles vêm da
    * Área de trabalho, onde clicar num número abre esta tela já filtrada. Se
    * reagissem a mudanças da prop, limpar o filtro aqui seria desfeito no

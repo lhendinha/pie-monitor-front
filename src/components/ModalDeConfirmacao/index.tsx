@@ -35,6 +35,13 @@ interface Props {
   /** O que está sendo verificado, em uma frase ("Conferindo o que existe
    * dentro de X…"). Só aparece com `verificando`. */
   mensagemDeEspera?: ReactNode;
+  /** A verificação FALHOU -- e não saber é motivo pra não deixar seguir,
+   * não pra deixar.
+   *
+   * Separado de `verificando` porque o que a tela deve dizer é outro: sem
+   * isto o botão anunciava "Verificando…" pra sempre, prometendo uma espera
+   * que nunca termina, e o esqueleto seguia pulsando como se algo viesse. */
+  falhouAVerificacao?: boolean;
   onConfirmar: () => void;
   onFechar: () => void;
 }
@@ -56,6 +63,7 @@ export default function ModalDeConfirmacao({
   confirmando,
   verificando,
   mensagemDeEspera,
+  falhouAVerificacao,
   onConfirmar,
   onFechar,
 }: Props) {
@@ -71,10 +79,14 @@ export default function ModalDeConfirmacao({
           <Botao
             variante="perigo"
             onClick={onConfirmar}
-            disabled={confirmando || verificando}
+            disabled={confirmando || verificando || falhouAVerificacao}
           >
             {!reversivel && <IconeLixeira />}
-            {confirmando ? "Excluindo…" : verificando ? "Verificando…" : rotulo || "Excluir"}
+            {confirmando
+              ? "Excluindo…"
+              : verificando && !falhouAVerificacao
+                ? "Verificando…"
+                : rotulo || "Excluir"}
           </Botao>
         </RodapeDeAcoes>
       }
@@ -88,7 +100,13 @@ export default function ModalDeConfirmacao({
             dela em cima, então o esqueleto só precisa cobrir o que sobra.
             Com duas barras o diálogo saltava 29px pra cima quando a resposta
             chegava -- medido no navegador. */}
-        {verificando && <Esqueleto linhas={1} altura="15px" />}
+        {verificando && !falhouAVerificacao && <Esqueleto linhas={1} altura="15px" />}
+        {/* Em falha, faixa em vez de esqueleto: não há nada a caminho. */}
+        {falhouAVerificacao && (
+          <Faixa tom="aviso" aEsquerda>
+            Enquanto isso não carregar, a exclusão fica bloqueada.
+          </Faixa>
+        )}
         {!verificando && aviso && (
           <Faixa tom="aviso" aEsquerda>
             {aviso}

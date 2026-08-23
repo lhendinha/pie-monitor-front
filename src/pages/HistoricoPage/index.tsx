@@ -1,12 +1,14 @@
 import { Flex, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 import {
   Botao,
   CabecalhoDePagina,
   CartaoDeTabela,
+  AreaAtualizando,
   EstadoVazio,
+  EstadoDeErro,
   Esqueleto,
   Modal,
   Pagination,
@@ -26,6 +28,13 @@ import type { HistoricoItem } from "../../types";
 
 interface Props {
   deepLink?: DeepLinkHistorico | null;
+  /** Com que filtro a tela abre, quando quem navegou até aqui já sabe.
+   *
+   * Vem da Área de trabalho: "Envios com falha" cruza os dois tipos, então
+   * ela manda `""` (todos). Sem isso, o clique caía em Movimentações e o
+   * número da tela não batia com o número clicado. Só vale na PRIMEIRA
+   * montagem -- depois quem manda é o filtro da própria tela. */
+  tipoEnvioInicial?: string;
   onDeepLinkConsumido?: () => void;
 }
 
@@ -34,15 +43,27 @@ interface Props {
  * A tela abre filtrada em Movimentações: é o que se olha no dia a dia, e
  * lembrete é diário -- sem filtro ele dominaria a lista.
  */
-export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: Props) {
+export default function HistoricoPage({
+  deepLink,
+  tipoEnvioInicial,
+  onDeepLinkConsumido,
+}: Props) {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
-  const [tipoEnvio, setTipoEnvio] = useState<string>(TIPO_DE_ENVIO_PADRAO);
+  const [tipoEnvio, setTipoEnvio] = useState<string>(
+    tipoEnvioInicial ?? TIPO_DE_ENVIO_PADRAO,
+  );
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 
   const query = useQuery<{ historico: HistoricoItem[]; total: number; total_paginas: number }>({
     queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio }),
+    /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
+       `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
+       tabela DESMONTA -- pisca a cada página, a cada filtro e a cada tecla
+       da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
+       visível ainda é o antigo. */
+    placeholderData: keepPreviousData,
     queryFn: () => listarHistorico({ pagina, tamanhoPagina, tipoEnvio }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar o histórico.");
@@ -121,6 +142,17 @@ export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: Props) 
 
       {query.isPending ? (
         <Esqueleto linhas={4} />
+      ) : query.isError ? (
+        /* Sem isto a tela dizia "Nenhum e-mail enviado ainda" numa falha de
+           rede -- e, como `totalSemFiltro` também caía pra 0, nem o "Ver
+           todos os envios" aparecia pra desmentir. */
+        <CartaoDeTabela>
+          <EstadoDeErro
+            mensagem="Não foi possível carregar o histórico."
+            onTentarDeNovo={() => query.refetch()}
+            tentando={query.isFetching}
+          />
+        </CartaoDeTabela>
       ) : (
         <CartaoDeTabela>
           {historico.length === 0 ? (
@@ -143,13 +175,15 @@ export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: Props) 
             />
           ) : (
             <>
-              {historico.map((h, i) => (
-                <ItemDeHistorico
-                  key={`${h.numero_processo}-${h.enviado_em}-${i}`}
-                  item={h}
-                  onAbrir={setItemAberto}
-                />
-              ))}
+              <AreaAtualizando atualizando={query.isPlaceholderData}>
+                {historico.map((h, i) => (
+                  <ItemDeHistorico
+                    key={`${h.numero_processo}-${h.enviado_em}-${i}`}
+                    item={h}
+                    onAbrir={setItemAberto}
+                  />
+                ))}
+              </AreaAtualizando>
               <Pagination
                 pagina={pagina}
                 totalPaginas={totalPaginas}

@@ -15,9 +15,11 @@ import { ApiError, redefinirSenha } from "../../services";
 
 interface Props {
   token: string;
+  /** Senha salva. Quem navega é a rota. */
+  onConcluido: () => void;
 }
 
-export default function RedefinirSenhaPage({ token }: Props) {
+export default function RedefinirSenhaPage({ token, onConcluido }: Props) {
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [erro, setErro] = useState("");
@@ -37,9 +39,9 @@ export default function RedefinirSenhaPage({ token }: Props) {
     try {
       await redefinirSenha(token, senha);
       setSucesso(true);
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1500);
+      // Mesmo motivo do convite: `window.location.href` recarregava o SPA
+      // inteiro depois de 1,5s parado.
+      onConcluido();
     } catch (err) {
       /** Link já usado ou expirado (410) NÃO é senha errada. Marcar os
        * campos nesse caso fazia a pessoa tentar senhas diferentes sem

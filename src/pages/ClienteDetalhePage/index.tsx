@@ -124,8 +124,15 @@ export default function ClienteDetalhePage() {
           /* Mesma razão do detalhe do processo: o aviso é a consequência
              da exclusão, e confirmar antes dele chegar é decidir às
              cegas. */
-          verificando={processosQuery.isPending}
-          mensagemDeEspera="Conferindo o que está vinculado a este cliente…"
+          /* Mesma razão do detalhe do processo: em falha a contagem cai
+             pra 0, o aviso some e a exclusão seria confirmada às cegas. */
+          verificando={processosQuery.isPending || processosQuery.isError}
+          falhouAVerificacao={processosQuery.isError}
+          mensagemDeEspera={
+            processosQuery.isError
+              ? "Não foi possível conferir o que está vinculado a este cliente. Recarregue a página antes de excluir."
+              : "Conferindo o que está vinculado a este cliente…"
+          }
           confirmando={removerMutation.isPending}
           onConfirmar={() => removerMutation.mutate()}
           onFechar={() => setConfirmandoRemocao(false)}

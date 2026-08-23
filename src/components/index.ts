@@ -34,6 +34,8 @@ export { default as ModalDeAviso } from "./ModalDeAviso";
 export { default as CelulaComSub } from "./CelulaComSub";
 export { default as Tabela } from "./Tabela";
 export { default as EstadoVazio } from "./EstadoVazio";
+export { default as EstadoDeErro } from "./EstadoDeErro";
+export { default as AreaAtualizando } from "./AreaAtualizando";
 export { default as EtiquetaDePapel } from "./EtiquetaDePapel";
 export { default as Avatar } from "./Avatar";
 export { default as NomeEditavel } from "./NomeEditavel";

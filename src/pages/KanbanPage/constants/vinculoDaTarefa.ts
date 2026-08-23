@@ -7,6 +7,6 @@ export const RESULTADOS_POR_TIPO = 5;
 /** Menos caracteres que isto e a busca de processo casa com meio banco. */
 export const MINIMO_PRA_BUSCAR = 3;
 
-/** Espera entre teclas, em ms. Sem ela é uma requisição por caractere -- e
- * número de processo tem 20 dígitos. */
-export const ESPERA_DA_BUSCA_MS = 300;
+// A espera entre teclas saiu daqui pra `src/constants/busca.ts`: Clientes e
+// Processos precisam da mesma, e valores diferentes fariam a mesma ação
+// parecer mais lenta numa tela que na outra.

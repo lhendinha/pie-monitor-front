@@ -19,8 +19,17 @@ export function useSessao() {
     setSessaoExpirada(false);
   }, []);
 
-  const sair = useCallback(async () => {
-    await logout();
+  /** ⚠️ NÃO espera a rede. `logout()` apaga os tokens locais de forma
+   * síncrona, ANTES do `fetch` -- então o `await` não protegia nada, só
+   * segurava a tela: em conexão ruim a pessoa clicava em "Sair" e continuava
+   * logada, olhando a mesma tela, até o POST responder.
+   *
+   * O POST em si é best-effort (revoga o refresh token no servidor) e já
+   * engole o próprio erro. Deixá-lo correr sozinho é o comportamento certo:
+   * o que decide se a pessoa está dentro ou fora é o token local, e ele já
+   * se foi quando esta linha executa. */
+  const sair = useCallback(() => {
+    void logout();
     setAutenticado(false);
     setSessaoExpirada(false);
   }, []);

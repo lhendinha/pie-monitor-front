@@ -12,6 +12,8 @@ interface Props {
    * distinguir, os filtros abriam vazios afirmando que não há nenhuma
    * situação cadastrada. */
   carregandoCatalogos?: boolean;
+  /** A tabela ainda não reflete o que está escrito na busca. */
+  buscando?: boolean;
   total: number;
   /** Total do grupo, ignorando filtros -- é o "de Y" da contagem. Sem ele a
    * frase não diz de quanto o resultado foi recortado. */
@@ -37,6 +39,7 @@ interface Props {
 export default function CabecalhoProcessos({
   carregando,
   carregandoCatalogos,
+  buscando,
   total,
   totalSemFiltro,
   busca,
@@ -114,6 +117,7 @@ export default function CabecalhoProcessos({
           valor={busca}
           onMudar={onBuscar}
           larguraMaxima="420px"
+          buscando={buscando}
         />
       </Wrap>
 

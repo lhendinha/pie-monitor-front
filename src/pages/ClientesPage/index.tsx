@@ -1,7 +1,14 @@
-import { useDeferredValue, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CartaoDeTabela, Pagination, Esqueleto } from "../../components";
+import {
+  AreaAtualizando,
+  CartaoDeTabela,
+  EstadoDeErro,
+  Pagination,
+  Esqueleto,
+} from "../../components";
+import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { listarClientes, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -22,9 +29,11 @@ export default function ClientesPage() {
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const [modalAberto, setModalAberto] = useState(false);
   const [buscaInput, setBuscaInput] = useState("");
-  // `useDeferredValue` em vez de debounce: o React adia o valor derivado
-  // enquanto a digitação está rápida, sem timer pra limpar.
-  const busca = useDeferredValue(buscaInput);
+  /** ⚠️ Debounce de verdade, não `useDeferredValue`. Aquele não tem
+   * componente de TEMPO: só pula valores intermediários quando o render é
+   * lento o bastante, e nesta tabela ele é rápido -- então cada tecla virava
+   * uma `queryKey` nova e uma requisição. Digitar "silva" eram cinco. */
+  const busca = useValorComEspera(buscaInput);
   const queryClient = useQueryClient();
 
   const podeCriar = papelAtende("manager");
@@ -34,6 +43,12 @@ export default function ClientesPage() {
   const parametros = busca ? { busca } : { pagina, tamanhoPagina };
   const query = useQuery<{ clientes: Cliente[]; total: number; total_paginas: number }>({
     queryKey: qk.clientes(parametros),
+    /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
+       `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
+       tabela DESMONTA -- pisca a cada página, a cada filtro e a cada tecla
+       da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
+       visível ainda é o antigo. */
+    placeholderData: keepPreviousData,
     queryFn: () => listarClientes(parametros),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os clientes.");
@@ -49,6 +64,10 @@ export default function ClientesPage() {
         carregando={carregando}
         total={total}
         busca={buscaInput}
+        /* Duas fases, e as duas são "o que você vê não é o que você
+           escreveu": a espera entre teclas (o input já mudou, `busca` não) e
+           a consulta em voo (`isPlaceholderData`). */
+        buscando={buscaInput !== busca || query.isPlaceholderData}
         onBuscar={setBuscaInput}
         podeCriar={podeCriar}
         onNovoCliente={() => setModalAberto(true)}
@@ -56,13 +75,23 @@ export default function ClientesPage() {
 
       {carregando ? (
         <Esqueleto />
+      ) : query.isError ? (
+        <CartaoDeTabela>
+          <EstadoDeErro
+            mensagem="Não foi possível carregar os clientes."
+            onTentarDeNovo={() => query.refetch()}
+            tentando={query.isFetching}
+          />
+        </CartaoDeTabela>
       ) : (
         <CartaoDeTabela>
-          <TabelaClientes
-            clientes={clientes}
-            busca={busca}
-            onLimparBusca={() => setBuscaInput("")}
-          />
+          <AreaAtualizando atualizando={query.isPlaceholderData}>
+            <TabelaClientes
+              clientes={clientes}
+              busca={busca}
+              onLimparBusca={() => setBuscaInput("")}
+            />
+          </AreaAtualizando>
           {!busca && clientes.length > 0 && (
             <Pagination
               pagina={pagina}

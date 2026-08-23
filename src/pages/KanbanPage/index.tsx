@@ -16,6 +16,7 @@ import {
   Botao,
   CabecalhoDePagina,
   EstadoVazio,
+  EstadoDeErro,
   Esqueleto,
   IconePlus,
   useToast,
@@ -191,6 +192,18 @@ export default function KanbanPage() {
   }
 
   const carregando = subgruposQuery.isPending || quadroQuery.isPending || tarefasQuery.isPending;
+  /* Sem isto, uma falha de rede pintava o quadro vazio com "Nenhuma tarefa
+     com os filtros atuais" -- acusando o filtro por um erro que não é dele,
+     e oferecendo "Limpar filtros", que não resolve nada. */
+  const falhou = subgruposQuery.isError || quadroQuery.isError || tarefasQuery.isError;
+  const tentandoDeNovo =
+    subgruposQuery.isFetching || quadroQuery.isFetching || tarefasQuery.isFetching;
+
+  function recarregarQuadro() {
+    if (subgruposQuery.isError) subgruposQuery.refetch();
+    if (quadroQuery.isError) quadroQuery.refetch();
+    if (tarefasQuery.isError) tarefasQuery.refetch();
+  }
 
   return (
     <>
@@ -229,7 +242,13 @@ export default function KanbanPage() {
             onMudar={(parcial) => setFiltros((f) => ({ ...f, subgrupoId, ...parcial }))}
           />
 
-          {carregando ? (
+          {falhou ? (
+            <EstadoDeErro
+              mensagem="Não foi possível carregar o quadro."
+              onTentarDeNovo={recarregarQuadro}
+              tentando={tentandoDeNovo}
+            />
+          ) : carregando ? (
             <Esqueleto linhas={4} />
           ) : temFiltro && visiveis.length === 0 ? (
             /* Quadro vazio POR FILTRO não é o mesmo que quadro vazio: sem

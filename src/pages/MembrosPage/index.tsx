@@ -2,7 +2,7 @@ import { Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { CartaoDeTabela, Esqueleto, Pagination } from "../../components";
+import { CartaoDeTabela, EstadoDeErro, Esqueleto, Pagination } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo, listarSubgrupos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -80,6 +80,14 @@ export default function MembrosPage() {
 
       {membrosQuery.isPending ? (
         <Esqueleto linhas={3} />
+      ) : membrosQuery.isError ? (
+        <CartaoDeTabela>
+          <EstadoDeErro
+            mensagem="Não foi possível carregar os membros."
+            onTentarDeNovo={() => membrosQuery.refetch()}
+            tentando={membrosQuery.isFetching}
+          />
+        </CartaoDeTabela>
       ) : (
         <CartaoDeTabela>
           <TabelaDeMembros

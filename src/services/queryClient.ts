@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { ApiError } from "./api";
 import { useToast } from "../components";
@@ -38,8 +38,24 @@ export const queryClient = new QueryClient({
  * Ignora 401 (a transição de sessão expirada já é global, ver authBridge). */
 export function useToastOnQueryError(erro: unknown, mensagem: string) {
   const toast = useToast();
+  /** ⚠️ Guarda a última mensagem já avisada, e não só o erro.
+   *
+   * As deps olham a REFERÊNCIA do erro, e cada tentativa cria um `Error`
+   * novo. Em Processos, que revalida a cada 60s, isso virava um toast por
+   * minuto, indefinidamente -- numa tela que já está mostrando o estado de
+   * erro com "Tentar de novo". Avisar uma vez basta; quem insiste é a
+   * tela, não o alarme.
+   *
+   * Volta a `null` quando o erro some, então uma falha NOVA depois de uma
+   * recuperação avisa de novo, que é o certo. */
+  const jaAvisado = useRef<string | null>(null);
   useEffect(() => {
-    if (!erro || ehSessaoExpirada(erro)) return;
+    if (!erro || ehSessaoExpirada(erro)) {
+      jaAvisado.current = null;
+      return;
+    }
+    if (jaAvisado.current === mensagem) return;
+    jaAvisado.current = mensagem;
     toast.erro(mensagem);
   }, [erro, mensagem, toast]);
 }

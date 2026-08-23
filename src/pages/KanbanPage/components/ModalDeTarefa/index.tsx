@@ -7,6 +7,7 @@ import {
   Campo,
   LinhaDeCampos,
   Modal,
+  ModalDeConfirmacao,
   RodapeDeAcoes,
   Select,
   SeletorData,
@@ -95,6 +96,7 @@ export default function ModalDeTarefa({
       ? { tipo: "atendimento", id: tarefa.atendimento_id, rotulo: tarefa.atendimento_id }
       : null,
   });
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
   const toast = useToast();
 
   /** Os dois campos do vínculo, do jeito que a API espera: um preenchido e
@@ -149,7 +151,8 @@ export default function ModalDeTarefa({
   }
 
   return (
-    <Modal
+    <>
+      <Modal
       titulo={editando ? "Editar tarefa" : "Nova tarefa"}
       onFechar={onFechar}
       rodape={
@@ -159,9 +162,13 @@ export default function ModalDeTarefa({
               variante="perigoContorno"
               mr="auto"
               disabled={removerMutation.isPending}
-              onClick={() => removerMutation.mutate()}
+              /* Passa pelo diálogo como TODA exclusão do sistema. Era a
+                 única que não passava: um clique só, sem volta, e cujo
+                 único retorno era o botão ficar desabilitado com o mesmo
+                 rótulo -- parecia não ter feito nada. */
+              onClick={() => setConfirmandoRemocao(true)}
             >
-              Excluir
+              {removerMutation.isPending ? "Excluindo…" : "Excluir"}
             </Botao>
           )}
           <Botao variante="ghost" onClick={onFechar}>
@@ -269,6 +276,25 @@ export default function ModalDeTarefa({
           </Campo>
         </Stack>
       </form>
-    </Modal>
+      </Modal>
+
+      {/* IRMÃO do modal, não filho: o corpo do `Modal` tem `overflow-y`, e
+          uma sobreposição `position: fixed` lá dentro fica à mercê de
+          qualquer ancestral com `transform`. Fora, é uma camada limpa por
+          cima da outra. */}
+      {confirmandoRemocao && tarefa && (
+        <ModalDeConfirmacao
+          titulo="Excluir tarefa"
+          mensagem={
+            <>
+              A tarefa <strong>{tarefa.titulo}</strong> será removida do quadro.
+            </>
+          }
+          confirmando={removerMutation.isPending}
+          onConfirmar={() => removerMutation.mutate()}
+          onFechar={() => setConfirmandoRemocao(false)}
+        />
+      )}
+    </>
   );
 }

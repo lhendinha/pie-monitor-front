@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  AreaAtualizando,
   CartaoDeTabela,
+  EstadoDeErro,
   Esqueleto,
   ModalDeAviso,
   ModalDeConfirmacao,
@@ -60,6 +62,12 @@ export default function SubgruposPage() {
 
   const query = useQuery<{ subgrupos: Subgrupo[]; total: number; total_paginas: number }>({
     queryKey: qk.subgrupos({ pagina, tamanhoPagina }),
+    /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
+       `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
+       tabela DESMONTA -- pisca a cada página, a cada filtro e a cada tecla
+       da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
+       visível ainda é o antigo. */
+    placeholderData: keepPreviousData,
     queryFn: () => listarSubgrupos({ pagina, tamanhoPagina }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os subgrupos.");
@@ -117,23 +125,36 @@ export default function SubgruposPage() {
   });
 
   if (query.isPending) return <Esqueleto linhas={2} />;
+  if (query.isError) {
+    return (
+      <CartaoDeTabela>
+        <EstadoDeErro
+          mensagem="Não foi possível carregar os subgrupos."
+          onTentarDeNovo={() => query.refetch()}
+          tentando={query.isFetching}
+        />
+      </CartaoDeTabela>
+    );
+  }
 
   return (
     <CartaoDeTabela>
       {podeCriar && <FormularioNovoSubgrupo onCriado={invalidar} />}
 
-      <ListaDeSubgrupos
-        subgrupos={subgrupos}
-        podeEditar={podeEditar}
-        podeExcluir={podeExcluirSubgrupo}
-        renomeandoId={renomeandoId}
-        renomeando={renomearMutation.isPending}
-        onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
-        onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
-        onCancelarRenome={() => setRenomeandoId(null)}
-        onVerMembros={setVendoMembrosDe}
-        onRemover={setPedido}
-      />
+      <AreaAtualizando atualizando={query.isPlaceholderData}>
+        <ListaDeSubgrupos
+          subgrupos={subgrupos}
+          podeEditar={podeEditar}
+          podeExcluir={podeExcluirSubgrupo}
+          renomeandoId={renomeandoId}
+          renomeando={renomearMutation.isPending}
+          onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
+          onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
+          onCancelarRenome={() => setRenomeandoId(null)}
+          onVerMembros={setVendoMembrosDe}
+          onRemover={setPedido}
+        />
+      </AreaAtualizando>
 
       <Pagination
         pagina={pagina}

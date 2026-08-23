@@ -167,8 +167,18 @@ export default function ProcessoDetalhePage() {
              aviso acima é a CONSEQUÊNCIA da exclusão -- confirmar antes
              dele seria decidir sem ver o que vai acontecer, e é rápido o
              bastante pra dar tempo disso. */
-          verificando={tarefasQuery.isPending}
-          mensagemDeEspera="Conferindo o que está vinculado a este processo…"
+          /* ⚠️ `isPending || isError`, e não só `isPending`. Em FALHA,
+             `data` é `undefined`, `tarefasLigadas` cai pra 0 e o aviso
+             sobre tarefas órfãs SOME -- a pessoa confirmaria a exclusão
+             achando que não há nada vinculado. Não saber quantas são é
+             motivo pra não deixar excluir, não pra deixar. */
+          verificando={tarefasQuery.isPending || tarefasQuery.isError}
+          falhouAVerificacao={tarefasQuery.isError}
+          mensagemDeEspera={
+            tarefasQuery.isError
+              ? "Não foi possível conferir o que está vinculado a este processo. Recarregue a página antes de excluir."
+              : "Conferindo o que está vinculado a este processo…"
+          }
           confirmando={removerMutation.isPending}
           onConfirmar={() => removerMutation.mutate()}
           onFechar={() => setConfirmandoRemocao(false)}

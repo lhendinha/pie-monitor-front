@@ -6,8 +6,9 @@ import { Z_INDEX_CALENDARIO } from "../../../../../constants/camadaFlutuante";
 import { listarAtendimentos, listarProcessos } from "../../../../../services";
 import { OPCAO_LINHA } from "../../../../../theme/painelFiltro";
 import { mascararNumeroProcesso } from "../../../../../utils";
+import { ESPERA_DA_BUSCA_MS } from "../../../../../constants/busca";
+import { useValorComEspera } from "../../../../../hooks/useValorComEspera";
 import {
-  ESPERA_DA_BUSCA_MS,
   MINIMO_PRA_BUSCAR,
   RESULTADOS_POR_TIPO,
 } from "../../../constants/vinculoDaTarefa";
@@ -37,14 +38,10 @@ interface Props {
  */
 export default function VinculoDaTarefa({ valor, onMudar }: Props) {
   const [texto, setTexto] = useState("");
-  const [termo, setTermo] = useState("");
+  /** Mesmo debounce das outras buscas do sistema, agora num hook só. */
+  const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const id = setTimeout(() => setTermo(texto.trim()), ESPERA_DA_BUSCA_MS);
-    return () => clearTimeout(id);
-  }, [texto]);
 
   /** Fecha ao clicar fora. O campo vive DENTRO de um modal, então não dá
    * pra depender do descarte do modal -- ele fecharia a tela inteira. */
@@ -93,7 +90,6 @@ export default function VinculoDaTarefa({ valor, onMudar }: Props) {
     // quem representa é a etiqueta. Deixá-lo faria a próxima busca começar
     // com o resto da anterior.
     setTexto("");
-    setTermo("");
     setAberto(false);
   }
 

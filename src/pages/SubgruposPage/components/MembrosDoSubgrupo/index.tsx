@@ -7,6 +7,7 @@ import {
   Botao,
   BotaoQuadrado,
   EstadoVazio,
+  EstadoDeErro,
   Esqueleto,
   EtiquetaDePapel,
   IconeLixeira,
@@ -148,7 +149,16 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
           o papel vêm da lista do grupo. Com só a primeira, as linhas
           apareciam com o e-mail cru e a etiqueta de papel vazia, e depois
           trocavam sozinhas na frente da pessoa. */}
-      {query.isPending || grupoQuery.isPending ? (
+      {query.isError || grupoQuery.isError ? (
+        <EstadoDeErro
+          mensagem={`Não foi possível carregar os membros de ${subgrupo.nome}.`}
+          onTentarDeNovo={() => {
+            if (query.isError) query.refetch();
+            if (grupoQuery.isError) grupoQuery.refetch();
+          }}
+          tentando={query.isFetching || grupoQuery.isFetching}
+        />
+      ) : query.isPending || grupoQuery.isPending ? (
         <Esqueleto linhas={2} />
       ) : membros.length === 0 ? (
         <EstadoVazio mensagem="Ninguém neste subgrupo ainda." />

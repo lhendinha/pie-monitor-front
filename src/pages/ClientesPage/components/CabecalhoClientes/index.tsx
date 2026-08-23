@@ -8,6 +8,9 @@ interface Props {
   total: number;
   busca: string;
   onBuscar: (valor: string) => void;
+  /** O que a tabela mostra ainda não corresponde ao que está escrito no
+   * campo -- espera entre teclas ou consulta em voo. */
+  buscando?: boolean;
   podeCriar: boolean;
   onNovoCliente: () => void;
 }
@@ -16,6 +19,7 @@ interface Props {
  * estrutura do cabeçalho de Processos. */
 export default function CabecalhoClientes({
   carregando,
+  buscando,
   total,
   busca,
   onBuscar,
@@ -47,6 +51,7 @@ export default function CabecalhoClientes({
           valor={busca}
           onMudar={onBuscar}
           larguraMaxima="420px"
+          buscando={buscando}
         />
       </Flex>
 
