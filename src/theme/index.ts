@@ -57,6 +57,7 @@ export const system = createSystem(defaultConfig, {
         bad: {
           DEFAULT: { value: cores.bad },
           tint: { value: cores.badTint },
+          dark: { value: cores.badDark },
         },
       },
       /** ⚠️ `heading` e `body` são os nomes que o Chakra já usa nas próprias
@@ -191,7 +192,15 @@ export const system = createSystem(defaultConfig, {
         status: {
           good: { DEFAULT: { value: "{colors.good}" }, bg: { value: "{colors.good.tint}" } },
           warn: { DEFAULT: { value: "{colors.warn}" }, bg: { value: "{colors.warn.tint}" } },
-          bad: { DEFAULT: { value: "{colors.bad}" }, bg: { value: "{colors.bad.tint}" } },
+          /** `bad.dark` no `text`, e não o `bad`: o vermelho puro sobre o
+           * tint dá 3,72:1, que reprova em AA pra texto pequeno. Este dá
+           * 4,78:1 -- o mesmo do cinza que ele substituiu na etiqueta de
+           * falha. */
+          bad: {
+            DEFAULT: { value: "{colors.bad}" },
+            bg: { value: "{colors.bad.tint}" },
+            text: { value: "{colors.bad.dark}" },
+          },
         },
       },
     },

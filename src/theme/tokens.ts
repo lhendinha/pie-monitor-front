@@ -37,6 +37,10 @@ export const cores = {
   warnTint: "#fdf1de",
   bad: "#d64550",
   badTint: "#fbe9ea",
+  /** O vermelho escurecido, pra TEXTO sobre o tint. O `bad` puro dá 3,72:1
+   * sobre `badTint` -- reprova em AA pra texto pequeno; este dá 4,78:1. Já
+   * era usado no hover do botão de perigo. */
+  badDark: "#b93a44",
 } as const;
 
 export const raios = {
