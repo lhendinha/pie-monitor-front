@@ -1,6 +1,6 @@
-import { Box, Flex, Stack, Text } from "@chakra-ui/react";
+import { Flex, Stack, Text } from "@chakra-ui/react";
 
-import { EtiquetaDeMetadado, Esqueleto } from "../../../../components";
+import { EtiquetaDeMetadado, Esqueleto, Ponto } from "../../../../components";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { formatarData } from "../../../../utils";
 import { useTarefasDoProcesso } from "../../hooks/useTarefasDoProcesso";
@@ -36,17 +36,9 @@ export default function TarefasVinculadas({ numeroProcesso }: Props) {
       {tarefas.map((t) => (
         <Flex key={t.tarefa_id} align="center" gap="10px" py="4px" wrap="wrap">
           {/* A bolinha antes de cada tarefa é do artifact (lá é um "•"
-              literal). Aqui vira um ponto da marca, do MESMO tamanho do
-              item de movimentação -- as duas listas da página têm que ler
-              igual. */}
-          <Box
-            w="9px"
-            h="9px"
-            flex="0 0 auto"
-            borderRadius="full"
-            bg="fg.brand"
-            aria-hidden="true"
-          />
+              literal). Mesmo componente das outras listas -- as duas listas
+              desta página têm que ler igual. */}
+          <Ponto />
           <Text fontSize="13px" flex="1" minW="0">
             {t.titulo}
           </Text>

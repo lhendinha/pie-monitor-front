@@ -26,7 +26,8 @@ export const qk = {
     dataVerificarAte?: string;
     prazoFinalAte?: string;
   }) => ["processos", params] as const,
-  historico: (params: { pagina?: number; tamanhoPagina?: number }) => ["historico", params] as const,
+  historico: (params: { pagina?: number; tamanhoPagina?: number; tipoEnvio?: string }) =>
+    ["historico", params] as const,
   detalhesProcesso: (numeroProcesso: string) => ["detalhesProcesso", numeroProcesso] as const,
   detalheCliente: (clienteId: string) => ["cliente", clienteId] as const,
   clientes: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) => ["clientes", params] as const,

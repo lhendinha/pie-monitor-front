@@ -11,13 +11,14 @@ import {
   ModalDeConfirmacao,
   useToast,
 } from "../../components";
-import { contar, formatarDataHoraAmPm, mascararNumeroProcesso } from "../../utils";
+import { contar, formatarDataHoraAmPm } from "../../utils";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { detalhesProcesso, removerProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { useTarefasDoProcesso } from "./hooks/useTarefasDoProcesso";
 import FormularioProcesso from "./components/FormularioProcesso";
+import NumeroDoProcesso from "./components/NumeroDoProcesso";
 import Movimentacoes from "./components/Movimentacoes";
 import TarefasVinculadas from "./components/TarefasVinculadas";
 import type { Comunicacao, Processo } from "../../types";
@@ -148,7 +149,7 @@ export default function ProcessoDetalhePage() {
           titulo="Excluir processo"
           mensagem={
             <>
-              O processo <ProcessoEmDestaque numero={numero} /> deixa de ser monitorado e sai
+              O processo <NumeroDoProcesso numero={numero} /> deixa de ser monitorado e sai
               deste subgrupo.
             </>
           }
@@ -171,12 +172,3 @@ export default function ProcessoDetalhePage() {
   );
 }
 
-/** O número no diálogo vai mascarado e em mono, como em toda a aplicação --
- * 20 dígitos corridos no meio de uma frase não se leem. */
-function ProcessoEmDestaque({ numero }: { numero: string }) {
-  return (
-    <Text as="strong" fontFamily="mono" fontWeight="700">
-      {mascararNumeroProcesso(numero)}
-    </Text>
-  );
-}

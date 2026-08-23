@@ -5,6 +5,7 @@ import { getApelido, getEmail } from "../../services";
 import Avatar from "../Avatar";
 import { BotaoNu } from "../BotaoNu";
 import IconeChevron from "../Icons/IconeChevron";
+import { OPCAO_DE_MENU, PAINEL_DE_MENU } from "../../theme/menu";
 
 
 interface Props {
@@ -59,12 +60,12 @@ export default function MenuUsuario({ onSair }: Props) {
 
       <Portal>
         <Menu.Positioner>
-          <Menu.Content minW="180px">
-            <Menu.Item value="perfil" onSelect={() => navegar("/perfil")}>
+          <Menu.Content css={PAINEL_DE_MENU} minW="180px">
+            <Menu.Item value="perfil" onSelect={() => navegar("/perfil")} css={OPCAO_DE_MENU}>
               Meu perfil
             </Menu.Item>
             <Menu.Separator />
-            <Menu.Item value="sair" color="status.bad" onSelect={onSair}>
+            <Menu.Item value="sair" onSelect={onSair} css={OPCAO_DE_MENU} color="status.bad">
               Sair
             </Menu.Item>
           </Menu.Content>

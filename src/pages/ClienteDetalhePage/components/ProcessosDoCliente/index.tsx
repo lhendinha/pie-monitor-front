@@ -1,6 +1,6 @@
-import { Box, Flex, Stack, Text } from "@chakra-ui/react";
+import { Flex, Stack, Text } from "@chakra-ui/react";
 
-import { Esqueleto } from "../../../../components";
+import { Esqueleto, Ponto } from "../../../../components";
 import { useCatalogosDeProcesso } from "../../../../hooks/useCatalogosDeProcesso";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
@@ -43,7 +43,7 @@ export default function ProcessosDoCliente({ clienteId }: Props) {
           wrap="wrap"
         >
           {/* Mesma bolinha das outras listas do sistema. */}
-          <Box w="9px" h="9px" flex="0 0 auto" borderRadius="full" bg="fg.brand" aria-hidden="true" />
+          <Ponto />
           <Text fontFamily="mono" fontSize="12.5px" fontWeight="700">
             {mascararNumeroProcesso(p.numero_processo)}
           </Text>

@@ -127,6 +127,19 @@ export interface HistoricoItem {
   /** Referência pra comunicação em GET /processos/{numero}/detalhes que
    * gerou essa notificação -- não carrega o texto, só o ID pra casar. */
   comunicacao_id?: number;
+  /** `movimentacao` (novidade vinda do PJe) ou `lembrete` (aviso de prazo).
+   * Registro antigo não tem o campo, e a leitura trata ausente como
+   * `movimentacao` -- senão todo o histórico anterior sumiria do filtro. */
+  tipo_envio?: "movimentacao" | "lembrete";
+  /** O e-mail não saiu. Fica registrado pra dar o que investigar quando
+   * alguém diz "não fui avisado" -- antes isso só existia no log. */
+  falhou?: boolean;
+  erro?: string;
+  /** Lembrete de tarefa não tem processo: `numero_processo` guarda
+   * `TAREFA#{id}` porque é chave de partição e o DynamoDB recusa string
+   * vazia. Quem lê distingue por aqui, nunca decompondo aquele campo. */
+  tarefa_id?: string;
+  subgrupo_id?: string;
 }
 
 export interface TokensResponse {

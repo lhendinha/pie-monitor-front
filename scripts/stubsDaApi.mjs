@@ -116,6 +116,17 @@ const RESPOSTAS = [
     }),
   ],
   [
+    /\/historico/,
+    () => ({
+      historico: [
+        { numero_processo: "00002668720218130559", enviado_em: "2026-08-22T14:02:13Z", assunto: "Nova movimentação", tipo_comunicacao: "Intimação", nome_orgao: "Vara Única de Carmo do Rio Claro", destinatarios: ["ana@argos.local"], comunicacao_id: "c1", tipo_envio: "movimentacao" },
+        { numero_processo: "50004349620248130559", enviado_em: "2026-08-22T09:15:40Z", assunto: "Prazo em 2 dias", tipo_envio: "lembrete", destinatarios: ["joao@argos.local"], falhou: true, erro: "SMTP 550: caixa de entrada cheia" },
+      ],
+      total: 2,
+      total_paginas: 1,
+    }),
+  ],
+  [
     /\/grupos\/membros/,
     () => ({
       membros: [

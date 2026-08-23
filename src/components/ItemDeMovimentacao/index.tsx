@@ -1,5 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import DOMPurify from "dompurify";
+import Ponto from "../Ponto";
 
 interface Props {
   titulo: string;
@@ -29,7 +30,7 @@ export default function ItemDeMovimentacao({ titulo, meta, html, textoPlano, ult
       _hover={{ bg: "bg.canvas" }}
       transition="background .1s"
     >
-      <Box w="9px" h="9px" mt="6px" flex="0 0 auto" borderRadius="full" bg="fg.brand" />
+      <Ponto noTopo />
       <Box minW="0" flex="1">
         <Text fontSize="13.5px" fontWeight="700">
           {titulo}

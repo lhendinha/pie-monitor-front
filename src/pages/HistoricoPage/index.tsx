@@ -1,50 +1,81 @@
+import { Flex, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { listarHistorico, ApiError } from "../../services";
+
+import {
+  Botao,
+  CabecalhoDePagina,
+  CartaoDeTabela,
+  EstadoVazio,
+  Esqueleto,
+  Modal,
+  Pagination,
+  useToast,
+} from "../../components";
+import { TAMANHO_PAGINA_PADRAO } from "../../constants";
+import { ApiError, listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { mascararNumeroProcesso, formatarDataHora } from "../../utils";
+import { contar } from "../../utils";
+import DetalheHistorico from "./components/DetalheHistorico";
+import FiltroDeTipo from "./components/FiltroDeTipo";
+import ItemDeHistorico from "./components/ItemDeHistorico";
+import { TIPO_DE_ENVIO_PADRAO } from "./constants/historico";
 import type { DeepLinkHistorico } from "../../utils";
-import { Esqueleto, Pagination, Modal, useToast } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
-import DetalheHistorico from "./DetalheHistorico";
 import type { HistoricoItem } from "../../types";
 
-interface PageProps {
+interface Props {
   deepLink?: DeepLinkHistorico | null;
   onDeepLinkConsumido?: () => void;
 }
 
-export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: PageProps) {
+/** Histórico dos e-mails que o sistema mandou.
+ *
+ * A tela abre filtrada em Movimentações: é o que se olha no dia a dia, e
+ * lembrete é diário -- sem filtro ele dominaria a lista.
+ */
+export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: Props) {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
+  const [tipoEnvio, setTipoEnvio] = useState<string>(TIPO_DE_ENVIO_PADRAO);
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 
   const query = useQuery<{ historico: HistoricoItem[]; total: number; total_paginas: number }>({
-    queryKey: qk.historico({ pagina, tamanhoPagina }),
-    queryFn: () => listarHistorico({ pagina, tamanhoPagina }),
+    queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio }),
+    queryFn: () => listarHistorico({ pagina, tamanhoPagina, tipoEnvio }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar o histórico.");
   const historico = query.data?.historico || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
 
-  // Resolução do deep link do e-mail -- SEPARADA da query paginada normal,
-  // pra nunca bloquear nem substituir a lista principal. Busca TODOS os
-  // registros daquele processo (não a página atual) e acha o que bate com o
-  // comunicacao_id do link. É uma ação one-shot (não um dado declarativo de
-  // render), por isso vira mutation em vez de query -- as variáveis do
-  // deepLink vão como argumento do mutate (não fechando sobre a prop), pra
-  // não pegar um `deepLink` desatualizado se ele mudar antes da resposta
-  // chegar.
+  /** Total sem filtro nenhum -- é o "de Y" da contagem. Uma página de
+   * tamanho 1: só o `total` do envelope interessa, e o React Query mantém
+   * em cache. */
+  const totalQuery = useQuery<{ total: number }>({
+    queryKey: qk.historico({ pagina: 1, tamanhoPagina: 1, tipoEnvio: "" }),
+    queryFn: () => listarHistorico({ pagina: 1, tamanhoPagina: 1 }),
+  });
+  const totalSemFiltro = totalQuery.data?.total ?? 0;
+
+  /** Resolução do link do e-mail -- SEPARADA da consulta paginada, pra nunca
+   * bloquear nem substituir a lista principal. Busca todos os registros
+   * daquele processo (não a página atual) e acha o que bate com o
+   * `comunicacao_id` do link.
+   *
+   * É uma ação de uma vez só, e não um dado declarativo de render, por isso
+   * é mutation e não query -- e as variáveis vão como argumento do `mutate`
+   * (sem fechar sobre a prop) pra não pegar um `deepLink` desatualizado se
+   * ele mudar antes de a resposta chegar. */
   const deepLinkMutation = useMutation({
     mutationFn: (variaveis: { processo: string; comunicacaoId: string }) =>
-      listarHistorico({ numeroProcesso: variaveis.processo }),
-    onSuccess: (d: any, variaveis) => {
-      const candidatos: HistoricoItem[] = d.historico || [];
-      const encontrado = candidatos.find(
-        (h) => String(h.comunicacao_id) === variaveis.comunicacaoId
+      listarHistorico({ numeroProcesso: variaveis.processo }) as Promise<{
+        historico: HistoricoItem[];
+      }>,
+    onSuccess: (d, variaveis) => {
+      const encontrado = (d.historico || []).find(
+        (h) => String(h.comunicacao_id) === variaveis.comunicacaoId,
       );
       if (encontrado) setItemAberto(encontrado);
       else toast.erro("Não foi possível localizar a notificação do link recebido.");
@@ -60,59 +91,79 @@ export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: PagePro
   useEffect(() => {
     if (!deepLink) return;
     deepLinkMutation.mutate({ processo: deepLink.processo, comunicacaoId: deepLink.comunicacaoId });
-    // Deps proposital: só `deepLink` -- é resolvido uma vez (o App zera o
-    // estado depois via onDeepLinkConsumido pra não reabrir sozinho numa
-    // próxima visita à aba), não a cada mudança de toast/mutation/etc.
+    // Deps proposital: só `deepLink`. É resolvido uma vez (o App zera o
+    // estado depois, via `onDeepLinkConsumido`, pra não reabrir sozinho numa
+    // próxima visita), não a cada mudança de toast/mutation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLink]);
 
-  function handleMudarTamanho(novoTamanho: number) {
-    setTamanhoPagina(novoTamanho);
+  function handleMudarTipo(novo: string) {
+    setTipoEnvio(novo);
     setPagina(1);
   }
 
   return (
     <>
-      <div className="section-head">
-        <h2>Histórico de e-mails enviados</h2>
-        <span className="section-count">{query.isPending ? "carregando…" : `${total} envio(s)`}</span>
-      </div>
+      <CabecalhoDePagina
+        titulo="Histórico"
+        subtitulo="Movimentações detectadas e notificações enviadas."
+      />
+
+      <Flex align="center" gap="8px" wrap="wrap" mb="18px">
+        <FiltroDeTipo valor={tipoEnvio} onMudar={handleMudarTipo} />
+      </Flex>
+
+      <Text fontSize="11.5px" color="fg.subtle" mb="10px">
+        {query.isPending
+          ? "carregando…"
+          : `Mostrando ${total} de ${contar(totalSemFiltro, "envio", "envios")}`}
+      </Text>
 
       {query.isPending ? (
         <Esqueleto linhas={4} />
-      ) : historico.length === 0 ? (
-        <div className="empty">Nenhuma notificação enviada ainda.</div>
       ) : (
-        <>
-          <ul className="simple-list">
-            {historico.map((h, i) => (
-              <li className="simple-row simple-row-block" key={`${h.numero_processo}-${h.enviado_em}-${i}`}>
-                <button
-                  className="simple-row-clickable"
-                  onClick={() => setItemAberto(h)}
-                >
-                  <div className="simple-row-title">{mascararNumeroProcesso(h.numero_processo)}</div>
-                  <div className="simple-row-meta">
-                    {formatarDataHora(h.enviado_em)}
-                    {h.tipo_comunicacao ? ` · ${h.tipo_comunicacao}` : ""}
-                    {h.nome_orgao ? ` · ${h.nome_orgao}` : ""}
-                  </div>
-                  {h.destinatarios && h.destinatarios.length > 0 && (
-                    <div className="simple-row-meta">Pra: {h.destinatarios.join(", ")}</div>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <Pagination
-            pagina={pagina}
-            totalPaginas={totalPaginas}
-          total={total}
-            tamanhoPagina={tamanhoPagina}
-            onMudarPagina={setPagina}
-            onMudarTamanho={handleMudarTamanho}
-          />
-        </>
+        <CartaoDeTabela>
+          {historico.length === 0 ? (
+            /* Vazio por filtro é diferente de vazio de verdade -- e como a
+               tela abre filtrada, "não tem nada" costuma ser mentira. Por
+               isso o caminho de saída fica junto do recado. */
+            <EstadoVazio
+              mensagem={
+                totalSemFiltro > 0
+                  ? "Nenhum envio deste tipo."
+                  : "Nenhum e-mail enviado ainda. Os avisos de movimentação e de prazo aparecem aqui."
+              }
+              acao={
+                totalSemFiltro > 0 && (
+                  <Botao variante="ghost" onClick={() => handleMudarTipo("")}>
+                    Ver todos os envios
+                  </Botao>
+                )
+              }
+            />
+          ) : (
+            <>
+              {historico.map((h, i) => (
+                <ItemDeHistorico
+                  key={`${h.numero_processo}-${h.enviado_em}-${i}`}
+                  item={h}
+                  onAbrir={setItemAberto}
+                />
+              ))}
+              <Pagination
+                pagina={pagina}
+                totalPaginas={totalPaginas}
+                total={total}
+                tamanhoPagina={tamanhoPagina}
+                onMudarPagina={setPagina}
+                onMudarTamanho={(t) => {
+                  setTamanhoPagina(t);
+                  setPagina(1);
+                }}
+              />
+            </>
+          )}
+        </CartaoDeTabela>
       )}
 
       {itemAberto && (
