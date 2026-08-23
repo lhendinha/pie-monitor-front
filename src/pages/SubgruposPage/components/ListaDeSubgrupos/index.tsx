@@ -8,9 +8,9 @@ import {
   IconeLapis,
   IconeLixeira,
   LinhaDeLista,
+  NomeEditavel,
 } from "../../../../components";
 import { contar } from "../../../../utils";
-import NomeDoSubgrupo from "../NomeDoSubgrupo";
 import type { Subgrupo } from "../../../../types";
 
 interface Props {
@@ -71,7 +71,7 @@ export default function ListaDeSubgrupos({
             </>
           }
         >
-          <NomeDoSubgrupo
+          <NomeEditavel
             /* A chave inclui o nome pra o rascunho nascer do valor atual:
                renomeado e reaberto, o campo tem que vir com o nome novo. */
             key={s.nome}

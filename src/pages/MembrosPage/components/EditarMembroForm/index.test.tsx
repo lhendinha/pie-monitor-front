@@ -36,7 +36,7 @@ describe("EditarMembroForm", () => {
       <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
-    expect(await screen.findByText("Escolha ao menos um subgrupo.")).toBeInTheDocument();
+    expect(await screen.findByText("Escolha pelo menos um subgrupo.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
   });
 
@@ -48,7 +48,7 @@ describe("EditarMembroForm", () => {
     );
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).not.toBeDisabled());
-    expect(screen.queryByText("Escolha ao menos um subgrupo.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Escolha pelo menos um subgrupo.")).not.toBeInTheDocument();
   });
 
   it("submete a atualização com os campos do formulário", async () => {

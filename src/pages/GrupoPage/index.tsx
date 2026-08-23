@@ -6,7 +6,7 @@ import { papelAtende } from "../../services";
 import ConvidarPage from "../ConvidarPage";
 import MembrosPage from "../MembrosPage";
 import SubgruposPage from "../SubgruposPage";
-import OpcoesLista from "./OpcoesLista";
+import OpcoesLista from "./components/OpcoesLista";
 import type { SubAbaId } from "../../types";
 
 /** Agrupa Subgrupos/Membros/Convidar/Fases/Situações -- itens de gestão do
@@ -29,8 +29,8 @@ export default function GrupoPage() {
 
       {abaAtiva === "subgrupos" && <SubgruposPage />}
       {abaAtiva === "membros" && <MembrosPage />}
-      {abaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" />}
-      {abaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" />}
+      {abaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" nomeSingular="fase" />}
+      {abaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" nomeSingular="situação" />}
       {abaAtiva === "convidar" && <ConvidarPage />}
     </>
   );

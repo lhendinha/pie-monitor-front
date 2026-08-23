@@ -1,20 +1,38 @@
+import { Input } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { listarSubgrupos, criarConvite } from "../../services";
+
+import {
+  Botao,
+  Campo,
+  Cartao,
+  LinhaDeCampos,
+  MultiSelect,
+  Select,
+  useToast,
+} from "../../components";
+import { NOME_PAPEL, PAPEIS_CONVIDAVEIS } from "../../constants";
+import { criarConvite, listarSubgrupos } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { Select, MultiSelect, useToast } from "../../components";
+import { emailValido } from "../../utils";
 import type { Papel, Subgrupo } from "../../types";
 
+/** Sub-aba "Convidar" da tela de Grupo.
+ *
+ * Convite é pra quem ainda NÃO tem conta -- quem já tem entra pelos
+ * subgrupos, na aba Subgrupos. Por isso a tela é só um formulário: não há
+ * lista pra mostrar.
+ */
 export default function ConvidarPage() {
   const [email, setEmail] = useState("");
   const [papelInicial, setPapelInicial] = useState<Papel>("user");
   const [subgruposSelecionados, setSubgruposSelecionados] = useState<string[]>([]);
-  const [campoInvalido, setCampoInvalido] = useState(false);
+  const [erro, setErro] = useState("");
   const toast = useToast();
 
   const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
-    // MultiSelect precisa da lista inteira, não de 1 página.
+    // O MultiSelect precisa da lista inteira, não de uma página.
     queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
   });
@@ -24,59 +42,72 @@ export default function ConvidarPage() {
   const convidarMutation = useMutation({
     mutationFn: () => criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados),
     onSuccess: () => {
-      toast.sucesso(`Convite enviado pra ${email}.`);
+      toast.sucesso(`Convite enviado pra ${email.trim().toLowerCase()}.`);
       setEmail("");
       setSubgruposSelecionados([]);
     },
     onError: (err) => {
-      setCampoInvalido(true);
+      // O erro comum é o e-mail já ter conta ou convite aberto, e a mensagem
+      // do servidor diz qual dos dois -- marcar o campo dá o "onde".
+      setErro("Não foi possível convidar. Confira o e-mail.");
       toastErroMutation(toast, err, "Não foi possível convidar.");
     },
   });
 
+  const limpo = email.trim().toLowerCase();
+  // O servidor recusa do mesmo jeito -- isto é pra a pessoa não preencher o
+  // resto do formulário pra tomar erro no fim.
+  const emailRuim = limpo.length > 0 && !emailValido(limpo);
+  const semSubgrupo = subgruposSelecionados.length === 0;
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCampoInvalido(false);
+    setErro("");
     convidarMutation.mutate();
   }
 
   return (
-    <>
-      <div className="section-head">
-        <h2>Convidar pra esse grupo</h2>
-      </div>
-
+    <Cartao titulo="Convidar pra este grupo">
+      {/* O `Campo` já espaça a si mesmo (16px embaixo) -- um `Stack` com
+          intervalo aqui somaria os dois e dobraria o respiro. */}
       <form onSubmit={handleSubmit}>
-        <div className="form-row">
-          <div className={`field${campoInvalido ? " field-error" : ""}`} style={{ flex: 2 }}>
-            <label htmlFor="email-convite">E-mail</label>
-            <input
+        <LinhaDeCampos proporcoes="2fr 1fr">
+          <Campo
+            rotulo="E-mail"
+            para="email-convite"
+            obrigatorio
+            erro={emailRuim ? "E-mail inválido." : erro || undefined}
+          >
+            <Input
               id="email-convite"
               type="email"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
-                setCampoInvalido(false);
+                setErro("");
               }}
             />
-          </div>
-          <div className="field">
-            <label htmlFor="papel-convite">Papel inicial</label>
+          </Campo>
+          <Campo rotulo="Papel inicial" para="papel-convite">
             <Select
               id="papel-convite"
-              opcoes={[
-                { value: "user", label: "Usuário" },
-                { value: "manager", label: "Gerente" },
-                { value: "admin", label: "Admin" },
-              ]}
+              opcoes={PAPEIS_CONVIDAVEIS.map((p) => ({ value: p, label: NOME_PAPEL[p] }))}
               valor={papelInicial}
               onMudar={(v) => setPapelInicial(v as Papel)}
             />
-          </div>
-        </div>
+          </Campo>
+        </LinhaDeCampos>
 
-        <div className="field" style={{ marginTop: 16 }}>
-          <label htmlFor="subgrupos-convite">Subgrupos</label>
+        <Campo
+          rotulo="Subgrupos"
+          para="subgrupos-convite"
+          obrigatorio
+          /* Diz o que o campo FAZ, e não que ele é obrigatório -- o
+             asterisco já diz isso. Quem convida alguém pela primeira vez
+             não sabe o que um subgrupo decide; essa é a informação que
+             falta na hora de escolher. */
+          dica="O subgrupo define quais processos a pessoa vai ver — escolha pelo menos um."
+        >
           <MultiSelect
             id="subgrupos-convite"
             opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
@@ -84,18 +115,15 @@ export default function ConvidarPage() {
             onMudar={setSubgruposSelecionados}
             placeholder="Selecione os subgrupos"
           />
-        </div>
+        </Campo>
 
-        <div className="form-row" style={{ marginTop: 16 }}>
-          <button
-            className="btn"
-            type="submit"
-            disabled={convidarMutation.isPending || !email.trim() || subgruposSelecionados.length === 0}
-          >
-            {convidarMutation.isPending ? "Enviando…" : "Enviar convite"}
-          </button>
-        </div>
+        <Botao
+          type="submit"
+          disabled={convidarMutation.isPending || !limpo || emailRuim || semSubgrupo}
+        >
+          {convidarMutation.isPending ? "Enviando…" : "Convidar"}
+        </Botao>
       </form>
-    </>
+    </Cartao>
   );
 }

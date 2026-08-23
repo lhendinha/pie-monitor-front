@@ -25,8 +25,15 @@ export function criarOpcaoProcesso(tipo: TipoOpcaoProcesso, rotulo: string, orde
 // só reenvia `ordem`, pra não sobrescrever uma edição de rótulo concorrente
 // com um valor `opcao.rotulo` já desatualizado (`JSON.stringify` descarta
 // chaves `undefined`, então o backend recebe o PATCH parcial de verdade).
+/** PATCH parcial: campo omitido não é tocado.
+ *
+ * Os dois são opcionais porque as duas edições desta tela são
+ * independentes -- renomear manda só o rótulo, arrastar manda só a ordem.
+ * Mandar os dois sempre significaria que renomear sobrescreve um arrastar
+ * concorrente com uma `ordem` velha, e vice-versa. O servidor trata `null`
+ * como "não enviado" (`AtualizarOpcaoRequest`). */
 export function atualizarOpcaoProcesso(
-  tipo: TipoOpcaoProcesso, opcaoId: string, rotulo: string | undefined, ordem: number,
+  tipo: TipoOpcaoProcesso, opcaoId: string, rotulo?: string, ordem?: number,
 ) {
   return chamar(`${RECURSO[tipo]}/${opcaoId}`, { method: "PATCH", body: { rotulo, ordem } });
 }

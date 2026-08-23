@@ -3,6 +3,9 @@ import { useState, type KeyboardEvent } from "react";
 
 interface Props {
   nome: string;
+  /** Como chamar o campo pra quem usa leitor de tela: "Novo nome de Cível".
+   * O rótulo visível é o próprio nome, que some quando o campo aparece. */
+  rotuloDoCampo?: string;
   /** Em edição, o nome vira campo no lugar (`.subgrupo-name-input`). */
   editando: boolean;
   /** Falso pra quem não tem `admin`: aí o nome é só texto. */
@@ -12,14 +15,18 @@ interface Props {
   onCancelar: () => void;
 }
 
-/** O nome do subgrupo na linha -- e o campo que ele vira ao ser clicado.
+/** Um nome numa linha de lista -- e o campo que ele vira ao ser clicado.
  *
  * Renomear é trocar uma palavra: no artifact isso acontece na própria
  * linha, sem modal. Enter confirma, Escape desiste, e sair do campo
  * confirma também (é o que se espera de edição no lugar).
+ *
+ * Serve subgrupo e opção de processo (fase, situação) -- as duas telas
+ * renomeiam do mesmo jeito.
  */
-export default function NomeDoSubgrupo({
+export default function NomeEditavel({
   nome,
+  rotuloDoCampo,
   editando,
   podeRenomear,
   onIniciar,
@@ -48,7 +55,7 @@ export default function NomeDoSubgrupo({
   if (editando) {
     return (
       <Input
-        aria-label={`Novo nome de ${nome}`}
+        aria-label={rotuloDoCampo || `Novo nome de ${nome}`}
         value={rascunho}
         onChange={(e) => setRascunho(e.target.value)}
         onKeyDown={handleKeyDown}

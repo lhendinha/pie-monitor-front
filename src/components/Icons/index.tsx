@@ -27,3 +27,5 @@ export { default as IconePlus } from "./IconePlus";
 export { default as IconeCheck } from "./IconeCheck";
 export { default as IconeAlerta } from "./IconeAlerta";
 export { default as IconeCadeado } from "./IconeCadeado";
+export { default as IconeOlho } from "./IconeOlho";
+export { default as IconeOlhoCortado } from "./IconeOlhoCortado";
