@@ -30,7 +30,7 @@ import {
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { coresDoStatus } from "../../theme/atendimento";
-import { mascararNumeroProcesso } from "../../utils";
+import { contar, mascararNumeroProcesso } from "../../utils";
 import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
 import type { Atendimento, Cliente, Membro } from "../../types";
@@ -216,9 +216,27 @@ export default function AtendimentoDetalhePage() {
       {confirmandoExclusao && (
         <ModalDeConfirmacao
           titulo="Excluir atendimento"
-          /* Diz o que se perde, e nomeia: a linha do tempo é o trabalho
-             acumulado, e é ela que não volta. */
-          mensagem={`"${atendimento.assunto}" e os ${(atendimento.registros || []).length} registros da linha do tempo serão apagados. Não dá pra desfazer.`}
+          /* Nomeia em NEGRITO, como todas as outras confirmações do sistema
+             (subgrupo, coluna, opção): é o nome que a pessoa confere antes
+             de apagar, e ele tem que saltar da frase. O componente aceita
+             marcação exatamente por isso.
+
+             O singular é dito por extenso ("o seu único registro"), e não
+             como "1 registro": é a frase do artifact, e uma contagem de um
+             soa a formulário. */
+          mensagem={
+            <>
+              O atendimento <strong>{atendimento.assunto}</strong> e{" "}
+              {(atendimento.registros || []).length === 1
+                ? "o seu único registro será removido"
+                : `todos os seus ${contar(
+                    (atendimento.registros || []).length,
+                    "registro",
+                    "registros",
+                  )} serão removidos`}
+              .
+            </>
+          }
           confirmando={excluir.isPending}
           onConfirmar={() => excluir.mutate()}
           onFechar={() => setConfirmandoExclusao(false)}

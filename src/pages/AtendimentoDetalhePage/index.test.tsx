@@ -161,8 +161,35 @@ describe("exclusão", () => {
     await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
 
     const dialogo = await screen.findByRole("dialog");
-    expect(dialogo).toHaveTextContent(/2 registros/);
+    expect(dialogo).toHaveTextContent(
+      "O atendimento Revisão de contrato e todos os seus 2 registros serão removidos.",
+    );
     expect(mocks.removerAtendimento).not.toHaveBeenCalled();
+  });
+
+  it("o nome do atendimento vem em NEGRITO", async () => {
+    /* É o nome que a pessoa confere antes de apagar -- tem que saltar da
+     * frase. Todas as outras confirmações do sistema fazem assim. */
+    await montar();
+    await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    const negrito = dialogo.querySelector("strong");
+    expect(negrito?.textContent).toBe("Revisão de contrato");
+  });
+
+  it("com UM registro, a frase vai no singular por extenso", async () => {
+    // "1 registro" soa a formulário; o artifact escreve "o seu único".
+    mocks.detalhesAtendimento.mockResolvedValue({
+      ...ATENDIMENTO,
+      registros: [ATENDIMENTO.registros[0]],
+    });
+    await montar();
+    await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(dialogo).toHaveTextContent("o seu único registro será removido");
+    expect(dialogo).not.toHaveTextContent("1 registro será");
   });
 
   it("confirmando, exclui e volta pra lista", async () => {
