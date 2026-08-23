@@ -75,6 +75,17 @@ function salvarTokens({ access_token, refresh_token, expira_em, email, apelido }
   localStorage.setItem(KEYS.grupoId, payload.grupo_id || "");
 }
 
+/** Guarda o apelido novo depois de um `PATCH /me`.
+ *
+ * O apelido vive no `localStorage` porque a topbar o lê a cada render, sem
+ * ir à rede. Sem esta função, editar o perfil mudava o servidor e a topbar
+ * continuava mostrando o nome antigo até o próximo login -- e a pessoa
+ * concluiria, com razão, que a edição não salvou. */
+export function salvarApelido(apelido: string): void {
+  if (apelido) localStorage.setItem(KEYS.apelido, apelido);
+  else localStorage.removeItem(KEYS.apelido);
+}
+
 export function limparTokens(): void {
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
 }
@@ -107,7 +118,10 @@ export async function login(email: string, password: string): Promise<TokensResp
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.detail || "Não foi possível entrar.");
+    // `ApiError` e não `Error`: o corpo do 401 traz `tentativas_restantes` e
+    // `bloqueio_minutos` nas últimas tentativas, e o do 429 traz
+    // `retry_after_segundos`. Com `Error` comum, a tela recebia só o texto.
+    throw new ApiError(dados.detail || "Não foi possível entrar.", resp.status, dados);
   }
   salvarTokens(dados);
   return dados;
@@ -181,7 +195,7 @@ export async function solicitarRecuperacaoSenha(email: string): Promise<{ mensag
   });
   const dados = await resp.json();
   if (!resp.ok) {
-    throw new Error(dados.detail || "Não foi possível processar o pedido.");
+    throw new ApiError(dados.detail || "Não foi possível processar o pedido.", resp.status, dados);
   }
   return dados;
 }

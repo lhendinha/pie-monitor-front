@@ -30,6 +30,7 @@ vi.mock("./pages", () => ({
   ClientesPage: () => <div>tela de clientes</div>,
   ClienteDetalhePage: () => <div>detalhe do cliente</div>,
   GrupoPage: () => <div>tela de grupo</div>,
+  PerfilPage: () => <div>tela de perfil</div>,
   HistoricoPage: ({ deepLink }: { deepLink: { comunicacaoId: string } | null }) => (
     <div>histórico {deepLink ? `deep:${deepLink.comunicacaoId}` : "sem deep"}</div>
   ),

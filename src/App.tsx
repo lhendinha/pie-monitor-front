@@ -6,6 +6,7 @@ import {
   ClienteDetalhePage,
   ClientesPage,
   GrupoPage,
+  PerfilPage,
   ProcessoDetalhePage,
   ProcessosPage,
 } from "./pages";
@@ -43,6 +44,7 @@ function Rotas() {
           />
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/clientes/:clienteId" element={<ClienteDetalhePage />} />
+          <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/historico" element={<RotaHistorico />} />
           {/* `manager`, igual ao piso do item no menu lateral. Esconder do
               menu sem fechar a rota era cosmético: bastava digitar o

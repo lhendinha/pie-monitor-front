@@ -8,3 +8,4 @@ export * from "./grupos";
 export * from "./clientes";
 export * from "./opcoesProcesso";
 export * from "./tarefas";
+export * from "./perfil";

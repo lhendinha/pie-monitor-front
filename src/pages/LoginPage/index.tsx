@@ -8,9 +8,9 @@ import {
   CampoDeSenha,
   CartaoDeAutenticacao,
   Faixa,
-  useToast,
 } from "../../components";
 import { login } from "../../services";
+import { avisoDeTentativas } from "./helpers/avisoDeTentativas";
 
 interface Props {
   /** Recado que chega junto com a tela -- hoje só "sua sessão expirou".
@@ -25,23 +25,33 @@ export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: Props) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
+  /** O recado sobre o bloqueio: quantas tentativas restam, ou que a próxima
+   * já é recusada. Separado do `erro` porque é SECUNDÁRIO a ele -- o que
+   * deu errado continua sendo a mensagem principal. */
+  const [alerta, setAlerta] = useState<{ texto: string; ofereceRecuperacao: boolean } | null>(null);
   const [enviando, setEnviando] = useState(false);
-  const toast = useToast();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErro("");
+    setAlerta(null);
     setEnviando(true);
     try {
       await login(email.trim().toLowerCase(), senha);
       onEntrar();
     } catch (err) {
-      /** Marca os dois campos sem dizer qual está errado, e repete a
-       * mensagem do servidor -- que também não distingue e-mail
-       * inexistente de senha errada. Dizer "esse e-mail não existe"
+      /** Nunca diz QUAL dos dois está errado -- nem o servidor distingue
+       * e-mail inexistente de senha errada. "Esse e-mail não existe"
        * entregaria quem tem conta aqui a quem estiver testando endereços. */
-      setErro("E-mail ou senha incorretos.");
-      toast.erro(err instanceof Error ? err.message : "Não foi possível entrar.");
+      const resultado = avisoDeTentativas(err);
+      setErro(resultado.erro);
+      setAlerta(
+        resultado.alerta
+          ? { texto: resultado.alerta, ofereceRecuperacao: Boolean(resultado.ofereceRecuperacao) }
+          : resultado.ofereceRecuperacao
+            ? { texto: resultado.erro, ofereceRecuperacao: true }
+            : null,
+      );
     } finally {
       setEnviando(false);
     }
@@ -53,6 +63,23 @@ export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: Props) {
         <Box mb="16px">
           <Faixa tom="aviso" aEsquerda>
             {aviso}
+          </Faixa>
+        </Box>
+      )}
+
+      {alerta && (
+        <Box mb="16px">
+          <Faixa tom="aviso" aEsquerda>
+            {alerta.texto}
+            {/* Redefinir a senha destrava o login na hora, mesmo bloqueado.
+                Sem este atalho, a saída existe e ninguém encontra. */}
+            {alerta.ofereceRecuperacao && (
+              <Text mt="6px" fontWeight="500">
+                <BotaoDeLink type="button" onClick={onEsqueciSenha}>
+                  Redefinir minha senha agora
+                </BotaoDeLink>
+              </Text>
+            )}
           </Faixa>
         </Box>
       )}

@@ -8,3 +8,4 @@ export { default as ClientesPage } from "./ClientesPage";
 export { default as ClienteDetalhePage } from "./ClienteDetalhePage";
 export { default as HistoricoPage } from "./HistoricoPage";
 export { default as GrupoPage } from "./GrupoPage";
+export { default as PerfilPage } from "./PerfilPage";

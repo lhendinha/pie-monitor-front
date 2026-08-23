@@ -12,9 +12,20 @@ if (!API_URL) {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** Corpo inteiro da resposta de erro.
+   *
+   * Existe porque alguns erros carregam mais que a mensagem: o `401` do
+   * login manda `tentativas_restantes` e `bloqueio_minutos` nas últimas
+   * tentativas, e o `429` manda `retry_after_segundos`. Guardar só o texto
+   * jogava fora exatamente o que a tela precisa pra avisar antes do
+   * bloqueio.
+   */
+  corpo: Record<string, unknown>;
+
+  constructor(message: string, status: number, corpo: Record<string, unknown> = {}) {
     super(message);
     this.status = status;
+    this.corpo = corpo;
   }
 }
 

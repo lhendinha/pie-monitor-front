@@ -43,3 +43,4 @@ export { default as MarcaArgos } from "./MarcaArgos";
 export { BotaoDeLink } from "./BotaoDeLink";
 export { default as CartaoDeAutenticacao } from "./CartaoDeAutenticacao";
 export { default as CampoDeSenha } from "./CampoDeSenha";
+export { default as RotuloDeSecao } from "./RotuloDeSecao";
