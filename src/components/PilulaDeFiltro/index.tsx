@@ -1,12 +1,24 @@
 import { Button } from "@chakra-ui/react";
+import type { ButtonProps } from "@chakra-ui/react";
 import { forwardRef } from "react";
 import type { ReactNode } from "react";
 
 import { PILULA, coresPilula } from "../../theme/pilula";
 
-interface Props {
+/** ⚠️ Estende `ButtonProps` porque o componente já faz spread de `...resto`
+ * no `Button` -- a tipagem não declarava isso, então passar `onClick` (ou
+ * qualquer atributo de botão) era erro de compilação num componente que
+ * aceitava perfeitamente em runtime. */
+interface Props extends ButtonProps {
   /** Muda a cor: filtro escolhido fica em azul claro, como no artifact. */
   ativo: boolean;
+  /** Some com a seta de "abre um painel".
+   *
+   * A pílula nasceu como GATILHO de painel, e a seta anuncia isso. Numa
+   * pílula que só ALTERNA (o "Sem arquivadas" do Kanban), ela promete um
+   * menu que não existe -- a pessoa clica esperando escolher e o estado
+   * muda embaixo dela. */
+  semSeta?: boolean;
   children: ReactNode;
 }
 
@@ -20,7 +32,7 @@ interface Props {
  * da referência do elemento para posicionar e para saber o que é "dentro".
  */
 export const PilulaDeFiltro = forwardRef<HTMLButtonElement, Props>(
-  function PilulaDeFiltro({ ativo, children, ...resto }, ref) {
+  function PilulaDeFiltro({ ativo, semSeta, children, ...resto }, ref) {
     const cor = coresPilula(ativo);
     return (
       <Button
@@ -51,7 +63,7 @@ export const PilulaDeFiltro = forwardRef<HTMLButtonElement, Props>(
         {...resto}
       >
         {children}
-        <span aria-hidden="true">▾</span>
+        {!semSeta && <span aria-hidden="true">▾</span>}
       </Button>
     );
   },

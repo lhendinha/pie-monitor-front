@@ -55,7 +55,11 @@ beforeEach(() => {
     total_paginas: 1,
   });
   mocks.listarQuadro.mockResolvedValue({
-    colunas: [{ subgrupo_id: "sg-trab", coluna_id: "c1", nome: "A Fazer", ordem: 1 }],
+    colunas: [
+      { subgrupo_id: "sg-trab", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false, e_arquivado: false },
+      { subgrupo_id: "sg-trab", coluna_id: "c2", nome: "Concluído", ordem: 2, e_conclusao: true, e_arquivado: false },
+      { subgrupo_id: "sg-trab", coluna_id: "c3", nome: "Arquivado", ordem: 3, e_conclusao: false, e_arquivado: true },
+    ],
   });
   // A listagem do quadro NÃO contém a tarefa do link -- é o ponto.
   mocks.listarTarefas.mockResolvedValue({ tarefas: [], total: 0, total_paginas: 0 });
@@ -115,6 +119,42 @@ describe("KanbanPage — link do lembrete de prazo", () => {
       await screen.findByText(/Não foi possível abrir a tarefa do link/),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Gestão kanban" })).toBeInTheDocument();
+  });
+
+  it("o Arquivado NÃO aparece no quadro por padrão", async () => {
+    /* Depósito do que já saiu do fluxo -- à vista o tempo todo, rouba uma
+     * coluna de largura pro que ninguém está tocando. */
+    montar();
+
+    expect(await screen.findByText("A Fazer")).toBeInTheDocument();
+    expect(screen.queryByText("Arquivado")).not.toBeInTheDocument();
+  });
+
+  it("a pílula revela a coluna, e o rótulo diz o ESTADO", async () => {
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: "Sem arquivadas" }));
+
+    expect(await screen.findByText("Arquivado")).toBeInTheDocument();
+    // O rótulo vira o estado novo, como as outras pílulas da barra.
+    expect(screen.getByRole("button", { name: "Com arquivadas" })).toBeInTheDocument();
+  });
+
+  it("'Limpar filtros' NÃO esconde a coluna revelada", async () => {
+    /* Ligar ADICIONA uma coluna, nunca esconde tarefa -- não é filtro, é
+     * preferência de visualização. Limpar não pode desfazer o que a pessoa
+     * acabou de revelar. */
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: "Sem arquivadas" }));
+    await screen.findByText("Arquivado");
+    await user.type(screen.getByLabelText(/Pesquisar cartão/), "nada-encontra-isso");
+    const limpar = await screen.findByRole("button", { name: "Limpar filtros" });
+    await user.click(limpar);
+
+    expect(await screen.findByText("Arquivado")).toBeInTheDocument();
   });
 
   it("sem link, não busca tarefa nenhuma", async () => {

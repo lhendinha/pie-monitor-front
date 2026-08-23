@@ -1,6 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 
-import { CampoDeBusca, SeletorDePeriodo } from "../../../../components";
+import { CampoDeBusca, PilulaDeFiltro, SeletorDePeriodo } from "../../../../components";
 import PilulaDeMenu from "../PilulaDeMenu";
 import type { FiltrosDoQuadro } from "../../types";
 import type { Membro, Subgrupo } from "../../../../types";
@@ -60,6 +60,19 @@ export default function FiltrosDoKanban({
 
           A conta: com filtro aplicado e cartões à vista, não sobra botão de
           limpar -- a saída é trocar cada pílula de volta na mão. */}
+      {/* Alterna, não filtra: ligar ADICIONA a coluna de Arquivado, nunca
+          esconde tarefa. Por isso fica fora do "Limpar filtros" e o rótulo
+          descreve o ESTADO ("Sem arquivadas" / "Com arquivadas"), como as
+          outras pílulas da barra -- e não a ação. */}
+      <PilulaDeFiltro
+        ativo={filtros.mostrarArquivadas}
+        semSeta
+        aria-pressed={filtros.mostrarArquivadas}
+        onClick={() => onMudar({ mostrarArquivadas: !filtros.mostrarArquivadas })}
+      >
+        {filtros.mostrarArquivadas ? "Com arquivadas" : "Sem arquivadas"}
+      </PilulaDeFiltro>
+
       <CampoDeBusca
         rotulo="Pesquisar cartão ou processo"
         placeholder="Pesquisar cartão ou processo"

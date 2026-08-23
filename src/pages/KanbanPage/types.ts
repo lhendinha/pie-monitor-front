@@ -15,6 +15,13 @@ export interface FiltrosDoQuadro {
    * personalizado -- guardado separado pra que voltar pro personalizado
    * depois de passar por "Este mês" não perca o que a pessoa escolheu. */
   intervaloPersonalizado?: Intervalo;
+  /** Mostra a coluna de Arquivado no quadro.
+   *
+   * Desligado por padrão: o Arquivado é o depósito do que já saiu do fluxo,
+   * e à vista rouba largura do que está em andamento. Não é um filtro --
+   * ligar ADICIONA uma coluna, nunca esconde tarefa -- então fica fora do
+   * "tem filtro?" e do "Limpar filtros". */
+  mostrarArquivadas: boolean;
   /** "todas", "sem" (sem responsável) ou o e-mail de alguém. */
   pessoa: string;
   busca: string;

@@ -60,6 +60,9 @@ import type {
  * quadro que mente sobre o que está em aberto -- e a separação certa
  * (aberta × concluída, que a API sabe fazer com `apenas_abertas`) fica pra
  * quando o desenho da coluna de conclusão for decidido. */
+/* ⚠️ `mostrarArquivadas` fica FORA daqui de propósito: "Limpar filtros" não
+   pode esconder uma coluna que a pessoa acabou de revelar. É preferência de
+   visualização, não filtro. */
 const FILTROS_VAZIOS = {
   periodoId: PERIODO_TODOS,
   intervaloPersonalizado: undefined,
@@ -89,6 +92,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
     /* O quadro abre no subgrupo da tarefa do link -- é o dela que interessa,
        não o último da lista. */
     subgrupoId: tarefaDoLink?.subgrupoId ?? "",
+    mostrarArquivadas: false,
     ...FILTROS_VAZIOS,
   });
   const [tarefaAberta, setTarefaAberta] = useState<Tarefa | null>(null);
@@ -228,16 +232,13 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
   }
 
   const colunas = [...(quadroQuery.data?.colunas || [])].sort((a, b) => a.ordem - b.ordem);
-  /** O QUADRO não mostra o Arquivado; o modal de editar, sim.
+  /** O Arquivado só aparece no quadro quando pedido.
    *
-   * Ele é o depósito do que já saiu do fluxo -- deixá-lo à vista rouba uma
-   * coluna de largura pro que ninguém está tocando. O filtro pra revelá-lo
-   * vem na etapa 2, junto com o arquivamento automático; até lá ele está
-   * sempre vazio, porque nada move tarefa pra lá ainda.
-   *
-   * Quem edita o quadro continua vendo a coluna na lista do modal -- é
-   * onde ela precisa aparecer pra a regra do quadro fazer sentido. */
-  const colunasVisiveis = colunas.filter((c) => !c.e_arquivado);
+   * Ele é o depósito do que já saiu do fluxo -- à vista o tempo todo, rouba
+   * uma coluna de largura pro que ninguém está tocando. Quem edita o quadro
+   * continua vendo a coluna na lista do modal, com ou sem o filtro: é onde
+   * ela precisa aparecer pra a regra do quadro fazer sentido. */
+  const colunasVisiveis = colunas.filter((c) => !c.e_arquivado || filtros.mostrarArquivadas);
   const busca = filtros.busca.trim().toLowerCase();
 
   const visiveis = (tarefasQuery.data || []).filter((t) => {
