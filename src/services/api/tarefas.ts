@@ -69,6 +69,16 @@ export function criarTarefa(tarefa: NovaTarefa) {
   return chamar("/tarefas", { method: "POST", body: { ...tarefa } });
 }
 
+/** Uma tarefa só, pelo par que a identifica.
+ *
+ * Existe pro link do lembrete de prazo: aberto do e-mail, o front chega sem
+ * nada em mãos. Pela listagem não dá -- ela não filtra por `tarefa_id`,
+ * então seria paginar tudo até achar.
+ */
+export function detalhesTarefa(subgrupoId: string, tarefaId: string) {
+  return chamar(`/subgrupos/${subgrupoId}/tarefas/${tarefaId}`);
+}
+
 export function removerTarefa(subgrupoId: string, tarefaId: string) {
   return chamar(`/subgrupos/${subgrupoId}/tarefas/${tarefaId}`, { method: "DELETE" });
 }

@@ -17,6 +17,7 @@ import RotaHistorico from "./routes/RotaHistorico";
 import RotaLogin from "./routes/RotaLogin";
 import RotaRaiz from "./routes/RotaRaiz";
 import RotaRedefinirSenha from "./routes/RotaRedefinirSenha";
+import RotaTarefa from "./routes/RotaTarefa";
 
 /** As rotas propriamente ditas. Separado do `App` porque precisa estar
  * DENTRO do `SessaoProvider` -- `RotaProtegida` e `RotaLogin` leem a sessão
@@ -36,6 +37,9 @@ function Rotas() {
         <Route element={<AppShell onSair={sair} />}>
           <Route index element={<RotaRaiz />} />
           <Route path="/kanban" element={<KanbanPage />} />
+          {/* O link do lembrete de prazo. Abre o quadro do subgrupo com o
+              modal da tarefa já carregado -- ver `RotaTarefa`. */}
+          <Route path="/tarefas/:subgrupoId/:tarefaId" element={<RotaTarefa />} />
           <Route path="/processos" element={<ProcessosPage />} />
           {/* Detalhe é rota: o e-mail de lembrete linka direto pra cá, e a
               tela se hidrata sozinha pelo número. O subgrupo está no

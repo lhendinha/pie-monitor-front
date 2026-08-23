@@ -1,5 +1,5 @@
 import { Flex } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
@@ -24,6 +24,7 @@ import {
 import { PERIODO_TODOS, TETO_POR_PAGINA } from "../../constants";
 import {
   atualizarTarefa,
+  detalhesTarefa,
   listarMembrosDoGrupo,
   listarQuadro,
   listarSubgrupos,
@@ -55,15 +56,33 @@ const FILTROS_VAZIOS = {
   busca: "",
 };
 
+interface Props {
+  /** A tarefa que o link do lembrete de prazo aponta
+   * (`/tarefas/:subgrupoId/:tarefaId`).
+   *
+   * Abre o quadro DELA e o modal dela, já carregado. Sem isto o link caía
+   * no `<Navigate to="/" />` e a pessoa era jogada na Área de trabalho, sem
+   * a tarefa e sem explicação -- e esse endereço já sai por e-mail desde
+   * 21/08, com o formato correto de propósito, esperando esta rota. */
+  tarefaDoLink?: { subgrupoId: string; tarefaId: string };
+}
+
 /** Gestão kanban.
  *
  * Cada subgrupo tem o PRÓPRIO quadro -- trocar o subgrupo não filtra, troca
  * de quadro. Por isso o seletor dele fica sempre ativo e fora do "Limpar
  * filtros".
  */
-export default function KanbanPage() {
-  const [filtros, setFiltros] = useState<FiltrosDoQuadro>({ subgrupoId: "", ...FILTROS_VAZIOS });
+export default function KanbanPage({ tarefaDoLink }: Props = {}) {
+  const [filtros, setFiltros] = useState<FiltrosDoQuadro>({
+    /* O quadro abre no subgrupo da tarefa do link -- é o dela que interessa,
+       não o último da lista. */
+    subgrupoId: tarefaDoLink?.subgrupoId ?? "",
+    ...FILTROS_VAZIOS,
+  });
   const [tarefaAberta, setTarefaAberta] = useState<Tarefa | null>(null);
+  /** O link já foi consumido -- fechar o modal não pode reabri-lo. */
+  const [linkConsumido, setLinkConsumido] = useState(false);
   const [criandoNaColuna, setCriandoNaColuna] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -105,6 +124,35 @@ export default function KanbanPage() {
     enabled: papelAtende("manager"),
   });
   const membros = membrosQuery.data?.membros || [];
+
+  /** Carrega a tarefa do link direto pelo par que a identifica.
+   *
+   * ⚠️ NÃO dá pra esperar que ela apareça no quadro: o quadro abre filtrado
+   * no mês, e um lembrete de prazo pode ser de uma tarefa fora dessa janela
+   * -- justamente as atrasadas, que são as que mais geram lembrete. Buscar
+   * a tarefa sozinha é o único caminho que sempre funciona. */
+  const tarefaDoLinkQuery = useQuery<Tarefa>({
+    queryKey: tarefaDoLink
+      ? qk.tarefa(tarefaDoLink.subgrupoId, tarefaDoLink.tarefaId)
+      : ["tarefa", "nenhuma"],
+    queryFn: () => detalhesTarefa(tarefaDoLink!.subgrupoId, tarefaDoLink!.tarefaId) as Promise<Tarefa>,
+    enabled: Boolean(tarefaDoLink) && !linkConsumido,
+    /* Link velho aponta pra tarefa que pode ter sido excluída. Retentar um
+       404 só atrasa o recado. */
+    retry: false,
+  });
+  useToastOnQueryError(
+    tarefaDoLinkQuery.error,
+    "Não foi possível abrir a tarefa do link. Ela pode ter sido excluída.",
+  );
+
+  /** Abre o modal quando a tarefa do link chega -- uma vez só. */
+  useEffect(() => {
+    if (tarefaDoLinkQuery.data && !linkConsumido) {
+      setTarefaAberta(tarefaDoLinkQuery.data);
+      setLinkConsumido(true);
+    }
+  }, [tarefaDoLinkQuery.data, linkConsumido]);
   const apelidoPorEmail = new Map(membros.map((m) => [m.email, m.apelido || m.email]));
 
   const sensors = useSensors(

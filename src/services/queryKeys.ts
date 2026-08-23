@@ -19,6 +19,11 @@ export const qk = {
   tarefas: (params: Record<string, unknown> = {}) => ["tarefas", params] as const,
   tarefasDoProcesso: (numeroProcesso: string) =>
     ["tarefas", "processo", numeroProcesso] as const,
+  /** ⚠️ NÃO começa com "tarefas": os `invalidateQueries({ queryKey:
+   * ["tarefas"] })` espalhados pelo Kanban derrubariam esta consulta junto,
+   * e o modal aberto pelo link piscaria a cada movimento de cartão. */
+  tarefa: (subgrupoId: string, tarefaId: string) =>
+    ["tarefa", subgrupoId, tarefaId] as const,
   processos: (params: {
     pagina?: number;
     tamanhoPagina?: number;
