@@ -32,6 +32,7 @@ import { toastErroMutation, useToastOnQueryError } from "../../services/queryCli
 import { qk } from "../../services/queryKeys";
 import { intervaloDoPeriodo } from "../../utils";
 import ColunaDoQuadro from "./components/ColunaDoQuadro";
+import { moverTarefaNaLista } from "./helpers/cacheDoQuadro";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
 import ModalDeTarefa from "./components/ModalDeTarefa";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
@@ -144,9 +145,7 @@ export default function KanbanPage() {
       // em janelas de data diferentes, e deixar uma delas com a coluna
       // velha faz o cartão saltar ao trocar o filtro.
       queryClient.setQueriesData<Tarefa[]>({ queryKey: ["tarefas"] }, (lista) =>
-        lista?.map((t) =>
-          t.tarefa_id === tarefa.tarefa_id ? { ...t, coluna_id: destino } : t,
-        ),
+        moverTarefaNaLista(lista, tarefa.tarefa_id, destino),
       );
       return { anteriores };
     },

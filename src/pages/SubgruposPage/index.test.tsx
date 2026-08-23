@@ -435,6 +435,58 @@ describe("SubgruposPage", () => {
     );
   });
 
+  it("a lista de membros espera as DUAS consultas antes de desenhar", async () => {
+    /* A lista por subgrupo só traz e-mail; o apelido e o papel vêm da lista
+     * do grupo. Esperando só a primeira, as linhas apareciam com o e-mail
+     * cru e a etiqueta de papel vazia, e trocavam sozinhas na frente da
+     * pessoa. A do grupo aqui nunca assenta. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    mocks.listarMembrosDoGrupo.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+    await screen.findByText("Membros do Cível");
+
+    // Nada de linha com o e-mail cru enquanto o apelido não chega.
+    expect(screen.queryByText("ana@argos.local")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Remover .* de Cível/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("a lixeira de membro trava SÓ a linha clicada", async () => {
+    /* Travar a lista inteira num modal de dez membros esconde qual deles
+     * está saindo -- e não travar nada faz a pessoa clicar de novo achando
+     * que falhou. A remoção aqui nunca assenta. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 2, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    mocks.listarMembrosDoSubgrupo.mockResolvedValue({
+      membros: [{ email: "ana@argos.local" }, { email: "bruno@argos.local" }],
+    });
+    mocks.listarMembrosDoGrupo.mockResolvedValue({
+      membros: [
+        { email: "ana@argos.local", apelido: "Ana Paula", papel: "admin" },
+        { email: "bruno@argos.local", apelido: "Bruno Reis", papel: "user" },
+      ],
+    });
+    mocks.removerMembro.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+    await user.click(await screen.findByRole("button", { name: "Remover Ana Paula de Cível" }));
+
+    expect(screen.getByRole("button", { name: "Remover Ana Paula de Cível" })).toBeDisabled();
+    // A outra linha continua utilizável.
+    expect(screen.getByRole("button", { name: "Remover Bruno Reis de Cível" })).toBeEnabled();
+  });
+
   it("erro ao criar mostra a mensagem da ApiError e marca o campo inválido", async () => {
     mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.criarSubgrupo.mockRejectedValue(new ApiError("Já existe um subgrupo com esse nome", 400));

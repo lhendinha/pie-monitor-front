@@ -172,6 +172,34 @@ describe("HistoricoPage", () => {
     await waitFor(() => expect(onDeepLinkConsumido).toHaveBeenCalledTimes(1));
   });
 
+  it("o modal abre DURANTE a busca do link, não só quando ela termina", async () => {
+    /* Quem chega por um link de e-mail não tem contexto nenhum: sem isto
+     * ela caía numa lista comum, sem nada indicando que o item do link
+     * estava sendo buscado -- e, se falhasse, só um toast que ela podia nem
+     * associar ao link.
+     *
+     * A busca por `numeroProcesso` nunca assenta aqui: é a espera
+     * congelada. Fica vermelho se o modal voltar a depender de `itemAberto`
+     * pra existir. */
+    mocks.listarHistorico.mockImplementation((opcoes: any) =>
+      opcoes?.numeroProcesso
+        ? new Promise(() => {})
+        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
+    );
+    renderComProviders(
+      <HistoricoPage
+        deepLink={{ processo: ITEM.numero_processo, comunicacaoId: String(ITEM.comunicacao_id) }}
+        onDeepLinkConsumido={vi.fn()}
+      />
+    );
+
+    const dialogo = within(await screen.findByRole("dialog"));
+    expect(dialogo.getByText("Detalhes do envio")).toBeInTheDocument();
+    expect(
+      dialogo.getByText("Localizando a notificação do link recebido…")
+    ).toBeInTheDocument();
+  });
+
   it("deep link sem match no comunicacao_id mostra toast e ainda consome o link", async () => {
     mocks.listarHistorico.mockImplementation((opcoes: any) =>
       opcoes?.numeroProcesso

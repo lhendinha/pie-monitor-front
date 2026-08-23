@@ -94,4 +94,31 @@ describe("GrupoPage", () => {
       expect(screen.getByRole("tab", { name: nome })).toBeInTheDocument();
     }
   });
+
+  it("ação numa opção trava SÓ a linha dela", async () => {
+    /* "Reativar" não mudava nada até o refetch chegar, e quem não vê
+     * retorno clica de novo. Travar a LISTA inteira seria o outro extremo:
+     * numa lista de vinte fases, esconde qual delas está mudando.
+     *
+     * A reativação aqui nunca assenta -- é a espera congelada. */
+    mocks.papelAtende.mockReturnValue(true);
+    mocks.listarOpcoesProcesso.mockResolvedValue({
+      opcoes: [
+        { tipo: "fase", opcao_id: "f1", rotulo: "Inicial", ordem: 1, ativo: false },
+        { tipo: "fase", opcao_id: "f2", rotulo: "Recursal", ordem: 2, ativo: false },
+      ],
+      total: 2,
+      total_paginas: 1,
+    });
+    mocks.reativarOpcaoProcesso.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    renderComProviders(<GrupoPage />);
+
+    await user.click(await screen.findByRole("tab", { name: "Fases" }));
+    await user.click(await screen.findByRole("button", { name: "Reativar Inicial" }));
+
+    expect(screen.getByRole("button", { name: "Reativar Inicial" })).toBeDisabled();
+    // A outra linha segue utilizável.
+    expect(screen.getByRole("button", { name: "Reativar Recursal" })).toBeEnabled();
+  });
 });
