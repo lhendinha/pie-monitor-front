@@ -15,10 +15,17 @@ import type { FiltrosProcessos } from "../../../types";
  * adia o valor derivado enquanto a digitação está rápida, sem `useEffect`
  * nem timer pra limpar.
  */
-export function useFiltrosProcessos() {
+export function useFiltrosProcessos(iniciais?: Partial<FiltrosProcessos>) {
   const [buscaInput, setBuscaInput] = useState("");
   const busca = useDeferredValue(buscaInput);
-  const [aplicados, setAplicados] = useState<FiltrosProcessos>(FILTROS_PROCESSOS_VAZIOS);
+  /** Os iniciais só valem na PRIMEIRA montagem, de propósito: eles vêm da
+   * Área de trabalho, onde clicar num número abre esta tela já filtrada. Se
+   * reagissem a mudanças da prop, limpar o filtro aqui seria desfeito no
+   * render seguinte. */
+  const [aplicados, setAplicados] = useState<FiltrosProcessos>({
+    ...FILTROS_PROCESSOS_VAZIOS,
+    ...iniciais,
+  });
 
   const filtros = {
     busca,

@@ -18,3 +18,16 @@ export function alterarMinhaSenha(senhaAtual: string, novaSenha: string) {
     body: { senha_atual: senhaAtual, nova_senha: novaSenha },
   });
 }
+
+/** GET /resumo -- as contagens da Área de trabalho.
+ *
+ * Vem do servidor, e não somado no cliente, porque cada número é uma
+ * contagem sobre a coleção INTEIRA: com paginação a tela só tem uma página
+ * na mão, e somar o que está nela daria um número errado e silencioso.
+ *
+ * Respeita o mesmo escopo das listagens -- `user`/`manager` contam só os
+ * subgrupos que participam. Sem isso o número do card não bateria com a
+ * lista que o clique abre. */
+export function resumoDaAreaDeTrabalho() {
+  return chamar("/resumo");
+}

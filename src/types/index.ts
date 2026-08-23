@@ -195,6 +195,32 @@ export interface SubAbaConfig {
 
 /** Tarefa do Kanban. Aqui só os campos que o detalhe do processo usa -- o
  * quadro completo entra na etapa dele. */
+/** Contagens da Área de trabalho (`GET /resumo`). */
+export interface ResumoDaAreaDeTrabalho {
+  a_verificar_ate_hoje: number;
+  prazo_final_em_7_dias: number;
+  tarefas_atrasadas: number;
+  tarefas_sem_responsavel: number;
+  envios_com_falha: number;
+  minhas_concluidas: number;
+  minhas_atrasadas: number;
+  minhas_a_concluir: number;
+  processos_total: number;
+  atendimentos_em_andamento: number;
+  movimentacoes_7_dias: number;
+}
+
+/** Uma coluna do quadro Kanban de um subgrupo. */
+export interface ColunaDoQuadro {
+  subgrupo_id: string;
+  coluna_id: string;
+  nome: string;
+  ordem: number;
+  /** A coluna que marca conclusão. Só uma por quadro -- marcar outra
+   * desmarca esta, no servidor. */
+  e_conclusao: boolean;
+}
+
 export interface Tarefa {
   subgrupo_id: string;
   tarefa_id: string;

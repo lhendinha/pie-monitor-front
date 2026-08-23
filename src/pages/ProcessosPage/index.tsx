@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { listarProcessos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -13,7 +13,7 @@ import TabelaProcessos from "./components/TabelaProcessos";
 import NovoProcessoForm from "./components/NovoProcessoForm";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { useFiltrosProcessos } from "./hooks/useFiltrosProcessos";
-import type { Processo } from "../../types";
+import type { FiltrosProcessos, Processo } from "../../types";
 
 /** Listagem de processos.
  *
@@ -26,11 +26,17 @@ import type { Processo } from "../../types";
 export default function ProcessosPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const navegar = useNavigate();
+  /** A Área de trabalho abre esta tela já filtrada -- clicar em "A verificar
+   * até hoje" tem que mostrar exatamente os processos que geraram aquele
+   * número. Vem por `state` da navegação, e não por query string, porque é
+   * um atalho interno: não é URL pra compartilhar. */
+  const { state } = useLocation();
+  const filtrosIniciais = (state as { filtros?: Partial<FiltrosProcessos> } | null)?.filtros;
 
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
 
-  const f = useFiltrosProcessos();
+  const f = useFiltrosProcessos(filtrosIniciais);
   const apoio = useCatalogosDeProcesso();
   const queryClient = useQueryClient();
 

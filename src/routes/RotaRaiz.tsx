@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 
+import { WorkspacePage } from "../pages";
 import { parseDeepLinkHistorico, parseProcessoAvulso } from "../utils";
 
 /** A raiz `/` é onde caem os links de e-mail de movimentação, que usam query
@@ -18,9 +19,8 @@ import { parseDeepLinkHistorico, parseProcessoAvulso } from "../utils";
  * histórico do navegador, senão o Voltar traz a pessoa de volta pro
  * redirecionamento, em laço.
  *
- * ⚠️ Fase 0: sem deep link, `/` vai pra Processos, que é a tela inicial de
- * hoje. Quando a Área de trabalho existir (etapa 2e), ela passa a ser
- * renderizada aqui e este redirecionamento sai.
+ * Sem deep link nenhum, `/` É a Área de trabalho -- ela não redireciona pra
+ * lugar nenhum, é a tela em si.
  */
 export default function RotaRaiz() {
   const { search } = useLocation();
@@ -31,5 +31,5 @@ export default function RotaRaiz() {
   const processo = parseProcessoAvulso(search);
   if (processo) return <Navigate to="/processos" replace state={{ processoEmDestaque: processo }} />;
 
-  return <Navigate to="/processos" replace />;
+  return <WorkspacePage />;
 }

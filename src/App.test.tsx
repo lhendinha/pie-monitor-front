@@ -30,6 +30,7 @@ vi.mock("./pages", () => ({
   ClientesPage: () => <div>tela de clientes</div>,
   ClienteDetalhePage: () => <div>detalhe do cliente</div>,
   GrupoPage: () => <div>tela de grupo</div>,
+  WorkspacePage: () => <div>área de trabalho</div>,
   PerfilPage: () => <div>tela de perfil</div>,
   HistoricoPage: ({ deepLink }: { deepLink: { comunicacaoId: string } | null }) => (
     <div>histórico {deepLink ? `deep:${deepLink.comunicacaoId}` : "sem deep"}</div>
@@ -100,10 +101,12 @@ describe("deep link dos e-mails", () => {
     expect(screen.getByText("tela de processos")).toBeInTheDocument();
   });
 
-  it("raiz sem parâmetro nenhum cai em Processos (Fase 0)", () => {
+  it("raiz sem parâmetro nenhum É a Área de trabalho -- não redireciona", () => {
+    // Ela deixou de ser um redirecionamento pra Processos quando a tela
+    // passou a existir.
     irPara("/");
     renderComProviders(<App />);
-    expect(screen.getByText("tela de processos")).toBeInTheDocument();
+    expect(screen.getByText("área de trabalho")).toBeInTheDocument();
   });
 });
 
@@ -121,8 +124,13 @@ describe("menu lateral", () => {
 
   it("não mostra item de tela ainda não construída", () => {
     renderComProviders(<App />);
-    for (const pendente of ["Área de trabalho", "Gestão kanban", "Agenda", "Atendimentos"]) {
+    for (const pendente of ["Gestão kanban", "Agenda", "Atendimentos"]) {
       expect(screen.queryByRole("link", { name: pendente })).not.toBeInTheDocument();
     }
+  });
+
+  it("mostra Área de trabalho, que deixou de ser pendente", () => {
+    renderComProviders(<App />);
+    expect(screen.getByRole("link", { name: "Área de trabalho" })).toBeInTheDocument();
   });
 });

@@ -1,0 +1,32 @@
+import { formatarData, diasAte } from "../../utils";
+import Etiqueta from "../Etiqueta";
+
+interface Props {
+  data: string;
+  /** Concluída não fica vermelha, mesmo com data no passado: já foi feita,
+   * e pintar de atraso o que já acabou é alarme falso. */
+  concluida?: boolean;
+}
+
+/** O prazo de uma tarefa como etiqueta (`.due-tag` do artifact).
+ *
+ * Perto da data, escreve por extenso ("Hoje", "Amanhã", "Ontem") em vez da
+ * data: é assim que se fala de prazo, e a data crua exige o leitor calcular
+ * a distância sozinho. Longe, a data serve melhor.
+ */
+export default function EtiquetaDePrazo({ data, concluida }: Props) {
+  const dias = diasAte(data);
+  const atrasada = dias < 0 && !concluida;
+  const hoje = dias === 0;
+
+  const texto =
+    dias === 0 ? "Hoje" : dias === 1 ? "Amanhã" : dias === -1 ? "Ontem" : formatarData(data);
+
+  const cores = atrasada
+    ? { bg: "status.bad.bg", color: "status.bad.text" }
+    : hoje
+      ? { bg: "status.warn.bg", color: "status.warn" }
+      : { bg: "border.subtle", color: "fg.muted" };
+
+  return <Etiqueta cores={cores}>{texto}</Etiqueta>;
+}

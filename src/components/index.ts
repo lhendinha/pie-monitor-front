@@ -44,3 +44,4 @@ export { BotaoDeLink } from "./BotaoDeLink";
 export { default as CartaoDeAutenticacao } from "./CartaoDeAutenticacao";
 export { default as CampoDeSenha } from "./CampoDeSenha";
 export { default as RotuloDeSecao } from "./RotuloDeSecao";
+export { default as EtiquetaDePrazo } from "./EtiquetaDePrazo";

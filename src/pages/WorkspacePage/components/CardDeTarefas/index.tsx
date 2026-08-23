@@ -1,0 +1,99 @@
+import { Box, Text } from "@chakra-ui/react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+
+import { Cartao, EstadoVazio, Esqueleto, Pagination } from "../../../../components";
+import { listarTarefas } from "../../../../services";
+import { useToastOnQueryError } from "../../../../services/queryClient";
+import { qk } from "../../../../services/queryKeys";
+import { contar } from "../../../../utils";
+import LinhaDeTarefa from "../LinhaDeTarefa";
+import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants/workspace";
+import type { Tarefa } from "../../../../types";
+
+interface Props {
+  titulo: string;
+  /** Filtro que define o card. `responsavel: "eu"` ou
+   * `semResponsavel: true` -- os dois já resolvidos no servidor. */
+  filtro: { responsavel?: string; semResponsavel?: boolean };
+  vazio: string;
+  acao?: (tarefa: Tarefa) => ReactNode;
+  responsavel?: (tarefa: Tarefa) => ReactNode;
+}
+
+/** Um card de lista de tarefas da Área de trabalho.
+ *
+ * Os dois cards são o mesmo componente com filtro diferente: "Minhas
+ * tarefas" e "Disponíveis para assumir" só divergem no que pedem ao
+ * servidor e na ação de cada linha.
+ *
+ * `apenas_abertas` sempre: aqui a lista é do que ainda há por fazer.
+ * Concluída sai da lista, e não fica riscada -- riscar é da Agenda, que
+ * mostra o dia inteiro.
+ */
+export default function CardDeTarefas({
+  titulo,
+  filtro,
+  vazio,
+  acao,
+  responsavel,
+}: Props) {
+  const [pagina, setPagina] = useState(1);
+  const [tamanhoPagina, setTamanhoPagina] = useState<number>(TAMANHO_PAGINA_CARD_PADRAO);
+
+  const parametros = { ...filtro, apenasAbertas: true, pagina, tamanhoPagina };
+  const query = useQuery<{ tarefas: Tarefa[]; total: number; total_paginas: number }>({
+    queryKey: qk.tarefas(parametros),
+    queryFn: () => listarTarefas(parametros),
+  });
+  useToastOnQueryError(query.error, `Não foi possível carregar "${titulo}".`);
+
+  const tarefas = query.data?.tarefas || [];
+  const total = query.data?.total ?? 0;
+
+  return (
+    <Cartao
+      titulo={titulo}
+      /* A contagem no cabeçalho é do TOTAL, não da página: é ela que
+         responde "quanto tenho pela frente", e a página só mostra os
+         primeiros. */
+      acoes={
+        total > 0 ? (
+          <Text fontSize="11.5px" fontWeight="700" color="fg.subtle" fontFamily="mono">
+            {contar(total, "tarefa", "tarefas")}
+          </Text>
+        ) : undefined
+      }
+    >
+      {query.isPending ? (
+        <Esqueleto linhas={2} />
+      ) : tarefas.length === 0 ? (
+        <EstadoVazio mensagem={vazio} />
+      ) : (
+        <Box>
+          {tarefas.map((t) => (
+            <LinhaDeTarefa
+              key={`${t.subgrupo_id}-${t.tarefa_id}`}
+              tarefa={t}
+              acao={acao?.(t)}
+              responsavel={responsavel?.(t)}
+            />
+          ))}
+          <Pagination
+            pagina={pagina}
+            totalPaginas={query.data?.total_paginas ?? 0}
+            total={total}
+            tamanhoPagina={tamanhoPagina}
+            tamanhos={TAMANHOS_PAGINA_CARD}
+            onMudarPagina={setPagina}
+            onMudarTamanho={(t) => {
+              setTamanhoPagina(t);
+              setPagina(1);
+            }}
+          />
+        </Box>
+      )}
+    </Cartao>
+  );
+}

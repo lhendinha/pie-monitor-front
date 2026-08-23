@@ -108,11 +108,36 @@ const RESPOSTAS = [
   [
     /\/tarefas/,
     () => ({
+      // Datas relativas a hoje: a etiqueta de prazo mostra "Hoje",
+      // "Amanhã" e "Ontem", e com data fixa a verificação visual só
+      // mostraria data crua depois que a data passasse.
       tarefas: [
-        { tarefa_id: "t1", subgrupo_id: "sg-civel", titulo: "Protocolar réplica", data: "2026-09-01", coluna_id: "c1", prioridade: "Alta" },
-        { tarefa_id: "t2", subgrupo_id: "sg-civel", titulo: "Conferir prazo de contestação", data: "2026-09-05", coluna_id: "c1", prioridade: "Média" },
+        { tarefa_id: "t1", subgrupo_id: "sg-civel", titulo: "Protocolar réplica", data: emDias(-2), coluna_id: "c1", prioridade: "Alta", processo_numero: "00002668720218130559" },
+        { tarefa_id: "t2", subgrupo_id: "sg-civel", titulo: "Conferir prazo de contestação", data: emDias(0), coluna_id: "c1", prioridade: "Média" },
+        { tarefa_id: "t3", subgrupo_id: "sg-civel", titulo: "Juntar procuração", data: emDias(1), coluna_id: "c1", prioridade: "Baixa" },
+        { tarefa_id: "t4", subgrupo_id: "sg-trab", titulo: "Preparar audiência", data: emDias(6), coluna_id: "c1", prioridade: "Alta" },
       ],
-      total: 2,
+      total: 4,
+      total_paginas: 1,
+    }),
+  ],
+  [
+    /\/resumo/,
+    () => ({
+      a_verificar_ate_hoje: 3, prazo_final_em_7_dias: 5, tarefas_atrasadas: 2,
+      tarefas_sem_responsavel: 4, envios_com_falha: 1,
+      minhas_concluidas: 12, minhas_atrasadas: 2, minhas_a_concluir: 7,
+      processos_total: 25, atendimentos_em_andamento: 3, movimentacoes_7_dias: 9,
+    }),
+  ],
+  [
+    /\/subgrupos\/[^/]+\/quadro/,
+    () => ({
+      colunas: [
+        { subgrupo_id: "sg-civel", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false },
+        { subgrupo_id: "sg-civel", coluna_id: "c2", nome: "Fazendo", ordem: 2, e_conclusao: false },
+        { subgrupo_id: "sg-civel", coluna_id: "c3", nome: "Concluído", ordem: 3, e_conclusao: true },
+      ],
     }),
   ],
   [
@@ -178,6 +203,13 @@ const RESPOSTAS = [
  * O que não casar com nada responde `{}` em vez de sair pra internet -- uma
  * chamada esquecida vira tela vazia, não um screenshot travado na rede.
  */
+/** Data relativa a hoje, em `aaaa-mm-dd`. Local, nunca UTC. */
+function emDias(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export async function instalarStubs(contexto) {
   await contexto.route("**/*", (rota) => {
     const requisicao = rota.request();

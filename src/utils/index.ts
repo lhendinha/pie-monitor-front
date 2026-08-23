@@ -7,3 +7,4 @@ export * from "./plural";
 export * from "./calendario";
 export * from "./email";
 export * from "./suporte";
+export * from "./prazo";

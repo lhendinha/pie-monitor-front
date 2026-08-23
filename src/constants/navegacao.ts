@@ -25,7 +25,7 @@ export interface ItemNavegacao {
  * pelo próprio piso, como sempre fizeram.
  */
 export const ITENS_NAVEGACAO: ItemNavegacao[] = [
-  { caminho: "/", rotulo: "Área de trabalho", icone: "Workspace", pendente: true },
+  { caminho: "/", rotulo: "Área de trabalho", icone: "Workspace" },
   { caminho: "/kanban", rotulo: "Gestão kanban", icone: "Kanban", pendente: true },
   { caminho: "/agenda", rotulo: "Agenda", icone: "Agenda", pendente: true },
   { caminho: "/atendimentos", rotulo: "Atendimentos", icone: "Atendimentos", pendente: true },
