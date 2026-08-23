@@ -35,7 +35,11 @@ import { coresDoStatus } from "../../theme/atendimento";
 import { contar, mascararNumeroProcesso } from "../../utils";
 import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
-import type { Atendimento, Cliente, Membro } from "../../types";
+import type { Atendimento } from "../../types";
+import type {
+  RespostaDeClientes,
+  RespostaDeMembros,
+} from "../../types/respostas";
 
 /** Detalhe de um atendimento: cabeçalho, linha do tempo e o campo de
  * escrever.
@@ -59,11 +63,9 @@ export default function AtendimentoDetalhePage() {
     retry: false,
   });
 
-  const clientesQuery = useQuery<{ clientes: Cliente[] }>({
+  const clientesQuery = useQuery<RespostaDeClientes>({
     queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }) as Promise<{
-      clientes: Cliente[];
-    }>,
+    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }) as Promise<RespostaDeClientes>,
   });
   const nomePorCliente = useMemo(
     () => new Map((clientesQuery.data?.clientes || []).map((c) => [c.cliente_id, c.nome])),
@@ -72,7 +74,7 @@ export default function AtendimentoDetalhePage() {
 
   /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
    * não vem, e a linha do tempo mostra o e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<{ membros: Membro[] }>({
+  const membrosQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.membros(),
     queryFn: listarMembrosDoGrupo,
     enabled: papelAtende("manager"),

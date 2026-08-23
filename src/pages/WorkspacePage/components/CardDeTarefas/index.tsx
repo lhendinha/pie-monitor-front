@@ -3,6 +3,12 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
+/** Quem o cartão mostra: um responsável, ou as sem responsável nenhum. */
+interface FiltroDoCard {
+  responsavel?: string;
+  semResponsavel?: boolean;
+}
+
 import {
   AreaAtualizando,
   Cartao,
@@ -18,12 +24,15 @@ import { contar } from "../../../../utils";
 import LinhaDeTarefa from "../LinhaDeTarefa";
 import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants/workspace";
 import type { Tarefa } from "../../../../types";
+import type {
+  RespostaDeTarefasPaginada,
+} from "../../../../types/respostas";
 
 interface Props {
   titulo: string;
   /** Filtro que define o card. `responsavel: "eu"` ou
    * `semResponsavel: true` -- os dois já resolvidos no servidor. */
-  filtro: { responsavel?: string; semResponsavel?: boolean };
+  filtro: FiltroDoCard;
   vazio: string;
   acao?: (tarefa: Tarefa) => ReactNode;
   responsavel?: (tarefa: Tarefa) => ReactNode;
@@ -50,7 +59,7 @@ export default function CardDeTarefas({
   const [tamanhoPagina, setTamanhoPagina] = useState<number>(TAMANHO_PAGINA_CARD_PADRAO);
 
   const parametros = { ...filtro, apenasAbertas: true, pagina, tamanhoPagina };
-  const query = useQuery<{ tarefas: Tarefa[]; total: number; total_paginas: number }>({
+  const query = useQuery<RespostaDeTarefasPaginada>({
     queryKey: qk.tarefas(parametros),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a

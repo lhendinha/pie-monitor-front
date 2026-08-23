@@ -24,7 +24,11 @@ import {
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { contar, emailValido } from "../../../../utils";
-import type { Membro, Subgrupo } from "../../../../types";
+import type { Subgrupo } from "../../../../types";
+import type {
+  RespostaDeMembroAdicionado,
+  RespostaDeMembros,
+} from "../../../../types/respostas";
 
 interface Props {
   subgrupo: Subgrupo;
@@ -48,7 +52,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
   const queryClient = useQueryClient();
   const queryKey = qk.membrosDoSubgrupo(subgrupo.subgrupo_id);
 
-  const query = useQuery<{ membros: Membro[] }>({
+  const query = useQuery<RespostaDeMembros>({
     queryKey,
     queryFn: () => listarMembrosDoSubgrupo(subgrupo.subgrupo_id),
   });
@@ -57,7 +61,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
   /** A lista por subgrupo devolve só e-mail. Apelido e papel vêm da lista do
    * grupo, que já tem os três -- em vez de pedir um join novo no backend.
    * Mesmo piso (`manager`) das outras duas rotas desta tela. */
-  const grupoQuery = useQuery<{ membros: Membro[] }>({
+  const grupoQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.membros(),
     queryFn: listarMembrosDoGrupo,
   });
@@ -73,7 +77,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
 
   const adicionarMutation = useMutation({
     mutationFn: (email: string) =>
-      adicionarMembro(subgrupo.subgrupo_id, email) as Promise<{ mensagem: string; email: string }>,
+      adicionarMembro(subgrupo.subgrupo_id, email) as Promise<RespostaDeMembroAdicionado>,
     onSuccess: (resp) => {
       setNovoEmail("");
       invalidar();

@@ -12,8 +12,12 @@ import { TETO_POR_PAGINA } from "../../../../constants";
 import { listarClientes, listarOpcoesProcesso } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import type { Cliente, OpcaoProcesso } from "../../../../types";
+import type { OpcaoProcesso } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
+import type {
+  RespostaDeClientes,
+  RespostaDeOpcoes,
+} from "../../../../types/respostas";
 
 interface Props {
   valores: CamposOpcionaisProcesso;
@@ -32,21 +36,21 @@ interface Props {
  * (fase/situação), prazos e por fim as anotações.
  */
 export default function CamposProcesso({ valores, onMudar }: Props) {
-  const clientesQuery = useQuery<{ clientes: Cliente[] }>({
+  const clientesQuery = useQuery<RespostaDeClientes>({
     queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(clientesQuery.error, "Não foi possível carregar os clientes.");
   const clientes = clientesQuery.data?.clientes || [];
 
-  const fasesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
+  const fasesQuery = useQuery<RespostaDeOpcoes>({
     queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(fasesQuery.error, "Não foi possível carregar as fases.");
   const fases = fasesQuery.data?.opcoes || [];
 
-  const situacoesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
+  const situacoesQuery = useQuery<RespostaDeOpcoes>({
     queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
   });

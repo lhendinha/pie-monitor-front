@@ -22,7 +22,11 @@ import {
 } from "../../../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import type { Grupo, Membro, Papel, Subgrupo } from "../../../../types";
+import type { Grupo, Membro, Papel } from "../../../../types";
+import type {
+  RespostaDeMembros,
+  RespostaDeSubgrupos,
+} from "../../../../types/respostas";
 
 interface Props {
   membro: Membro;
@@ -61,7 +65,7 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
    * enquanto isso -- não se encaixa no modelo declarativo do `useQuery`. */
   useEffect(() => {
     listarMembrosDoGrupo()
-      .then((d: { membros: Membro[] }) => {
+      .then((d: RespostaDeMembros) => {
         if (grupoAlteradoRef.current) return;
         const fresco = d.membros.find((m) => m.email === membro.email);
         if (fresco) setSubgruposSelecionados(fresco.subgrupos || []);
@@ -69,7 +73,7 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
       .finally(() => setSubgruposCarregados(true));
   }, [membro.email]);
 
-  const subgruposDoGrupoQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposDoGrupoQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgruposDoGrupo(grupoSelecionado),
     queryFn: () => listarSubgruposDoGrupo(grupoSelecionado),
   });

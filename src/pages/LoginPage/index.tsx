@@ -12,6 +12,13 @@ import {
 import { login } from "../../services";
 import { avisoDeTentativas } from "./helpers/avisoDeTentativas";
 
+/** O aviso acima do formulário. `ofereceRecuperacao` liga o link de
+ * 'esqueci a senha' -- só faz sentido quando a falha foi de credencial. */
+interface AlertaDoLogin {
+  texto: string;
+  ofereceRecuperacao: boolean;
+}
+
 interface Props {
   /** Recado que chega junto com a tela -- hoje só "sua sessão expirou".
    * Vai DENTRO do cartão porque é sobre este login: solto acima dele
@@ -28,7 +35,7 @@ export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: Props) {
   /** O recado sobre o bloqueio: quantas tentativas restam, ou que a próxima
    * já é recusada. Separado do `erro` porque é SECUNDÁRIO a ele -- o que
    * deu errado continua sendo a mensagem principal. */
-  const [alerta, setAlerta] = useState<{ texto: string; ofereceRecuperacao: boolean } | null>(null);
+  const [alerta, setAlerta] = useState<AlertaDoLogin | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   async function handleSubmit(e: FormEvent) {

@@ -16,7 +16,9 @@ import { qk } from "../../services/queryKeys";
 import CabecalhoClientes from "./components/CabecalhoClientes";
 import NovoClienteForm from "./components/NovoClienteForm";
 import TabelaClientes from "./components/TabelaClientes";
-import type { Cliente } from "../../types";
+import type {
+  RespostaDeClientesPaginada,
+} from "../../types/respostas";
 
 /** Listagem de clientes.
  *
@@ -41,7 +43,7 @@ export default function ClientesPage() {
   // Buscando, a API devolve o conjunto filtrado inteiro num envelope só --
   // por isso a paginação some enquanto há termo.
   const parametros = busca ? { busca } : { pagina, tamanhoPagina };
-  const query = useQuery<{ clientes: Cliente[]; total: number; total_paginas: number }>({
+  const query = useQuery<RespostaDeClientesPaginada>({
     queryKey: qk.clientes(parametros),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a

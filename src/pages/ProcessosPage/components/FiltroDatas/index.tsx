@@ -1,6 +1,13 @@
 import { Popover, Portal } from "@chakra-ui/react";
 import { useState } from "react";
 
+/** As duas datas-limite do painel. Parcial: o campo que não veio fica
+ * como estava. */
+interface DatasDoFiltro {
+  dataVerificarAte?: string;
+  prazoFinalAte?: string;
+}
+
 import { PilulaDeFiltro, RodapeDeFiltro } from "../../../../components";
 import { SELETOR_CALENDARIO } from "../../../../constants/camadaFlutuante";
 import { PAINEL } from "../../../../theme/painelFiltro";
@@ -10,7 +17,7 @@ import CamposDeData from "./CamposDeData";
 interface Props {
   dataVerificarAte: string;
   prazoFinalAte: string;
-  onMudar: (parcial: { dataVerificarAte?: string; prazoFinalAte?: string }) => void;
+  onMudar: (parcial: DatasDoFiltro) => void;
 }
 
 /** As duas datas atrás de um chip só, como no artifact.

@@ -5,12 +5,13 @@ import { COLUNA_DATAS } from "../../../theme/painelFiltro";
 import { Rotulo } from "../../Rotulo";
 import SeletorData from "../../SeletorData";
 import RodapeDeFiltro from "../../RodapeDeFiltro";
+import type { Intervalo } from "../../../utils/periodo";
 
 interface Props {
   /** Rascunho inicial -- o intervalo já aplicado, se houver. */
   de: string;
   ate: string;
-  onAplicar: (intervalo: { de: string; ate: string }) => void;
+  onAplicar: (intervalo: Intervalo) => void;
   onVoltar: () => void;
 }
 

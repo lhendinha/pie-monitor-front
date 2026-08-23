@@ -1,5 +1,8 @@
 import { chamar } from "./client";
 import type { Papel } from "../../types";
+import type {
+  RespostaDeConvite,
+} from "../../types/respostas";
 
 export function criarConvite(email: string, papelInicial: Papel, subgruposIniciais: string[]) {
   return chamar("/convites", {
@@ -14,5 +17,5 @@ export function criarConvite(email: string, papelInicial: Papel, subgruposInicia
  * destinatário, então o e-mail convidado e o papel não vêm junto.
  */
 export function verificarConvite(token: string) {
-  return chamar(`/convites/${encodeURIComponent(token)}`) as Promise<{ valido: boolean }>;
+  return chamar(`/convites/${encodeURIComponent(token)}`) as Promise<RespostaDeConvite>;
 }

@@ -21,11 +21,23 @@ vi.mock("./services", async () => {
 
 // As páginas reais fazem rede e não são o assunto aqui -- o que este arquivo
 // testa é PRA ONDE o router manda, não o que cada tela desenha.
+interface PropsComToken {
+  token: string;
+}
+
+interface DeepLinkDoHistorico {
+  comunicacaoId: string;
+}
+
+interface PropsComDeepLink {
+  deepLink: DeepLinkDoHistorico | null;
+}
+
 vi.mock("./pages", () => ({
   LoginPage: () => <div>tela de login</div>,
   EsqueciSenhaPage: () => <div>tela de esqueci senha</div>,
-  AceitarConvitePage: ({ token }: { token: string }) => <div>convite {token}</div>,
-  RedefinirSenhaPage: ({ token }: { token: string }) => <div>redefinir {token}</div>,
+  AceitarConvitePage: ({ token }: PropsComToken) => <div>convite {token}</div>,
+  RedefinirSenhaPage: ({ token }: PropsComToken) => <div>redefinir {token}</div>,
   ProcessosPage: () => <div>tela de processos</div>,
   ProcessoDetalhePage: () => <div>detalhe do processo</div>,
   ClientesPage: () => <div>tela de clientes</div>,
@@ -37,7 +49,7 @@ vi.mock("./pages", () => ({
   AtendimentosPage: () => <div>tela de atendimentos</div>,
   AtendimentoDetalhePage: () => <div>detalhe do atendimento</div>,
   PerfilPage: () => <div>tela de perfil</div>,
-  HistoricoPage: ({ deepLink }: { deepLink: { comunicacaoId: string } | null }) => (
+  HistoricoPage: ({ deepLink }: PropsComDeepLink) => (
     <div>histórico {deepLink ? `deep:${deepLink.comunicacaoId}` : "sem deep"}</div>
   ),
 }));

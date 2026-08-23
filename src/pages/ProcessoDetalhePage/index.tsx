@@ -21,7 +21,9 @@ import FormularioProcesso from "./components/FormularioProcesso";
 import NumeroDoProcesso from "./components/NumeroDoProcesso";
 import Movimentacoes from "./components/Movimentacoes";
 import TarefasVinculadas from "./components/TarefasVinculadas";
-import type { Comunicacao, Processo } from "../../types";
+import type {
+  RespostaDeDetalhesDoProcesso,
+} from "../../types/respostas";
 
 /** Página de detalhe de um processo.
  *
@@ -46,7 +48,7 @@ export default function ProcessoDetalhePage() {
   const tarefasQuery = useTarefasDoProcesso(numero);
   const tarefasLigadas = tarefasQuery.data?.tarefas.length ?? 0;
 
-  const query = useQuery<{ comunicacoes: Comunicacao[]; processos: Processo[] }>({
+  const query = useQuery<RespostaDeDetalhesDoProcesso>({
     queryKey: qk.detalhesProcesso(numero),
     queryFn: () => detalhesProcesso(numero),
   });

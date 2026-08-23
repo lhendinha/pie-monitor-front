@@ -15,13 +15,19 @@ export function criarColuna(subgrupoId: string, nome: string) {
   return chamar(`/subgrupos/${subgrupoId}/quadro`, { method: "POST", body: { nome } });
 }
 
+/** PATCH parcial da coluna: o campo omitido não é tocado. */
+export interface CamposDaColuna {
+  nome?: string;
+  ordem?: number;
+}
+
 /** Renomeia e/ou reordena. Os dois campos são opcionais e independentes --
  * mandar só `ordem` num arraste evita sobrescrever um rename concorrente
  * com um nome já defasado. */
 export function atualizarColuna(
   subgrupoId: string,
   colunaId: string,
-  campos: { nome?: string; ordem?: number },
+  campos: CamposDaColuna,
 ) {
   return chamar(`/subgrupos/${subgrupoId}/quadro/${colunaId}`, {
     method: "PATCH",

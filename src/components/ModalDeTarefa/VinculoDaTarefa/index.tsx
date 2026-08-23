@@ -13,8 +13,11 @@ import {
   RESULTADOS_POR_TIPO,
 } from "../../../constants/vinculoDaTarefa";
 import EtiquetaDeVinculo from "../EtiquetaDeVinculo";
-import type { AtendimentoResumido, Processo } from "../../../types";
 import type { Vinculo, VinculosDaTarefa } from "../../../types";
+import type {
+  RespostaDeAtendimentosResumidos,
+  RespostaDeProcessos,
+} from "../../../types/respostas";
 
 interface Props {
   valor: VinculosDaTarefa;
@@ -62,10 +65,8 @@ export default function VinculoDaTarefa({ valor, onMudar }: Props) {
       // Em paralelo: são dois recursos independentes, e em série o campo
       // ficaria com o dobro da latência por tecla parada.
       const [processos, atendimentos] = await Promise.all([
-        listarProcessos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<{ processos: Processo[] }>,
-        listarAtendimentos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<{
-          atendimentos: AtendimentoResumido[];
-        }>,
+        listarProcessos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<RespostaDeProcessos>,
+        listarAtendimentos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<RespostaDeAtendimentosResumidos>,
       ]);
       return [
         ...(processos.processos ?? []).slice(0, RESULTADOS_POR_TIPO).map((p) => ({

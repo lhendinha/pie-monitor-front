@@ -19,7 +19,11 @@ import TabelaProcessos from "./components/TabelaProcessos";
 import NovoProcessoForm from "./components/NovoProcessoForm";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { useFiltrosProcessos } from "./hooks/useFiltrosProcessos";
-import type { FiltrosProcessos, Processo } from "../../types";
+import type { FiltrosProcessos } from "../../types";
+import type {
+  RespostaDeProcessosPaginada,
+  RespostaDeTotal,
+} from "../../types/respostas";
 
 /** Listagem de processos.
  *
@@ -51,11 +55,7 @@ export default function ProcessosPage() {
 
   const parametrosBusca = f.filtroAtivo ? f.filtros : { pagina, tamanhoPagina };
 
-  const processosQuery = useQuery<{
-    processos: Processo[];
-    total: number;
-    total_paginas: number;
-  }>({
+  const processosQuery = useQuery<RespostaDeProcessosPaginada>({
     queryKey: qk.processos(parametrosBusca),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
@@ -71,7 +71,7 @@ export default function ProcessosPage() {
   /** Total do grupo sem filtro nenhum -- é o "de Y" da contagem
    * ("Mostrando 3 de 11 processos"). Uma página de tamanho 1: só o `total`
    * do envelope interessa, e o React Query mantém em cache. */
-  const totalQuery = useQuery<{ total: number }>({
+  const totalQuery = useQuery<RespostaDeTotal>({
     queryKey: qk.processos({ pagina: 1, tamanhoPagina: 1 }),
     queryFn: () => listarProcessos({ pagina: 1, tamanhoPagina: 1 }),
   });
@@ -90,7 +90,6 @@ export default function ProcessosPage() {
   function invalidarProcessos() {
     queryClient.invalidateQueries({ queryKey: ["processos"] });
   }
-
 
   return (
     <>

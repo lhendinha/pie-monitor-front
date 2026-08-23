@@ -14,7 +14,10 @@ import { qk } from "../../../../services/queryKeys";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
 import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
 import CampoDeLeitura from "../CampoDeLeitura";
-import type { Comunicacao, HistoricoItem, Processo } from "../../../../types";
+import type { HistoricoItem } from "../../../../types";
+import type {
+  RespostaDeDetalhesDoProcesso,
+} from "../../../../types/respostas";
 
 interface Props {
   item: HistoricoItem;
@@ -41,7 +44,7 @@ export default function DetalheHistorico({ item }: Props) {
    * lá guarda `TAREFA#{id}` porque é chave de partição. */
   const habilitado = !ehDeTarefa;
 
-  const query = useQuery<{ comunicacoes: Comunicacao[]; processos: Processo[] }>({
+  const query = useQuery<RespostaDeDetalhesDoProcesso>({
     queryKey: qk.detalhesProcesso(item.numero_processo),
     queryFn: () => detalhesProcesso(item.numero_processo),
     enabled: habilitado,

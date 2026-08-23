@@ -29,6 +29,15 @@ import {
   useConteudoDoSubgrupo,
 } from "./hooks/useConteudoDoSubgrupo";
 import type { Subgrupo } from "../../types";
+import type {
+  RespostaDeSubgruposPaginada,
+} from "../../types/respostas";
+
+/** O que a mutation de renomear recebe. */
+interface RenomearSubgrupo {
+  id: string;
+  nome: string;
+}
 
 /** Sub-aba "Subgrupos" da tela de Grupo.
  *
@@ -60,7 +69,7 @@ export default function SubgruposPage() {
   const podeCriar = papelAtende("manager");
   const podeEditar = papelAtende("admin");
 
-  const query = useQuery<{ subgrupos: Subgrupo[]; total: number; total_paginas: number }>({
+  const query = useQuery<RespostaDeSubgruposPaginada>({
     queryKey: qk.subgrupos({ pagina, tamanhoPagina }),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
@@ -100,7 +109,7 @@ export default function SubgruposPage() {
   }
 
   const renomearMutation = useMutation({
-    mutationFn: ({ id, nome }: { id: string; nome: string }) => atualizarSubgrupo(id, nome),
+    mutationFn: ({ id, nome }: RenomearSubgrupo) => atualizarSubgrupo(id, nome),
     onSuccess: () => {
       invalidar();
       toast.sucesso("Subgrupo renomeado.");

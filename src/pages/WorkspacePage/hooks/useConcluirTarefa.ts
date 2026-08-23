@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { atualizarTarefa, listarQuadro } from "../../../services";
 import { qk } from "../../../services/queryKeys";
-import type { ColunaDoQuadro, Tarefa } from "../../../types";
+import type { Tarefa } from "../../../types";
+import type { RespostaDoQuadro } from "../../../types/respostas";
 
 /** Conclui uma tarefa.
  *
@@ -19,7 +20,7 @@ export function useConcluirTarefa(aoConcluir: () => void, aoFalhar: (erro: unkno
 
   return useMutation({
     mutationFn: async (tarefa: Tarefa) => {
-      const quadro = await queryClient.fetchQuery<{ colunas: ColunaDoQuadro[] }>({
+      const quadro = await queryClient.fetchQuery<RespostaDoQuadro>({
         queryKey: qk.quadro(tarefa.subgrupo_id),
         queryFn: () => listarQuadro(tarefa.subgrupo_id),
         staleTime: 5 * 60 * 1000,

@@ -46,6 +46,12 @@ interface Props {
   onFechar: () => void;
 }
 
+/** O que a mutation de renomear recebe. */
+interface RenomearColuna {
+  id: string;
+  nome: string;
+}
+
 /** "Editar quadro" -- criar, renomear, reordenar, marcar conclusão e
  * remover coluna. Piso `admin` no servidor e no botão que abre isto.
  *
@@ -107,7 +113,7 @@ export default function ModalDoQuadro({
   const renomearMutation = useMutation({
     // Só o nome: reenviar a `ordem` sobrescreveria um arraste concorrente
     // com um valor possivelmente defasado.
-    mutationFn: ({ id, nome }: { id: string; nome: string }) =>
+    mutationFn: ({ id, nome }: RenomearColuna) =>
       atualizarColuna(subgrupoId, id, { nome }),
     onSuccess: invalidar,
     onError: (err) => toastErroMutation(toast, err, "Não foi possível renomear a coluna."),

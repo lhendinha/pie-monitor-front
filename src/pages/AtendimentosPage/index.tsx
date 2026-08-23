@@ -27,7 +27,12 @@ import CabecalhoAtendimentos from "./components/CabecalhoAtendimentos";
 import LinhaDeAtendimento from "./components/LinhaDeAtendimento";
 import NovoAtendimentoForm from "./components/NovoAtendimentoForm";
 import { STATUS_TODOS, statusParaApi } from "./constants";
-import type { Atendimento, Cliente, Membro, Subgrupo } from "../../types";
+import type {
+  RespostaDeAtendimentosPaginada,
+  RespostaDeClientes,
+  RespostaDeMembros,
+  RespostaDeSubgrupos,
+} from "../../types/respostas";
 
 /** Listagem de atendimentos.
  *
@@ -59,24 +64,20 @@ export default function AtendimentosPage() {
     tamanhoPagina,
   };
 
-  const query = useQuery<{ atendimentos: Atendimento[]; total: number; total_paginas: number }>({
+  const query = useQuery<RespostaDeAtendimentosPaginada>({
     queryKey: qk.atendimentos(parametros),
     /* Mantém a página anterior enquanto a nova vem. Sem isto a chave nasce
        fria, `isPending` vira true e a lista DESMONTA -- pisca a cada
        página, a cada filtro e a cada tecla da busca. */
     placeholderData: keepPreviousData,
-    queryFn: () => listarAtendimentos(parametros) as Promise<{
-      atendimentos: Atendimento[];
-      total: number;
-      total_paginas: number;
-    }>,
+    queryFn: () => listarAtendimentos(parametros) as Promise<RespostaDeAtendimentosPaginada>,
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os atendimentos.");
 
   /** Os subgrupos são do modal de criação, e ele precisa deles ABERTO --
    * por isso a consulta fica aqui, não lá dentro: assim ela já está pronta
    * (ou a caminho) quando o modal abre, em vez de começar no clique. */
-  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
   });
@@ -86,11 +87,9 @@ export default function AtendimentosPage() {
    * Uma consulta pra lista inteira, não uma por linha: dez atendimentos com
    * dois clientes cada seriam vinte requisições pra mostrar vinte palavras.
    */
-  const clientesQuery = useQuery<{ clientes: Cliente[] }>({
+  const clientesQuery = useQuery<RespostaDeClientes>({
     queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }) as Promise<{
-      clientes: Cliente[];
-    }>,
+    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }) as Promise<RespostaDeClientes>,
   });
   const nomePorId = useMemo(
     () => new Map((clientesQuery.data?.clientes || []).map((c) => [c.cliente_id, c.nome])),
@@ -99,7 +98,7 @@ export default function AtendimentosPage() {
 
   /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
    * não vem, e o avatar cai nas iniciais do e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<{ membros: Membro[] }>({
+  const membrosQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.membros(),
     queryFn: listarMembrosDoGrupo,
     enabled: papelAtende("manager"),

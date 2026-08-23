@@ -10,6 +10,9 @@ import { useValorComEspera } from "../../../../hooks/useValorComEspera";
 import { listarClientes } from "../../../../services";
 import { OPCAO_LINHA } from "../../../../theme/painelFiltro";
 import type { Cliente } from "../../../../types";
+import type {
+  RespostaDeClientes,
+} from "../../../../types/respostas";
 
 interface Props {
   id: string;
@@ -50,13 +53,11 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: Props) {
 
   const busca = termo.length >= MINIMO_PRA_BUSCAR ? termo : "";
 
-  const query = useQuery<{ clientes: Cliente[] }>({
+  const query = useQuery<RespostaDeClientes>({
     queryKey: ["busca-clientes", busca],
     enabled: Boolean(busca),
     queryFn: () =>
-      listarClientes({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<{
-        clientes: Cliente[];
-      }>,
+      listarClientes({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<RespostaDeClientes>,
   });
 
   const achados = (query.data?.clientes || []).filter((c) => !valor.includes(c.cliente_id));

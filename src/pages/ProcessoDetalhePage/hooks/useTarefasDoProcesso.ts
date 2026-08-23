@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { listarTarefas } from "../../../services";
 import { qk } from "../../../services/queryKeys";
-import type { Tarefa } from "../../../types";
+import type {
+  RespostaDeTarefas,
+} from "../../../types/respostas";
 
 /** As tarefas abertas neste processo.
  *
@@ -13,7 +15,7 @@ import type { Tarefa } from "../../../types";
  * mesmo resultado hoje e divergiriam no primeiro ajuste.
  */
 export function useTarefasDoProcesso(numeroProcesso: string) {
-  return useQuery<{ tarefas: Tarefa[] }>({
+  return useQuery<RespostaDeTarefas>({
     queryKey: qk.tarefasDoProcesso(numeroProcesso),
     queryFn: () => listarTarefas({ processoNumero: numeroProcesso, tamanhoPagina: 100 }),
   });

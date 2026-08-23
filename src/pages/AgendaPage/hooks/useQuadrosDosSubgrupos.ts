@@ -3,7 +3,10 @@ import { useMemo } from "react";
 
 import { listarQuadro } from "../../../services";
 import { qk } from "../../../services/queryKeys";
-import type { ColunaDoQuadro, Tarefa } from "../../../types";
+import type { Tarefa } from "../../../types";
+import type {
+  RespostaDoQuadro,
+} from "../../../types/respostas";
 
 /** Quadro muda raramente -- só `admin` edita coluna. Mesmo tempo que
  * `useConcluirTarefa` usa, e a mesma chave, então as duas telas dividem o
@@ -35,7 +38,7 @@ export function useQuadrosDosSubgrupos(subgrupoIds: string[]) {
   const consultas = useQueries({
     queries: subgrupoIds.map((id) => ({
       queryKey: qk.quadro(id),
-      queryFn: () => listarQuadro(id) as Promise<{ colunas: ColunaDoQuadro[] }>,
+      queryFn: () => listarQuadro(id) as Promise<RespostaDoQuadro>,
       staleTime: VALIDADE,
     })),
   });

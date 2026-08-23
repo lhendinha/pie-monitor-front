@@ -19,6 +19,12 @@ import { qk } from "../../../../services/queryKeys";
 import { contar } from "../../../../utils";
 import type { ConfiguracoesDoGrupo as Configuracoes } from "../../../../types";
 
+/** PATCH parcial: só o que mudou vai. */
+interface CamposDasConfiguracoes {
+  nome?: string;
+  dias_para_arquivar?: number;
+}
+
 /** Sub-aba "Configurações" da tela de Grupo: nome do grupo e prazo de
  * arquivamento.
  *
@@ -47,7 +53,7 @@ export default function ConfiguracoesDoGrupo() {
   }, [query.data]);
 
   const salvar = useMutation({
-    mutationFn: (campos: { nome?: string; dias_para_arquivar?: number }) =>
+    mutationFn: (campos: CamposDasConfiguracoes) =>
       atualizarConfiguracoesDoGrupo(campos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.configuracoesDoGrupo() });

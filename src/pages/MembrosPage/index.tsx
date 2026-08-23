@@ -9,7 +9,12 @@ import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import EditarMembroForm from "./components/EditarMembroForm";
 import TabelaDeMembros from "./components/TabelaDeMembros";
-import type { Grupo, Membro, Subgrupo } from "../../types";
+import type { Membro } from "../../types";
+import type {
+  RespostaDeGrupos,
+  RespostaDeMembros,
+  RespostaDeSubgrupos,
+} from "../../types/respostas";
 
 /** Sub-aba "Membros" da tela de Grupo.
  *
@@ -26,13 +31,13 @@ export default function MembrosPage() {
 
   const podeEditar = ehSuperAdmin();
 
-  const membrosQuery = useQuery<{ membros: Membro[] }>({
+  const membrosQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.membros(),
     queryFn: listarMembrosDoGrupo,
   });
   useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
-  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     // A lista inteira, e não uma página: os nomes daqui resolvem os ids
     // que vêm em `membro.subgrupos`, e qualquer pessoa pode estar em
     // qualquer subgrupo do grupo.
@@ -41,7 +46,7 @@ export default function MembrosPage() {
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
-  const gruposQuery = useQuery<{ grupos: Grupo[] }>({
+  const gruposQuery = useQuery<RespostaDeGrupos>({
     queryKey: qk.grupos(),
     queryFn: listarGrupos,
     enabled: podeEditar,

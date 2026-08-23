@@ -42,11 +42,17 @@ import ModalDoQuadro from "./components/ModalDoQuadro";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type {
-  ColunaDoQuadro as Coluna,
-  Membro,
-  Subgrupo,
-  Tarefa,
-} from "../../types";
+  RespostaDeMembros,
+  RespostaDeSubgrupos,
+  RespostaDoQuadro,
+} from "../../types/respostas";
+import type { Tarefa } from "../../types";
+
+/** O par que identifica a tarefa apontada pelo lembrete de e-mail. */
+interface TarefaDoLink {
+  subgrupoId: string;
+  tarefaId: string;
+}
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
  * (`PERIODS = { kanban: 'mes' }`).
@@ -79,7 +85,13 @@ interface Props {
    * no `<Navigate to="/" />` e a pessoa era jogada na Área de trabalho, sem
    * a tarefa e sem explicação -- e esse endereço já sai por e-mail desde
    * 21/08, com o formato correto de propósito, esperando esta rota. */
-  tarefaDoLink?: { subgrupoId: string; tarefaId: string };
+  tarefaDoLink?: TarefaDoLink;
+}
+
+/** A tarefa arrastada e a coluna em que ela caiu. */
+interface MoverTarefa {
+  tarefa: Tarefa;
+  destino: string;
 }
 
 /** Gestão kanban.
@@ -104,7 +116,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
   });
@@ -117,7 +129,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
   // mais recente, que é o que costuma estar em uso.
   const subgrupoId = filtros.subgrupoId || subgrupos[subgrupos.length - 1]?.subgrupo_id || "";
 
-  const quadroQuery = useQuery<{ colunas: Coluna[] }>({
+  const quadroQuery = useQuery<RespostaDoQuadro>({
     queryKey: qk.quadro(subgrupoId),
     queryFn: () => listarQuadro(subgrupoId),
     enabled: Boolean(subgrupoId),
@@ -135,7 +147,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
 
   /** Nomes de quem é responsável. `manager` pra cima -- pra `user` a lista
    * não vem, e o cartão mostra o e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<{ membros: Membro[] }>({
+  const membrosQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.membros(),
     queryFn: listarMembrosDoGrupo,
     enabled: papelAtende("manager"),
@@ -200,7 +212,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
    * chegasse -- um pisca-pisca que parece que o arraste falhou. Agora ele
    * fica onde foi largado, e volta sozinho se o servidor recusar. */
   const moverMutation = useMutation({
-    mutationFn: ({ tarefa, destino }: { tarefa: Tarefa; destino: string }) =>
+    mutationFn: ({ tarefa, destino }: MoverTarefa) =>
       atualizarTarefa(tarefa.subgrupo_id, tarefa.tarefa_id, { coluna_id: destino }),
     onMutate: async ({ tarefa, destino }) => {
       // Cancela o que estiver em voo: um refetch chegando depois do carimbo

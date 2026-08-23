@@ -4,7 +4,12 @@ import { listarClientes, listarOpcoesProcesso, listarSubgrupos } from "../servic
 import { useToastOnQueryError } from "../services/queryClient";
 import { qk } from "../services/queryKeys";
 import { TETO_POR_PAGINA } from "../constants";
-import type { Cliente, OpcaoProcesso, Subgrupo } from "../types";
+import type { OpcaoProcesso } from "../types";
+import type {
+  RespostaDeClientes,
+  RespostaDeOpcoes,
+  RespostaDeSubgrupos,
+} from "../types/respostas";
 
 /** As quatro listas que a tela de Processos usa pra traduzir id em nome:
  * subgrupos, clientes, fases e situações.
@@ -17,24 +22,31 @@ import type { Cliente, OpcaoProcesso, Subgrupo } from "../types";
  * lista pode apontar pra qualquer subgrupo ou cliente, e com meia lista o
  * nome viraria o id cru na tela.
  */
+/** Qualquer coisa que carregue ids de cliente -- processo ou atendimento.
+ * O helper só precisa dos ids, e pedir a entidade inteira o prenderia a uma
+ * delas. */
+interface ComClientes {
+  cliente_ids?: string[];
+}
+
 export function useCatalogosDeProcesso() {
-  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
-  const clientesQuery = useQuery<{ clientes: Cliente[] }>({
+  const clientesQuery = useQuery<RespostaDeClientes>({
     queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),
   });
 
-  const fasesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
+  const fasesQuery = useQuery<RespostaDeOpcoes>({
     queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
   });
 
-  const situacoesQuery = useQuery<{ opcoes: OpcaoProcesso[] }>({
+  const situacoesQuery = useQuery<RespostaDeOpcoes>({
     queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
   });
@@ -71,7 +83,7 @@ export function useCatalogosDeProcesso() {
     /** Nomes dos clientes de um processo, já juntos pra caber numa célula.
      * Processo sem cliente devolve string vazia -- quem chama decide o que
      * mostrar no lugar. */
-    clientesNomes: (p: { cliente_ids?: string[] }) =>
+    clientesNomes: (p: ComClientes) =>
       (p.cliente_ids || [])
         .map((id) => clientes.find((c) => c.cliente_id === id)?.nome || id)
         .join(", "),

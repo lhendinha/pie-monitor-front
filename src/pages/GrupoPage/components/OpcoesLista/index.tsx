@@ -40,6 +40,9 @@ import { calcularOrdemAposMover } from "../../../../utils";
 import FormularioNovaOpcao from "../FormularioNovaOpcao";
 import LinhaDeOpcao from "../LinhaDeOpcao";
 import type { OpcaoProcesso, TipoOpcaoProcesso } from "../../../../types";
+import type {
+  RespostaDeOpcoesPaginada,
+} from "../../../../types/respostas";
 
 interface Props {
   tipo: TipoOpcaoProcesso;
@@ -48,6 +51,12 @@ interface Props {
   /** "fase" / "situação" -- vira "Nova fase" no campo e "Desativar fase" no
    * diálogo. */
   nomeSingular: string;
+}
+
+/** O que a mutation de renomear recebe. */
+interface RenomearOpcao {
+  id: string;
+  rotulo: string;
 }
 
 /** CRUD de uma lista (Fases OU Situações).
@@ -75,7 +84,7 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const query = useQuery<{ opcoes: OpcaoProcesso[]; total: number; total_paginas: number }>({
+  const query = useQuery<RespostaDeOpcoesPaginada>({
     queryKey: qk.opcoesProcesso(tipo, { tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarOpcoesProcesso(tipo, { tamanhoPagina: TETO_POR_PAGINA }),
   });
@@ -107,7 +116,7 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
   const renomearMutation = useMutation({
     // Só o rótulo -- reenviar a `ordem` sobrescreveria um arrastar
     // concorrente com um valor possivelmente desatualizado.
-    mutationFn: ({ id, rotulo }: { id: string; rotulo: string }) =>
+    mutationFn: ({ id, rotulo }: RenomearOpcao) =>
       atualizarOpcaoProcesso(tipo, id, rotulo),
     onSuccess: invalidar,
     onError: (err) => toastErroMutation(toast, err, "Não foi possível renomear."),

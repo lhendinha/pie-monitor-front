@@ -25,6 +25,11 @@ import ItemDeHistorico from "./components/ItemDeHistorico";
 import { TIPO_DE_ENVIO_PADRAO } from "./constants/historico";
 import type { DeepLinkHistorico } from "../../utils";
 import type { HistoricoItem } from "../../types";
+import type {
+  RespostaDeHistorico,
+  RespostaDeHistoricoPaginada,
+  RespostaDeTotal,
+} from "../../types/respostas";
 
 interface Props {
   deepLink?: DeepLinkHistorico | null;
@@ -36,6 +41,12 @@ interface Props {
    * montagem -- depois quem manda é o filtro da própria tela. */
   tipoEnvioInicial?: string;
   onDeepLinkConsumido?: () => void;
+}
+
+/** O que o link de e-mail aponta: o processo e a comunicação dentro dele. */
+interface AlvoDoDeepLink {
+  processo: string;
+  comunicacaoId: string;
 }
 
 /** Histórico dos e-mails que o sistema mandou.
@@ -56,7 +67,7 @@ export default function HistoricoPage({
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 
-  const query = useQuery<{ historico: HistoricoItem[]; total: number; total_paginas: number }>({
+  const query = useQuery<RespostaDeHistoricoPaginada>({
     queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio }),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
@@ -74,7 +85,7 @@ export default function HistoricoPage({
   /** Total sem filtro nenhum -- é o "de Y" da contagem. Uma página de
    * tamanho 1: só o `total` do envelope interessa, e o React Query mantém
    * em cache. */
-  const totalQuery = useQuery<{ total: number }>({
+  const totalQuery = useQuery<RespostaDeTotal>({
     queryKey: qk.historico({ pagina: 1, tamanhoPagina: 1, tipoEnvio: "" }),
     queryFn: () => listarHistorico({ pagina: 1, tamanhoPagina: 1 }),
   });
@@ -90,10 +101,8 @@ export default function HistoricoPage({
    * (sem fechar sobre a prop) pra não pegar um `deepLink` desatualizado se
    * ele mudar antes de a resposta chegar. */
   const deepLinkMutation = useMutation({
-    mutationFn: (variaveis: { processo: string; comunicacaoId: string }) =>
-      listarHistorico({ numeroProcesso: variaveis.processo }) as Promise<{
-        historico: HistoricoItem[];
-      }>,
+    mutationFn: (variaveis: AlvoDoDeepLink) =>
+      listarHistorico({ numeroProcesso: variaveis.processo }) as Promise<RespostaDeHistorico>,
     onSuccess: (d, variaveis) => {
       const encontrado = (d.historico || []).find(
         (h) => String(h.comunicacao_id) === variaveis.comunicacaoId,

@@ -16,7 +16,10 @@ import { criarConvite, listarSubgrupos } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { emailValido } from "../../utils";
-import type { Papel, Subgrupo } from "../../types";
+import type { Papel } from "../../types";
+import type {
+  RespostaDeSubgrupos,
+} from "../../types/respostas";
 
 /** Sub-aba "Convidar" da tela de Grupo.
  *
@@ -31,7 +34,7 @@ export default function ConvidarPage() {
   const [erro, setErro] = useState("");
   const toast = useToast();
 
-  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     // O MultiSelect precisa da lista inteira, não de uma página.
     queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),

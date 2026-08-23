@@ -14,6 +14,7 @@ import { criarAtendimento } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import CampoDeClientes from "../CampoDeClientes";
 import CampoDeProcesso from "../CampoDeProcesso";
+import type { ProcessoEscolhido } from "../CampoDeProcesso";
 import type { Subgrupo } from "../../../../types";
 
 interface Props {
@@ -48,7 +49,7 @@ export default function NovoAtendimentoForm({
   /* O último da lista, como no Kanban: a listagem vem na ordem de criação,
      então o último é o mais recente -- o que costuma estar em uso. */
   const [subgrupoId, setSubgrupoId] = useState("");
-  const [processo, setProcesso] = useState<{ numero: string; rotulo: string } | null>(null);
+  const [processo, setProcesso] = useState<ProcessoEscolhido | null>(null);
   const [registro, setRegistro] = useState("");
 
   const subgrupoEscolhido = subgrupoId || subgrupos[subgrupos.length - 1]?.subgrupo_id || "";

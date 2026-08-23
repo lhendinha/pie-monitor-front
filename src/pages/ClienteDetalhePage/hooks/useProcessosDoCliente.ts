@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { listarProcessos } from "../../../services";
 import { qk } from "../../../services/queryKeys";
-import type { Processo } from "../../../types";
+import type {
+  RespostaDeProcessos,
+} from "../../../types/respostas";
 
 /** Os processos deste cliente (`GET /processos?cliente_id=X`).
  *
@@ -11,7 +13,7 @@ import type { Processo } from "../../../types";
  * coisa, e com a chave igual isso é uma requisição só.
  */
 export function useProcessosDoCliente(clienteId: string) {
-  return useQuery<{ processos: Processo[] }>({
+  return useQuery<RespostaDeProcessos>({
     queryKey: qk.processos({ clienteId }),
     queryFn: () => listarProcessos({ clienteId }),
   });

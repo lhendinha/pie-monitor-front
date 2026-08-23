@@ -2,6 +2,9 @@ import type { JwtPayload, Papel, TokensResponse } from "../types";
 import { HIERARQUIA_PAPEIS } from "../constants";
 import { ApiError } from "./api/client";
 import { dispararAutenticacaoInvalida } from "./authBridge";
+import type {
+  RespostaDeMensagem,
+} from "../types/respostas";
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
@@ -187,7 +190,7 @@ export async function aceitarConvite(
 }
 
 /** POST /senha/esqueci -- público, sempre responde com sucesso genérico (não revela se o e-mail existe). */
-export async function solicitarRecuperacaoSenha(email: string): Promise<{ mensagem: string }> {
+export async function solicitarRecuperacaoSenha(email: string): Promise<RespostaDeMensagem> {
   const resp = await fetch(`${API_URL}/senha/esqueci`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -201,7 +204,7 @@ export async function solicitarRecuperacaoSenha(email: string): Promise<{ mensag
 }
 
 /** POST /senha/redefinir -- público, troca a senha a partir do token recebido por e-mail. */
-export async function redefinirSenha(token: string, password: string): Promise<{ mensagem: string }> {
+export async function redefinirSenha(token: string, password: string): Promise<RespostaDeMensagem> {
   const resp = await fetch(`${API_URL}/senha/redefinir`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

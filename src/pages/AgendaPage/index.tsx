@@ -43,12 +43,12 @@ import {
 } from "./helpers/periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros } from "./types";
 import type {
-  AtendimentoResumido,
-  ColunaDoQuadro,
-  Membro,
-  Subgrupo,
-  Tarefa,
-} from "../../types";
+  RespostaDeAtendimentosResumidos,
+  RespostaDeMembros,
+  RespostaDeSubgrupos,
+  RespostaDoQuadro,
+} from "../../types/respostas";
+import type { Tarefa } from "../../types";
 
 /** Agenda: as tarefas do escritório projetadas por data.
  *
@@ -75,14 +75,14 @@ export default function AgendaPage() {
 
   const isoDeHoje = hojeISO();
 
-  const subgruposQuery = useQuery<{ subgrupos: Subgrupo[] }>({
+  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
   const subgrupos = subgruposQuery.data?.subgrupos || [];
 
-  const membrosQuery = useQuery<{ membros: Membro[] }>({
+  const membrosQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.membros(),
     queryFn: listarMembrosDoGrupo,
     enabled: papelAtende("manager"),
@@ -107,7 +107,7 @@ export default function AgendaPage() {
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */
-  const atendimentosQuery = useQuery<{ atendimentos: AtendimentoResumido[] }>({
+  const atendimentosQuery = useQuery<RespostaDeAtendimentosResumidos>({
     queryKey: qk.atendimentos({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarAtendimentos({ tamanhoPagina: TETO_POR_PAGINA }),
   });
@@ -134,7 +134,7 @@ export default function AgendaPage() {
      o modal deixa trocar. */
   const subgrupoDoModal =
     tarefaAberta?.subgrupo_id || subgruposExibidos[subgruposExibidos.length - 1] || "";
-  const quadroDoModalQuery = useQuery<{ colunas: ColunaDoQuadro[] }>({
+  const quadroDoModalQuery = useQuery<RespostaDoQuadro>({
     queryKey: qk.quadro(subgrupoDoModal),
     queryFn: () => listarQuadro(subgrupoDoModal),
     enabled: Boolean(subgrupoDoModal) && (Boolean(tarefaAberta) || criando),

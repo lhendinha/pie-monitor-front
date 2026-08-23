@@ -14,6 +14,9 @@ import {
 } from "../../components";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
 import { ApiError, aceitarConvite, verificarConvite } from "../../services";
+import type {
+  RespostaDeConvite,
+} from "../../types/respostas";
 
 interface Props {
   token: string;
@@ -26,7 +29,7 @@ export default function AceitarConvitePage({ token, onEntrar }: Props) {
   /** Confere o link ao ABRIR. Sem isto, a pessoa preenchia apelido e senha,
    * clicava, esperava o round-trip e SÓ ENTÃO lia "Convite expirado" -- uma
    * recusa que já era conhecida quando a página carregou. */
-  const conviteQuery = useQuery<{ valido: boolean }>({
+  const conviteQuery = useQuery<RespostaDeConvite>({
     queryKey: ["convite", token],
     queryFn: () => verificarConvite(token),
     enabled: Boolean(token),

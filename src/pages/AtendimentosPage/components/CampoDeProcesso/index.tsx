@@ -10,12 +10,22 @@ import { useValorComEspera } from "../../../../hooks/useValorComEspera";
 import { listarProcessos } from "../../../../services";
 import { OPCAO_LINHA } from "../../../../theme/painelFiltro";
 import { mascararNumeroProcesso } from "../../../../utils";
-import type { Processo } from "../../../../types";
+import type {
+  RespostaDeProcessos,
+} from "../../../../types/respostas";
+
+/** O processo escolhido: o número que vai pro servidor e o rótulo já
+ * mascarado que a etiqueta mostra. Guardar os dois evita mascarar de novo a
+ * cada render -- e o rótulo continua certo mesmo depois de a busca sumir. */
+export interface ProcessoEscolhido {
+  numero: string;
+  rotulo: string;
+}
 
 interface Props {
   id: string;
-  valor: { numero: string; rotulo: string } | null;
-  onMudar: (escolhido: { numero: string; rotulo: string } | null) => void;
+  valor: ProcessoEscolhido | null;
+  onMudar: (escolhido: ProcessoEscolhido | null) => void;
 }
 
 /** Busca de processo com escolha ÚNICA (o `af-proc-*` do artifact).
@@ -44,13 +54,11 @@ export default function CampoDeProcesso({ id, valor, onMudar }: Props) {
 
   const busca = termo.length >= MINIMO_PRA_BUSCAR ? termo : "";
 
-  const query = useQuery<{ processos: Processo[] }>({
+  const query = useQuery<RespostaDeProcessos>({
     queryKey: ["busca-processos-atendimento", busca],
     enabled: Boolean(busca),
     queryFn: () =>
-      listarProcessos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<{
-        processos: Processo[];
-      }>,
+      listarProcessos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<RespostaDeProcessos>,
   });
 
   const achados = query.data?.processos || [];
