@@ -1,6 +1,11 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import { AppShell, RotaPorPapel, RotaProtegida, ToastProvider } from "./components";
+import {
+  AppShell,
+  RotaPorPapel,
+  RotaProtegida,
+  ToastProvider,
+} from "./components";
 import { SessaoProvider, useSessaoContexto } from "./contexts/SessaoContext";
 import {
   ClienteDetalhePage,
@@ -50,7 +55,10 @@ function Rotas() {
           />
           {/* O link do lembrete de prazo. Abre o quadro do subgrupo com o
               modal da tarefa já carregado -- ver `RotaTarefa`. */}
-          <Route path="/tarefas/:subgrupoId/:tarefaId" element={<RotaTarefa />} />
+          <Route
+            path="/tarefas/:subgrupoId/:tarefaId"
+            element={<RotaTarefa />}
+          />
           <Route path="/processos" element={<ProcessosPage />} />
           {/* Detalhe é rota: o e-mail de lembrete linka direto pra cá, e a
               tela se hidrata sozinha pelo número. O subgrupo está no
