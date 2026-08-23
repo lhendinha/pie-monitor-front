@@ -1,4 +1,4 @@
-import { Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -48,9 +48,12 @@ export default function LinhaDeColuna({
   onMarcarConclusao,
   onExcluir,
 }: Props) {
+  /* A coluna de conclusão fica SEMPRE no fim do quadro -- o servidor
+     recusa movê-la (409). Desabilitar aqui evita oferecer o gesto que vai
+     falhar; a alça dela some logo abaixo, pelo mesmo motivo. */
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: coluna.coluna_id,
-    disabled: emAndamento,
+    disabled: emAndamento || coluna.e_conclusao,
   });
 
   return (
@@ -65,16 +68,22 @@ export default function LinhaDeColuna({
       bg={isDragging ? "bg.canvas" : undefined}
       opacity={isDragging ? 0.85 : 1}
     >
-      <BotaoQuadrado
-        type="button"
-        tamanho="compacto"
-        aria-label={`Reordenar ${coluna.nome}`}
-        cursor="grab"
-        {...attributes}
-        {...listeners}
-      >
-        <IconeArrastar />
-      </BotaoQuadrado>
+      {coluna.e_conclusao ? (
+        /* Espaço reservado no lugar da alça: sem ele o nome da conclusão
+           desalinha das outras linhas. */
+        <Box w="26px" flexShrink="0" />
+      ) : (
+        <BotaoQuadrado
+          type="button"
+          tamanho="compacto"
+          aria-label={`Reordenar ${coluna.nome}`}
+          cursor="grab"
+          {...attributes}
+          {...listeners}
+        >
+          <IconeArrastar />
+        </BotaoQuadrado>
+      )}
 
       <NomeEditavel
         key={coluna.nome}

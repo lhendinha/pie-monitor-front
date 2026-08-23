@@ -111,10 +111,13 @@ describe("ModalDoQuadro", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("com UMA coluna só, a lixeira some", () => {
-    // O quadro precisa de pelo menos uma coluna.
-    montar([COLUNAS[0]], []);
-    expect(screen.queryByRole("button", { name: /^Excluir/ })).not.toBeInTheDocument();
+  it("com UMA comum só, a lixeira dela some", () => {
+    /* O quadro precisa de pelo menos uma coluna ALÉM da de conclusão. Sem
+     * isso: toda tarefa nova nasceria já concluída, e excluir a última
+     * comum mandava as tarefas ABERTAS dela pra conclusão -- não há coluna
+     * anterior, então o destino vira a seguinte. */
+    montar([COLUNAS[0], COLUNAS[2]], []);
+    expect(screen.queryByRole("button", { name: "Excluir A Fazer" })).not.toBeInTheDocument();
   });
 
   it("cria coluna e limpa o campo", async () => {

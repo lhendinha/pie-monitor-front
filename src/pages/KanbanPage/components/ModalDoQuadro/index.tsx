@@ -85,6 +85,7 @@ export default function ModalDoQuadro({
   );
 
   const lista = ordemLocal ?? [...colunas].sort((a, b) => a.ordem - b.ordem);
+  const comuns = lista.filter((c) => !c.e_conclusao);
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: qk.quadro(subgrupoId) });
@@ -184,13 +185,29 @@ export default function ModalDoQuadro({
     return i > 0 ? lista[i - 1] : lista[1];
   }
 
+  function avisoDaExclusao(coluna: ColunaDoQuadro) {
+    const quantas = contarNaColuna(coluna.coluna_id);
+    if (quantas === 0) return undefined;
+    const destino = destinoAoExcluir(coluna);
+    const frase = `${contar(quantas, "tarefa", "tarefas")} vão para "${
+      destino?.nome ?? "a coluna anterior"
+    }".`;
+    /* ⚠️ O destino sendo a coluna de conclusão, essas tarefas passam a
+       CONTAR COMO CONCLUÍDAS -- sem ninguém as ter feito. Dizer só "vão
+       para X" esconderia a única parte que importa. */
+    return destino?.e_conclusao
+      ? `${frase} Como "${destino.nome}" é a coluna de conclusão, elas passam a contar como concluídas.`
+      : frase;
+  }
+
   return (
     <>
       <Modal titulo={`Editar quadro — ${subgrupoNome}`} onFechar={onFechar}>
         <Stack gap="0">
           <Text fontSize="11.5px" color="fg.subtle" mb="12px" lineHeight="1.5">
             Ao excluir uma coluna, as tarefas dela são movidas para a coluna anterior. A coluna
-            marcada como <strong>conclusão</strong> é a que faz a tarefa contar como concluída.
+            marcada como <strong>conclusão</strong> é a que faz a tarefa contar como concluída, e
+            fica sempre por último — por isso ela não se arrasta.
           </Text>
 
           {/* Antes da lista: criar coluna é a ação que se procura ao abrir isto,
@@ -225,9 +242,11 @@ export default function ModalDoQuadro({
                   tarefas={contarNaColuna(coluna.coluna_id)}
                   editando={renomeandoId === coluna.coluna_id}
                   emAndamento={emAndamento(coluna.coluna_id)}
-                  /* O quadro precisa de pelo menos uma coluna -- o servidor
-                     recusa, e a lixeira nem aparece. */
-                  podeExcluir={lista.length > 1}
+                  /* O quadro precisa de pelo menos uma coluna ALÉM da de
+                     conclusão -- o servidor recusa, e a lixeira nem
+                     aparece. Só com a conclusão, toda tarefa nova nasceria
+                     dentro dela, ou seja, já concluída. */
+                  podeExcluir={comuns.length > 1}
                   onIniciarRenome={() => setRenomeandoId(coluna.coluna_id)}
                   onRenomear={(nome) =>
                     renomearMutation.mutate({ id: coluna.coluna_id, nome })
@@ -254,14 +273,12 @@ export default function ModalDoQuadro({
             </>
           }
           /* O medo aqui é perder tarefa, e não é isso que acontece: elas
-             mudam de coluna. Dizer pra ONDE é o que desarma o medo. */
-          aviso={
-            contarNaColuna(paraExcluir.coluna_id) > 0
-              ? `${contar(contarNaColuna(paraExcluir.coluna_id), "tarefa", "tarefas")} vão para "${
-                  destinoAoExcluir(paraExcluir)?.nome ?? "a coluna anterior"
-                }".`
-              : undefined
-          }
+             mudam de coluna. Dizer pra ONDE é o que desarma o medo -- e,
+             quando o destino é a coluna de CONCLUSÃO, dizer o que isso
+             significa, porque "concluída" é derivado de estar nela.
+             Acontece de verdade: basta a conclusão estar posicionada antes
+             da coluna que se exclui. */
+          aviso={avisoDaExclusao(paraExcluir)}
           /* Sem a contagem real não dá pra prometer pra onde as tarefas
              vão -- e é justamente o que desarma o medo de perdê-las. */
           verificando={todasQuery.isPending}
