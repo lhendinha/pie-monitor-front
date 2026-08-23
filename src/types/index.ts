@@ -232,6 +232,13 @@ export interface ColunaDoQuadro {
   /** A coluna que marca conclusão. Só uma por quadro -- marcar outra
    * desmarca esta, no servidor. */
   e_conclusao: boolean;
+  /** O destino do que já foi concluído há tempo demais pra ocupar espaço no
+   * quadro. Tarefa arquivada CONTINUA CONCLUÍDA -- é concluída guardada,
+   * não um terceiro estado.
+   *
+   * Coluna fixa: não se renomeia, não se move, não se exclui e não vira
+   * conclusão. O servidor recusa as quatro coisas. */
+  e_arquivado: boolean;
 }
 
 export interface Tarefa {

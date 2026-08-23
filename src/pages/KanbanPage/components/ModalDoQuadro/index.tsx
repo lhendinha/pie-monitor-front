@@ -86,7 +86,7 @@ export default function ModalDoQuadro({
   );
 
   const lista = ordemLocal ?? [...colunas].sort((a, b) => a.ordem - b.ordem);
-  const comuns = lista.filter((c) => !c.e_conclusao);
+  const comuns = lista.filter((c) => !c.e_conclusao && !c.e_arquivado);
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: qk.quadro(subgrupoId) });
@@ -213,8 +213,9 @@ export default function ModalDoQuadro({
         <Stack gap="0">
           <Text fontSize="11.5px" color="fg.subtle" mb="12px" lineHeight="1.5">
             Ao excluir uma coluna, as tarefas dela são movidas para a coluna anterior. A coluna
-            marcada como <strong>conclusão</strong> é a que faz a tarefa contar como concluída, e
-            fica sempre por último — por isso ela não se arrasta.
+            marcada como <strong>conclusão</strong> é a que faz a tarefa contar como concluída;
+            <strong> Arquivado</strong> guarda o que já foi concluído há tempo, e continua contando
+            como concluído. As duas ficam sempre no fim, nessa ordem — por isso não se arrastam.
           </Text>
 
           {/* Antes da lista: criar coluna é a ação que se procura ao abrir isto,

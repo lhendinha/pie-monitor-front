@@ -20,9 +20,10 @@ vi.mock("../../../../services", async (importOriginal) => {
 import ModalDoQuadro from "./index";
 
 const COLUNAS = [
-  { subgrupo_id: "sg", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false },
-  { subgrupo_id: "sg", coluna_id: "c2", nome: "Fazendo", ordem: 2, e_conclusao: false },
-  { subgrupo_id: "sg", coluna_id: "c3", nome: "Concluído", ordem: 3, e_conclusao: true },
+  { subgrupo_id: "sg", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false, e_arquivado: false },
+  { subgrupo_id: "sg", coluna_id: "c2", nome: "Fazendo", ordem: 2, e_conclusao: false, e_arquivado: false },
+  { subgrupo_id: "sg", coluna_id: "c3", nome: "Concluído", ordem: 3, e_conclusao: true, e_arquivado: false },
+  { subgrupo_id: "sg", coluna_id: "c4", nome: "Arquivado", ordem: 4, e_conclusao: false, e_arquivado: true },
 ];
 
 const tarefa = (id: string, coluna: string) => ({
@@ -99,6 +100,34 @@ describe("ModalDoQuadro", () => {
     expect(within(linha).getByText("conclusão")).toBeInTheDocument();
   });
 
+  it("a coluna de ARQUIVADO é totalmente fechada", () => {
+    /* Não se renomeia, não se move, não se exclui e não vira conclusão --
+     * é infraestrutura do arquivamento automático, não uma escolha de quem
+     * monta o quadro. Marcá-la como conclusão faria toda tarefa nova
+     * nascer arquivada. */
+    montar();
+
+    expect(screen.queryByRole("button", { name: "Excluir Arquivado" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Marcar Arquivado como/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reordenar Arquivado" })).not.toBeInTheDocument();
+    // A conclusão também não se arrasta, mas o nome dela É editável.
+    expect(screen.queryByRole("button", { name: "Reordenar Concluído" })).not.toBeInTheDocument();
+  });
+
+  it("clicar no nome do Arquivado NÃO abre edição", async () => {
+    const user = userEvent.setup();
+    montar();
+
+    /* Ancora na ETIQUETA da linha: o parágrafo de topo também cita
+       "Arquivado", e "0 tarefas" aparece em três linhas. A etiqueta
+       minúscula só existe nesta. */
+    const linha = screen.getByText("arquivado").closest("div")!.parentElement!;
+    await user.click(within(linha).getByText("Arquivado"));
+    expect(screen.queryByLabelText("Novo nome de Arquivado")).not.toBeInTheDocument();
+  });
+
   it("a coluna de conclusão NÃO pode ser excluída nem remarcada", () => {
     /* Sem ela o quadro fica sem como concluir nada -- e toda tarefa já
      * concluída viraria aberta de novo. O servidor recusa; aqui os botões
@@ -116,7 +145,7 @@ describe("ModalDoQuadro", () => {
      * isso: toda tarefa nova nasceria já concluída, e excluir a última
      * comum mandava as tarefas ABERTAS dela pra conclusão -- não há coluna
      * anterior, então o destino vira a seguinte. */
-    montar([COLUNAS[0], COLUNAS[2]], []);
+    montar([COLUNAS[0], COLUNAS[2], COLUNAS[3]], []);
     expect(screen.queryByRole("button", { name: "Excluir A Fazer" })).not.toBeInTheDocument();
   });
 

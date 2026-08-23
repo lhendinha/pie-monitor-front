@@ -48,12 +48,13 @@ export default function LinhaDeColuna({
   onMarcarConclusao,
   onExcluir,
 }: Props) {
-  /* A coluna de conclusão fica SEMPRE no fim do quadro -- o servidor
-     recusa movê-la (409). Desabilitar aqui evita oferecer o gesto que vai
-     falhar; a alça dela some logo abaixo, pelo mesmo motivo. */
+  /* As duas do FIM não se movem: o servidor recusa (409), e oferecer o
+     gesto que vai falhar é pior que não oferecer. A alça delas some logo
+     abaixo, pelo mesmo motivo. */
+  const fixa = coluna.e_conclusao || coluna.e_arquivado;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: coluna.coluna_id,
-    disabled: emAndamento || coluna.e_conclusao,
+    disabled: emAndamento || fixa,
   });
 
   return (
@@ -68,9 +69,9 @@ export default function LinhaDeColuna({
       bg={isDragging ? "bg.canvas" : undefined}
       opacity={isDragging ? 0.85 : 1}
     >
-      {coluna.e_conclusao ? (
-        /* Espaço reservado no lugar da alça: sem ele o nome da conclusão
-           desalinha das outras linhas. */
+      {fixa ? (
+        /* Espaço reservado no lugar da alça: sem ele o nome desalinha das
+           outras linhas. */
         <Box w="26px" flexShrink="0" />
       ) : (
         <BotaoQuadrado
@@ -90,7 +91,11 @@ export default function LinhaDeColuna({
         nome={coluna.nome}
         rotuloDoCampo={`Novo nome de ${coluna.nome}`}
         editando={editando}
-        podeRenomear
+        /* Arquivado nem o nome muda: é infraestrutura do arquivamento
+           automático, não uma escolha de quem monta o quadro. A conclusão,
+           sim -- ali o nome é só texto, e um erro de digitação seria
+           impossível de corrigir. */
+        podeRenomear={!coluna.e_arquivado}
         salvando={emAndamento}
         onIniciar={onIniciarRenome}
         onConfirmar={onRenomear}
@@ -100,22 +105,22 @@ export default function LinhaDeColuna({
       {/* A marca de conclusão vem escrita, e não só como ícone: "o que essa
           coluna tem de diferente" é a pergunta que a lista precisa
           responder de relance. */}
-      {coluna.e_conclusao && (
+      {(coluna.e_conclusao || coluna.e_arquivado) && (
         <Flex
           align="center"
           gap="4px"
           px="7px"
           py="2px"
           borderRadius="full"
-          bg="status.good.bg"
-          color="status.good"
+          bg={coluna.e_conclusao ? "status.good.bg" : "bg.canvas"}
+          color={coluna.e_conclusao ? "status.good" : "fg.subtle"}
           fontSize="10.5px"
           fontWeight="800"
           textTransform="uppercase"
           css={{ "& svg": { width: "11px", height: "11px" } }}
         >
-          <IconeCheck />
-          conclusão
+          {coluna.e_conclusao && <IconeCheck />}
+          {coluna.e_conclusao ? "conclusão" : "arquivado"}
         </Flex>
       )}
 
@@ -124,7 +129,7 @@ export default function LinhaDeColuna({
       </Text>
 
       <Flex gap="6px">
-        {!coluna.e_conclusao && (
+        {!fixa && (
           <BotaoQuadrado
             type="button"
             title="Marcar como coluna de conclusão"
@@ -137,7 +142,7 @@ export default function LinhaDeColuna({
         )}
         {/* A de conclusão não some: sem ela o quadro fica sem como concluir
             nada, e toda tarefa já concluída viraria aberta de novo. */}
-        {podeExcluir && !coluna.e_conclusao && (
+        {podeExcluir && !fixa && (
           <BotaoQuadrado
             type="button"
             tom="perigo"

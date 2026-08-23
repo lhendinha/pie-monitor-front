@@ -228,6 +228,16 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
   }
 
   const colunas = [...(quadroQuery.data?.colunas || [])].sort((a, b) => a.ordem - b.ordem);
+  /** O QUADRO não mostra o Arquivado; o modal de editar, sim.
+   *
+   * Ele é o depósito do que já saiu do fluxo -- deixá-lo à vista rouba uma
+   * coluna de largura pro que ninguém está tocando. O filtro pra revelá-lo
+   * vem na etapa 2, junto com o arquivamento automático; até lá ele está
+   * sempre vazio, porque nada move tarefa pra lá ainda.
+   *
+   * Quem edita o quadro continua vendo a coluna na lista do modal -- é
+   * onde ela precisa aparecer pra a regra do quadro fazer sentido. */
+  const colunasVisiveis = colunas.filter((c) => !c.e_arquivado);
   const busca = filtros.busca.trim().toLowerCase();
 
   const visiveis = (tarefasQuery.data || []).filter((t) => {
@@ -336,7 +346,7 @@ export default function KanbanPage({ tarefaDoLink }: Props = {}) {
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
               <Flex gap="16px" align="flex-start" overflowX="auto" pb="8px">
-                {colunas.map((c) => (
+                {colunasVisiveis.map((c) => (
                   <ColunaDoQuadro
                     key={c.coluna_id}
                     coluna={c}

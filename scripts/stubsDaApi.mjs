@@ -138,6 +138,8 @@ const RESPOSTAS = [
         { subgrupo_id: "sg-civel", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false },
         { subgrupo_id: "sg-civel", coluna_id: "c2", nome: "Fazendo", ordem: 2, e_conclusao: false },
         { subgrupo_id: "sg-civel", coluna_id: "c3", nome: "Concluído", ordem: 3, e_conclusao: true },
+        // O quadro NÃO mostra esta; o modal de editar, sim.
+        { subgrupo_id: "sg-civel", coluna_id: "c4", nome: "Arquivado", ordem: 4, e_conclusao: false, e_arquivado: true },
       ],
     }),
   ],
