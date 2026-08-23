@@ -1,6 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 
-import { Avatar, BotaoNu, Etiqueta } from "../../../../components";
+import { Avatar, BotaoNu, Etiqueta, IconeClientes } from "../../../../components";
 import { coresDoStatus } from "../../../../theme/atendimento";
 import { formatarData } from "../../../../utils";
 import type { Atendimento } from "../../../../types";
@@ -25,6 +25,14 @@ interface Props {
  * Mostra a prévia do ÚLTIMO registro, não do primeiro: a pergunta de quem
  * varre a lista é "em que pé isso está", e o primeiro registro é o que ela
  * já sabe.
+ *
+ * As medidas do artifact aqui não são decorativas:
+ * - a data é AZUL da marca e em mono (`.at-date`) -- é o que faz a lista se
+ *   ler por data sem que a data precise de um rótulo;
+ * - o cliente vem atrás do ícone de pessoas de 13px, que diz o que aquele
+ *   nome É sem gastar a palavra "cliente" em toda linha;
+ * - a prévia é uma CAIXA (fundo, borda, raio), não texto solto: é o que a
+ *   separa do assunto quando os dois são frases parecidas.
  */
 export default function LinhaDeAtendimento({
   atendimento,
@@ -36,12 +44,9 @@ export default function LinhaDeAtendimento({
   const registros = atendimento.registros || [];
   const ultimo = registros[registros.length - 1];
 
-  /* Nome de quem não é mais membro (ou de um id que não resolve) cai no
-     próprio id -- some da tela seria pior: a linha diria que ninguém
-     escreveu. */
-  const clientes = atendimento.cliente_ids
-    .map((id) => nomeDoCliente(id) ?? id)
-    .join(", ");
+  /* Id que não resolve cai no próprio id -- some da tela seria pior: a
+     linha não diria a quem o atendimento pertence. */
+  const clientes = atendimento.cliente_ids.map((id) => nomeDoCliente(id) ?? id).join(", ");
 
   return (
     <BotaoNu
@@ -49,49 +54,60 @@ export default function LinhaDeAtendimento({
       onClick={() => onAbrir(atendimento)}
       display="flex"
       alignItems="center"
-      gap="14px"
+      gap="16px"
       w="100%"
       textAlign="left"
-      p="13px 12px"
+      p="16px 18px"
       borderBottomWidth={ultima ? "0" : "1px"}
       borderBottomStyle="solid"
       borderBottomColor="border.subtle"
       _hover={{ bg: "bg.canvas" }}
     >
       <Box flex="1" minW="0">
-        <Flex align="center" gap="8px" wrap="wrap">
-          <Text as="span" fontSize="12px" color="fg.muted" fontFamily="mono">
+        <Flex align="center" gap="8px" wrap="wrap" fontWeight="800" fontSize="13.5px">
+          <Text as="span" color="fg.brand" fontFamily="mono" fontWeight="700">
             {formatarData(atendimento.criado_em)}
           </Text>
-          <Text as="span" fontWeight="700" fontSize="13.5px">
-            — {atendimento.assunto}
-          </Text>
+          <Text as="span">— {atendimento.assunto}</Text>
           <Etiqueta cores={coresDoStatus(atendimento.status)}>{atendimento.status}</Etiqueta>
         </Flex>
+
         {clientes && (
-          <Text fontSize="12px" color="fg.muted" mt="3px" truncate>
-            {clientes}
-          </Text>
+          <Flex align="center" gap="6px" mt="3px" color="fg.muted" fontSize="12.5px" minW="0">
+            <Box color="fg.subtle" flexShrink="0" display="flex">
+              <IconeClientes tamanho={13} />
+            </Box>
+            <Text truncate>{clientes}</Text>
+          </Flex>
         )}
       </Box>
 
-      {/* A prévia some nas telas estreitas: espremida vira duas palavras e
+      {/* A caixa some nas telas estreitas: espremida vira duas palavras e
           reticências, que não respondem nada. */}
-      <Text
-        flex="1"
-        minW="0"
-        truncate
-        fontSize="12.5px"
-        color="fg.muted"
-        display={{ base: "none", lg: "block" }}
-      >
-        {ultimo?.texto}
-      </Text>
+      {ultimo && (
+        <Text
+          flex="1"
+          maxW="420px"
+          minW="0"
+          truncate
+          bg="bg.canvas"
+          borderWidth="1px"
+          borderStyle="solid"
+          borderColor="border.subtle"
+          borderRadius="sm"
+          p="9px 12px"
+          fontSize="12.5px"
+          color="fg.muted"
+          display={{ base: "none", lg: "block" }}
+        >
+          {ultimo.texto}
+        </Text>
+      )}
 
       {ultimo && (
-        <Flex align="center" gap="8px" flexShrink="0">
+        <Flex align="center" gap="12px" flex="0 0 auto">
           <Avatar nome={nomeDoAutor(ultimo.autor_id)} tamanho="pequeno" />
-          <Text fontSize="11.5px" color="fg.muted" whiteSpace="nowrap">
+          <Text fontSize="11px" color="fg.subtle" textAlign="right" whiteSpace="nowrap">
             {formatarData(ultimo.registrado_em)}
           </Text>
         </Flex>

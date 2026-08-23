@@ -1,10 +1,15 @@
-/** Ícone de "Clientes" no menu lateral. Traçado de 1.8 e `currentColor`:
- * a cor vem do estado do item (ativo/inativo), não do ícone. */
-export default function IconeClientes() {
+/** Ícone de "Clientes". Traçado de 1.8 e `currentColor`: a cor vem do
+ * estado de quem o usa (ativo/inativo), não do ícone.
+ *
+ * `tamanho` porque ele tem dois usos com medidas diferentes: 18px no menu
+ * lateral e 13px na linha do atendimento (`.at-item-cliente svg` do
+ * artifact). Sem a prop, o segundo caso teria que apertá-lo por CSS de
+ * fora -- que foi exatamente como o `IconeCheck` acabou deformado. */
+export default function IconeClientes({ tamanho = 18 }: { tamanho?: number } = {}) {
   return (
     <svg
-      width="18"
-      height="18"
+      width={tamanho}
+      height={tamanho}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

@@ -31,8 +31,11 @@ function atendimento(parcial: Record<string, unknown> = {}) {
     status: "Em andamento",
     criado_em: "2026-08-10T09:00:00+00:00",
     cliente_ids: ["c1"],
+    /* Data do registro DIFERENTE da criação de propósito: a linha mostra as
+       duas (criação à esquerda, último registro à direita), e com a mesma
+       data não dá pra distinguir qual está sendo verificada. */
     registros: [
-      { autor_id: "ana@x.com", registrado_em: "2026-08-10T09:00:00+00:00", texto: "Primeiro contato" },
+      { autor_id: "ana@x.com", registrado_em: "2026-08-12T09:00:00+00:00", texto: "Primeiro contato" },
     ],
     ...parcial,
   };
@@ -238,5 +241,32 @@ describe("erro", () => {
     expect(
       await screen.findByRole("button", { name: /Tentar de novo/ }, { timeout: 8000 }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("fidelidade ao artifact", () => {
+  /* Foram três divergências reportadas de uma vez, todas por eu ter escrito
+   * "parecido" em vez de conferir o CSS. O teste trava o que dá pra travar
+   * em jsdom -- as MEDIDAS ficam na verificação em Chrome. */
+
+  it("a data de criação é um elemento PRÓPRIO, separada do assunto", async () => {
+    /* Ela é azul da marca e em mono no artifact -- é o que faz a lista se
+     * ler por data sem que a data precise de rótulo. A COR não se testa
+     * aqui: o jsdom não resolve as variáveis do tema, e a verificação real
+     * é a medição em Chrome (rgb(0,143,213), IBM Plex Mono, 13.5px). O que
+     * este teste trava é o que jsdom sabe: que a data não está grudada no
+     * assunto, sem elemento próprio pra receber aquele estilo. */
+    await montar();
+    const data = await screen.findByText("10/08/2026");
+    expect(data.tagName.toLowerCase()).toBe("span");
+    expect(data.textContent).toBe("10/08/2026");
+  });
+
+  it("o cliente vem atrás do ícone de pessoas", async () => {
+    // Diz o que aquele nome É sem gastar a palavra "cliente" em toda linha.
+    await montar();
+    const cliente = await screen.findByText("Maria Souza");
+    const linha = cliente.closest("button");
+    expect(linha?.querySelector("svg")).toBeTruthy();
   });
 });
