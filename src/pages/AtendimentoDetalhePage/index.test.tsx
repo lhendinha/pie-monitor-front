@@ -110,7 +110,7 @@ describe("novo registro", () => {
     await montar();
     const campo = screen.getByLabelText("Novo registro do atendimento");
     await userEvent.type(campo, "Enviei a minuta");
-    await userEvent.click(screen.getByRole("button", { name: "Registrar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Adicionar registro" }));
 
     await waitFor(() =>
       expect(mocks.adicionarRegistro).toHaveBeenCalledWith("s1", "a1", "Enviei a minuta"),
@@ -125,21 +125,30 @@ describe("novo registro", () => {
 
     const campo = screen.getByLabelText("Novo registro do atendimento");
     await userEvent.type(campo, "Texto que não pode sumir");
-    await userEvent.click(screen.getByRole("button", { name: "Registrar" }));
+    await userEvent.click(screen.getByRole("button", { name: "Adicionar registro" }));
 
     await waitFor(() => expect(mocks.adicionarRegistro).toHaveBeenCalled());
     expect(campo).toHaveValue("Texto que não pode sumir");
   });
 
+  it("o botão é SÓ ícone, e por isso precisa de nome acessível", async () => {
+    /* É o único nome que ele tem -- sem o `aria-label`, leitor de tela lê
+     * um botão vazio e o teste aqui seria a única forma de perceber. */
+    await montar();
+    const botao = screen.getByRole("button", { name: "Adicionar registro" });
+    expect(botao.textContent).toBe("");
+    expect(botao.querySelector("svg")).toBeTruthy();
+  });
+
   it("botão travado com o campo vazio", async () => {
     await montar();
-    expect(screen.getByRole("button", { name: "Registrar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Adicionar registro" })).toBeDisabled();
   });
 
   it("só espaço em branco não conta como texto", async () => {
     await montar();
     await userEvent.type(screen.getByLabelText("Novo registro do atendimento"), "   ");
-    expect(screen.getByRole("button", { name: "Registrar" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Adicionar registro" })).toBeDisabled();
   });
 });
 

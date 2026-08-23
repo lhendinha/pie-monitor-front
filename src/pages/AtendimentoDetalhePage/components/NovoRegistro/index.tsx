@@ -1,7 +1,7 @@
 import { Flex, Textarea } from "@chakra-ui/react";
 import { useState } from "react";
 
-import { Avatar, Botao } from "../../../../components";
+import { Avatar, Botao, IconeEnviar } from "../../../../components";
 import { getApelido, getEmail } from "../../../../services";
 
 interface Props {
@@ -41,9 +41,15 @@ export default function NovoRegistro({ enviando, onEnviar }: Props) {
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
       />
+      {/* Só o ícone, como no artifact -- por isso o `aria-label` e o
+          `title` não são enfeite: são o único nome que o botão tem, pra
+          leitor de tela e pra quem passa o mouse sem reconhecer o desenho.
+          O estado de envio vira o texto "Enviando…", que aí aparece. */}
       <Botao
         type="button"
         alignSelf="flex-end"
+        aria-label="Adicionar registro"
+        title="Adicionar registro"
         disabled={vazio || enviando}
         onClick={async () => {
           if (vazio || enviando) return;
@@ -56,7 +62,7 @@ export default function NovoRegistro({ enviando, onEnviar }: Props) {
           }
         }}
       >
-        {enviando ? "Enviando…" : "Registrar"}
+        {enviando ? "Enviando…" : <IconeEnviar />}
       </Botao>
     </Flex>
   );
