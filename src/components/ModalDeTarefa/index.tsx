@@ -28,7 +28,7 @@ import type {
   VinculosDaTarefa,
 } from "../../types";
 
-interface Props {
+interface ModalDeTarefaProps {
   /** Ausente = criando. */
   tarefa?: Tarefa | null;
   subgrupoAtual: string;
@@ -82,7 +82,7 @@ export default function ModalDeTarefa({
   dataInicial,
   onSalvo,
   onFechar,
-}: Props) {
+}: ModalDeTarefaProps) {
   const idFormulario = useId();
   const editando = Boolean(tarefa);
 

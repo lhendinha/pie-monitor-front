@@ -1,3 +1,5 @@
+import type { Tarefa } from "../../types";
+
 import type { Intervalo } from "../../utils/periodo";
 
 /** Estado dos filtros do quadro.
@@ -30,3 +32,21 @@ export interface FiltrosDoQuadro {
 // `Vinculo`/`VinculosDaTarefa` subiram pra `src/types` junto com o
 // `ModalDeTarefa`, que virou componente geral quando a Agenda passou a
 // abrir a mesma tarefa.
+
+/** A tarefa arrastada e a coluna em que ela caiu. */
+export interface MoverTarefa {
+  tarefa: Tarefa;
+  destino: string;
+}
+
+/** O par que identifica a tarefa apontada pelo lembrete de e-mail. */
+export interface TarefaDoLink {
+  subgrupoId: string;
+  tarefaId: string;
+}
+
+/** O que a mutation de renomear recebe. */
+export interface RenomearColuna {
+  id: string;
+  nome: string;
+}

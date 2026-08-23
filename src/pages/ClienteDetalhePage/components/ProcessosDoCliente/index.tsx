@@ -6,7 +6,7 @@ import { useToastOnQueryError } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
 import { useProcessosDoCliente } from "../../hooks/useProcessosDoCliente";
 
-interface Props {
+interface ProcessosDoClienteProps {
   clienteId: string;
 }
 
@@ -16,7 +16,7 @@ interface Props {
  * pergunta que a coluna "Processos" da listagem responde em número, aqui
  * respondida por extenso.
  */
-export default function ProcessosDoCliente({ clienteId }: Props) {
+export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProps) {
   const apoio = useCatalogosDeProcesso();
   const query = useProcessosDoCliente(clienteId);
   useToastOnQueryError(query.error, "Não foi possível carregar os processos do cliente.");

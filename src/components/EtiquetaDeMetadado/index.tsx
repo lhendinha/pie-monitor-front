@@ -1,14 +1,14 @@
 import { Flex } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface EtiquetaDeMetadadoProps {
   children: ReactNode;
 }
 
 /** Etiqueta de metadado (`.meta-chip` do artifact): pílula discreta em cima
  * do fundo da página, usada para subgrupo, situação e fase no cabeçalho de
  * um detalhe. Não é a pílula de filtro -- esta não é clicável. */
-export default function EtiquetaDeMetadado({ children }: Props) {
+export default function EtiquetaDeMetadado({ children }: EtiquetaDeMetadadoProps) {
   return (
     <Flex
       align="center"

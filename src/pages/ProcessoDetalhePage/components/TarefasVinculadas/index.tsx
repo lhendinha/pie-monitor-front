@@ -5,7 +5,7 @@ import { useToastOnQueryError } from "../../../../services/queryClient";
 import { formatarData } from "../../../../utils";
 import { useTarefasDoProcesso } from "../../hooks/useTarefasDoProcesso";
 
-interface Props {
+interface TarefasVinculadasProps {
   numeroProcesso: string;
 }
 
@@ -16,7 +16,7 @@ interface Props {
  * Depende do filtro `processo_numero` de `GET /tarefas`, criado em
  * 22/08/2026 justamente pra isto.
  */
-export default function TarefasVinculadas({ numeroProcesso }: Props) {
+export default function TarefasVinculadas({ numeroProcesso }: TarefasVinculadasProps) {
   const query = useTarefasDoProcesso(numeroProcesso);
   useToastOnQueryError(query.error, "Não foi possível carregar as tarefas do processo.");
 

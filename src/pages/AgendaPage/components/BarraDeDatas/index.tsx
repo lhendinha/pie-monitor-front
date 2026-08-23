@@ -2,7 +2,7 @@ import { Flex, Text } from "@chakra-ui/react";
 
 import { Botao, BotaoQuadrado, IconeChevron } from "../../../../components";
 
-interface Props {
+interface BarraDeDatasProps {
   rotulo: string;
   onNavegar: (passo: number) => void;
   onHoje: () => void;
@@ -13,7 +13,7 @@ interface Props {
  * O chevron é girado em vez de haver dois ícones: é a mesma seta, e um
  * segundo arquivo divergiria do primeiro no próximo ajuste de traço.
  */
-export default function BarraDeDatas({ rotulo, onNavegar, onHoje }: Props) {
+export default function BarraDeDatas({ rotulo, onNavegar, onHoje }: BarraDeDatasProps) {
   return (
     <Flex align="center" gap="10px" mb="14px">
       <BotaoQuadrado type="button" aria-label="Período anterior" onClick={() => onNavegar(-1)}>

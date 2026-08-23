@@ -4,7 +4,7 @@ import { Rotulo } from "../../../../components";
 import LinhaDoResumo from "../LinhaDoResumo";
 import type { NumeroDoResumo } from "../../types";
 
-interface Props {
+interface GrupoDeNumerosProps {
   rotulo: string;
   numeros: NumeroDoResumo[];
   /** O primeiro grupo não afasta do topo -- o cabeçalho do cartão já
@@ -18,7 +18,7 @@ interface Props {
  * segundo é contexto. Misturados, um prazo vencido apareceria com o mesmo
  * peso da contagem total de processos.
  */
-export default function GrupoDeNumeros({ rotulo, numeros, primeiro }: Props) {
+export default function GrupoDeNumeros({ rotulo, numeros, primeiro }: GrupoDeNumerosProps) {
   return (
     <Box>
       <Rotulo variante="filtro" as="p" mt={primeiro ? "0" : "14px"} mb="2px">

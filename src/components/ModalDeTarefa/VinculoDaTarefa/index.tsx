@@ -19,7 +19,7 @@ import type {
   RespostaDeProcessos,
 } from "../../../types/respostas";
 
-interface Props {
+interface VinculoDaTarefaProps {
   valor: VinculosDaTarefa;
   onMudar: (vinculos: VinculosDaTarefa) => void;
 }
@@ -39,7 +39,7 @@ interface Props {
  * processo tem 20 dígitos, e disparar a cada tecla seriam 20 requisições
  * pra uma resposta que só interessa no fim.
  */
-export default function VinculoDaTarefa({ valor, onMudar }: Props) {
+export default function VinculoDaTarefa({ valor, onMudar }: VinculoDaTarefaProps) {
   const [texto, setTexto] = useState("");
   /** Mesmo debounce das outras buscas do sistema, agora num hook só. */
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);

@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 
-interface Props {
+interface PontoProps {
   /** `ruim` pinta de vermelho -- é o que faz uma falha saltar numa lista
    * longa sem ler linha por linha. */
   tom?: "marca" | "ruim";
@@ -16,7 +16,7 @@ interface Props {
  * já houve um pedido explícito pra que todas tivessem o mesmo tamanho.
  * Quatro cópias de `9px` divergem no primeiro ajuste.
  */
-export default function Ponto({ tom = "marca", noTopo }: Props) {
+export default function Ponto({ tom = "marca", noTopo }: PontoProps) {
   return (
     <Box
       aria-hidden="true"

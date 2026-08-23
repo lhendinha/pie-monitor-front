@@ -38,18 +38,13 @@ import { useTarefasDoQuadro } from "../../hooks/useTarefasDoQuadro";
 import { posicaoValidaNoQuadro } from "../../helpers/posicaoDeColuna";
 import LinhaDeColuna from "../LinhaDeColuna";
 import type { ColunaDoQuadro } from "../../../../types";
+import type { RenomearColuna } from "../../types";
 
-interface Props {
+interface ModalDoQuadroProps {
   subgrupoId: string;
   subgrupoNome: string;
   colunas: ColunaDoQuadro[];
   onFechar: () => void;
-}
-
-/** O que a mutation de renomear recebe. */
-interface RenomearColuna {
-  id: string;
-  nome: string;
 }
 
 /** "Editar quadro" -- criar, renomear, reordenar, marcar conclusão e
@@ -64,7 +59,7 @@ export default function ModalDoQuadro({
   subgrupoNome,
   colunas,
   onFechar,
-}: Props) {
+}: ModalDoQuadroProps) {
   const [nova, setNova] = useState("");
   const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   const [paraExcluir, setParaExcluir] = useState<ColunaDoQuadro | null>(null);

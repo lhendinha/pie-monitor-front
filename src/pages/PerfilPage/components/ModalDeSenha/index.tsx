@@ -15,7 +15,7 @@ import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../../../constants";
 import { alterarMinhaSenha } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 
-interface Props {
+interface ModalDeSenhaProps {
   onFechar: () => void;
 }
 
@@ -27,7 +27,7 @@ interface Props {
  * também, com chave própria, senão quem tivesse um token válido adivinharia
  * a senha atual à vontade, contornando o bloqueio do login.
  */
-export default function ModalDeSenha({ onFechar }: Props) {
+export default function ModalDeSenha({ onFechar }: ModalDeSenhaProps) {
   /** Liga o botão do rodapé ao `<form>` do corpo: eles são irmãos, não pai
    * e filho, porque o rodapé fica fora da área que rola. */
   const idFormulario = useId();

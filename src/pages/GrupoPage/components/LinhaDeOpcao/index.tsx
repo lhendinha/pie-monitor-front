@@ -14,7 +14,7 @@ import {
 } from "../../../../components";
 import type { OpcaoProcesso } from "../../../../types";
 
-interface Props {
+interface LinhaDeOpcaoProps {
   opcao: OpcaoProcesso;
   /** Falso pra quem não tem `admin`: a linha vira só leitura, sem arrastar
    * e sem ações. */
@@ -48,7 +48,7 @@ export default function LinhaDeOpcao({
   onDesativar,
   onReativar,
   emAndamento,
-}: Props) {
+}: LinhaDeOpcaoProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: opcao.opcao_id,
     disabled: !podeGerenciar,

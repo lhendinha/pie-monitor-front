@@ -14,7 +14,7 @@ import type {
   RespostaDeClientes,
 } from "../../../../types/respostas";
 
-interface Props {
+interface CampoDeClientesProps {
   id: string;
   /** Ids escolhidos. */
   valor: string[];
@@ -35,7 +35,7 @@ interface Props {
  * do sistema. Quem já foi escolhido não volta a aparecer nos resultados --
  * escolher duas vezes o mesmo cliente não significa nada.
  */
-export default function CampoDeClientes({ id, valor, nomes, onMudar }: Props) {
+export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeClientesProps) {
   const [texto, setTexto] = useState("");
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
   const [aberto, setAberto] = useState(false);

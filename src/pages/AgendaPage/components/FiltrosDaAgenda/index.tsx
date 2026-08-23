@@ -5,7 +5,7 @@ import SeletorDeVisao from "../SeletorDeVisao";
 import type { FiltrosDaAgenda as Filtros } from "../../types";
 import type { Membro, Subgrupo } from "../../../../types";
 
-interface Props {
+interface FiltrosDaAgendaProps {
   subgrupos: Subgrupo[];
   membros: Membro[];
   filtros: Filtros;
@@ -30,7 +30,7 @@ export default function FiltrosDaAgenda({
   filtros,
   carregandoSubgrupos,
   onMudar,
-}: Props) {
+}: FiltrosDaAgendaProps) {
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="14px">
       <SeletorDeVisao visao={filtros.visao} onMudar={(visao) => onMudar({ visao })} />

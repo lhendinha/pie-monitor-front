@@ -2,7 +2,7 @@ import { Box, Input } from "@chakra-ui/react";
 
 import IconeBusca from "../Icons/IconeBusca";
 
-interface Props {
+interface CampoDeBuscaProps {
   rotulo: string;
   placeholder: string;
   valor: string;
@@ -35,7 +35,7 @@ export default function CampoDeBusca({
   onMudar,
   larguraMaxima = "340px",
   buscando,
-}: Props) {
+}: CampoDeBuscaProps) {
   return (
     <Box position="relative" flex="1" minW="200px" maxW={larguraMaxima}>
       <Box

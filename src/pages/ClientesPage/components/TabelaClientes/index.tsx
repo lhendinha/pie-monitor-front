@@ -3,14 +3,14 @@ import { COLUNAS_CLIENTES } from "../../constants/clientes";
 import LinhaCliente from "../LinhaCliente";
 import type { Cliente } from "../../../../types";
 
-interface Props {
+interface TabelaClientesProps {
   clientes: Cliente[];
   busca: string;
   onLimparBusca: () => void;
 }
 
 /** A tabela de clientes, nas 4 colunas do artifact. */
-export default function TabelaClientes({ clientes, busca, onLimparBusca }: Props) {
+export default function TabelaClientes({ clientes, busca, onLimparBusca }: TabelaClientesProps) {
   return (
     <Tabela
       colunas={COLUNAS_CLIENTES}

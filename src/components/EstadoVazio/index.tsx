@@ -1,7 +1,7 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface EstadoVazioProps {
   mensagem: string;
   /** Um botão pra sair do vazio -- "Limpar filtros", "Limpar busca". Só faz
    * sentido quando a lista está vazia POR causa de um filtro. */
@@ -14,7 +14,7 @@ interface Props {
  * Fica DENTRO do cartão, e não no lugar dele: o vazio é conteúdo da tabela,
  * não ausência de tabela.
  */
-export default function EstadoVazio({ mensagem, acao }: Props) {
+export default function EstadoVazio({ mensagem, acao }: EstadoVazioProps) {
   return (
     <Box p="34px 10px" textAlign="center">
       <Stack gap="10px" align="center">

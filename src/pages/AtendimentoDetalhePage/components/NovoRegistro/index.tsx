@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Avatar, Botao, IconeEnviar } from "../../../../components";
 import { getApelido, getEmail } from "../../../../services";
 
-interface Props {
+interface NovoRegistroProps {
   enviando: boolean;
   /** Resolve quando o registro FOI gravado, rejeita se falhou -- é o que
    * diz ao campo se ele pode se limpar. */
@@ -17,7 +17,7 @@ interface Props {
  * e viu a rede cair não pode perdê-los. Por isso o texto só é descartado no
  * callback de sucesso, e não ao clicar.
  */
-export default function NovoRegistro({ enviando, onEnviar }: Props) {
+export default function NovoRegistro({ enviando, onEnviar }: NovoRegistroProps) {
   const [texto, setTexto] = useState("");
 
   const vazio = texto.trim() === "";

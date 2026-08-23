@@ -6,7 +6,7 @@ type Sessao = ReturnType<typeof useSessao>;
 
 const Contexto = createContext<Sessao | null>(null);
 
-interface Props {
+interface SessaoProviderProps {
   children: ReactNode;
 }
 
@@ -23,7 +23,7 @@ interface Props {
  * resolve. Se aparecer a vontade de guardar "a lista de X" aqui, o lugar
  * certo é uma query.
  */
-export function SessaoProvider({ children }: Props) {
+export function SessaoProvider({ children }: SessaoProviderProps) {
   const sessao = useSessao();
   return <Contexto.Provider value={sessao}>{children}</Contexto.Provider>;
 }

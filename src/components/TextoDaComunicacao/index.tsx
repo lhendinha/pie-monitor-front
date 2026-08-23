@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import DOMPurify from "dompurify";
 
-interface Props {
+interface TextoDaComunicacaoProps {
   /** HTML vindo da API do PJe -- sanitizado aqui, nunca antes. */
   html?: string;
   /** Texto puro, quando a comunicação original não foi encontrada e só
@@ -17,7 +17,7 @@ interface Props {
  * O teto de altura existe porque publicação de tribunal pode ter páginas de
  * texto: numa lista, um item não pode empurrar os outros pra fora da tela.
  */
-export default function TextoDaComunicacao({ html, textoPlano, inteiro }: Props) {
+export default function TextoDaComunicacao({ html, textoPlano, inteiro }: TextoDaComunicacaoProps) {
   if (!html && !textoPlano) return null;
   return (
     <Box

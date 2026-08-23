@@ -5,7 +5,7 @@ import { coresDoStatus } from "../../../../theme/atendimento";
 import { formatarData } from "../../../../utils";
 import type { Atendimento } from "../../../../types";
 
-interface Props {
+interface LinhaDeAtendimentoProps {
   atendimento: Atendimento;
   /** Nome de cada cliente vinculado. O atendimento guarda só os ids, e quem
    * resolve os nomes é a página -- numa consulta só pra lista inteira, em
@@ -40,7 +40,7 @@ export default function LinhaDeAtendimento({
   nomeDoAutor,
   onAbrir,
   ultima,
-}: Props) {
+}: LinhaDeAtendimentoProps) {
   const registros = atendimento.registros || [];
   const ultimo = registros[registros.length - 1];
 

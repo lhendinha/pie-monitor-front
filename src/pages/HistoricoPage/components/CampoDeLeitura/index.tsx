@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { Rotulo } from "../../../../components";
 
-interface Props {
+interface CampoDeLeituraProps {
   rotulo: string;
   children: ReactNode;
 }
@@ -15,7 +15,7 @@ interface Props {
  * um controle pra apontar o `htmlFor`, e neste modal não há controle nenhum
  * -- um `<label for>` apontando pra nada é rótulo que não rotula.
  */
-export default function CampoDeLeitura({ rotulo, children }: Props) {
+export default function CampoDeLeitura({ rotulo, children }: CampoDeLeituraProps) {
   return (
     <Stack gap="6px">
       <Rotulo variante="campo" as="p">

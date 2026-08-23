@@ -3,7 +3,7 @@ import { COLUNAS_MEMBROS, COLUNA_DE_ACOES } from "../../constants/membros";
 import LinhaDeMembro from "../LinhaDeMembro";
 import type { Membro } from "../../../../types";
 
-interface Props {
+interface TabelaDeMembrosProps {
   membros: Membro[];
   /** id do subgrupo -> nome. `membro.subgrupos` traz ids, e id não diz nada
    * pra quem lê. */
@@ -13,7 +13,7 @@ interface Props {
 }
 
 /** A tabela de pessoas do grupo, nas 4 colunas do artifact. */
-export default function TabelaDeMembros({ membros, nomeDoSubgrupo, podeEditar, onEditar }: Props) {
+export default function TabelaDeMembros({ membros, nomeDoSubgrupo, podeEditar, onEditar }: TabelaDeMembrosProps) {
   return (
     <Tabela
       colunas={podeEditar ? [...COLUNAS_MEMBROS, COLUNA_DE_ACOES] : COLUNAS_MEMBROS}

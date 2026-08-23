@@ -11,7 +11,7 @@ import type { Tarefa } from "../../../../types";
 /** Quantas tarefas cabem num cartão de dia antes do "+N mais". */
 const TAREFAS_VISIVEIS = 3;
 
-interface Props {
+interface VisaoPorSemanaProps {
   data: Date;
   isoDeHoje: string;
   porDia: Map<string, Tarefa[]>;
@@ -35,7 +35,7 @@ export default function VisaoPorSemana({
   porDia,
   estaConcluida,
   onEscolherDia,
-}: Props) {
+}: VisaoPorSemanaProps) {
   const inicio = inicioDaSemana(data);
 
   return (

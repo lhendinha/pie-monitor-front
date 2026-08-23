@@ -15,7 +15,7 @@ import { PilulaDeFiltro } from "../PilulaDeFiltro";
 import IntervaloPersonalizado from "./IntervaloPersonalizado";
 import ListaDeOpcoes from "./ListaDeOpcoes";
 
-interface Props {
+interface SeletorDePeriodoProps {
   /** Id de `PERIODOS_*`, `PERIODO_TODOS` ou `PERIODO_PERSONALIZADO`. */
   periodoId: string;
   /** Só é lido quando `periodoId` é o personalizado. */
@@ -49,7 +49,7 @@ export default function SeletorDePeriodo({
   periodoId,
   intervaloPersonalizado,
   onMudar,
-}: Props) {
+}: SeletorDePeriodoProps) {
   const [aberto, setAberto] = useState(false);
   const [modo, setModo] = useState<"lista" | "personalizado">("lista");
 

@@ -12,7 +12,7 @@ interface Opcao {
   rotulo: string;
 }
 
-interface Props {
+interface PilulaDeMenuProps {
   opcoes: readonly Opcao[];
   selecionado: string;
   /** A pílula fica azul quando há filtro. Filtro ligado que parece
@@ -26,7 +26,7 @@ interface Props {
  * Três filtros do quadro têm exatamente esta forma (subgrupo, período,
  * pessoas), então o desenho vive num lugar só.
  */
-export default function PilulaDeMenu({ opcoes, selecionado, ativo, onEscolher }: Props) {
+export default function PilulaDeMenu({ opcoes, selecionado, ativo, onEscolher }: PilulaDeMenuProps) {
   const atual = opcoes.find((o) => o.id === selecionado) ?? opcoes[0];
 
   return (

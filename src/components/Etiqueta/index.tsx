@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react";
 import type { ButtonProps } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface EtiquetaProps {
   /** Fundo e texto -- vêm de fora porque o significado da cor é de quem
    * usa: papel, status de envio, o que for. */
   cores: Pick<ButtonProps, "bg" | "color">;
@@ -15,7 +15,7 @@ interface Props {
  * Cor E texto, sempre: quem não distingue duas pílulas claras continua
  * lendo "Admin" e "Gerente", "Enviado" e "Falha".
  */
-export default function Etiqueta({ cores, children }: Props) {
+export default function Etiqueta({ cores, children }: EtiquetaProps) {
   return (
     <Box
       as="span"

@@ -1,10 +1,10 @@
-interface Props {
+interface IconeChevronProps {
   tamanho?: number;
 }
 
 /** Seta do select (`.csel-trigger svg` do artifact): 15px, traço 2.
  * Quem abre o menu gira 180°. */
-export default function IconeChevron({ tamanho = 15 }: Props) {
+export default function IconeChevron({ tamanho = 15 }: IconeChevronProps) {
   return (
     <svg
       width={tamanho}

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
 
-interface Props {
+interface ModalProps {
   titulo: string;
   /** Uma linha de contexto embaixo do título -- tipicamente uma contagem.
    * Fica no cabeçalho porque ele não rola: assim a informação continua
@@ -27,7 +27,7 @@ interface Props {
  * mais alto que a janela precisa rolar por fora, senão o rodapé com os
  * botões fica inalcançável em tela baixa.
  */
-export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, children }: Props) {
+export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, children }: ModalProps) {
   // Esc fecha -- é o que se espera de qualquer diálogo, e sem isso quem
   // navega por teclado fica preso dentro dele.
   useEffect(() => {

@@ -1,11 +1,5 @@
-/** Qualquer item ordenável: uma opção de Fase/Situação ou uma coluna do
- * quadro. A conta só precisa da `ordem`, e pedir a entidade inteira
- * prenderia o helper a uma delas. */
-interface ComOrdem {
-  ordem: number;
-}
 
-/** `ordem` do item movido = ponto médio entre os vizinhos na posição de
+import type { ComOrdem } from "../types";/** `ordem` do item movido = ponto médio entre os vizinhos na posição de
  * destino.
  *
  * Assim só ESSE item precisa ser gravado, em vez de reindexar a lista

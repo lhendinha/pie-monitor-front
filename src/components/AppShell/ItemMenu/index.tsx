@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import type { ItemNavegacao } from "../../../constants";
 import { ICONES_MENU } from "../icones";
 
-interface Props {
+interface ItemMenuProps {
   item: ItemNavegacao;
 }
 
@@ -18,7 +18,7 @@ interface Props {
  * entrega -- não guardado em estado próprio, que é como esse tipo de menu
  * costuma dessincronizar do endereço.
  */
-export default function ItemMenu({ item }: Props) {
+export default function ItemMenu({ item }: ItemMenuProps) {
   const Icone = ICONES_MENU[item.icone];
 
   return (

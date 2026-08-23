@@ -5,7 +5,7 @@ import LinhaDeTarefa from "../LinhaDeTarefa";
 import { rotuloDoDia } from "../../helpers/periodoDaAgenda";
 import type { Tarefa } from "../../../../types";
 
-interface Props {
+interface ListaDeUmDiaProps {
   data: Date;
   tarefas: Tarefa[];
   estaConcluida: (tarefa: Tarefa) => boolean;
@@ -35,7 +35,7 @@ export default function ListaDeUmDia({
   assuntoDoAtendimento,
   onAbrir,
   comData = true,
-}: Props) {
+}: ListaDeUmDiaProps) {
   return (
     <Cartao titulo={comData ? rotuloDoDia(data) : undefined}>
       <Box px="16px" py="4px">

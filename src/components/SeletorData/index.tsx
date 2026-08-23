@@ -8,7 +8,7 @@ import IconeCalendario from "../Icons/IconeCalendario";
 import IconeSeta from "../Icons/IconeSeta";
 import { Gatilho } from "./Gatilho";
 
-interface Props {
+interface SeletorDataProps {
   /** Vai num `Box` que ENVOLVE o seletor -- nunca num elemento da lib.
    *
    * ⚠️ O `DatePicker` do zag encontra as próprias partes pelos ids que ele
@@ -60,7 +60,7 @@ export default function SeletorData({
   placeholder = "Escolher data",
   aberto,
   onAbertura,
-}: Props) {
+}: SeletorDataProps) {
   // `parseDate` faz a ponte: a lib trabalha com `DateValue`, e pra fora
   // este componente segue falando `aaaa-mm-dd`, que é o formato da API --
   // objeto de data não atravessa essa fronteira.

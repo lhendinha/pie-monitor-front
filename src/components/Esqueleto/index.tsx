@@ -1,6 +1,6 @@
 import { Skeleton, Stack, VisuallyHidden } from "@chakra-ui/react";
 
-interface Props {
+interface EsqueletoProps {
   /** Quantas barras. O padrão serve a uma tabela; um cartão pequeno pede
    * menos. */
   linhas?: number;
@@ -18,7 +18,7 @@ interface Props {
  * tabela, no raio e na cor de borda do sistema. A versão antiga usava o
  * creme da paleta pré-Argos (`--paper-dim`), e destoava de tudo.
  */
-export default function Esqueleto({ linhas = 3, altura = "56px" }: Props) {
+export default function Esqueleto({ linhas = 3, altura = "56px" }: EsqueletoProps) {
   return (
     <>
       {/* ⚠️ O anúncio vive AQUI, junto do esqueleto, e não espalhado pelas

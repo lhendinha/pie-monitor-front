@@ -3,7 +3,7 @@ import { Box, Stack, Text } from "@chakra-ui/react";
 import Botao from "../Botao";
 import { IconeAlerta } from "../Icons";
 
-interface Props {
+interface EstadoDeErroProps {
   /** O que não deu certo, do ponto de vista de quem lê -- "Não foi possível
    * carregar os processos." Sem jargão de rede. */
   mensagem: string;
@@ -25,7 +25,7 @@ interface Props {
  * Fica DENTRO do cartão, no lugar da tabela, pelo mesmo motivo do
  * `EstadoVazio`: é conteúdo da lista, não ausência dela.
  */
-export default function EstadoDeErro({ mensagem, onTentarDeNovo, tentando }: Props) {
+export default function EstadoDeErro({ mensagem, onTentarDeNovo, tentando }: EstadoDeErroProps) {
   return (
     <Box p="34px 10px" textAlign="center" role="alert">
       <Stack gap="10px" align="center">

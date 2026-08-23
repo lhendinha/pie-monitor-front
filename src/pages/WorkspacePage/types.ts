@@ -1,3 +1,5 @@
+import type { Tarefa } from "../../types";
+
 /** Um número do "Resumo rápido". */
 export interface NumeroDoResumo {
   rotulo: string;
@@ -9,4 +11,16 @@ export interface NumeroDoResumo {
    * a linha não é clicável -- botão que não vai a lugar nenhum é pior que
    * texto. */
   ir?: () => void;
+}
+
+/** A tarefa e quem passa a ser responsável por ela. */
+export interface AssumirTarefa {
+  tarefa: Tarefa;
+  email: string;
+}
+
+/** Quem o cartão mostra: um responsável, ou as sem responsável nenhum. */
+export interface FiltroDoCard {
+  responsavel?: string;
+  semResponsavel?: boolean;
 }

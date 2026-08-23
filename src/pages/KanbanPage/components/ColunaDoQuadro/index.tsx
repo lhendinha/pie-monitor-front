@@ -6,7 +6,7 @@ import { BotaoNu, IconeCheck, IconePlus } from "../../../../components";
 import CartaoDeTarefa from "../CartaoDeTarefa";
 import type { ColunaDoQuadro as Coluna, Tarefa } from "../../../../types";
 
-interface Props {
+interface ColunaDoQuadroProps {
   coluna: Coluna;
   tarefas: Tarefa[];
   apelidoPorEmail: (email?: string | null) => string | undefined;
@@ -27,7 +27,7 @@ export default function ColunaDoQuadro({
   apelidoPorEmail,
   onAbrirTarefa,
   onNovaTarefa,
-}: Props) {
+}: ColunaDoQuadroProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: coluna.coluna_id,
     data: { colunaId: coluna.coluna_id },

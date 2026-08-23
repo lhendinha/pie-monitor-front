@@ -1,6 +1,6 @@
 import { BotaoNu } from "../../BotaoNu";
 
-interface Props {
+interface NumeroPaginaProps {
   numero: number;
   atual: boolean;
   onClick: () => void;
@@ -8,7 +8,7 @@ interface Props {
 
 /** Número de página (`.pagination-numero` do artifact): sem borda, fonte
  * mono, e o atual em cheio na cor da marca. */
-export default function NumeroPagina({ numero, atual, onClick }: Props) {
+export default function NumeroPagina({ numero, atual, onClick }: NumeroPaginaProps) {
   return (
     <BotaoNu
       type="button"

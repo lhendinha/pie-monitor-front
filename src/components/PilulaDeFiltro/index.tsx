@@ -9,7 +9,7 @@ import { PILULA, coresPilula } from "../../theme/pilula";
  * no `Button` -- a tipagem não declarava isso, então passar `onClick` (ou
  * qualquer atributo de botão) era erro de compilação num componente que
  * aceitava perfeitamente em runtime. */
-interface Props extends ButtonProps {
+interface PilulaDeFiltroProps extends ButtonProps {
   /** Muda a cor: filtro escolhido fica em azul claro, como no artifact. */
   ativo: boolean;
   /** Some com a seta de "abre um painel".
@@ -31,7 +31,7 @@ interface Props extends ButtonProps {
  * `forwardRef` porque ela é usada como gatilho de `Popover`, e a lib precisa
  * da referência do elemento para posicionar e para saber o que é "dentro".
  */
-export const PilulaDeFiltro = forwardRef<HTMLButtonElement, Props>(
+export const PilulaDeFiltro = forwardRef<HTMLButtonElement, PilulaDeFiltroProps>(
   function PilulaDeFiltro({ ativo, semSeta, children, ...resto }, ref) {
     const cor = coresPilula(ativo);
     return (

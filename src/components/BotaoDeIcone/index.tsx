@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
 
-interface Props {
+interface BotaoDeIconeProps {
   rotulo: string;
   /** Ponto vermelho de "tem coisa nova", como no artifact. */
   comAviso?: boolean;
@@ -13,7 +13,7 @@ interface Props {
 
 /** Botão redondo só com ícone da barra superior (`.icon-btn` do artifact):
  * 34px, sem borda, cinza, e fundo suave no hover. */
-export default function BotaoDeIcone({ rotulo, comAviso, onClick, children }: Props) {
+export default function BotaoDeIcone({ rotulo, comAviso, onClick, children }: BotaoDeIconeProps) {
   return (
     <BotaoNu
       type="button"

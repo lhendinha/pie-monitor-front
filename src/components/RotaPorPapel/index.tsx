@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { papelAtende } from "../../services";
 import type { Papel } from "../../types";
 
-interface Props {
+interface RotaPorPapelProps {
   /** Papel a partir do qual a rota é acessível. */
   minimo: Papel;
 }
@@ -19,7 +19,7 @@ interface Props {
  * Redireciona pra Processos, que é a tela inicial de qualquer papel, em vez
  * de mostrar "sem permissão": não é erro, é lugar errado.
  */
-export default function RotaPorPapel({ minimo }: Props) {
+export default function RotaPorPapel({ minimo }: RotaPorPapelProps) {
   if (!papelAtende(minimo)) return <Navigate to="/processos" replace />;
   return <Outlet />;
 }

@@ -6,7 +6,7 @@ import SetaPagina from "./SetaPagina";
 import { numerosVisiveis } from "./numerosVisiveis";
 import { TAMANHOS_PAGINA } from "../../types";
 
-interface Props {
+interface PaginationProps {
   pagina: number;
   totalPaginas: number;
   /** Total de itens, não da página. É o que decide se a barra aparece: com
@@ -37,7 +37,7 @@ export default function Pagination({
   onMudarPagina,
   onMudarTamanho,
   tamanhos = TAMANHOS_PAGINA,
-}: Props) {
+}: PaginationProps) {
   /** A barra some quando a lista não tem como ser paginada em tamanho
    * nenhum -- aí o "Por página" seria um controle sem efeito.
    *

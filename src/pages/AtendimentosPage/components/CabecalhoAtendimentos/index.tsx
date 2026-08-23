@@ -10,7 +10,7 @@ import {
 import { contar } from "../../../../utils";
 import { OPCOES_DE_STATUS, STATUS_TODOS } from "../../constants";
 
-interface Props {
+interface CabecalhoAtendimentosProps {
   carregando: boolean;
   /** Quantos a página mostra, e quantos existem no total -- "Mostrando 3 de
    * 12 atendimentos", como no artifact. */
@@ -36,7 +36,7 @@ export default function CabecalhoAtendimentos({
   status,
   onMudarStatus,
   onNovo,
-}: Props) {
+}: CabecalhoAtendimentosProps) {
   return (
     <Box mb="14px">
       <CabecalhoDePagina

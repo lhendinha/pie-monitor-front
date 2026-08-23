@@ -2,7 +2,7 @@ import { Text } from "@chakra-ui/react";
 
 import { mascararNumeroProcesso } from "../../../../utils";
 
-interface Props {
+interface NumeroDoProcessoProps {
   numero: string;
 }
 
@@ -11,7 +11,7 @@ interface Props {
  * Mascarado e em mono, como em toda a aplicação: 20 dígitos corridos no meio
  * de um texto não se leem.
  */
-export default function NumeroDoProcesso({ numero }: Props) {
+export default function NumeroDoProcesso({ numero }: NumeroDoProcessoProps) {
   return (
     <Text as="strong" fontFamily="mono" fontWeight="700">
       {mascararNumeroProcesso(numero)}

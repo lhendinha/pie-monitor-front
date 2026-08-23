@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import { Rotulo } from "../Rotulo";
 
-interface Props {
+interface CampoProps {
   rotulo: string;
   /** `id` do controle que o rótulo nomeia. Obrigatório: rótulo sem `for`
    * não é lido junto do campo, e clicar nele não foca nada.
@@ -29,7 +29,7 @@ interface Props {
  * é outra coisa (rótulo de coluna de filtro). O asterisco de obrigatório vai
  * em `bad`, como no artifact.
  */
-export default function Campo({ rotulo, para, obrigatorio, dica, erro, children }: Props) {
+export default function Campo({ rotulo, para, obrigatorio, dica, erro, children }: CampoProps) {
   return (
     <Box mb="16px" position="relative">
       <Rotulo variante="campo" id={`${para}-rotulo`} htmlFor={para} mb="6px">

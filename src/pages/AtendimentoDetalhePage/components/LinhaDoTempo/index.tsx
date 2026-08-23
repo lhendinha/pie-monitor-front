@@ -4,7 +4,7 @@ import { Avatar } from "../../../../components";
 import { formatarDataHora } from "../../../../utils";
 import type { RegistroDeAtendimento } from "../../../../types";
 
-interface Props {
+interface LinhaDoTempoProps {
   registros: RegistroDeAtendimento[];
   /** Apelido de quem escreveu. O registro guarda só o e-mail, e quem
    * resolve o nome é a página. */
@@ -20,7 +20,7 @@ interface Props {
  * Append-only: não há editar nem excluir registro, nem aqui nem no
  * servidor. É registro de atendimento a cliente.
  */
-export default function LinhaDoTempo({ registros, nomeDoAutor }: Props) {
+export default function LinhaDoTempo({ registros, nomeDoAutor }: LinhaDoTempoProps) {
   return (
     <Flex direction="column">
       {registros.map((registro, indice) => (

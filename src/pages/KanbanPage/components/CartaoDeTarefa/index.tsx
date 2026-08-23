@@ -7,7 +7,7 @@ import { mascararNumeroProcesso } from "../../../../utils";
 import { CORES_DA_PRIORIDADE } from "../../constants/kanban";
 import type { Tarefa } from "../../../../types";
 
-interface Props {
+interface CartaoDeTarefaProps {
   tarefa: Tarefa;
   /** Apelido de quem é responsável -- a tarefa guarda só o e-mail. */
   responsavel?: string;
@@ -20,7 +20,7 @@ interface Props {
  * do prazo. Não é redundância -- a tarja se lê varrendo a coluna de cima a
  * baixo, o ponto se lê quando o olho já parou no cartão.
  */
-export default function CartaoDeTarefa({ tarefa, responsavel, onAbrir }: Props) {
+export default function CartaoDeTarefa({ tarefa, responsavel, onAbrir }: CartaoDeTarefaProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `${tarefa.subgrupo_id}:${tarefa.tarefa_id}`,
     data: { tarefa },

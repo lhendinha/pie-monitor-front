@@ -3,12 +3,6 @@ import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
-/** Quem o cartão mostra: um responsável, ou as sem responsável nenhum. */
-interface FiltroDoCard {
-  responsavel?: string;
-  semResponsavel?: boolean;
-}
-
 import {
   AreaAtualizando,
   Cartao,
@@ -24,11 +18,12 @@ import { contar } from "../../../../utils";
 import LinhaDeTarefa from "../LinhaDeTarefa";
 import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants/workspace";
 import type { Tarefa } from "../../../../types";
+import type { FiltroDoCard } from "../../types";
 import type {
   RespostaDeTarefasPaginada,
 } from "../../../../types/respostas";
 
-interface Props {
+interface CardDeTarefasProps {
   titulo: string;
   /** Filtro que define o card. `responsavel: "eu"` ou
    * `semResponsavel: true` -- os dois já resolvidos no servidor. */
@@ -54,7 +49,7 @@ export default function CardDeTarefas({
   vazio,
   acao,
   responsavel,
-}: Props) {
+}: CardDeTarefasProps) {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState<number>(TAMANHO_PAGINA_CARD_PADRAO);
 

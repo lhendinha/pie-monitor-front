@@ -20,7 +20,7 @@ const BotaoRemover = chakra("button", {
   },
 });
 
-interface Props {
+interface EtiquetaDeVinculoProps {
   vinculo: Vinculo;
   onRemover: () => void;
 }
@@ -31,7 +31,7 @@ interface Props {
  * e um atendimento lado a lado, o número e o assunto não dizem sozinhos
  * qual é qual.
  */
-export default function EtiquetaDeVinculo({ vinculo, onRemover }: Props) {
+export default function EtiquetaDeVinculo({ vinculo, onRemover }: EtiquetaDeVinculoProps) {
   const tipo = vinculo.tipo === "processo" ? "Processo" : "Atendimento";
   return (
     <Flex

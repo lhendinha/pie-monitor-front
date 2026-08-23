@@ -12,11 +12,11 @@ import {
 import { solicitarRecuperacaoSenha } from "../../services";
 import { emailValido } from "../../utils";
 
-interface Props {
+interface EsqueciSenhaPageProps {
   onVoltar: () => void;
 }
 
-export default function EsqueciSenhaPage({ onVoltar }: Props) {
+export default function EsqueciSenhaPage({ onVoltar }: EsqueciSenhaPageProps) {
   const [email, setEmail] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);

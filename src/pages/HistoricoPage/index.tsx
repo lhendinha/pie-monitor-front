@@ -25,13 +25,14 @@ import ItemDeHistorico from "./components/ItemDeHistorico";
 import { TIPO_DE_ENVIO_PADRAO } from "./constants/historico";
 import type { DeepLinkHistorico } from "../../utils";
 import type { HistoricoItem } from "../../types";
+import type { AlvoDoDeepLink } from "./types";
 import type {
   RespostaDeHistorico,
   RespostaDeHistoricoPaginada,
   RespostaDeTotal,
 } from "../../types/respostas";
 
-interface Props {
+interface HistoricoPageProps {
   deepLink?: DeepLinkHistorico | null;
   /** Com que filtro a tela abre, quando quem navegou até aqui já sabe.
    *
@@ -43,12 +44,6 @@ interface Props {
   onDeepLinkConsumido?: () => void;
 }
 
-/** O que o link de e-mail aponta: o processo e a comunicação dentro dele. */
-interface AlvoDoDeepLink {
-  processo: string;
-  comunicacaoId: string;
-}
-
 /** Histórico dos e-mails que o sistema mandou.
  *
  * A tela abre filtrada em Movimentações: é o que se olha no dia a dia, e
@@ -58,7 +53,7 @@ export default function HistoricoPage({
   deepLink,
   tipoEnvioInicial,
   onDeepLinkConsumido,
-}: Props) {
+}: HistoricoPageProps) {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const [tipoEnvio, setTipoEnvio] = useState<string>(

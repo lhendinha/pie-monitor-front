@@ -19,7 +19,7 @@ import type {
   RespostaDeDetalhesDoProcesso,
 } from "../../../../types/respostas";
 
-interface Props {
+interface DetalheHistoricoProps {
   item: HistoricoItem;
 }
 
@@ -32,7 +32,7 @@ interface Props {
  * no backend. Mesma chave de consulta da página de detalhe do processo, pra
  * dividir o cache.
  */
-export default function DetalheHistorico({ item }: Props) {
+export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
   const ehDeTarefa = Boolean(item.tarefa_id);
   const ehLembrete = item.tipo_envio === "lembrete";
   const falhou = Boolean(item.falhou);

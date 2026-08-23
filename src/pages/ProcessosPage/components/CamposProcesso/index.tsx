@@ -19,7 +19,7 @@ import type {
   RespostaDeOpcoes,
 } from "../../../../types/respostas";
 
-interface Props {
+interface CamposProcessoProps {
   valores: CamposOpcionaisProcesso;
   onMudar: (valores: CamposOpcionaisProcesso) => void;
 }
@@ -35,7 +35,7 @@ interface Props {
  * A ordem dos campos é a do artifact: identificação, partes, classificação
  * (fase/situação), prazos e por fim as anotações.
  */
-export default function CamposProcesso({ valores, onMudar }: Props) {
+export default function CamposProcesso({ valores, onMudar }: CamposProcessoProps) {
   const clientesQuery = useQuery<RespostaDeClientes>({
     queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
     queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),

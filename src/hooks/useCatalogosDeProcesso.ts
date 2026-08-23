@@ -5,6 +5,7 @@ import { useToastOnQueryError } from "../services/queryClient";
 import { qk } from "../services/queryKeys";
 import { TETO_POR_PAGINA } from "../constants";
 import type { OpcaoProcesso } from "../types";
+import type { ComClientes } from "../types";
 import type {
   RespostaDeClientes,
   RespostaDeOpcoes,
@@ -22,13 +23,6 @@ import type {
  * lista pode apontar pra qualquer subgrupo ou cliente, e com meia lista o
  * nome viraria o id cru na tela.
  */
-/** Qualquer coisa que carregue ids de cliente -- processo ou atendimento.
- * O helper só precisa dos ids, e pedir a entidade inteira o prenderia a uma
- * delas. */
-interface ComClientes {
-  cliente_ids?: string[];
-}
-
 export function useCatalogosDeProcesso() {
   const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),

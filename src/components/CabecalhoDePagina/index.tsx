@@ -1,7 +1,7 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface CabecalhoDePaginaProps {
   titulo: string;
   subtitulo?: string;
   /** Ações à direita, tipicamente o botão de criar. */
@@ -10,7 +10,7 @@ interface Props {
 
 /** Título e subtítulo de uma tela (`.page-head` do artifact): 23px/800 com
  * a explicação de uma linha embaixo. */
-export default function CabecalhoDePagina({ titulo, subtitulo, acoes }: Props) {
+export default function CabecalhoDePagina({ titulo, subtitulo, acoes }: CabecalhoDePaginaProps) {
   return (
     <Flex align="flex-start" justify="space-between" gap="16px" mb="20px">
       <Box>

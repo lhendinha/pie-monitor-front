@@ -1,20 +1,14 @@
 import { Popover, Portal } from "@chakra-ui/react";
 import { useState } from "react";
 
-/** As duas datas-limite do painel. Parcial: o campo que não veio fica
- * como estava. */
-interface DatasDoFiltro {
-  dataVerificarAte?: string;
-  prazoFinalAte?: string;
-}
-
 import { PilulaDeFiltro, RodapeDeFiltro } from "../../../../components";
 import { SELETOR_CALENDARIO } from "../../../../constants/camadaFlutuante";
 import { PAINEL } from "../../../../theme/painelFiltro";
 import { contar } from "../../../../utils";
 import CamposDeData from "./CamposDeData";
+import type { DatasDoFiltro } from "../../types";
 
-interface Props {
+interface FiltroDatasProps {
   dataVerificarAte: string;
   prazoFinalAte: string;
   onMudar: (parcial: DatasDoFiltro) => void;
@@ -27,7 +21,7 @@ interface Props {
  * buscas, e a primeira delas com um filtro que a pessoa nem terminou de
  * montar.
  */
-export default function FiltroDatas({ dataVerificarAte, prazoFinalAte, onMudar }: Props) {
+export default function FiltroDatas({ dataVerificarAte, prazoFinalAte, onMudar }: FiltroDatasProps) {
   const [aberto, setAberto] = useState(false);
   const [verificar, setVerificar] = useState(dataVerificarAte);
   const [prazo, setPrazo] = useState(prazoFinalAte);

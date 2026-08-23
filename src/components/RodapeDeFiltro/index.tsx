@@ -3,7 +3,7 @@ import { Flex } from "@chakra-ui/react";
 import Botao from "../Botao";
 import { RODAPE } from "../../theme/painelFiltro";
 
-interface Props {
+interface RodapeDeFiltroProps {
   /** "Cancelar" no painel de situação/fase, "Limpar datas" no de datas --
    * é a única diferença entre os dois rodapés do artifact. */
   rotuloSecundario: string;
@@ -27,7 +27,7 @@ export default function RodapeDeFiltro({
   onSecundario,
   onAplicar,
   aplicarDesabilitado,
-}: Props) {
+}: RodapeDeFiltroProps) {
   return (
     <Flex
       justify="flex-end"

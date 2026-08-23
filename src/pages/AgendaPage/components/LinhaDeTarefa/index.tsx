@@ -6,7 +6,7 @@ import { CORES_DA_PRIORIDADE } from "../../../../constants";
 import { mascararNumeroProcesso } from "../../../../utils";
 import type { Tarefa } from "../../../../types";
 
-interface Props {
+interface LinhaDeTarefaProps {
   tarefa: Tarefa;
   concluida: boolean;
   /** Em que coluna do quadro a tarefa está ("A Fazer", "Fazendo"…).
@@ -39,7 +39,7 @@ export default function LinhaDeTarefa({
   assuntoDoAtendimento,
   onAbrir,
   ultima,
-}: Props) {
+}: LinhaDeTarefaProps) {
   const cor = CORES_DA_PRIORIDADE[tarefa.prioridade] ?? "fg.subtle";
 
   /* A segunda linha, como no artifact: coluna e vínculo separados por "·",

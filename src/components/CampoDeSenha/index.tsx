@@ -5,7 +5,7 @@ import { BotaoNu } from "../BotaoNu";
 import { IconeOlho, IconeOlhoCortado } from "../Icons";
 import { TAMANHO_MAXIMO_DA_SENHA } from "../../constants";
 
-interface Props {
+interface CampoDeSenhaProps {
   id: string;
   valor: string;
   onMudar: (valor: string) => void;
@@ -29,7 +29,7 @@ export default function CampoDeSenha({
   placeholder,
   autoComplete,
   autoFocus,
-}: Props) {
+}: CampoDeSenhaProps) {
   const [visivel, setVisivel] = useState(false);
   const rotulo = visivel ? "Ocultar senha" : "Mostrar senha";
 

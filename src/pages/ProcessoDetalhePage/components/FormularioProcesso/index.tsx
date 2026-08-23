@@ -17,7 +17,7 @@ import CamposProcesso from "../../../ProcessosPage/components/CamposProcesso";
 import type { Processo } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
 
-interface Props {
+interface FormularioProcessoProps {
   processo: Processo;
   subgrupoNome: string;
   faseRotulo: string;
@@ -40,7 +40,7 @@ export default function FormularioProcesso({
   situacaoRotulo,
   onSalvo,
   onRemover,
-}: Props) {
+}: FormularioProcessoProps) {
   const [apelido, setApelido] = useState(processo.apelido || "");
   const [campos, setCampos] = useState<CamposOpcionaisProcesso>({
     clienteIds: processo.cliente_ids || [],

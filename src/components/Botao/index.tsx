@@ -6,7 +6,7 @@ import { BOTAO } from "../../theme/painelFiltro";
 import { CORES_DO_BOTAO } from "../../theme/botao";
 import type { VarianteBotao } from "../../theme/botao";
 
-interface Props extends Omit<ButtonProps, "variant"> {
+interface BotaoProps extends Omit<ButtonProps, "variant"> {
   variante?: VarianteBotao;
   children: ReactNode;
 }
@@ -18,7 +18,7 @@ interface Props extends Omit<ButtonProps, "variant"> {
  * tinha a própria cópia dessas medidas, e os modais usavam as classes do
  * design antigo. Três fontes para o mesmo botão divergem no primeiro ajuste.
  */
-export default function Botao({ variante = "primario", children, ...resto }: Props) {
+export default function Botao({ variante = "primario", children, ...resto }: BotaoProps) {
   return (
     <Button
       type="button"

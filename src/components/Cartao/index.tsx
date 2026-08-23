@@ -1,7 +1,7 @@
 import { Box, Flex, Heading } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface CartaoProps {
   /** Sem título, o cartão não desenha cabeçalho -- é o caso do formulário
    * de detalhe, que é só corpo. */
   titulo?: string;
@@ -15,7 +15,7 @@ interface Props {
  * Diferente do `CartaoDeTabela`, que tem padding mínimo porque quem espaça
  * lá são as células.
  */
-export default function Cartao({ titulo, acoes, children }: Props) {
+export default function Cartao({ titulo, acoes, children }: CartaoProps) {
   return (
     <Box
       bg="bg.surface"

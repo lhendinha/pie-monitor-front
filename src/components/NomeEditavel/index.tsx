@@ -1,7 +1,7 @@
 import { Input, Text } from "@chakra-ui/react";
 import { useState, type KeyboardEvent } from "react";
 
-interface Props {
+interface NomeEditavelProps {
   nome: string;
   /** Como chamar o campo pra quem usa leitor de tela: "Novo nome de Cível".
    * O rótulo visível é o próprio nome, que some quando o campo aparece. */
@@ -39,7 +39,7 @@ export default function NomeEditavel({
   onConfirmar,
   onCancelar,
   salvando,
-}: Props) {
+}: NomeEditavelProps) {
   const [rascunho, setRascunho] = useState(nome);
 
   /** Nome vazio não apaga o que já existe: sem texto, sair do campo é

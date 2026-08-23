@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import { Botao, IconePlus } from "../../../../components";
 
-interface Props {
+interface FormularioNovaOpcaoProps {
   /** "fase" ou "situação", no singular -- vira o placeholder ("Nova fase"). */
   nomeSingular: string;
   enviando: boolean;
@@ -18,7 +18,7 @@ interface Props {
  * Um campo só, então sem modal e sem rótulo visível: o `placeholder` já diz
  * o que se escreve ali, e o `aria-label` repete pra quem usa leitor.
  */
-export default function FormularioNovaOpcao({ nomeSingular, enviando, erro, onCriar }: Props) {
+export default function FormularioNovaOpcao({ nomeSingular, enviando, erro, onCriar }: FormularioNovaOpcaoProps) {
   const [rotulo, setRotulo] = useState("");
   const texto = `Nova ${nomeSingular}`;
 

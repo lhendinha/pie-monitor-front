@@ -13,7 +13,7 @@ import {
 import { contar } from "../../../../utils";
 import type { Subgrupo } from "../../../../types";
 
-interface Props {
+interface ListaDeSubgruposProps {
   subgrupos: Subgrupo[];
   podeEditar: boolean;
   /** Por LINHA, e não por papel: um manager exclui o subgrupo que ele mesmo
@@ -43,7 +43,7 @@ export default function ListaDeSubgrupos({
   onCancelarRenome,
   onVerMembros,
   onRemover,
-}: Props) {
+}: ListaDeSubgruposProps) {
   if (subgrupos.length === 0) return <EstadoVazio mensagem="Nenhum subgrupo ainda." />;
 
   return (

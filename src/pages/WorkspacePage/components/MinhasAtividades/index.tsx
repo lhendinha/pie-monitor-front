@@ -3,7 +3,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { Cartao, EstadoDeErro, Esqueleto } from "../../../../components";
 import type { ResumoDaAreaDeTrabalho } from "../../../../types";
 
-interface Props {
+interface MinhasAtividadesProps {
   resumo?: ResumoDaAreaDeTrabalho;
   carregando: boolean;
   /** A consulta falhou.
@@ -30,7 +30,7 @@ export default function MinhasAtividades({
   falhou,
   onTentarDeNovo,
   tentando,
-}: Props) {
+}: MinhasAtividadesProps) {
   const barras = [
     { rotulo: "Concluídas", valor: resumo?.minhas_concluidas ?? 0, cor: "status.good" },
     { rotulo: "Atrasadas", valor: resumo?.minhas_atrasadas ?? 0, cor: "status.bad" },

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import MarcaArgos from "../MarcaArgos";
 
-interface Props {
+interface CartaoDeAutenticacaoProps {
   titulo: string;
   /** Explicação de uma ou duas linhas embaixo do título. */
   subtitulo?: string;
@@ -18,7 +18,7 @@ interface Props {
  * cópias desta moldura divergiriam no primeiro ajuste, e ela é a primeira
  * coisa que qualquer pessoa vê do sistema.
  */
-export default function CartaoDeAutenticacao({ titulo, subtitulo, children }: Props) {
+export default function CartaoDeAutenticacao({ titulo, subtitulo, children }: CartaoDeAutenticacaoProps) {
   return (
     <Flex minH="100vh" align="center" justify="center" p="24px" bg="bg.canvas">
       <Box

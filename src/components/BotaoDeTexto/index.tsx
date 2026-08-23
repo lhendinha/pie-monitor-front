@@ -1,14 +1,14 @@
 import { Button } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface BotaoDeTextoProps {
   onClick: () => void;
   children: ReactNode;
 }
 
 /** Botão sem moldura, na cor da marca (`.btn-text` do artifact). Usado no
  * "← Voltar" das telas de detalhe. */
-export default function BotaoDeTexto({ onClick, children }: Props) {
+export default function BotaoDeTexto({ onClick, children }: BotaoDeTextoProps) {
   return (
     <Button
       type="button"

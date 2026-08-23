@@ -6,7 +6,7 @@ import Faixa from "../Faixa";
 import Modal from "../Modal";
 import RodapeDeAcoes from "../RodapeDeAcoes";
 
-interface Props {
+interface ModalDeAvisoProps {
   titulo: string;
   mensagem: ReactNode;
   /** Os itens que a mensagem anuncia ("... ainda tem:"), um por linha.
@@ -26,7 +26,7 @@ interface Props {
  * um "Cancelar" que fazia exatamente a mesma coisa, e a frase "Essa ação
  * não pode ser desfeita" -- que além de falsa, assusta à toa.
  */
-export default function ModalDeAviso({ titulo, mensagem, itens, detalhe, onFechar }: Props) {
+export default function ModalDeAviso({ titulo, mensagem, itens, detalhe, onFechar }: ModalDeAvisoProps) {
   return (
     <Modal
       titulo={titulo}

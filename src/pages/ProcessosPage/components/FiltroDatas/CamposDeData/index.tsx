@@ -3,7 +3,7 @@ import { Box } from "@chakra-ui/react";
 import { Rotulo, SeletorData } from "../../../../../components";
 import { COLUNA_DATAS } from "../../../../../theme/painelFiltro";
 
-interface Props {
+interface CamposDeDataProps {
   verificar: string;
   prazo: string;
   onVerificar: (iso: string) => void;
@@ -26,7 +26,7 @@ export default function CamposDeData({
   onPrazo,
   calendario,
   onCalendario,
-}: Props) {
+}: CamposDeDataProps) {
   return (
     <Box w={COLUNA_DATAS.largura} p={COLUNA_DATAS.padding}>
       <Rotulo variante="filtro" id="rotulo-filtro-verificar" mb="6px">

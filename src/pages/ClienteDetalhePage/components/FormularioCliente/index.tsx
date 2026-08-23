@@ -8,7 +8,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
 import type { Cliente } from "../../../../types";
 
-interface Props {
+interface FormularioClienteProps {
   cliente: Cliente;
   podeExcluir: boolean;
   onSalvo: () => void;
@@ -22,7 +22,7 @@ interface Props {
  * a exclusão abaixo disso. Mostrar um botão que a API vai negar é pior que
  * não mostrar.
  */
-export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRemover }: Props) {
+export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRemover }: FormularioClienteProps) {
   const [nome, setNome] = useState(cliente.nome);
   const [cpfCnpj, setCpfCnpj] = useState(mascararCpfCnpj(cliente.cpf_cnpj || ""));
   const [telefone, setTelefone] = useState(mascararTelefone(cliente.telefone || ""));

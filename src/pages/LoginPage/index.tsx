@@ -11,15 +11,9 @@ import {
 } from "../../components";
 import { login } from "../../services";
 import { avisoDeTentativas } from "./helpers/avisoDeTentativas";
+import type { AlertaDoLogin } from "./types";
 
-/** O aviso acima do formulário. `ofereceRecuperacao` liga o link de
- * 'esqueci a senha' -- só faz sentido quando a falha foi de credencial. */
-interface AlertaDoLogin {
-  texto: string;
-  ofereceRecuperacao: boolean;
-}
-
-interface Props {
+interface LoginPageProps {
   /** Recado que chega junto com a tela -- hoje só "sua sessão expirou".
    * Vai DENTRO do cartão porque é sobre este login: solto acima dele
    * parecia aviso do site inteiro. */
@@ -28,7 +22,7 @@ interface Props {
   onEsqueciSenha: () => void;
 }
 
-export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: Props) {
+export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");

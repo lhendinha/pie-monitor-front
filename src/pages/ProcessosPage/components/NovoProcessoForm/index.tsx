@@ -19,7 +19,7 @@ import type { Subgrupo } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
 
 
-interface Props {
+interface NovoProcessoFormProps {
   subgrupos: Subgrupo[];
   /** Distingue "ainda não chegou" de "não existe nenhum". Sem isto o modal
    * abria afirmando "Crie um subgrupo primeiro" durante o carregamento --
@@ -34,7 +34,7 @@ export default function NovoProcessoForm({
   carregandoSubgrupos,
   onCadastrado,
   onFechar,
-}: Props) {
+}: NovoProcessoFormProps) {
   /** Liga o botão do rodapé ao `<form>` do corpo pelo atributo `form` --
    * eles são irmãos, não pai e filho, porque o rodapé fica fora da área que
    * rola. `useId` e não uma constante: dois modais abertos ao mesmo tempo

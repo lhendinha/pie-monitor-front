@@ -46,7 +46,7 @@ const Divisoria = chakra(Box, {
   },
 });
 
-interface Props {
+interface ListaDeOpcoesProps {
   selecionado: string;
   onEscolher: (id: string) => void;
   onAbrirPersonalizado: () => void;
@@ -59,7 +59,7 @@ interface Props {
  * o futuro é um erro fácil de cometer e difícil de perceber -- o quadro só
  * fica vazio.
  */
-export default function ListaDeOpcoes({ selecionado, onEscolher, onAbrirPersonalizado }: Props) {
+export default function ListaDeOpcoes({ selecionado, onEscolher, onAbrirPersonalizado }: ListaDeOpcoesProps) {
   function bloco(opcoes: readonly OpcaoDePeriodo[]) {
     return opcoes.map((o) => (
       <Opcao key={o.id} type="button" ativa={o.id === selecionado} onClick={() => onEscolher(o.id)}>

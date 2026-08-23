@@ -4,7 +4,7 @@ import IconeSino from "../../Icons/IconeSino";
 import BotaoDeIcone from "../../BotaoDeIcone";
 import MenuUsuario from "../MenuUsuario";
 
-interface Props {
+interface TopbarProps {
   onSair: () => void;
 }
 
@@ -13,7 +13,7 @@ interface Props {
  *
  * `sticky top 3px` pra ficar logo abaixo da faixa da marca, que é fixa.
  */
-export default function Topbar({ onSair }: Props) {
+export default function Topbar({ onSair }: TopbarProps) {
   return (
     <Flex
       as="header"

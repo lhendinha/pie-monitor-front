@@ -1,4 +1,5 @@
 import { chamar } from "./client";
+import type { CamposDaColuna } from "../../types/requisicoes";
 
 /** GET /subgrupos/{id}/quadro -- as colunas do Kanban daquele subgrupo.
  *
@@ -13,12 +14,6 @@ export function listarQuadro(subgrupoId: string) {
 /** Cria uma coluna no fim do quadro. Piso `admin` no servidor. */
 export function criarColuna(subgrupoId: string, nome: string) {
   return chamar(`/subgrupos/${subgrupoId}/quadro`, { method: "POST", body: { nome } });
-}
-
-/** PATCH parcial da coluna: o campo omitido não é tocado. */
-export interface CamposDaColuna {
-  nome?: string;
-  ordem?: number;
 }
 
 /** Renomeia e/ou reordena. Os dois campos são opcionais e independentes --

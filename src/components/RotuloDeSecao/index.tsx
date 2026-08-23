@@ -1,6 +1,6 @@
 import { Text } from "@chakra-ui/react";
 
-interface Props {
+interface RotuloDeSecaoProps {
   /** Primeiro da lista não desenha a linha de cima -- ela existe pra
    * SEPARAR seções, e antes da primeira não há o que separar. */
   primeiro?: boolean;
@@ -14,7 +14,7 @@ interface Props {
  * com nome ("Informações pessoais", "Conta") sem precisar de um cartão
  * pra cada um.
  */
-export default function RotuloDeSecao({ primeiro, children }: Props) {
+export default function RotuloDeSecao({ primeiro, children }: RotuloDeSecaoProps) {
   return (
     <Text
       as="p"

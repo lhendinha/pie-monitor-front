@@ -30,7 +30,7 @@ import type {
   RespostaDeMembros,
 } from "../../../../types/respostas";
 
-interface Props {
+interface MembrosDoSubgrupoProps {
   subgrupo: Subgrupo;
   onFechar: () => void;
 }
@@ -46,7 +46,7 @@ interface Props {
  * "Subgrupos" do modal de editar membro. Os dois invalidam as mesmas
  * consultas, então a contagem da linha atrás muda junto.
  */
-export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
+export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgrupoProps) {
   const [novoEmail, setNovoEmail] = useState("");
   const toast = useToast();
   const queryClient = useQueryClient();

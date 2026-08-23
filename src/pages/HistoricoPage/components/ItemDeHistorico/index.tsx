@@ -5,7 +5,7 @@ import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
 import type { HistoricoItem } from "../../../../types";
 
-interface Props {
+interface ItemDeHistoricoProps {
   item: HistoricoItem;
   onAbrir: (item: HistoricoItem) => void;
 }
@@ -15,7 +15,7 @@ interface Props {
  * A linha inteira abre o detalhe, então precisa ser alcançável pelo
  * teclado: `tabIndex` + Enter/Espaço.
  */
-export default function ItemDeHistorico({ item, onAbrir }: Props) {
+export default function ItemDeHistorico({ item, onAbrir }: ItemDeHistoricoProps) {
   const falhou = Boolean(item.falhou);
 
   /** Lembrete de tarefa não tem processo -- `numero_processo` guarda

@@ -10,7 +10,7 @@ import {
 import type { FiltrosDoQuadro } from "../../types";
 import type { Membro, Subgrupo } from "../../../../types";
 
-interface Props {
+interface FiltrosDoKanbanProps {
   subgrupos: Subgrupo[];
   membros: Membro[];
   filtros: FiltrosDoQuadro;
@@ -29,7 +29,7 @@ export default function FiltrosDoKanban({
   membros,
   filtros,
   onMudar,
-}: Props) {
+}: FiltrosDoKanbanProps) {
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="18px">
       <PilulaDeMenu

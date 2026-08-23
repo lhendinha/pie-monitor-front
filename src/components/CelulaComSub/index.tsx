@@ -1,7 +1,7 @@
 import { Box, Table, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface CelulaComSubProps {
   principal: ReactNode;
   sub?: ReactNode;
   /** - `processo`: coluna "Processo", onde a linha de cima é `.proc-num`
@@ -21,7 +21,7 @@ interface Props {
  * Medidas do artifact: `.tbl td` 13px 14px com divisória em `line-soft`,
  * `.cell-sub` 12px em `slate-2` com 2px de respiro.
  */
-export default function CelulaComSub({ principal, sub, variante = "padrao" }: Props) {
+export default function CelulaComSub({ principal, sub, variante = "padrao" }: CelulaComSubProps) {
   const processo = variante === "processo";
   const forte = processo || variante === "destaque";
   return (

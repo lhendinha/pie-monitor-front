@@ -4,14 +4,14 @@ import { Outlet } from "react-router-dom";
 import MenuLateral from "./MenuLateral";
 import Topbar from "./Topbar";
 
-interface Props {
+interface AppShellProps {
   onSair: () => void;
 }
 
 /** Moldura do app autenticado: faixa da marca, menu lateral e a área de
  * conteúdo, que o router preenche via `<Outlet />`.
  */
-export default function AppShell({ onSair }: Props) {
+export default function AppShell({ onSair }: AppShellProps) {
   return (
     <>
       <Box

@@ -11,12 +11,12 @@ vi.mock("./authBridge", () => mocks);
 import { ApiError } from "./api";
 import { queryClient, toastErroMutation, useToastOnQueryError } from "./queryClient";
 
-interface Props {
+interface ComponenteDeErroProps {
   erro: unknown;
   mensagem: string;
 }
 
-function ComponenteDeErro({ erro, mensagem }: Props) {
+function ComponenteDeErro({ erro, mensagem }: ComponenteDeErroProps) {
   useToastOnQueryError(erro, mensagem);
   return null;
 }

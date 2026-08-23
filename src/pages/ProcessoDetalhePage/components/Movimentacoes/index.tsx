@@ -6,7 +6,7 @@ import { formatarData } from "../../../../utils";
 import { MOVIMENTACOES_POR_PAGINA, TAMANHOS_MOVIMENTACOES } from "../../constants/detalhe";
 import type { Comunicacao } from "../../../../types";
 
-interface Props {
+interface MovimentacoesProps {
   comunicacoes: Comunicacao[];
 }
 
@@ -20,7 +20,7 @@ interface Props {
  * tudo de uma vez -- o que ela resolve é a tela crescer sem fim num
  * processo antigo, não o tamanho da resposta.
  */
-export default function Movimentacoes({ comunicacoes }: Props) {
+export default function Movimentacoes({ comunicacoes }: MovimentacoesProps) {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(MOVIMENTACOES_POR_PAGINA);
 

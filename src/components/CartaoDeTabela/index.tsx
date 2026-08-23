@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface CartaoDeTabelaProps {
   children: ReactNode;
 }
 
@@ -15,7 +15,7 @@ interface Props {
  * padding 6px 4px -- pequeno de propósito, porque quem espaça de verdade
  * são as células.
  */
-export default function CartaoDeTabela({ children }: Props) {
+export default function CartaoDeTabela({ children }: CartaoDeTabelaProps) {
   return (
     <Box
       bg="bg.surface"

@@ -8,7 +8,7 @@ import IconeChevron from "../../Icons/IconeChevron";
 import { OPCAO_DE_MENU, PAINEL_DE_MENU } from "../../../theme/menu";
 
 
-interface Props {
+interface MenuUsuarioProps {
   onSair: () => void;
 }
 
@@ -22,7 +22,7 @@ interface Props {
  * limpar o local: só limpar o storage deixaria o refresh token válido no
  * servidor, e a sessão seguiria viva pra quem tivesse o token.
  */
-export default function MenuUsuario({ onSair }: Props) {
+export default function MenuUsuario({ onSair }: MenuUsuarioProps) {
   const navegar = useNavigate();
   const nome = getApelido() || getEmail() || "";
 

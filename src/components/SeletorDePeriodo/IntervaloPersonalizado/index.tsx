@@ -7,7 +7,7 @@ import SeletorData from "../../SeletorData";
 import RodapeDeFiltro from "../../RodapeDeFiltro";
 import type { Intervalo } from "../../../utils/periodo";
 
-interface Props {
+interface IntervaloPersonalizadoProps {
   /** Rascunho inicial -- o intervalo já aplicado, se houver. */
   de: string;
   ate: string;
@@ -29,7 +29,7 @@ interface Props {
  * na primeira dispararia uma busca com um intervalo que a pessoa nem
  * terminou de montar -- e, pior, invertido enquanto o fim ainda é o antigo.
  */
-export default function IntervaloPersonalizado({ de, ate, onAplicar, onVoltar }: Props) {
+export default function IntervaloPersonalizado({ de, ate, onAplicar, onVoltar }: IntervaloPersonalizadoProps) {
   const [inicio, setInicio] = useState(de);
   const [fim, setFim] = useState(ate);
   /** Só um calendário aberto por vez: abrir um é a mesma operação que

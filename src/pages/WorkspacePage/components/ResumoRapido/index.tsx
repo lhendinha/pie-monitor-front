@@ -6,7 +6,7 @@ import GrupoDeNumeros from "../GrupoDeNumeros";
 import type { NumeroDoResumo } from "../../types";
 import type { ResumoDaAreaDeTrabalho } from "../../../../types";
 
-interface Props {
+interface ResumoRapidoProps {
   resumo?: ResumoDaAreaDeTrabalho;
   carregando: boolean;
   /** A consulta falhou.
@@ -33,7 +33,7 @@ export default function ResumoRapido({
   falhou,
   onTentarDeNovo,
   tentando,
-}: Props) {
+}: ResumoRapidoProps) {
   const navegar = useNavigate();
 
   function irParaProcessos(filtros: Record<string, string>) {

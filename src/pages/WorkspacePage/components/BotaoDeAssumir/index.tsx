@@ -1,6 +1,6 @@
 import { BotaoNu, IconePlus } from "../../../../components";
 
-interface Props {
+interface BotaoDeAssumirProps {
   rotulo: string;
   desabilitado?: boolean;
   onAssumir: () => void;
@@ -15,7 +15,7 @@ interface Props {
  * Por isso não há também um botão "Assumir" na linha: dois botões pra mesma
  * ação, um do lado do outro, só confundem.
  */
-export default function BotaoDeAssumir({ rotulo, desabilitado, onAssumir }: Props) {
+export default function BotaoDeAssumir({ rotulo, desabilitado, onAssumir }: BotaoDeAssumirProps) {
   return (
     <BotaoNu
       type="button"

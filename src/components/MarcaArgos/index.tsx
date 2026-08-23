@@ -1,6 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 
-interface Props {
+interface MarcaArgosProps {
   /** `menu` é a do topo da barra lateral (26px, deitada); `gate` é a das
    * telas de entrada (42px, empilhada e centralizada), onde a marca é a
    * primeira coisa que a pessoa vê. */
@@ -18,7 +18,7 @@ const MEDIDAS = {
  * marca e, **dentro** dele, um contorno branco de 2px afastado das bordas --
  * é esse miolo vazado que dá a leitura de "olho".
  */
-export default function MarcaArgos({ tamanho = "menu" }: Props) {
+export default function MarcaArgos({ tamanho = "menu" }: MarcaArgosProps) {
   const m = MEDIDAS[tamanho];
   return (
     <Flex

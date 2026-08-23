@@ -1,6 +1,6 @@
 import { BotaoNu, IconeCheck } from "../../../../components";
 
-interface Props {
+interface BotaoDeConcluirProps {
   rotulo: string;
   desabilitado?: boolean;
   onConcluir: () => void;
@@ -13,7 +13,7 @@ interface Props {
  * tarefas, dez círculos berrantes competiriam com os títulos, que são o que
  * se lê.
  */
-export default function BotaoDeConcluir({ rotulo, desabilitado, onConcluir }: Props) {
+export default function BotaoDeConcluir({ rotulo, desabilitado, onConcluir }: BotaoDeConcluirProps) {
   return (
     <BotaoNu
       type="button"

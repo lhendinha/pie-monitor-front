@@ -4,7 +4,7 @@ import { formatarData, formatarDataHoraAmPm, mascararNumeroProcesso } from "../.
 import { CelulaComSub } from "../../../../components";
 import type { Processo } from "../../../../types";
 
-interface Props {
+interface LinhaProcessoProps {
   processo: Processo;
   subgrupoNome: (id: string) => string;
   clientesNomes: (p: Processo) => string;
@@ -27,7 +27,7 @@ export default function LinhaProcesso({
   faseRotulo,
   situacaoRotulo,
   onAbrir,
-}: Props) {
+}: LinhaProcessoProps) {
   const temApelido = Boolean(p.apelido);
 
   return (

@@ -4,7 +4,7 @@ import { PilulaDeFiltro } from "../../../../components";
 import { OPCAO_DE_MENU, OPCAO_DE_MENU_ATIVA, PAINEL_DE_MENU } from "../../../../theme/menu";
 import { TIPOS_DE_ENVIO } from "../../constants/historico";
 
-interface Props {
+interface FiltroDeTipoProps {
   valor: string;
   onMudar: (valor: string) => void;
 }
@@ -16,7 +16,7 @@ interface Props {
  * a pessoa ver uma lista incompleta achando que está vendo tudo. Pelo mesmo
  * motivo a opção escolhida fica realçada dentro do menu.
  */
-export default function FiltroDeTipo({ valor, onMudar }: Props) {
+export default function FiltroDeTipo({ valor, onMudar }: FiltroDeTipoProps) {
   const atual = TIPOS_DE_ENVIO.find((t) => t.valor === valor) || TIPOS_DE_ENVIO[0];
 
   return (

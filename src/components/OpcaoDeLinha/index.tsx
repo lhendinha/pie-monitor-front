@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { BotaoNu } from "../BotaoNu";
 import { OPCAO_LINHA } from "../../theme/painelFiltro";
 
-interface Props {
+interface OpcaoDeLinhaProps {
   ativa: boolean;
   onClick: () => void;
   children: ReactNode;
@@ -16,7 +16,7 @@ interface Props {
  * artifact usa nos dois. Subiu de `Select/` pra cá quando ganhou o segundo
  * consumidor, fora do Select.
  */
-export function OpcaoDeLinha({ ativa, onClick, children }: Props) {
+export function OpcaoDeLinha({ ativa, onClick, children }: OpcaoDeLinhaProps) {
   return (
     <BotaoNu
       type="button"

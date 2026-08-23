@@ -1,4 +1,4 @@
-interface Props {
+interface IconeEnviarProps {
   tamanho?: number;
 }
 
@@ -6,7 +6,7 @@ interface Props {
  * campo ao lado -- o registro novo do atendimento.
  *
  * 15px é a medida de `.btn svg`, e vai como padrão porque é onde ele mora. */
-export default function IconeEnviar({ tamanho = 15 }: Props) {
+export default function IconeEnviar({ tamanho = 15 }: IconeEnviarProps) {
   return (
     <svg
       width={tamanho}

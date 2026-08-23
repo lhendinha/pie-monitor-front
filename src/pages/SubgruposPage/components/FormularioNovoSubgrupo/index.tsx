@@ -6,7 +6,7 @@ import { Botao, IconePlus, useToast } from "../../../../components";
 import { criarSubgrupo } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 
-interface Props {
+interface FormularioNovoSubgrupoProps {
   onCriado: () => void;
 }
 
@@ -17,7 +17,7 @@ interface Props {
  * É um campo só, então não tem modal nem rótulo visível: o `placeholder` já
  * diz o que se escreve ali, e o `aria-label` repete pra quem usa leitor.
  */
-export default function FormularioNovoSubgrupo({ onCriado }: Props) {
+export default function FormularioNovoSubgrupo({ onCriado }: FormularioNovoSubgrupoProps) {
   const [nome, setNome] = useState("");
   const [erro, setErro] = useState("");
   const toast = useToast();

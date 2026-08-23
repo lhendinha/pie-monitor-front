@@ -18,14 +18,14 @@ import type {
   RespostaDeConvite,
 } from "../../types/respostas";
 
-interface Props {
+interface AceitarConvitePageProps {
   token: string;
   /** Chamado quando a conta é criada e os tokens já estão salvos. Quem
    * navega é a rota -- a página segue pura, como a de login. */
   onEntrar: () => void;
 }
 
-export default function AceitarConvitePage({ token, onEntrar }: Props) {
+export default function AceitarConvitePage({ token, onEntrar }: AceitarConvitePageProps) {
   /** Confere o link ao ABRIR. Sem isto, a pessoa preenchia apelido e senha,
    * clicava, esperava o round-trip e SÓ ENTÃO lia "Convite expirado" -- uma
    * recusa que já era conhecida quando a página carregou. */

@@ -4,7 +4,7 @@ import { BotaoNu } from "../../BotaoNu";
 import { IconeAlerta, IconeCheck } from "../../Icons";
 import type { ToastItem } from "../tipos";
 
-interface Props {
+interface AvisoProps {
   item: ToastItem;
   onFechar: () => void;
 }
@@ -16,7 +16,7 @@ interface Props {
  * ícone. Aviso vermelho inteiro no canto da tela compete com o conteúdo, e
  * uma falha ao salvar não é um alarme.
  */
-export default function Aviso({ item, onFechar }: Props) {
+export default function Aviso({ item, onFechar }: AvisoProps) {
   const ehErro = item.tipo === "erro";
   return (
     <BotaoNu

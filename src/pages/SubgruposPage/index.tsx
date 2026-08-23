@@ -29,15 +29,10 @@ import {
   useConteudoDoSubgrupo,
 } from "./hooks/useConteudoDoSubgrupo";
 import type { Subgrupo } from "../../types";
+import type { RenomearSubgrupo } from "./types";
 import type {
   RespostaDeSubgruposPaginada,
 } from "../../types/respostas";
-
-/** O que a mutation de renomear recebe. */
-interface RenomearSubgrupo {
-  id: string;
-  nome: string;
-}
 
 /** Sub-aba "Subgrupos" da tela de Grupo.
  *

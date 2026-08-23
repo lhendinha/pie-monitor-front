@@ -1,7 +1,7 @@
 import { SimpleGrid } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface LinhaDeCamposProps {
   /** Colunas da grade, quando os dois campos não merecem o mesmo espaço --
    * "2fr 1fr" dá o dobro ao primeiro. Um endereço de e-mail precisa caber
    * inteiro; um seletor de três itens, não. */
@@ -15,7 +15,7 @@ interface Props {
  * Vira uma coluna só abaixo de 640px -- dois campos de data espremidos num
  * celular não são utilizáveis, e o artifact faz o mesmo no seu media query.
  */
-export default function LinhaDeCampos({ proporcoes, children }: Props) {
+export default function LinhaDeCampos({ proporcoes, children }: LinhaDeCamposProps) {
   return (
     <SimpleGrid
       /* ⚠️ `templateColumns` SEMPRE, nunca `columns={{ base: 1, sm: 2 }}`.

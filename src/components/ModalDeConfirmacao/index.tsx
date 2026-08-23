@@ -8,7 +8,7 @@ import { IconeLixeira } from "../Icons";
 import Modal from "../Modal";
 import RodapeDeAcoes from "../RodapeDeAcoes";
 
-interface Props {
+interface ModalDeConfirmacaoProps {
   titulo: string;
   /** O que vai ser removido, em uma frase. Aceita marcação porque o nome do
    * item vem em negrito no meio dela. */
@@ -66,7 +66,7 @@ export default function ModalDeConfirmacao({
   falhouAVerificacao,
   onConfirmar,
   onFechar,
-}: Props) {
+}: ModalDeConfirmacaoProps) {
   return (
     <Modal
       titulo={titulo}

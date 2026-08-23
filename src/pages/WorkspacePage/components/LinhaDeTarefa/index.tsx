@@ -5,7 +5,7 @@ import { EtiquetaDePrazo } from "../../../../components";
 import { mascararNumeroProcesso } from "../../../../utils";
 import type { Tarefa } from "../../../../types";
 
-interface Props {
+interface LinhaDeTarefaProps {
   tarefa: Tarefa;
   /** Ação à esquerda: o círculo de concluir. */
   acao?: ReactNode;
@@ -20,7 +20,7 @@ interface Props {
  * de varredura -- o que importa é bater o olho em quantas há e quando
  * vencem, e linhas de alturas diferentes atrapalham isso.
  */
-export default function LinhaDeTarefa({ tarefa, acao, responsavel }: Props) {
+export default function LinhaDeTarefa({ tarefa, acao, responsavel }: LinhaDeTarefaProps) {
   const meta = tarefa.processo_numero
     ? mascararNumeroProcesso(tarefa.processo_numero)
     : tarefa.prioridade;

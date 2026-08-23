@@ -3,7 +3,7 @@ import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { Botao, CampoDeBusca } from "../../../../components";
 import { contar } from "../../../../utils";
 
-interface Props {
+interface CabecalhoClientesProps {
   carregando: boolean;
   total: number;
   busca: string;
@@ -25,7 +25,7 @@ export default function CabecalhoClientes({
   onBuscar,
   podeCriar,
   onNovoCliente,
-}: Props) {
+}: CabecalhoClientesProps) {
   return (
     <Box mb="14px">
       <Flex align="flex-start" justify="space-between" gap="16px" mb="18px">

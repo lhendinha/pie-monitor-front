@@ -1,4 +1,4 @@
-interface Props {
+interface IconeClientesProps {
   tamanho?: number;
 }
 
@@ -9,7 +9,7 @@ interface Props {
  * lateral e 13px na linha do atendimento (`.at-item-cliente svg` do
  * artifact). Sem a prop, o segundo caso teria que apertá-lo por CSS de
  * fora -- que foi exatamente como o `IconeCheck` acabou deformado. */
-export default function IconeClientes({ tamanho = 18 }: Props) {
+export default function IconeClientes({ tamanho = 18 }: IconeClientesProps) {
   return (
     <svg
       width={tamanho}

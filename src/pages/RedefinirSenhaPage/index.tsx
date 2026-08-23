@@ -13,13 +13,13 @@ import {
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
 import { ApiError, redefinirSenha } from "../../services";
 
-interface Props {
+interface RedefinirSenhaPageProps {
   token: string;
   /** Senha salva. Quem navega é a rota. */
   onConcluido: () => void;
 }
 
-export default function RedefinirSenhaPage({ token, onConcluido }: Props) {
+export default function RedefinirSenhaPage({ token, onConcluido }: RedefinirSenhaPageProps) {
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [erro, setErro] = useState("");

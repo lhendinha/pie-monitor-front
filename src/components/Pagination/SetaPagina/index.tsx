@@ -1,6 +1,6 @@
 import { BotaoNu } from "../../BotaoNu";
 
-interface Props {
+interface SetaPaginaProps {
   direcao: "anterior" | "proxima";
   desabilitado: boolean;
   onClick: () => void;
@@ -8,7 +8,7 @@ interface Props {
 
 /** Seta de página (`.pagination-seta` do artifact): quadrado de 30px com
  * borda, glifo de 16px. */
-export default function SetaPagina({ direcao, desabilitado, onClick }: Props) {
+export default function SetaPagina({ direcao, desabilitado, onClick }: SetaPaginaProps) {
   const anterior = direcao === "anterior";
   return (
     <BotaoNu

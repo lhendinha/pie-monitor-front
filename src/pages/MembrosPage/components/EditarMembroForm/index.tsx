@@ -28,14 +28,14 @@ import type {
   RespostaDeSubgrupos,
 } from "../../../../types/respostas";
 
-interface Props {
+interface EditarMembroFormProps {
   membro: Membro;
   grupos: Grupo[];
   onAtualizado: () => void;
   onFechar: () => void;
 }
 
-export default function EditarMembroForm({ membro, grupos, onAtualizado, onFechar }: Props) {
+export default function EditarMembroForm({ membro, grupos, onAtualizado, onFechar }: EditarMembroFormProps) {
   /** Liga o botão do rodapé ao `<form>` do corpo pelo atributo `form` --
    * eles são irmãos, não pai e filho, porque o rodapé fica fora da área que
    * rola. `useId` e não uma constante: dois modais abertos ao mesmo tempo

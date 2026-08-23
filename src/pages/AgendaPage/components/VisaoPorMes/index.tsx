@@ -6,7 +6,7 @@ import { DIAS_DA_SEMANA_CURTOS, PONTOS_POR_CELULA } from "../../constants";
 import { gradeDoMes } from "../../../../utils/calendario";
 import type { Tarefa } from "../../../../types";
 
-interface Props {
+interface VisaoPorMesProps {
   data: Date;
   isoDeHoje: string;
   porDia: Map<string, Tarefa[]>;
@@ -27,7 +27,7 @@ interface Props {
  * O fundo da grade é a própria borda: `gap: 1px` sobre `bg="border"` desenha
  * as divisórias sem 42 bordas que se somam em dobro nos encontros.
  */
-export default function VisaoPorMes({ data, isoDeHoje, porDia, onEscolherDia }: Props) {
+export default function VisaoPorMes({ data, isoDeHoje, porDia, onEscolherDia }: VisaoPorMesProps) {
   const grade = gradeDoMes(data.getFullYear(), data.getMonth());
 
   return (

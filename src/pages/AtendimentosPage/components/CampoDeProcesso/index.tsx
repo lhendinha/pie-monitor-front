@@ -10,19 +10,12 @@ import { useValorComEspera } from "../../../../hooks/useValorComEspera";
 import { listarProcessos } from "../../../../services";
 import { OPCAO_LINHA } from "../../../../theme/painelFiltro";
 import { mascararNumeroProcesso } from "../../../../utils";
+import type { ProcessoEscolhido } from "../../types";
 import type {
   RespostaDeProcessos,
 } from "../../../../types/respostas";
 
-/** O processo escolhido: o número que vai pro servidor e o rótulo já
- * mascarado que a etiqueta mostra. Guardar os dois evita mascarar de novo a
- * cada render -- e o rótulo continua certo mesmo depois de a busca sumir. */
-export interface ProcessoEscolhido {
-  numero: string;
-  rotulo: string;
-}
-
-interface Props {
+interface CampoDeProcessoProps {
   id: string;
   valor: ProcessoEscolhido | null;
   onMudar: (escolhido: ProcessoEscolhido | null) => void;
@@ -38,7 +31,7 @@ interface Props {
  * etiqueta e o que devolve. Um componente com `multiplo?: boolean` teria
  * dois caminhos separados do começo ao fim.
  */
-export default function CampoDeProcesso({ id, valor, onMudar }: Props) {
+export default function CampoDeProcesso({ id, valor, onMudar }: CampoDeProcessoProps) {
   const [texto, setTexto] = useState("");
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
   const [aberto, setAberto] = useState(false);

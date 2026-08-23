@@ -7,13 +7,13 @@ import { criarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
 
-interface Props {
+interface NovoClienteFormProps {
   onCadastrado: () => void;
   onFechar: () => void;
 }
 
 
-export default function NovoClienteForm({ onCadastrado, onFechar }: Props) {
+export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteFormProps) {
   /** Liga o botão do rodapé ao `<form>` do corpo pelo atributo `form` --
    * eles são irmãos, não pai e filho, porque o rodapé fica fora da área que
    * rola. `useId` e não uma constante: dois modais abertos ao mesmo tempo

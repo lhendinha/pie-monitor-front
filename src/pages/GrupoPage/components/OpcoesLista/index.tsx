@@ -40,23 +40,18 @@ import { calcularOrdemAposMover } from "../../../../utils";
 import FormularioNovaOpcao from "../FormularioNovaOpcao";
 import LinhaDeOpcao from "../LinhaDeOpcao";
 import type { OpcaoProcesso, TipoOpcaoProcesso } from "../../../../types";
+import type { RenomearOpcao } from "../../types";
 import type {
   RespostaDeOpcoesPaginada,
 } from "../../../../types/respostas";
 
-interface Props {
+interface OpcoesListaProps {
   tipo: TipoOpcaoProcesso;
   /** "Fases" / "Situações", pras mensagens de erro. */
   titulo: string;
   /** "fase" / "situação" -- vira "Nova fase" no campo e "Desativar fase" no
    * diálogo. */
   nomeSingular: string;
-}
-
-/** O que a mutation de renomear recebe. */
-interface RenomearOpcao {
-  id: string;
-  rotulo: string;
 }
 
 /** CRUD de uma lista (Fases OU Situações).
@@ -69,7 +64,7 @@ interface RenomearOpcao {
  * inteira com `TETO_POR_PAGINA` em vez de paginar. Mesma premissa do
  * seletor de Fase/Situação do formulário de processo.
  */
-export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
+export default function OpcoesLista({ tipo, titulo, nomeSingular }: OpcoesListaProps) {
   const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   const [paraDesativar, setParaDesativar] = useState<OpcaoProcesso | null>(null);
   const [erroAoCriar, setErroAoCriar] = useState("");

@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react";
 
 import { iniciais } from "../../utils";
 
-interface Props {
+interface AvatarProps {
   nome: string;
   /** `pequeno` (22px) é o do chip da barra superior; `medio` (30px) é o das
    * listas de pessoas, onde o avatar divide a linha com nome e e-mail. */
@@ -20,7 +20,7 @@ const MEDIDAS = {
  * "Ana Paula" vira "AP" -- e com duas cópias dessa decisão, uma delas
  * acabaria divergindo.
  */
-export default function Avatar({ nome, tamanho = "medio" }: Props) {
+export default function Avatar({ nome, tamanho = "medio" }: AvatarProps) {
   const { caixa, fonte } = MEDIDAS[tamanho];
   return (
     <Box

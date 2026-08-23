@@ -14,7 +14,7 @@ import {
 import { atualizarMeuPerfil, getApelido, getEmail, salvarApelido } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 
-interface Props {
+interface FormularioIdentificacaoProps {
   onAlterarSenha: () => void;
 }
 
@@ -23,7 +23,7 @@ interface Props {
  * Não há consulta -- apelido e e-mail já estão na sessão, e ir à rede
  * buscar o que já está em mãos faria a tela piscar sem ganho.
  */
-export default function FormularioIdentificacao({ onAlterarSenha }: Props) {
+export default function FormularioIdentificacao({ onAlterarSenha }: FormularioIdentificacaoProps) {
   const email = getEmail() || "";
   const apelidoSalvo = getApelido() || "";
   const [apelido, setApelido] = useState(apelidoSalvo);

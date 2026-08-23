@@ -47,12 +47,7 @@ import type {
   RespostaDoQuadro,
 } from "../../types/respostas";
 import type { Tarefa } from "../../types";
-
-/** O par que identifica a tarefa apontada pelo lembrete de e-mail. */
-interface TarefaDoLink {
-  subgrupoId: string;
-  tarefaId: string;
-}
+import type { MoverTarefa, TarefaDoLink } from "./types";
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
  * (`PERIODS = { kanban: 'mes' }`).
@@ -77,7 +72,7 @@ const FILTROS_VAZIOS = {
   busca: "",
 };
 
-interface Props {
+interface KanbanPageProps {
   /** A tarefa que o link do lembrete de prazo aponta
    * (`/tarefas/:subgrupoId/:tarefaId`).
    *
@@ -88,19 +83,13 @@ interface Props {
   tarefaDoLink?: TarefaDoLink;
 }
 
-/** A tarefa arrastada e a coluna em que ela caiu. */
-interface MoverTarefa {
-  tarefa: Tarefa;
-  destino: string;
-}
-
 /** Gestão kanban.
  *
  * Cada subgrupo tem o PRÓPRIO quadro -- trocar o subgrupo não filtra, troca
  * de quadro. Por isso o seletor dele fica sempre ativo e fora do "Limpar
  * filtros".
  */
-export default function KanbanPage({ tarefaDoLink }: Props = {}) {
+export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   const [filtros, setFiltros] = useState<FiltrosDoQuadro>({
     /* O quadro abre no subgrupo da tarefa do link -- é o dela que interessa,
        não o último da lista. */

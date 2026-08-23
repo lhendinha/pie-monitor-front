@@ -1,7 +1,7 @@
 import { Box } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface AreaAtualizandoProps {
   /** Os dados na tela são os ANTERIORES, e os novos estão vindo. */
   atualizando: boolean;
   children: ReactNode;
@@ -20,7 +20,7 @@ interface Props {
  * `pointerEvents: none` junto: clicar numa linha que está prestes a ser
  * substituída abre o item errado.
  */
-export default function AreaAtualizando({ atualizando, children }: Props) {
+export default function AreaAtualizando({ atualizando, children }: AreaAtualizandoProps) {
   return (
     <Box
       aria-busy={atualizando || undefined}

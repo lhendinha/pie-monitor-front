@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { mascararCpfCnpj, mascararTelefone } from "../../../../utils";
 import type { Cliente } from "../../../../types";
 
-interface Props {
+interface LinhaClienteProps {
   cliente: Cliente;
 }
 
@@ -24,7 +24,7 @@ function tipoDoCliente(cpfCnpj?: string | null): string {
  * alcançável pelo teclado: as ações saíram da linha e foram pro detalhe,
  * então quem navega por Tab não teria outro caminho.
  */
-export default function LinhaCliente({ cliente }: Props) {
+export default function LinhaCliente({ cliente }: LinhaClienteProps) {
   const navegar = useNavigate();
   const tipo = tipoDoCliente(cliente.cpf_cnpj);
 

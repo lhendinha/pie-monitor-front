@@ -1,13 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 
 import { atualizarTarefa } from "../../../services";
-import type { Tarefa } from "../../../types";
-
-/** A tarefa e quem passa a ser responsável por ela. */
-interface AssumirTarefa {
-  tarefa: Tarefa;
-  email: string;
-}
+import type { AssumirTarefa } from "../types";
 
 /** Assume uma tarefa sem dono: grava o próprio e-mail como responsável.
  *

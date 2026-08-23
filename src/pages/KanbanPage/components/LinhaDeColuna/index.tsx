@@ -12,7 +12,7 @@ import {
 import { contar } from "../../../../utils";
 import type { ColunaDoQuadro } from "../../../../types";
 
-interface Props {
+interface LinhaDeColunaProps {
   coluna: ColunaDoQuadro;
   /** Quantas tarefas estão nela hoje -- é o número que a pessoa precisa ver
    * antes de excluir, porque elas vão pra coluna anterior. */
@@ -47,7 +47,7 @@ export default function LinhaDeColuna({
   onCancelarRenome,
   onMarcarConclusao,
   onExcluir,
-}: Props) {
+}: LinhaDeColunaProps) {
   /* As duas do FIM não se movem: o servidor recusa (409), e oferecer o
      gesto que vai falhar é pior que não oferecer. A alça delas some logo
      abaixo, pelo mesmo motivo. */

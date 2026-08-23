@@ -6,7 +6,7 @@ import { PAINEL } from "../../../../theme/painelFiltro";
 import { VISOES, rotuloDaVisao } from "../../constants";
 import type { VisaoDaAgenda } from "../../types";
 
-interface Props {
+interface SeletorDeVisaoProps {
   visao: VisaoDaAgenda;
   onMudar: (visao: VisaoDaAgenda) => void;
 }
@@ -17,7 +17,7 @@ interface Props {
  * delas está sempre valendo, e apagar a pílula sugeriria que dá pra
  * desligá-la.
  */
-export default function SeletorDeVisao({ visao, onMudar }: Props) {
+export default function SeletorDeVisao({ visao, onMudar }: SeletorDeVisaoProps) {
   const [aberto, setAberto] = useState(false);
 
   function escolher(nova: VisaoDaAgenda) {

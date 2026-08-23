@@ -8,7 +8,7 @@ import {
 } from "../../../../components";
 import type { Membro } from "../../../../types";
 
-interface Props {
+interface LinhaDeMembroProps {
   membro: Membro;
   /** Nomes dos subgrupos da pessoa, já resolvidos: `membro.subgrupos` traz
    * ids, e id não diz nada pra quem lê. */
@@ -24,7 +24,7 @@ interface Props {
  * A linha inteira abre a edição, então precisa ser alcançável pelo teclado:
  * `tabIndex` + Enter/Espaço -- mesmo contrato da linha de processo.
  */
-export default function LinhaDeMembro({ membro, subgruposNomes, podeEditar, onEditar }: Props) {
+export default function LinhaDeMembro({ membro, subgruposNomes, podeEditar, onEditar }: LinhaDeMembroProps) {
   return (
     <Table.Row
       tabIndex={podeEditar ? 0 : undefined}

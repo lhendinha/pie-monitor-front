@@ -1,4 +1,4 @@
-interface Props {
+interface IconeLinkProps {
   tamanho?: number;
 }
 
@@ -7,7 +7,7 @@ interface Props {
  *
  * `tamanho` porque o artifact desenha o mesmo ícone em medidas diferentes
  * conforme o lugar (13px dentro do `.meta-chip`). */
-export default function IconeLink({ tamanho = 15 }: Props) {
+export default function IconeLink({ tamanho = 15 }: IconeLinkProps) {
   return (
     <svg
       width={tamanho}

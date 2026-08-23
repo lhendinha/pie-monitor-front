@@ -5,7 +5,7 @@ import FiltroDatas from "../FiltroDatas";
 import { contar } from "../../../../utils";
 import type { Cliente, FiltrosProcessos, OpcaoProcesso } from "../../../../types";
 
-interface Props {
+interface CabecalhoProcessosProps {
   carregando: boolean;
   /** As listas dos CHIPS (clientes, fases, situações), que não são a mesma
    * espera do `carregando` acima -- aquele é a lista de processos. Sem
@@ -50,7 +50,7 @@ export default function CabecalhoProcessos({
   fases,
   situacoes,
   onNovoProcesso,
-}: Props) {
+}: CabecalhoProcessosProps) {
   return (
     <Box mb="14px">
       <Flex align="flex-start" justify="space-between" gap="16px" mb="18px">

@@ -7,7 +7,7 @@ interface Aba<T extends string> {
   rotulo: string;
 }
 
-interface Props<T extends string> {
+interface AbasProps<T extends string> {
   abas: Aba<T>[];
   ativa: T;
   onMudar: (id: T) => void;
@@ -19,7 +19,7 @@ interface Props<T extends string> {
  * `role="tablist"` e `aria-selected` são o que faz o leitor de tela
  * anunciar "aba 2 de 5" em vez de ler cinco botões soltos.
  */
-export default function Abas<T extends string>({ abas, ativa, onMudar }: Props<T>) {
+export default function Abas<T extends string>({ abas, ativa, onMudar }: AbasProps<T>) {
   return (
     <Flex
       role="tablist"

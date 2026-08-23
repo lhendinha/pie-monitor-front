@@ -1,7 +1,7 @@
 import { formatarData, diasAte } from "../../utils";
 import Etiqueta from "../Etiqueta";
 
-interface Props {
+interface EtiquetaDePrazoProps {
   data: string;
   /** Concluída não fica vermelha, mesmo com data no passado: já foi feita,
    * e pintar de atraso o que já acabou é alarme falso. */
@@ -14,7 +14,7 @@ interface Props {
  * data: é assim que se fala de prazo, e a data crua exige o leitor calcular
  * a distância sozinho. Longe, a data serve melhor.
  */
-export default function EtiquetaDePrazo({ data, concluida }: Props) {
+export default function EtiquetaDePrazo({ data, concluida }: EtiquetaDePrazoProps) {
   const dias = diasAte(data);
   const atrasada = dias < 0 && !concluida;
   const hoje = dias === 0;

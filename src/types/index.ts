@@ -335,3 +335,17 @@ export interface VinculosDaTarefa {
   processo: Vinculo | null;
   atendimento: Vinculo | null;
 }
+
+/** Qualquer item ordenável: uma opção de Fase/Situação ou uma coluna do
+ * quadro. `calcularOrdemAposMover` só precisa da `ordem`, e pedir a
+ * entidade inteira prenderia o helper a uma delas. */
+export interface ComOrdem {
+  ordem: number;
+}
+
+/** Qualquer coisa que carregue ids de cliente -- processo ou atendimento.
+ * Mesmo motivo do `ComOrdem`: o helper que resolve nomes só precisa dos
+ * ids. */
+export interface ComClientes {
+  cliente_ids?: string[];
+}

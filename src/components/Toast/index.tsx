@@ -12,11 +12,11 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-interface Props {
+interface ToastProviderProps {
   children: ReactNode;
 }
 
-export function ToastProvider({ children }: Props) {
+export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const proximoId = useRef(0);
 

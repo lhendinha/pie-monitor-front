@@ -1,7 +1,7 @@
 import { Table } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface TabelaProps {
   /** Uma string por coluna, na ordem. Vazia (`""`) pra coluna de ações,
    * que no artifact é `<th></th>`: o cabeçalho existe pra a contagem de
    * colunas bater, mas não tem nome. */
@@ -26,7 +26,7 @@ interface Props {
  * rola dentro do próprio container em vez de empurrar a página pro lado --
  * regra que vale pra todo conteúdo largo do sistema.
  */
-export default function Tabela({ colunas, vazio, children }: Props) {
+export default function Tabela({ colunas, vazio, children }: TabelaProps) {
   if (vazio) return <>{vazio}</>;
 
   return (

@@ -14,10 +14,10 @@ import { criarAtendimento } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import CampoDeClientes from "../CampoDeClientes";
 import CampoDeProcesso from "../CampoDeProcesso";
-import type { ProcessoEscolhido } from "../CampoDeProcesso";
+import type { ProcessoEscolhido } from "../../types";
 import type { Subgrupo } from "../../../../types";
 
-interface Props {
+interface NovoAtendimentoFormProps {
   subgrupos: Subgrupo[];
   /** Os subgrupos ainda estão vindo. O botão "Adicionar" aparece antes
    * deles, então dá pra abrir este modal com o seletor vazio -- e aí o
@@ -39,7 +39,7 @@ export default function NovoAtendimentoForm({
   carregandoSubgrupos,
   onSalvo,
   onFechar,
-}: Props) {
+}: NovoAtendimentoFormProps) {
   const prefixo = useId();
   const toast = useToast();
 

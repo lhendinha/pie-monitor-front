@@ -3,7 +3,7 @@ import { COLUNAS_PROCESSOS } from "../../constants/processos";
 import LinhaProcesso from "../LinhaProcesso";
 import type { Processo } from "../../../../types";
 
-interface Props {
+interface TabelaProcessosProps {
   processos: Processo[];
   filtroAtivo: boolean;
   onLimparFiltros: () => void;
@@ -24,7 +24,7 @@ export default function TabelaProcessos({
   faseRotulo,
   situacaoRotulo,
   onAbrir,
-}: Props) {
+}: TabelaProcessosProps) {
   return (
     <Tabela
       colunas={COLUNAS_PROCESSOS}

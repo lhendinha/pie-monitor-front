@@ -3,7 +3,7 @@ import { Flex, Text } from "@chakra-ui/react";
 import { BotaoNu } from "../../../../components";
 import type { NumeroDoResumo } from "../../types";
 
-interface Props {
+interface LinhaDoResumoProps {
   numero: NumeroDoResumo;
 }
 
@@ -26,7 +26,7 @@ const ESTILO = {
  * existirem, esses números informam sem prometer navegação que não tem pra
  * onde ir.
  */
-export default function LinhaDoResumo({ numero }: Props) {
+export default function LinhaDoResumo({ numero }: LinhaDoResumoProps) {
   const cor =
     numero.valor > 0 && numero.tom
       ? numero.tom === "bad"

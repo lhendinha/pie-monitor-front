@@ -1,7 +1,7 @@
 import { Flex } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-interface Props {
+interface LinhaDeListaProps {
   /** Ícone que abre a linha, à esquerda de tudo. */
   icone?: ReactNode;
   /** Ações à direita (renomear, remover), empurradas pela margem
@@ -19,7 +19,7 @@ interface Props {
  * computa, porque lá `.subgrupo-row svg` vem depois de `.btn-sq svg` na
  * folha e as duas regras têm a mesma especificidade.
  */
-export default function LinhaDeLista({ icone, acoes, children }: Props) {
+export default function LinhaDeLista({ icone, acoes, children }: LinhaDeListaProps) {
   return (
     <Flex
       align="center"

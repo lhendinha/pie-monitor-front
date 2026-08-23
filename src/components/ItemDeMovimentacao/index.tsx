@@ -2,7 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import DOMPurify from "dompurify";
 import Ponto from "../Ponto";
 
-interface Props {
+interface ItemDeMovimentacaoProps {
   titulo: string;
   meta: string;
   /** HTML vindo da API do PJe -- sanitizado aqui, nunca antes. */
@@ -20,7 +20,7 @@ interface Props {
  * Substitui o `ComunicacaoCard`, que vinha do design antigo e desenhava um
  * cartão dentro do cartão -- moldura demais, e destoava do resto da tela.
  */
-export default function ItemDeMovimentacao({ titulo, meta, html, textoPlano, ultimo }: Props) {
+export default function ItemDeMovimentacao({ titulo, meta, html, textoPlano, ultimo }: ItemDeMovimentacaoProps) {
   return (
     <Flex
       gap="14px"
