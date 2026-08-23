@@ -264,14 +264,13 @@ export default function ModalDeTarefa({
             rotulo="Coluna do quadro"
             para="tf-coluna"
             obrigatorio
-            dica={carregandoColunas ? "Carregando…" : undefined}
           >
             <Select
               id="tf-coluna"
               opcoes={colunas.map((c) => ({ value: c.coluna_id, label: c.nome }))}
               valor={colunaId}
               onMudar={setColunaId}
-              desabilitado={carregandoColunas}
+              carregando={carregandoColunas}
             />
           </Campo>
         </Stack>

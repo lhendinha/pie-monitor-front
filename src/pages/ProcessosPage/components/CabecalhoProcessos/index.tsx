@@ -123,9 +123,13 @@ export default function CabecalhoProcessos({
 
       {/* Contagem embaixo dos filtros, como no artifact: ela descreve o
           RESULTADO do que os chips acima definiram. */}
-      <Text fontSize="11.5px" color="fg.subtle" className="num">
+      {/* Some enquanto carrega, em vez de dizer "carregando…": o esqueleto
+          logo abaixo já é o recado, e duas mensagens da mesma espera na
+          mesma tela é ruído. Mantém a linha ocupando o espaço pra a
+          contagem não empurrar a tabela ao chegar. */}
+      <Text fontSize="11.5px" color="fg.subtle" className="num" minH="17px">
         {carregando
-          ? "carregando…"
+          ? ""
           : `Mostrando ${total} de ${contar(totalSemFiltro, "processo", "processos")}`}
       </Text>
     </Box>

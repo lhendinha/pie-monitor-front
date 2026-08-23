@@ -75,10 +75,8 @@ export default function AceitarConvitePage({ token, onEntrar }: Props) {
   if (conviteQuery.isPending) {
     return (
       <CartaoDeAutenticacao titulo="Criar sua conta">
+        {/* Só o esqueleto -- mesma razão do formulário de processo. */}
         <Stack gap="14px">
-          <Text fontSize="13.5px" color="fg.subtle">
-            Carregando…
-          </Text>
           <Esqueleto linhas={2} altura="38px" />
         </Stack>
       </CartaoDeAutenticacao>

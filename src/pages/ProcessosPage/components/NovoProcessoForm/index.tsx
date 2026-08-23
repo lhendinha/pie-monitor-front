@@ -69,10 +69,9 @@ export default function NovoProcessoForm({
   if (carregandoSubgrupos) {
     return (
       <Modal titulo="Novo processo" onFechar={onFechar}>
+        {/* Só o esqueleto: ele já diz que algo está vindo, e a frase em
+            cima era a mesma informação escrita duas vezes. */}
         <Stack gap="14px" py="10px">
-          <Text fontSize="13.5px" color="fg.subtle">
-            Carregando…
-          </Text>
           <Esqueleto linhas={3} altura="38px" />
         </Stack>
       </Modal>
