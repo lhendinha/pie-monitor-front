@@ -16,6 +16,7 @@ export const qk = {
   quadro: (subgrupoId: string) => ["quadro", subgrupoId] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
   grupos: () => ["grupos"] as const,
+  notificacoes: () => ["notificacoes"] as const,
   atendimentos: (
     params: { busca?: string; status?: string; pagina?: number; tamanhoPagina?: number } = {},
   ) => ["atendimentos", params] as const,

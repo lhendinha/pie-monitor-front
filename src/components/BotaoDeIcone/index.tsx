@@ -1,4 +1,5 @@
 import { Box } from "@chakra-ui/react";
+import { forwardRef } from "react";
 import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
@@ -12,10 +13,20 @@ interface BotaoDeIconeProps {
 }
 
 /** Botão redondo só com ícone da barra superior (`.icon-btn` do artifact):
- * 34px, sem borda, cinza, e fundo suave no hover. */
-export default function BotaoDeIcone({ rotulo, comAviso, onClick, children }: BotaoDeIconeProps) {
+ * 34px, sem borda, cinza, e fundo suave no hover.
+ *
+ * ⚠️ `forwardRef` porque ele é gatilho de `Popover` (o sino): a lib precisa
+ * da referência do elemento pra ancorar o painel. Sem ela o `positioning`
+ * é silenciosamente ignorado e o painel abre no canto da JANELA, não
+ * embaixo do botão -- foi exatamente o que aconteceu, e só apareceu
+ * olhando a tela. Mesmo motivo do `PilulaDeFiltro`. */
+const BotaoDeIcone = forwardRef<HTMLButtonElement, BotaoDeIconeProps>(function BotaoDeIcone(
+  { rotulo, comAviso, onClick, children, ...resto },
+  ref,
+) {
   return (
     <BotaoNu
+      ref={ref}
       type="button"
       title={rotulo}
       aria-label={rotulo}
@@ -29,6 +40,7 @@ export default function BotaoDeIcone({ rotulo, comAviso, onClick, children }: Bo
       borderRadius="full"
       color="fg.muted"
       _hover={{ bg: "border.subtle", color: "fg" }}
+      {...resto}
     >
       {children}
       {comAviso && (
@@ -47,4 +59,6 @@ export default function BotaoDeIcone({ rotulo, comAviso, onClick, children }: Bo
       )}
     </BotaoNu>
   );
-}
+});
+
+export default BotaoDeIcone;

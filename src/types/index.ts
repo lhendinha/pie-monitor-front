@@ -349,3 +349,35 @@ export interface ComOrdem {
 export interface ComClientes {
   cliente_ids?: string[];
 }
+
+
+/** Um aviso in-app. Uma linha POR DESTINATÁRIO: "lida" é individual, e o
+ * mesmo fato vira N linhas quando vai pro subgrupo. */
+export interface Notificacao {
+  usuario_id: string;
+  notificacao_id: string;
+  tipo: string;
+  criado_em: string;
+  lida: boolean;
+  /** Quem fez a ação. Vazio no lembrete de prazo -- ali não houve pessoa,
+   * foi o robô, e a frase é escrita sem "Fulano". */
+  autor: string;
+  titulo: string;
+  /** Complemento: a coluna de destino, o status novo, o motivo do
+   * lembrete. */
+  detalhe: string;
+  subgrupo_id: string;
+  /** Pra onde o clique leva, em duas partes em vez de um campo por tipo de
+   * recurso -- o mesmo `tipo` pode apontar pra coisas diferentes (o
+   * `lembrete` vale pra tarefa E pra processo). */
+  alvo_tipo: string;
+  alvo_id: string;
+}
+
+/** O que o canal de tempo real manda. `tipo` distingue os formatos --
+ * hoje só existe "notificacao", mas o campo evita que um formato novo
+ * quebre quem já escuta. */
+export interface MensagemDoCanal {
+  tipo: string;
+  notificacao?: Notificacao;
+}

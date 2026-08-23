@@ -10,3 +10,4 @@ export * from "./suporte";
 export * from "./prazo";
 export * from "./periodo";
 export * from "./ordemFracionaria";
+export * from "./notificacao";

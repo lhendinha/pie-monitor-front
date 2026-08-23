@@ -8,6 +8,8 @@ export * from "./subgrupos";
 export * from "./suporte";
 export * from "./prioridade";
 export * from "./atendimento";
+export * from "./canal";
+export * from "./notificacoes";
 export * from "./vinculoDaTarefa";
 export * from "./senha";
 export * from "./periodos";

@@ -1,8 +1,7 @@
 import { Flex } from "@chakra-ui/react";
 
-import IconeSino from "../../Icons/IconeSino";
-import BotaoDeIcone from "../../BotaoDeIcone";
 import MenuUsuario from "../MenuUsuario";
+import SinoDeNotificacoes from "./SinoDeNotificacoes";
 
 interface TopbarProps {
   onSair: () => void;
@@ -31,13 +30,7 @@ export default function Topbar({ onSair }: TopbarProps) {
       zIndex="20"
     >
       <Flex align="center" gap="6px" ml="auto">
-        {/* ⚠️ O sino é INERTE de propósito, decidido em 22/08/2026: não
-            existe endpoint de notificações ainda, e o artifact traz o botão
-            (com o ponto de aviso) no desenho. Não é esquecimento -- quando o
-            backend existir, é aqui que o `onClick` entra. */}
-        <BotaoDeIcone rotulo="Notificações" comAviso>
-          <IconeSino />
-        </BotaoDeIcone>
+        <SinoDeNotificacoes />
         <MenuUsuario onSair={onSair} />
       </Flex>
     </Flex>

@@ -121,7 +121,37 @@ const ATENDIMENTOS = {
   total_paginas: 1,
 };
 
+const AGORA = new Date();
+const hMenos = (h) => new Date(AGORA.getTime() - h * 3600_000).toISOString();
+
 const RESPOSTAS = [
+  [
+    /\/notificacoes/,
+    () => ({
+      notificacoes: [
+        {
+          usuario_id: "ana@argos.local", notificacao_id: "1787000000000003_a",
+          tipo: "tarefa_atribuida", criado_em: hMenos(0.2), lida: false,
+          autor: "joao@argos.local", titulo: "Protocolar contestação", detalhe: "",
+          subgrupo_id: "sg-civel", alvo_tipo: "tarefa", alvo_id: "t1",
+        },
+        {
+          usuario_id: "ana@argos.local", notificacao_id: "1787000000000002_b",
+          tipo: "tarefa_movida", criado_em: hMenos(3), lida: false,
+          autor: "joao@argos.local", titulo: "Preparar audiência", detalhe: "Fazendo",
+          subgrupo_id: "sg-civel", alvo_tipo: "tarefa", alvo_id: "t4",
+        },
+        {
+          usuario_id: "ana@argos.local", notificacao_id: "1787000000000001_c",
+          tipo: "lembrete", criado_em: hMenos(20), lida: true, autor: "",
+          titulo: "Processo 0000266-87.2021.8.13.0559", detalhe: "Prazo final é amanhã",
+          subgrupo_id: "sg-civel", alvo_tipo: "processo", alvo_id: "00002668720218130559",
+        },
+      ],
+      nao_lidas: 2,
+      limite: 50,
+    }),
+  ],
   // Antes de tudo: o caminho contém "/grupos", e um padrão mais largo
   // capturaria isto e devolveria a lista de grupos pra aba de Configurações.
   [

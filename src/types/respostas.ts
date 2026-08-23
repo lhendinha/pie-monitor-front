@@ -7,6 +7,7 @@ import type {
   Grupo,
   HistoricoItem,
   Membro,
+  Notificacao,
   OpcaoProcesso,
   Processo,
   Subgrupo,
@@ -78,6 +79,17 @@ export interface RespostaDeHistorico {
 
 export interface RespostaDeGrupos {
   grupos: Grupo[];
+}
+
+/** `GET /notificacoes`: o sino inteiro numa consulta. */
+export interface RespostaDoSino {
+  notificacoes: Notificacao[];
+  /** Quantas não lidas ENTRE AS QUE VIERAM -- não da partição inteira.
+   * Quando bate o teto, o badge mostra "N+". */
+  nao_lidas: number;
+  /** O teto que o servidor aplicou. Vem dele pra que o front não repita o
+   * número. */
+  limite: number;
 }
 
 /** `GET /subgrupos/{id}/quadro`. */
