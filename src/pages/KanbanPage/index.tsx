@@ -20,7 +20,7 @@ import {
   IconePlus,
   useToast,
 } from "../../components";
-import { TETO_POR_PAGINA } from "../../constants";
+import { PERIODO_TODOS, TETO_POR_PAGINA } from "../../constants";
 import {
   atualizarTarefa,
   listarMembrosDoGrupo,
@@ -30,11 +30,10 @@ import {
 } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
+import { intervaloDoPeriodo } from "../../utils";
 import ColunaDoQuadro from "./components/ColunaDoQuadro";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
 import ModalDeTarefa from "./components/ModalDeTarefa";
-import { PERIODOS } from "./constants/kanban";
-import { janelaDoPeriodo } from "./helpers/janelaDoPeriodo";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type {
@@ -44,7 +43,15 @@ import type {
   Tarefa,
 } from "../../types";
 
-const FILTROS_VAZIOS = { periodoId: "mes", pessoa: "todas", busca: "" };
+/** O quadro ABRE no mês, como no artifact (`PERIODS = { kanban: 'mes' }`)
+ * -- carregar o histórico inteiro por padrão seriam milhares de cartões,
+ * já que tarefa concluída não some, só muda de coluna. */
+const FILTROS_VAZIOS = {
+  periodoId: "mes",
+  intervaloPersonalizado: undefined,
+  pessoa: "todas",
+  busca: "",
+};
 
 /** Gestão kanban.
  *
@@ -66,9 +73,11 @@ export default function KanbanPage() {
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
   const subgrupos = subgruposQuery.data?.subgrupos || [];
 
-  // O primeiro subgrupo abre por padrão -- sem isso a tela ficaria em branco
-  // esperando uma escolha que quase sempre é a mesma.
-  const subgrupoId = filtros.subgrupoId || subgrupos[0]?.subgrupo_id || "";
+  // Um subgrupo abre por padrão -- sem isso a tela ficaria em branco
+  // esperando uma escolha que quase sempre é a mesma. É o ÚLTIMO da lista,
+  // não o primeiro: a listagem vem na ordem de criação, então o último é o
+  // mais recente, que é o que costuma estar em uso.
+  const subgrupoId = filtros.subgrupoId || subgrupos[subgrupos.length - 1]?.subgrupo_id || "";
 
   const quadroQuery = useQuery<{ colunas: Coluna[] }>({
     queryKey: qk.quadro(subgrupoId),
@@ -77,8 +86,13 @@ export default function KanbanPage() {
   });
   useToastOnQueryError(quadroQuery.error, "Não foi possível carregar o quadro.");
 
-  const periodo = PERIODOS.find((p) => p.id === filtros.periodoId) ?? PERIODOS[0];
-  const tarefasQuery = useTarefasDoQuadro(subgrupoId, janelaDoPeriodo(periodo.dias));
+  // `intervalo` é `null` em "Todos os períodos", e aí a janela sai vazia --
+  // o serviço omite `data_de`/`data_ate` da query e vem o subgrupo inteiro.
+  const intervalo = intervaloDoPeriodo(filtros.periodoId, filtros.intervaloPersonalizado);
+  const tarefasQuery = useTarefasDoQuadro(
+    subgrupoId,
+    intervalo ? { dataDe: intervalo.de, dataAte: intervalo.ate } : {},
+  );
   useToastOnQueryError(tarefasQuery.error, "Não foi possível carregar as tarefas.");
 
   /** Nomes de quem é responsável. `manager` pra cima -- pra `user` a lista
@@ -143,10 +157,14 @@ export default function KanbanPage() {
     return bateBusca && batePessoa;
   });
 
-  const temFiltro = Boolean(busca) || filtros.pessoa !== "todas" || filtros.periodoId !== "todos";
+  const temFiltro =
+    Boolean(busca) || filtros.pessoa !== "todas" || filtros.periodoId !== PERIODO_TODOS;
 
+  /** Limpar leva a período NENHUM, e não de volta ao mês padrão: quem
+   * clica em "Limpar filtros" olhando um quadro vazio quer VER tudo, e
+   * devolvê-lo ao mês deixaria escondido justamente o que ele procura. */
   function limpar() {
-    setFiltros((f) => ({ ...f, ...FILTROS_VAZIOS, periodoId: "todos" }));
+    setFiltros((f) => ({ ...f, ...FILTROS_VAZIOS, periodoId: PERIODO_TODOS }));
   }
 
   const carregando = subgruposQuery.isPending || quadroQuery.isPending || tarefasQuery.isPending;
@@ -185,9 +203,7 @@ export default function KanbanPage() {
             subgrupos={subgrupos}
             membros={membros}
             filtros={{ ...filtros, subgrupoId }}
-            temFiltro={temFiltro}
             onMudar={(parcial) => setFiltros((f) => ({ ...f, subgrupoId, ...parcial }))}
-            onLimpar={limpar}
           />
 
           {carregando ? (

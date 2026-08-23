@@ -26,6 +26,10 @@ export const PilulaDeFiltro = forwardRef<HTMLButtonElement, Props>(
       <Button
         ref={ref}
         type="button"
+        /* O estado "ligado" só existe como COR. Sem um atributo, nem teste
+           nem verificação em navegador conseguem afirmar que a pílula está
+           acesa sem comparar hex de fundo. */
+        data-ativo={ativo || undefined}
         display="inline-flex"
         alignItems="center"
         gap={PILULA.gap}

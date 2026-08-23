@@ -18,9 +18,18 @@ interface Props {
 export default function LinhaDeCampos({ proporcoes, children }: Props) {
   return (
     <SimpleGrid
-      columns={proporcoes ? undefined : { base: 1, sm: 2 }}
-      templateColumns={proporcoes ? { base: "1fr", sm: proporcoes } : undefined}
-      gap="14px"
+      /* ⚠️ `templateColumns` SEMPRE, nunca `columns={{ base: 1, sm: 2 }}`.
+         Aquela forma nunca chegou a duas colunas: medido no navegador, saía
+         `grid-template-columns: 516px` num viewport de 1440 -- um campo
+         embaixo do outro em todos os formulários do sistema, e o lado a
+         lado do artifact perdido em silêncio. */
+      templateColumns={{ base: "1fr", sm: proporcoes ?? "1fr 1fr" }}
+      /* Espaço só na HORIZONTAL. Empilhado (celular, ou uma linha de um
+         campo só), o vertical já vem dos 16px de margem do `Campo` -- somar
+         o `gap` dava 30px ali e 16px entre os campos soltos, que é a
+         irregularidade que aparecia no modal de tarefa. */
+      columnGap="14px"
+      rowGap="0"
     >
       {children}
     </SimpleGrid>

@@ -1,7 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 
-import { Botao, CampoDeBusca } from "../../../../components";
-import { PERIODOS } from "../../constants/kanban";
+import { CampoDeBusca, SeletorDePeriodo } from "../../../../components";
 import PilulaDeMenu from "../PilulaDeMenu";
 import type { FiltrosDoQuadro } from "../../types";
 import type { Membro, Subgrupo } from "../../../../types";
@@ -10,9 +9,7 @@ interface Props {
   subgrupos: Subgrupo[];
   membros: Membro[];
   filtros: FiltrosDoQuadro;
-  temFiltro: boolean;
   onMudar: (parcial: Partial<FiltrosDoQuadro>) => void;
-  onLimpar: () => void;
 }
 
 /** A barra de filtros do quadro (`.filter-bar` do artifact).
@@ -26,9 +23,7 @@ export default function FiltrosDoKanban({
   subgrupos,
   membros,
   filtros,
-  temFiltro,
   onMudar,
-  onLimpar,
 }: Props) {
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="18px">
@@ -39,16 +34,17 @@ export default function FiltrosDoKanban({
         onEscolher={(id) => onMudar({ subgrupoId: id })}
       />
 
-      <PilulaDeMenu
-        opcoes={PERIODOS.map((p) => ({ id: p.id, rotulo: p.rotulo }))}
-        selecionado={filtros.periodoId}
-        ativo={filtros.periodoId !== "todos"}
-        onEscolher={(id) => onMudar({ periodoId: id })}
+      <SeletorDePeriodo
+        periodoId={filtros.periodoId}
+        intervaloPersonalizado={filtros.intervaloPersonalizado}
+        onMudar={(periodoId, intervaloPersonalizado) =>
+          onMudar({ periodoId, intervaloPersonalizado })
+        }
       />
 
       <PilulaDeMenu
         opcoes={[
-          { id: "todas", rotulo: "Todas as pessoas e atribuições" },
+          { id: "todas", rotulo: "Todas as pessoas" },
           { id: "sem", rotulo: "Sem responsável" },
           ...membros.map((m) => ({ id: m.email, rotulo: m.apelido || m.email })),
         ]}
@@ -57,14 +53,13 @@ export default function FiltrosDoKanban({
         onEscolher={(id) => onMudar({ pessoa: id })}
       />
 
-      {/* Só aparece quando há o que limpar -- botão permanente que às vezes
-          não faz nada vira ruído. */}
-      {temFiltro && (
-        <Botao variante="ghost" onClick={onLimpar} px="13px" py="8px" fontSize="12px">
-          Limpar filtros
-        </Botao>
-      )}
+      {/* Sem "Limpar filtros" aqui, por escolha, DIVERGINDO do artifact --
+          lá existem dois (este e o do estado vazio) e eles aparecem juntos
+          quando o filtro zera o quadro, que é a duplicata visível na tela.
+          Ficou só o do estado vazio.
 
+          A conta: com filtro aplicado e cartões à vista, não sobra botão de
+          limpar -- a saída é trocar cada pílula de volta na mão. */}
       <CampoDeBusca
         rotulo="Pesquisar cartão ou processo"
         placeholder="Pesquisar cartão ou processo"

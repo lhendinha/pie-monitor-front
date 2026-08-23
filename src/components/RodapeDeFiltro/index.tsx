@@ -9,6 +9,10 @@ interface Props {
   rotuloSecundario: string;
   onSecundario: () => void;
   onAplicar: () => void;
+  /** Trava o "Aplicar" enquanto a escolha não fecha -- intervalo pela
+   * metade ou invertido. Quem usa isto tem que dizer NA TELA o que falta:
+   * botão apagado sem explicação faz a pessoa procurar o motivo. */
+  aplicarDesabilitado?: boolean;
 }
 
 /** Rodapé `.filter-actions` do artifact: divisória em cima, botões à
@@ -18,7 +22,12 @@ interface Props {
  * fase e datas) -- e os dois passam a confirmar a escolha em vez de aplicar
  * a cada clique, que é o que evita uma requisição por caixa marcada.
  */
-export default function RodapeDeFiltro({ rotuloSecundario, onSecundario, onAplicar }: Props) {
+export default function RodapeDeFiltro({
+  rotuloSecundario,
+  onSecundario,
+  onAplicar,
+  aplicarDesabilitado,
+}: Props) {
   return (
     <Flex
       justify="flex-end"
@@ -32,7 +41,7 @@ export default function RodapeDeFiltro({ rotuloSecundario, onSecundario, onAplic
       <Botao variante="ghost" onClick={onSecundario}>
         {rotuloSecundario}
       </Botao>
-      <Botao variante="primario" onClick={onAplicar}>
+      <Botao variante="primario" onClick={onAplicar} disabled={aplicarDesabilitado}>
         Aplicar
       </Botao>
     </Flex>

@@ -14,8 +14,10 @@ import {
 } from "../../../../components";
 import { criarTarefa, atualizarTarefa, removerTarefa } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
-import { hojeISO } from "../../../../utils";
+import { hojeISO, mascararNumeroProcesso } from "../../../../utils";
 import { PRIORIDADES } from "../../constants/kanban";
+import VinculoDaTarefa from "./VinculoDaTarefa";
+import type { VinculosDaTarefa } from "../../types";
 import type { ColunaDoQuadro, Membro, Subgrupo, Tarefa } from "../../../../types";
 
 interface Props {
@@ -71,7 +73,31 @@ export default function ModalDeTarefa({
   );
   const [prioridade, setPrioridade] = useState(tarefa?.prioridade ?? "Média");
   const [responsavel, setResponsavel] = useState(tarefa?.responsavel_id ?? "");
+  /** O rótulo inicial é o próprio número/id: o nome bonito (apelido do
+   * processo, assunto do atendimento) exigiria buscar o item só pra abrir o
+   * modal, e mostrar campo vazio numa tarefa QUE TEM vínculo seria pior --
+   * salvar por cima apagaria o vínculo sem a pessoa perceber. */
+  const [vinculos, setVinculos] = useState<VinculosDaTarefa>({
+    processo: tarefa?.processo_numero
+      ? {
+          tipo: "processo",
+          id: tarefa.processo_numero,
+          rotulo: mascararNumeroProcesso(tarefa.processo_numero),
+        }
+      : null,
+    atendimento: tarefa?.atendimento_id
+      ? { tipo: "atendimento", id: tarefa.atendimento_id, rotulo: tarefa.atendimento_id }
+      : null,
+  });
   const toast = useToast();
+
+  /** Os dois campos do vínculo, do jeito que a API espera: um preenchido e
+   * o outro `null`. `null` explícito, e não omitido, porque é assim que se
+   * DESFAZ um vínculo num PATCH parcial. */
+  const camposDoVinculo = {
+    processo_numero: vinculos.processo?.id ?? null,
+    atendimento_id: vinculos.atendimento?.id ?? null,
+  };
 
   const salvarMutation = useMutation({
     mutationFn: () =>
@@ -82,6 +108,7 @@ export default function ModalDeTarefa({
             coluna_id: colunaId,
             prioridade,
             responsavel_id: responsavel || null,
+            ...camposDoVinculo,
           })
         : criarTarefa({
             subgrupo_id: subgrupoId,
@@ -90,6 +117,7 @@ export default function ModalDeTarefa({
             coluna_id: colunaId,
             prioridade,
             responsavel_id: responsavel || null,
+            ...camposDoVinculo,
           }),
     onSuccess: () => {
       toast.sucesso(editando ? "Tarefa atualizada." : "Tarefa criada.");
@@ -173,6 +201,23 @@ export default function ModalDeTarefa({
               />
             </Campo>
           </LinhaDeCampos>
+
+          {/* Posição do artifact: depois da linha de Data, antes de
+              Responsável. Não é obrigatório -- tarefa solta, sem processo
+              nem atendimento, é caso comum.
+
+              ⚠️ O campo é UM, então na prática escolhe-se um vínculo só.
+              Isso é a forma do campo (é assim no artifact), NÃO uma regra
+              do sistema: a API aceita `processo_numero` e `atendimento_id`
+              ao mesmo tempo e grava os dois -- verificado. A dica não pode
+              anunciar uma restrição que o servidor não tem. */}
+          <Campo
+            rotulo="Processo ou atendimento vinculado"
+            para="tf-vinculo"
+            dica="Opcional. Dá pra vincular um processo, um atendimento, ou os dois."
+          >
+            <VinculoDaTarefa valor={vinculos} onMudar={setVinculos} />
+          </Campo>
 
           <LinhaDeCampos>
             <Campo rotulo="Responsável" para="tf-responsavel">

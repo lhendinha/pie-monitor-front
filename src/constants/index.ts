@@ -7,3 +7,4 @@ export * from "./abasDoGrupo";
 export * from "./subgrupos";
 export * from "./suporte";
 export * from "./senha";
+export * from "./periodos";

@@ -10,3 +10,4 @@ export * from "./opcoesProcesso";
 export * from "./tarefas";
 export * from "./perfil";
 export * from "./quadro";
+export * from "./atendimentos";

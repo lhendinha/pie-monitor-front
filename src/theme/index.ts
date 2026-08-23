@@ -108,7 +108,27 @@ export const system = createSystem(defaultConfig, {
              o cinza padrão do navegador (#757575) por omissão -- aqui vale a
              coerência com o resto do sistema. */
           _placeholder: { color: "fg.subtle" },
+          /* ⚠️ A variável, não a propriedade. A receita do Chakra emite
+             `border-color: var(--focus-ring-color)` e `outline-color:
+             var(--focus-ring-color)` DEPOIS das nossas declarações, na
+             mesma classe compilada -- disputar `borderColor` aqui perde
+             sempre, e o campo focado ficava cinza (`#a1a1aa`, o
+             `gray-400` que a variável trazia por padrão) com o nosso halo
+             azul em volta. Trocando a variável, a borda e o contorno da
+             própria receita passam a ser da marca. */
           _focusVisible: {
+            /* ⚠️ A variável vai AQUI DENTRO, não no `base`. A receita do
+               Chakra emite `border-color: var(--focus-ring-color)` e
+               `outline-color: var(--focus-ring-color)` depois das nossas
+               declarações, então disputar `borderColor` perde sempre; e
+               declarar a variável no `base` também perde, porque a receita
+               redefine ela lá com o mesmo peso. Neste bloco o seletor é
+               `:is(:focus-visible, [data-focus-visible])`, que vence a
+               classe seca -- e aí borda e contorno da própria receita
+               passam a ser da marca em vez do `#a1a1aa` que vinha por
+               padrão. Medido no navegador; sem isso o campo focado fica
+               cinza com o halo azul em volta. */
+            "--focus-ring-color": "{colors.fg.brand}",
             outline: "none",
             borderColor: "fg.brand",
             boxShadow: "0 0 0 3px {colors.brand.tint}",
@@ -132,7 +152,27 @@ export const system = createSystem(defaultConfig, {
           minHeight: "76px",
           resize: "vertical",
           _placeholder: { color: "fg.subtle" },
+          /* ⚠️ A variável, não a propriedade. A receita do Chakra emite
+             `border-color: var(--focus-ring-color)` e `outline-color:
+             var(--focus-ring-color)` DEPOIS das nossas declarações, na
+             mesma classe compilada -- disputar `borderColor` aqui perde
+             sempre, e o campo focado ficava cinza (`#a1a1aa`, o
+             `gray-400` que a variável trazia por padrão) com o nosso halo
+             azul em volta. Trocando a variável, a borda e o contorno da
+             própria receita passam a ser da marca. */
           _focusVisible: {
+            /* ⚠️ A variável vai AQUI DENTRO, não no `base`. A receita do
+               Chakra emite `border-color: var(--focus-ring-color)` e
+               `outline-color: var(--focus-ring-color)` depois das nossas
+               declarações, então disputar `borderColor` perde sempre; e
+               declarar a variável no `base` também perde, porque a receita
+               redefine ela lá com o mesmo peso. Neste bloco o seletor é
+               `:is(:focus-visible, [data-focus-visible])`, que vence a
+               classe seca -- e aí borda e contorno da própria receita
+               passam a ser da marca em vez do `#a1a1aa` que vinha por
+               padrão. Medido no navegador; sem isso o campo focado fica
+               cinza com o halo azul em volta. */
+            "--focus-ring-color": "{colors.fg.brand}",
             outline: "none",
             borderColor: "fg.brand",
             boxShadow: "0 0 0 3px {colors.brand.tint}",

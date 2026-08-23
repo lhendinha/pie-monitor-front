@@ -242,5 +242,17 @@ export interface Tarefa {
   coluna_id: string;
   prioridade: string;
   responsavel_id?: string | null;
+  /** O vínculo da tarefa. Um OU o outro, nunca os dois -- é assim que o
+   * backend grava, e o campo da tela reflete isso sendo um só. */
   processo_numero?: string | null;
+  atendimento_id?: string | null;
+}
+
+/** Só o que o campo de vínculo da tarefa precisa -- a tela de Atendimentos
+ * ainda não existe, e inventar os campos dela agora seria adivinhar. */
+export interface AtendimentoResumido {
+  subgrupo_id: string;
+  atendimento_id: string;
+  assunto: string;
+  status: string;
 }

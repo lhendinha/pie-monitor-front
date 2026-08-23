@@ -8,3 +8,4 @@ export * from "./calendario";
 export * from "./email";
 export * from "./suporte";
 export * from "./prazo";
+export * from "./periodo";

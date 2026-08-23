@@ -10,6 +10,7 @@ export { default as RotaProtegida } from "./RotaProtegida";
 export { default as RotaPorPapel } from "./RotaPorPapel";
 export { Rotulo } from "./Rotulo";
 export { default as SeletorData } from "./SeletorData";
+export { default as SeletorDePeriodo } from "./SeletorDePeriodo";
 export { BotaoNu } from "./BotaoNu";
 export { BotaoQuadrado } from "./BotaoQuadrado";
 export { default as Botao } from "./Botao";
