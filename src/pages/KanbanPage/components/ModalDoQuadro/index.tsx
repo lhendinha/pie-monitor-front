@@ -35,6 +35,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { calcularOrdemAposMover, contar } from "../../../../utils";
 import { useTarefasDoQuadro } from "../../hooks/useTarefasDoQuadro";
+import { posicaoValidaNoQuadro } from "../../helpers/posicaoDeColuna";
 import LinhaDeColuna from "../LinhaDeColuna";
 import type { ColunaDoQuadro } from "../../../../types";
 
@@ -152,7 +153,13 @@ export default function ModalDoQuadro({
     const { active, over } = evento;
     if (!over || active.id === over.id || reordenarMutation.isPending) return;
     const de = lista.findIndex((c) => c.coluna_id === active.id);
-    const para = lista.findIndex((c) => c.coluna_id === over.id);
+    /* Trunca no último lugar antes da conclusão: o `dnd-kit` deixa soltar
+       depois dela, e o servidor recusaria com 409. */
+    const para = posicaoValidaNoQuadro(
+      lista.findIndex((c) => c.coluna_id === over.id),
+      lista,
+    );
+    if (para === de) return;
     const movida = arrayMove(lista, de, para);
     const ordem = calcularOrdemAposMover(movida[para - 1], movida[para + 1]);
     const colunaMovida = { ...movida[para], ordem };
