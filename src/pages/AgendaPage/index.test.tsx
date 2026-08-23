@@ -252,6 +252,62 @@ describe("concluída", () => {
   });
 });
 
+describe("coluna na linha", () => {
+  it("mostra em que coluna a tarefa está", async () => {
+    /* A Agenda não tem colunas -- é a única forma de saber em que pé a
+     * tarefa está sem abri-la. É a primeira metade do `meta` do artifact. */
+    comTarefas(tarefa({ titulo: "Protocolar", coluna_id: "c1" }));
+    await montar();
+    await trocarVisao("Por dia");
+
+    expect((await screen.findAllByText("A Fazer")).length).toBeGreaterThan(0);
+  });
+
+  it("junta coluna e processo com '·', como o artifact", async () => {
+    comTarefas(
+      tarefa({ titulo: "Com processo", processo_numero: "00002668720218130559" }),
+    );
+    await montar();
+    await trocarVisao("Por dia");
+
+    expect(
+      (await screen.findAllByText(/^A Fazer · 0000266-87\.2021\.8\.13\.0559$/))[0],
+    ).toBeInTheDocument();
+  });
+
+  it("coluna que o quadro não conhece some da linha, sem id cru", async () => {
+    comTarefas(tarefa({ titulo: "Órfã", coluna_id: "c-que-nao-existe" }));
+    await montar();
+    await trocarVisao("Por dia");
+
+    await screen.findAllByText("Órfã");
+    expect(screen.queryByText(/c-que-nao-existe/)).not.toBeInTheDocument();
+  });
+});
+
+describe("espera pelos quadros", () => {
+  it("NÃO mostra a lista antes dos quadros -- senão risca depois", async () => {
+    /* 🔴 O quadro chega depois das tarefas. Renderizar antes escreve a
+     * concluída SEM risco e a risca meio segundo depois: no intervalo, a
+     * tela afirma o contrário do que é. */
+    let liberar: (v: unknown) => void = () => {};
+    mocks.listarQuadro.mockReturnValue(new Promise((r) => { liberar = r; }));
+    comTarefas(tarefa({ titulo: "Já fiz", coluna_id: "c2" }));
+
+    renderComProviders(<AgendaPage />);
+    await screen.findByRole("heading", { name: "Agenda" });
+
+    // Com os quadros pendentes, a tarefa não pode estar na tela.
+    await waitFor(() => expect(mocks.listarTarefas).toHaveBeenCalled());
+    expect(screen.queryByText("Já fiz")).not.toBeInTheDocument();
+
+    liberar({ colunas: COLUNAS });
+    const titulo = (await screen.findAllByText("Já fiz"))[0];
+    // E quando aparece, já aparece riscada.
+    expect(titulo).toHaveStyle({ textDecoration: "line-through" });
+  });
+});
+
 describe("cartão de hoje", () => {
   it("mostra as tarefas de HOJE mesmo navegando pra outro mês", async () => {
     /* É o ponto de retorno de quem foi olhar outro mês -- se ele seguisse a

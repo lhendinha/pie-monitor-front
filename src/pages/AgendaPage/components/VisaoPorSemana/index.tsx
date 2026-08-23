@@ -39,7 +39,25 @@ export default function VisaoPorSemana({
   const inicio = inicioDaSemana(data);
 
   return (
-    <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap="8px">
+    <Grid
+      templateColumns="repeat(7, minmax(0, 1fr))"
+      gap="8px"
+      /* ⚠️ Media query literal, e não um breakpoint do Chakra: a medida é
+         840px, do artifact, e o mais próximo da escala do Chakra é 768px --
+         perto o bastante pra parecer igual e longe o bastante pra deixar
+         tablet estreito com sete colunas espremidas.
+
+         Abaixo dela a faixa ROLA na horizontal com coluna de 112px, em vez
+         de encolher: sete colunas num celular dão ~50px cada, e o título da
+         tarefa vira duas letras e reticências. */
+      css={{
+        "@media (max-width: 840px)": {
+          gridTemplateColumns: "repeat(7, minmax(112px, 1fr))",
+          overflowX: "auto",
+          paddingBottom: "6px",
+        },
+      }}
+    >
       {DIAS_DA_SEMANA_CURTOS.map((nomeDoDia, indice) => {
         const dia = somarDias(inicio, indice);
         const iso = paraIso(dia);

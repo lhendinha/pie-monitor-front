@@ -9,6 +9,12 @@ import type { Tarefa } from "../../../../types";
 interface Props {
   tarefa: Tarefa;
   concluida: boolean;
+  /** Em que coluna do quadro a tarefa está ("A Fazer", "Fazendo"…).
+   *
+   * A Agenda não tem colunas, então esta é a única forma de saber em que pé
+   * a tarefa está sem abri-la -- e é a primeira metade do `meta` do
+   * artifact. */
+  nomeDaColuna?: string;
   /** Assunto do atendimento vinculado, quando houver. A tarefa guarda só o
    * id, e quem resolve o nome é a página. */
   assuntoDoAtendimento?: string;
@@ -29,17 +35,20 @@ interface Props {
 export default function LinhaDeTarefa({
   tarefa,
   concluida,
+  nomeDaColuna,
   assuntoDoAtendimento,
   onAbrir,
   ultima,
 }: Props) {
   const cor = CORES_DA_PRIORIDADE[tarefa.prioridade] ?? "fg.subtle";
 
-  /* O que identifica a tarefa além do título. Vínculo é um OU outro na
-     apresentação -- os dois cabem no dado, mas a linha tem uma frase só. */
+  /* A segunda linha, como no artifact: coluna e vínculo separados por "·",
+     pulando o que não existir. Vínculo é um OU outro na apresentação -- os
+     dois cabem no dado, mas a linha tem uma frase só. */
   const vinculo = tarefa.processo_numero
     ? mascararNumeroProcesso(tarefa.processo_numero)
     : assuntoDoAtendimento;
+  const detalhe = [nomeDaColuna, vinculo].filter(Boolean).join(" · ");
 
   return (
     <BotaoNu
@@ -69,9 +78,9 @@ export default function LinhaDeTarefa({
         >
           {tarefa.titulo}
         </Text>
-        {vinculo && (
+        {detalhe && (
           <Text fontSize="11.5px" color="fg.muted" mt="2px" truncate>
-            {vinculo}
+            {detalhe}
           </Text>
         )}
       </Box>

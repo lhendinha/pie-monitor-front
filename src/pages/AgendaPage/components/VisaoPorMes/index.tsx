@@ -70,6 +70,12 @@ export default function VisaoPorMes({ data, isoDeHoje, porDia, onEscolherDia }: 
             w="100%"
             minH="84px"
             p="6px"
+            /* Célula mais baixa no celular (640px do artifact): com 84px a
+               grade de seis semanas não cabe na tela e o mês fica sem
+               visão de conjunto, que é o motivo de existir esta visão. */
+            css={{
+              "@media (max-width: 640px)": { minHeight: "52px", padding: "4px" },
+            }}
             display="flex"
             flexDirection="column"
             gap="5px"

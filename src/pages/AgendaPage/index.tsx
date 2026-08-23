@@ -30,7 +30,7 @@ import LinhaDeTarefa from "./components/LinhaDeTarefa";
 import ListaDeUmDia from "./components/ListaDeUmDia";
 import VisaoPorMes from "./components/VisaoPorMes";
 import VisaoPorSemana from "./components/VisaoPorSemana";
-import { useColunasQueConcluem } from "./hooks/useColunasQueConcluem";
+import { useQuadrosDosSubgrupos } from "./hooks/useQuadrosDosSubgrupos";
 import { useTarefasDaAgenda } from "./hooks/useTarefasDaAgenda";
 import { agruparPorDia } from "./helpers/tarefasPorDia";
 import {
@@ -99,7 +99,11 @@ export default function AgendaPage() {
   const subgruposExibidos = filtros.subgrupoIds.length
     ? filtros.subgrupoIds
     : subgrupos.map((s) => s.subgrupo_id);
-  const { estaConcluida } = useColunasQueConcluem(subgruposExibidos);
+  const {
+    carregando: carregandoQuadros,
+    estaConcluida,
+    nomeDaColuna,
+  } = useQuadrosDosSubgrupos(subgruposExibidos);
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */
@@ -148,7 +152,12 @@ export default function AgendaPage() {
     setCriando(false);
   }
 
-  const carregando = subgruposQuery.isPending || tarefasQuery.isPending;
+  /* Os quadros entram na espera: sem eles a lista sai com a tarefa concluída
+     SEM risco e a risca meio segundo depois -- no intervalo, a tela afirma o
+     contrário do que é. Custa uma onda a mais (subgrupos -> quadros), e o
+     cache é o mesmo do Kanban, então em geral já vem quente. */
+  const carregando =
+    subgruposQuery.isPending || tarefasQuery.isPending || carregandoQuadros;
 
   return (
     <Box>
@@ -201,6 +210,7 @@ export default function AgendaPage() {
               isoDeHoje={isoDeHoje}
               porDia={porDia}
               estaConcluida={estaConcluida}
+              nomeDaColuna={nomeDaColuna}
               assuntoDoAtendimento={(id) => assuntoPorId.get(id)}
               onAbrirTarefa={setTarefaAberta}
               onEscolherDia={abrirDia}
@@ -224,6 +234,7 @@ export default function AgendaPage() {
                   key={`${tarefa.subgrupo_id}:${tarefa.tarefa_id}`}
                   tarefa={tarefa}
                   concluida={estaConcluida(tarefa)}
+                  nomeDaColuna={nomeDaColuna(tarefa)}
                   assuntoDoAtendimento={
                     tarefa.atendimento_id ? assuntoPorId.get(tarefa.atendimento_id) : undefined
                   }
@@ -264,6 +275,7 @@ interface PropsDaArea {
   isoDeHoje: string;
   porDia: Map<string, Tarefa[]>;
   estaConcluida: (tarefa: Tarefa) => boolean;
+  nomeDaColuna: (tarefa: Tarefa) => string | undefined;
   assuntoDoAtendimento: (id: string) => string | undefined;
   onAbrirTarefa: (tarefa: Tarefa) => void;
   onEscolherDia: (iso: string) => void;
@@ -278,6 +290,7 @@ function AreaDaVisao({
   isoDeHoje,
   porDia,
   estaConcluida,
+  nomeDaColuna,
   assuntoDoAtendimento,
   onAbrirTarefa,
   onEscolherDia,
@@ -319,6 +332,7 @@ function AreaDaVisao({
         data={dataVisivel}
         tarefas={tarefas}
         estaConcluida={estaConcluida}
+        nomeDaColuna={nomeDaColuna}
         assuntoDoAtendimento={assuntoDoAtendimento}
         onAbrir={onAbrirTarefa}
         /* A barra de datas logo acima já diz que dia é este. */
@@ -349,6 +363,7 @@ function AreaDaVisao({
           data={dia}
           tarefas={tarefas}
           estaConcluida={estaConcluida}
+          nomeDaColuna={nomeDaColuna}
           assuntoDoAtendimento={assuntoDoAtendimento}
           onAbrir={onAbrirTarefa}
         />

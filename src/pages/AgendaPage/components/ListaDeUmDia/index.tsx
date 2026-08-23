@@ -9,6 +9,7 @@ interface Props {
   data: Date;
   tarefas: Tarefa[];
   estaConcluida: (tarefa: Tarefa) => boolean;
+  nomeDaColuna: (tarefa: Tarefa) => string | undefined;
   assuntoDoAtendimento: (id: string) => string | undefined;
   onAbrir: (tarefa: Tarefa) => void;
   /** Desenha a data no cabeçalho.
@@ -30,6 +31,7 @@ export default function ListaDeUmDia({
   data,
   tarefas,
   estaConcluida,
+  nomeDaColuna,
   assuntoDoAtendimento,
   onAbrir,
   comData = true,
@@ -42,6 +44,7 @@ export default function ListaDeUmDia({
             key={`${tarefa.subgrupo_id}:${tarefa.tarefa_id}`}
             tarefa={tarefa}
             concluida={estaConcluida(tarefa)}
+            nomeDaColuna={nomeDaColuna(tarefa)}
             assuntoDoAtendimento={
               tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
             }
