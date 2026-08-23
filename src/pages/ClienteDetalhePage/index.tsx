@@ -121,6 +121,11 @@ export default function ClienteDetalhePage() {
                 } esse cliente.`
               : undefined
           }
+          /* Mesma razão do detalhe do processo: o aviso é a consequência
+             da exclusão, e confirmar antes dele chegar é decidir às
+             cegas. */
+          verificando={processosQuery.isPending}
+          mensagemDeEspera="Conferindo o que está vinculado a este cliente…"
           confirmando={removerMutation.isPending}
           onConfirmar={() => removerMutation.mutate()}
           onFechar={() => setConfirmandoRemocao(false)}

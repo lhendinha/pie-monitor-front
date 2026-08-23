@@ -176,6 +176,31 @@ describe("SubgruposPage", () => {
     });
   });
 
+  it("o diálogo abre no CLIQUE, antes de a contagem chegar", async () => {
+    // Já foi ao contrário: a lixeira não fazia NADA visível até a contagem
+    // responder, e a pessoa clicava de novo achando que tinha falhado.
+    // Este teste fica vermelho se alguém voltar a esperar em silêncio.
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+    });
+    // Promessa que nunca assenta = a espera congelada.
+    mocks.conteudoDoSubgrupo.mockReturnValue(new Promise(() => {}));
+    const user = userEvent.setup();
+    renderComProviders(<SubgruposPage />);
+
+    await screen.findByText("Cível");
+    await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+
+    const dialogo = within(await screen.findByRole("dialog"));
+    expect(dialogo.getByText(/Conferindo o que ainda existe dentro de/)).toBeInTheDocument();
+    // A ação destrutiva fica TRAVADA enquanto não se sabe se ela vale --
+    // é o único pedaço do comportamento antigo que valia a pena manter.
+    expect(dialogo.getByRole("button", { name: /Verificando/ })).toBeDisabled();
+    // Cancelar continua funcionando: diálogo sem saída é pior que nenhum.
+    expect(dialogo.getByRole("button", { name: "Cancelar" })).toBeEnabled();
+    expect(mocks.removerSubgrupo).not.toHaveBeenCalled();
+  });
+
   describe("aviso de último subgrupo", () => {
     /** A tela NÃO deduz mais isso da listagem -- ela lê `ficaria_sem_subgrupo`
      * do servidor. Deduzir só funcionava pra quem não é admin: a listagem é

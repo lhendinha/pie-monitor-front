@@ -163,6 +163,12 @@ export default function ProcessoDetalhePage() {
                 } sem processo.`
               : undefined
           }
+          /* Trava "Excluir" enquanto a contagem de tarefas não chega. O
+             aviso acima é a CONSEQUÊNCIA da exclusão -- confirmar antes
+             dele seria decidir sem ver o que vai acontecer, e é rápido o
+             bastante pra dar tempo disso. */
+          verificando={tarefasQuery.isPending}
+          mensagemDeEspera="Conferindo o que está vinculado a este processo…"
           confirmando={removerMutation.isPending}
           onConfirmar={() => removerMutation.mutate()}
           onFechar={() => setConfirmandoRemocao(false)}

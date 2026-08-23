@@ -2,6 +2,7 @@ import { Stack, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
 import Botao from "../Botao";
+import Esqueleto from "../Esqueleto";
 import Faixa from "../Faixa";
 import { IconeLixeira } from "../Icons";
 import Modal from "../Modal";
@@ -22,6 +23,18 @@ interface Props {
    * aviso assusta à toa. */
   reversivel?: boolean;
   confirmando?: boolean;
+  /** Ainda checando se dá pra excluir.
+   *
+   * O diálogo abre no CLIQUE, não quando a resposta chega: esperar em
+   * silêncio faz a pessoa clicar de novo achando que o botão falhou. Aqui
+   * ela vê o diálogo, o nome do item e que algo está em curso.
+   *
+   * A ação destrutiva fica travada enquanto isso -- é o que o silêncio
+   * protegia, e é o único pedaço daquilo que valia a pena manter. */
+  verificando?: boolean;
+  /** O que está sendo verificado, em uma frase ("Conferindo o que existe
+   * dentro de X…"). Só aparece com `verificando`. */
+  mensagemDeEspera?: ReactNode;
   onConfirmar: () => void;
   onFechar: () => void;
 }
@@ -41,6 +54,8 @@ export default function ModalDeConfirmacao({
   rotulo,
   reversivel,
   confirmando,
+  verificando,
+  mensagemDeEspera,
   onConfirmar,
   onFechar,
 }: Props) {
@@ -53,23 +68,33 @@ export default function ModalDeConfirmacao({
           <Botao variante="ghost" onClick={onFechar}>
             Cancelar
           </Botao>
-          <Botao variante="perigo" onClick={onConfirmar} disabled={confirmando}>
+          <Botao
+            variante="perigo"
+            onClick={onConfirmar}
+            disabled={confirmando || verificando}
+          >
             {!reversivel && <IconeLixeira />}
-            {confirmando ? "Excluindo…" : rotulo || "Excluir"}
+            {confirmando ? "Excluindo…" : verificando ? "Verificando…" : rotulo || "Excluir"}
           </Botao>
         </RodapeDeAcoes>
       }
     >
       <Stack gap="14px">
-        <Text fontSize="13.5px" lineHeight="1.5">
-          {mensagem}
+        <Text fontSize="13.5px" lineHeight="1.5" aria-live="polite">
+          {verificando ? mensagemDeEspera : mensagem}
         </Text>
-        {aviso && (
+        {/* UMA barra, na altura da linha de apoio que aparece depois ("Essa
+            ação não pode ser desfeita"). A frase principal já ocupa o lugar
+            dela em cima, então o esqueleto só precisa cobrir o que sobra.
+            Com duas barras o diálogo saltava 29px pra cima quando a resposta
+            chegava -- medido no navegador. */}
+        {verificando && <Esqueleto linhas={1} altura="15px" />}
+        {!verificando && aviso && (
           <Faixa tom="aviso" aEsquerda>
             {aviso}
           </Faixa>
         )}
-        {!reversivel && (
+        {!verificando && !reversivel && (
           <Text fontSize="11.5px" color="fg.subtle">
             Essa ação não pode ser desfeita.
           </Text>

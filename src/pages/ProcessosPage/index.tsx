@@ -126,6 +126,7 @@ export default function ProcessosPage() {
       {modalAberto && (
         <NovoProcessoForm
           subgrupos={apoio.subgrupos}
+          carregandoSubgrupos={apoio.carregandoSubgrupos}
           onCadastrado={invalidarProcessos}
           onFechar={() => setModalAberto(false)}
         />

@@ -150,12 +150,18 @@ export default function SubgruposPage() {
         <MembrosDoSubgrupo subgrupo={vendoMembrosDe} onFechar={() => setVendoMembrosDe(null)} />
       )}
 
-      {/* Enquanto a contagem não chega, nenhum diálogo: abrir o "tem
-          certeza?" e trocá-lo pelo "não dá ainda" meio segundo depois é
-          pior que esperar.
+      {/* O diálogo abre no CLIQUE, e não quando a contagem chega.
 
-          Se a contagem FALHA, o "tem certeza?" abre assim mesmo: o
-          pré-teste é conveniência, e quem decide de verdade é o DELETE.
+          Já foi ao contrário, com o argumento de que trocar o "tem certeza?"
+          pelo "não dá ainda" meio segundo depois era pior que esperar. O
+          argumento tratava do problema errado: clicar na lixeira e não ver
+          NADA acontecer é o pior dos três -- a pessoa clica de novo achando
+          que o botão falhou. O que valia a pena preservar era só não
+          oferecer a ação destrutiva antes de saber se ela vale, e isso o
+          `verificando` faz travando o botão.
+
+          Se a contagem FALHA, o "tem certeza?" fica utilizável assim mesmo:
+          o pré-teste é conveniência, e quem decide de verdade é o DELETE.
           Sem esta saída, um erro na contagem deixaria a lixeira sem
           resposta nenhuma. */}
       {/* Vem ANTES dos outros dois: é a ordem em que o servidor checa, então
@@ -182,12 +188,18 @@ export default function SubgruposPage() {
         />
       )}
 
-      {pedido && !ficariaSemSubgrupo && !conteudoQuery.isPending && impedimentos.length === 0 && (
+      {pedido && (conteudoQuery.isPending || (!ficariaSemSubgrupo && impedimentos.length === 0)) && (
         <ModalDeConfirmacao
           titulo="Excluir subgrupo"
           mensagem={
             <>
               O subgrupo <strong>{pedido.nome}</strong> e o quadro Kanban dele serão removidos.
+            </>
+          }
+          verificando={conteudoQuery.isPending}
+          mensagemDeEspera={
+            <>
+              Conferindo o que ainda existe dentro de <strong>{pedido.nome}</strong>…
             </>
           }
           confirmando={removerMutation.isPending}

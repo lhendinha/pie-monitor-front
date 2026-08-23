@@ -51,6 +51,11 @@ export function useCatalogosDeProcesso() {
     lista.find((o) => o.opcao_id === id)?.rotulo || id || "";
 
   return {
+    /** Lista vazia significa DUAS coisas -- "não existe nenhum" e "ainda não
+     * chegou" -- e quem lê precisa distinguir. Sem isto, o modal de novo
+     * processo anunciava "Crie um subgrupo primeiro" durante o
+     * carregamento, afirmando uma coisa falsa pra quem tem subgrupos. */
+    carregandoSubgrupos: subgruposQuery.isPending,
     subgrupos,
     clientes,
     fases,

@@ -1,10 +1,11 @@
-import { Input, Text } from "@chakra-ui/react";
+import { Input, Stack, Text } from "@chakra-ui/react";
 import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
   Campo,
+  Esqueleto,
   Modal,
   RodapeDeAcoes,
   Select,
@@ -20,12 +21,17 @@ import type { CamposOpcionaisProcesso } from "../../../../services/api/processos
 
 interface Props {
   subgrupos: Subgrupo[];
+  /** Distingue "ainda não chegou" de "não existe nenhum". Sem isto o modal
+   * abria afirmando "Crie um subgrupo primeiro" durante o carregamento --
+   * uma frase falsa pra quem tem subgrupos, e pior que não dizer nada. */
+  carregandoSubgrupos?: boolean;
   onCadastrado: () => void;
   onFechar: () => void;
 }
 
 export default function NovoProcessoForm({
   subgrupos,
+  carregandoSubgrupos,
   onCadastrado,
   onFechar,
 }: Props) {
@@ -58,6 +64,19 @@ export default function NovoProcessoForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     criarMutation.mutate();
+  }
+
+  if (carregandoSubgrupos) {
+    return (
+      <Modal titulo="Novo processo" onFechar={onFechar}>
+        <Stack gap="14px" py="10px">
+          <Text fontSize="13.5px" color="fg.subtle">
+            Carregando os subgrupos…
+          </Text>
+          <Esqueleto linhas={3} altura="38px" />
+        </Stack>
+      </Modal>
+    );
   }
 
   if (subgrupos.length === 0) {

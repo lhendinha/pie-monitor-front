@@ -26,6 +26,11 @@ interface Props {
   subgrupoAtual: string;
   subgrupos: Subgrupo[];
   colunas: ColunaDoQuadro[];
+  /** O quadro do subgrupo ainda está vindo. O botão "Nova tarefa" aparece
+   * assim que os SUBGRUPOS resolvem, então dá pra abrir este modal com as
+   * colunas a caminho -- e aí o seletor vinha vazio e o Salvar travado, sem
+   * dizer por quê. */
+  carregandoColunas?: boolean;
   membros: Membro[];
   /** Coluna pré-escolhida, quando veio do "+ Nova atividade" de uma coluna. */
   colunaInicial?: string;
@@ -57,6 +62,7 @@ export default function ModalDeTarefa({
   subgrupoAtual,
   subgrupos,
   colunas,
+  carregandoColunas,
   membros,
   colunaInicial,
   onSalvo,
@@ -247,12 +253,18 @@ export default function ModalDeTarefa({
             </Campo>
           </LinhaDeCampos>
 
-          <Campo rotulo="Coluna do quadro" para="tf-coluna" obrigatorio>
+          <Campo
+            rotulo="Coluna do quadro"
+            para="tf-coluna"
+            obrigatorio
+            dica={carregandoColunas ? "Carregando as colunas do quadro…" : undefined}
+          >
             <Select
               id="tf-coluna"
               opcoes={colunas.map((c) => ({ value: c.coluna_id, label: c.nome }))}
               valor={colunaId}
               onMudar={setColunaId}
+              desabilitado={carregandoColunas}
             />
           </Campo>
         </Stack>

@@ -246,6 +246,7 @@ export default function KanbanPage() {
           subgrupoAtual={subgrupoId}
           subgrupos={subgrupos}
           colunas={colunas}
+          carregandoColunas={quadroQuery.isPending}
           membros={membros}
           colunaInicial={criandoNaColuna ?? undefined}
           onSalvo={invalidar}
