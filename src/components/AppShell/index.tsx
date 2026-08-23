@@ -10,11 +10,6 @@ interface Props {
 
 /** Moldura do app autenticado: faixa da marca, menu lateral e a área de
  * conteúdo, que o router preenche via `<Outlet />`.
- *
- * ⚠️ Durante a Fase 2 as telas ainda vêm do `index.css`, então o conteúdo
- * abaixo mistura Chakra (a moldura) com as classes antigas (o miolo). É
- * temporário e esperado: a moldura sobe primeiro justamente pra que cada
- * tela possa ser migrada uma por vez sem quebrar as outras.
  */
 export default function AppShell({ onSair }: Props) {
   return (

@@ -2,16 +2,16 @@ import { createSystem, defaultConfig } from "@chakra-ui/react";
 
 import { cores, fontes, raios, sombras, tipografia } from "./tokens";
 
-/** Sistema de design do Chakra, alimentado por `tokens.ts`.
+/** Sistema de design do Chakra, alimentado por `tokens.ts`. É a ÚNICA fonte
+ * de estilo da aplicação desde que o `src/index.css` (1050 linhas) foi
+ * apagado, no fim da Fase 2.
  *
- * ⚠️ `preflight: false`, e isso é o ponto mais importante deste arquivo
- * durante a Fase 2. O reset global do Chakra briga com o `src/index.css`
- * (1097 linhas), que ainda é o design system de todas as telas não migradas.
- * Ligar o reset agora desconfigura todas elas de uma vez -- e a partir daí
- * não dá pra saber se um bug é da tela nova ou do reset.
- *
- * Ele é ligado na ÚLTIMA etapa da fase, quando o `index.css` já tiver sido
- * apagado. Enquanto houver `className` apontando pra lá, fica desligado.
+ * ⚠️ `preflight: false` continua, e agora por escolha, não por transição. O
+ * `globalCss` abaixo já traz o que precisávamos do reset -- e cada linha
+ * dele entrou depois de um bug concreto, com o motivo anotado. Ligar o
+ * preflight do Chakra agora traria um lote de regras que ninguém pediu
+ * (imagens em bloco, tamanho de heading, borda de tabela) contra uma base
+ * que todas as telas já foram verificadas em Chrome.
  */
 export const system = createSystem(defaultConfig, {
   preflight: false,
@@ -207,11 +207,51 @@ export const system = createSystem(defaultConfig, {
   },
 
   globalCss: {
+    "html, body": { margin: 0, padding: 0 },
+
     body: {
       fontFamily: "ui",
       fontSize: tipografia.tamanhoBase,
       lineHeight: tipografia.alturaLinha,
+      /** Fundo e cor do texto também vinham do `index.css`. Ficam aqui, e
+       * não numa folha à parte, pra que exista UMA fonte de verdade: foi
+       * uma segunda definição de `color` no `body` que fez toda a
+       * aplicação herdar o azul-escuro da paleta antiga por semanas. */
+      bg: "bg.canvas",
+      color: "fg",
+      /* ⚠️ Sem isto o texto sai mais grosso que o do artifact no macOS --
+         diferença pequena e visível lado a lado. A tipagem do Chakra não
+         conhece a propriedade (prefixada e fora do padrão), daí o cast. */
+      ...({ WebkitFontSmoothing: "antialiased" } as Record<string, string>),
     },
+
+    /** Foco visível em tudo que recebe foco por teclado. Sem isto, quem
+     * navega por Tab não enxerga onde está -- e a maior parte dos nossos
+     * componentes não declara anel próprio. */
+    ":focus-visible": {
+      outline: "2px solid",
+      outlineColor: "brand",
+      outlineOffset: "2px",
+    },
+
+    /** `border-box` em tudo: vinha do `index.css`, e sem ele largura e
+     * padding voltam a se somar -- todo campo de 100% estoura o container
+     * que o segura.
+     *
+     * Junto, quem pede menos movimento no sistema recebe menos movimento aqui.
+     * Cobre também as animações que vêm de dentro do Chakra.
+     *
+     * O seletor leva a media query junto, e não o contrário: a tipagem do
+     * `globalCss` aceita condição DENTRO de um seletor, não um seletor
+     * dentro de uma condição. */
+    "*": {
+      boxSizing: "border-box",
+      "@media (prefers-reduced-motion: reduce)": {
+        animationDuration: "0.01ms !important",
+        transitionDuration: "0.01ms !important",
+      },
+    },
+
     ".num": { fontVariantNumeric: "tabular-nums" },
 
     /** ⚠️ Reset mínimo por TAG -- a parte do preflight que não dá pra adiar.
@@ -225,14 +265,9 @@ export const system = createSystem(defaultConfig, {
      *   `margin: 1em 0`, o que inflava cada item do menu lateral de 38px pra
      *   65px. O espaçamento parecia escolha de design; era margem default.
      *
-     * Conferido antes de adicionar: o `index.css` **não estiliza nenhuma
-     * destas tags diretamente** -- ele trabalha só por classe. Então não há
-     * conflito, mesmo com ele sendo unlayered (o que o faria vencer o
-     * Chakra, que emite em camadas).
-     *
-     * Isto NÃO é o preflight: continua sem tocar em cores, bordas de input,
-     * `box-sizing` global nem nada que desconfigure tela ainda não migrada.
-     * É só a margem/aparência que o navegador injeta sozinho.
+     * Isto NÃO é o preflight inteiro: é só a margem e a aparência que o
+     * navegador injeta sozinho, sem tocar em cores, bordas de campo nem
+     * tamanho de heading.
      */
     "p, h1, h2, h3, h4, h5, h6, figure, blockquote, dl, dd": { margin: 0 },
     "ul, ol": { margin: 0, padding: 0 },
@@ -252,12 +287,11 @@ export const system = createSystem(defaultConfig, {
      * Tailwind faz, e o Chakra faria se o dele estivesse ligado.
      *
      * Seletor universal tem especificidade 0, então qualquer regra por
-     * classe do `index.css` continua vencendo. */
+     * classe continua vencendo. */
     "*, *::before, *::after": { borderWidth: 0, borderStyle: "solid" },
 
-    // Sem `padding` de propósito: `.icon-btn` do index.css não define o
-    // próprio e seria achatado. Componente Chakra que quer zero padding
-    // define explicitamente.
+    // Sem `padding` de propósito: componente que quer zero padding define
+    // explicitamente, e assim nada é achatado por engano.
     button: { background: "none", cursor: "pointer" },
     fieldset: { margin: 0, padding: 0, border: 0 },
     /** Terceiro caso da mesma família do `<p>` e do `<button>`: sem
@@ -265,9 +299,7 @@ export const system = createSystem(defaultConfig, {
      * são `<Link>` do router, e apareciam sublinhados -- no artifact eles
      * são `<button>`, sem sublinhado nenhum.
      *
-     * Conferido: as duas regras de `text-decoration: underline` do
-     * `index.css` são de `button` (`.link-button`, `.footer-note button`),
-     * então nada aqui as atropela. */
+     * Quem quer sublinhado pede: é o que o `BotaoDeLink` faz no hover. */
     a: { color: "inherit", textDecoration: "none" },
   },
 });

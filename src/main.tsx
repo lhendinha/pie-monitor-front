@@ -5,7 +5,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { queryClient } from "./services/queryClient";
 import { system } from "./theme";
-import "./index.css";
 
 const ReactQueryDevtools = import.meta.env.DEV
   ? lazy(() =>

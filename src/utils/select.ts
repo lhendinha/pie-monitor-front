@@ -42,7 +42,7 @@ export function estilosMenuPortal(base: Record<string, unknown>) {
 
 /** Estilos do select padrão (`.csel-trigger` / `.csel-panel` do artifact).
  *
- * Substitui o mapa de classes que apontava pro `index.css` -- era de lá que
+ * Substitui o mapa de classes do design antigo -- era de lá que
  * vinha a borda bege do "Por página", herdada da paleta antiga. Aqui os
  * valores saem de `theme/tokens`, a única fonte de cor do projeto. */
 export function estilosSelect(
@@ -122,7 +122,7 @@ export function rotuloResumo(selecionados: readonly Opcao[], placeholder: string
 /** Estilos da variante "chip": o controle vira a pílula do artifact.
  *
  * Vai em `styles` e não em `classNames` de propósito -- o mapa por classe
- * aponta pro `index.css`, que some no fim da Fase 2. Aqui os valores vêm de
+ * apontava pro design antigo. Aqui os valores vêm de
  * `theme/tokens`, que é a única fonte de cor do projeto.
  *
  * `controlShouldRenderValue={false}` no componente cuida do resto: a pílula

@@ -4,7 +4,7 @@
  * `MultiSelect`) é o pareamento recomendado do react-select com
  * `menuPortalTarget`: sem isso (`"absolute"`, o default), o menu se
  * posiciona somando o scroll da PÁGINA -- mas `.modal-card` rola por
- * dentro de si mesma (`overflow-y: auto`, ver index.css), não a página,
+ * dentro de si mesma (`overflow-y: auto`), não a página,
  * então o cálculo ficava errado e o menu abria pra baixo (ignorando
  * `menuPlacement="auto"`) mesmo sem espaço, vazando pra fora do modal. */
 export const Z_INDEX_MENU_PORTAL = 210;

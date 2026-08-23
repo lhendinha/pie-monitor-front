@@ -16,7 +16,7 @@ interface Props extends Omit<ButtonProps, "variant"> {
  *
  * Um componente só para as quatro variantes -- antes o rodapé dos filtros
  * tinha a própria cópia dessas medidas, e os modais usavam as classes do
- * `index.css`. Três fontes para o mesmo botão divergem no primeiro ajuste.
+ * design antigo. Três fontes para o mesmo botão divergem no primeiro ajuste.
  */
 export default function Botao({ variante = "primario", children, ...resto }: Props) {
   return (

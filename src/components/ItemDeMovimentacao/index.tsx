@@ -17,7 +17,7 @@ interface Props {
 /** Uma movimentação numa lista (`.hist-item` do artifact): bolinha da
  * marca, título, meta e o texto do tribunal num bloco recuado.
  *
- * Substitui o `ComunicacaoCard`, que vinha do `index.css` e desenhava um
+ * Substitui o `ComunicacaoCard`, que vinha do design antigo e desenhava um
  * cartão dentro do cartão -- moldura demais, e destoava do resto da tela.
  */
 export default function ItemDeMovimentacao({ titulo, meta, html, textoPlano, ultimo }: Props) {

@@ -10,7 +10,7 @@ import { chakra } from "@chakra-ui/react";
  * O reset de aparência (fundo, borda, cursor) já vem do reset por tag em
  * `theme/index.ts`; aqui sobra o que o navegador ainda injeta e que aquele
  * reset deixou de fora de propósito -- `padding`, que não pôde ser global
- * porque o `.icon-btn` do `index.css` seria achatado.
+ * porque o `.icon-btn` do design antigo seria achatado.
  */
 export const BotaoNu = chakra("button", {
   base: {

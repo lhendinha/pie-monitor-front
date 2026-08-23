@@ -16,7 +16,7 @@ export const PAINEL_DE_MENU: SystemStyleObject = {
   borderRadius: "md",
   boxShadow: "md",
   /** ⚠️ O painel recebe foco ao abrir, e o `:focus-visible` global do
-   * `index.css` desenhava um anel de 2px da marca por cima da borda de 1px
+   * tema desenha um anel de 2px da marca por cima da borda de 1px
    * -- uma moldura azul grossa que o artifact não tem. Tirar daqui não custa
    * acessibilidade: quem navega por teclado vê o item REALÇADO, que é onde o
    * foco de fato está. */
