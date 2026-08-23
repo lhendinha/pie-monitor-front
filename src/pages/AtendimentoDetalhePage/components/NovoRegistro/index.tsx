@@ -31,6 +31,11 @@ export default function NovoRegistro({ enviando, onEnviar }: Props) {
         flex="1"
         minH="64px"
         resize="vertical"
+        /* O recipe do Chakra dá 9px 12px e raio `sm` ao campo; o artifact
+           quer 10px 12px e raio `md` neste (`.tl-new textarea`). Explícito
+           porque o recipe vence o padrão herdado. */
+        p="10px 12px"
+        borderRadius="md"
         aria-label="Novo registro do atendimento"
         placeholder="Adicionar novo registro..."
         value={texto}

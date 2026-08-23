@@ -20,6 +20,7 @@ export { default as IconeBusca } from "./IconeBusca";
 export { default as IconeCalendario } from "./IconeCalendario";
 export { default as IconeSeta } from "./IconeSeta";
 export { default as IconeChevron } from "./IconeChevron";
+export { default as IconeLink } from "./IconeLink";
 export { default as IconeSino } from "./IconeSino";
 export { default as IconeLixeira } from "./IconeLixeira";
 export { default as IconeLapis } from "./IconeLapis";

@@ -210,3 +210,24 @@ describe("erro", () => {
     expect(await screen.findByText(/pode ter sido excluído/)).toBeInTheDocument();
   });
 });
+
+describe("fidelidade ao artifact", () => {
+  /* Os chips daqui levam ÍCONE, ao contrário dos do detalhe do processo
+   * (que no artifact são só texto): aqui eles dizem coisas de naturezas
+   * diferentes -- quem é o cliente e a que processo isto se liga --, e sem
+   * o ícone as duas pílulas ficam indistinguíveis à primeira vista.
+   *
+   * As MEDIDAS ficam na verificação em Chrome; aqui trava-se a estrutura. */
+
+  it("o chip do cliente tem ícone", async () => {
+    await montar();
+    const chip = (await screen.findByText("Maria Souza")).closest("div");
+    expect(chip?.querySelector("svg")).toBeTruthy();
+  });
+
+  it("o chip do processo tem ícone", async () => {
+    await montar();
+    const chip = screen.getByText("0000266-87.2021.8.13.0559").closest("div");
+    expect(chip?.querySelector("svg")).toBeTruthy();
+  });
+});

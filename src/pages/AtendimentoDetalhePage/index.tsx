@@ -11,6 +11,8 @@ import {
   Esqueleto,
   Etiqueta,
   EtiquetaDeMetadado,
+  IconeClientes,
+  IconeLink,
   IconeLixeira,
   IconeSeta,
   ModalDeConfirmacao,
@@ -163,11 +165,24 @@ export default function AtendimentoDetalhePage() {
           </Heading>
           <Flex align="center" gap="8px" mt="8px" wrap="wrap">
             <Etiqueta cores={coresDoStatus(atendimento.status)}>{atendimento.status}</Etiqueta>
+            {/* Os chips daqui levam ÍCONE, ao contrário dos do detalhe do
+                processo (que no artifact são só texto): aqui eles dizem
+                coisas de naturezas diferentes -- quem é o cliente e a que
+                processo isto se liga --, e sem o ícone as duas pílulas
+                ficam indistinguíveis à primeira vista. */}
             {atendimento.cliente_ids.map((id) => (
-              <EtiquetaDeMetadado key={id}>{nomePorCliente.get(id) ?? id}</EtiquetaDeMetadado>
+              <EtiquetaDeMetadado key={id}>
+                <Box color="fg.subtle" display="flex">
+                  <IconeClientes tamanho={13} />
+                </Box>
+                {nomePorCliente.get(id) ?? id}
+              </EtiquetaDeMetadado>
             ))}
             {atendimento.processo_numero && (
               <EtiquetaDeMetadado>
+                <Box color="fg.subtle" display="flex">
+                  <IconeLink tamanho={13} />
+                </Box>
                 {mascararNumeroProcesso(atendimento.processo_numero)}
               </EtiquetaDeMetadado>
             )}
