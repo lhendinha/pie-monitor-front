@@ -20,4 +20,6 @@ export const ABAS_DO_GRUPO: SubAbaConfig[] = [
   { id: "fases", label: "Fases", minimo: "admin" },
   { id: "situacoes", label: "Situações", minimo: "admin" },
   { id: "convidar", label: "Convidar", minimo: "admin" },
+  // `admin`, espelhando o piso de GET/PATCH /grupos/configuracoes.
+  { id: "configuracoes", label: "Configurações", minimo: "admin" },
 ];

@@ -198,7 +198,24 @@ export type TamanhoPagina = (typeof TAMANHOS_PAGINA)[number];
 
 
 /** Sub-abas dentro de GrupoPage. */
-export type SubAbaId = "subgrupos" | "membros" | "convidar" | "fases" | "situacoes";
+export type SubAbaId =
+  | "subgrupos"
+  | "membros"
+  | "convidar"
+  | "fases"
+  | "situacoes"
+  | "configuracoes";
+
+/** `GET /grupos/configuracoes` -- configurações do próprio grupo.
+ *
+ * Os limites vêm do servidor junto do valor: a tela valida antes de mandar,
+ * e repetir os números aqui seria dois lugares pra manter em acordo. */
+export interface ConfiguracoesDoGrupo {
+  dias_para_arquivar: number;
+  dias_para_arquivar_minimo: number;
+  dias_para_arquivar_maximo: number;
+  dias_para_arquivar_padrao: number;
+}
 
 export interface SubAbaConfig {
   id: SubAbaId;

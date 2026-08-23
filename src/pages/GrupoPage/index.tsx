@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Abas, CabecalhoDePagina } from "../../components";
 import { ABAS_DO_GRUPO } from "../../constants";
 import { papelAtende } from "../../services";
+import ConfiguracoesDoGrupo from "./components/ConfiguracoesDoGrupo";
 import ConvidarPage from "../ConvidarPage";
 import MembrosPage from "../MembrosPage";
 import SubgruposPage from "../SubgruposPage";
@@ -32,6 +33,7 @@ export default function GrupoPage() {
       {abaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" nomeSingular="fase" />}
       {abaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" nomeSingular="situação" />}
       {abaAtiva === "convidar" && <ConvidarPage />}
+      {abaAtiva === "configuracoes" && <ConfiguracoesDoGrupo />}
     </>
   );
 }

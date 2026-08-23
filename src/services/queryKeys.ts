@@ -16,6 +16,7 @@ export const qk = {
   quadro: (subgrupoId: string) => ["quadro", subgrupoId] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
   grupos: () => ["grupos"] as const,
+  configuracoesDoGrupo: () => ["configuracoes-do-grupo"] as const,
   tarefas: (params: Record<string, unknown> = {}) => ["tarefas", params] as const,
   tarefasDoProcesso: (numeroProcesso: string) =>
     ["tarefas", "processo", numeroProcesso] as const,

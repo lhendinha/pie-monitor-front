@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
@@ -23,6 +23,8 @@ const mocks = vi.hoisted(() => ({
   atualizarOpcaoProcesso: vi.fn(),
   desativarOpcaoProcesso: vi.fn(),
   reativarOpcaoProcesso: vi.fn(),
+  lerConfiguracoesDoGrupo: vi.fn(),
+  atualizarConfiguracoesDoGrupo: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -36,6 +38,13 @@ beforeEach(() => {
   mocks.listarGrupos.mockResolvedValue({ grupos: [] });
   mocks.ehSuperAdmin.mockReturnValue(false);
   mocks.listarOpcoesProcesso.mockResolvedValue({ opcoes: [], total: 0, total_paginas: 0 });
+  mocks.lerConfiguracoesDoGrupo.mockResolvedValue({
+    dias_para_arquivar: 7,
+    dias_para_arquivar_minimo: 1,
+    dias_para_arquivar_maximo: 365,
+    dias_para_arquivar_padrao: 7,
+  });
+  mocks.atualizarConfiguracoesDoGrupo.mockResolvedValue({});
 });
 
 describe("GrupoPage", () => {
@@ -120,5 +129,66 @@ describe("GrupoPage", () => {
     expect(screen.getByRole("button", { name: "Reativar Inicial" })).toBeDisabled();
     // A outra linha segue utilizável.
     expect(screen.getByRole("button", { name: "Reativar Recursal" })).toBeEnabled();
+  });
+
+  describe("aba Configurações", () => {
+    async function abrirConfiguracoes(user: ReturnType<typeof userEvent.setup>) {
+      mocks.papelAtende.mockReturnValue(true);
+      renderComProviders(<GrupoPage />);
+      await user.click(await screen.findByRole("tab", { name: "Configurações" }));
+    }
+
+    it("o campo nasce com o que ESTÁ SALVO, não vazio", async () => {
+      /* Vazio, um "Salvar" sem querer gravaria o mínimo -- ou nada. */
+      const user = userEvent.setup();
+      await abrirConfiguracoes(user);
+
+      expect(await screen.findByLabelText(/Arquivar concluídas depois de/)).toHaveValue(7);
+    });
+
+    it("'Salvar' fica travado enquanto o valor não mudou", async () => {
+      // Botão que grava o que já está gravado só gera requisição à toa.
+      const user = userEvent.setup();
+      await abrirConfiguracoes(user);
+
+      await screen.findByLabelText(/Arquivar concluídas depois de/);
+      expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+    });
+
+    it("valor fora do limite trava e DIZ o motivo", async () => {
+      // Travar sem explicar faz a pessoa procurar o que faltou.
+      const user = userEvent.setup();
+      await abrirConfiguracoes(user);
+
+      const campo = await screen.findByLabelText(/Arquivar concluídas depois de/);
+      await user.clear(campo);
+      await user.type(campo, "999");
+
+      expect(await screen.findByText(/dentro do limite/)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+    });
+
+    it("salva o número novo", async () => {
+      const user = userEvent.setup();
+      await abrirConfiguracoes(user);
+
+      const campo = await screen.findByLabelText(/Arquivar concluídas depois de/);
+      await user.clear(campo);
+      await user.type(campo, "15");
+      await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+      await waitFor(() => expect(mocks.atualizarConfiguracoesDoGrupo).toHaveBeenCalledWith(15));
+    });
+
+    it("a dica diz que arquivada CONTINUA concluída", async () => {
+      /* É a dúvida que o nome "Arquivado" cria -- e a resposta errada
+       * ("some do sistema") faria a pessoa evitar configurar. */
+      const user = userEvent.setup();
+      await abrirConfiguracoes(user);
+
+      expect(
+        await screen.findByText(/continua contando como concluída/),
+      ).toBeInTheDocument();
+    });
   });
 });

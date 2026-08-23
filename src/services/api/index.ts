@@ -11,3 +11,4 @@ export * from "./tarefas";
 export * from "./perfil";
 export * from "./quadro";
 export * from "./atendimentos";
+export * from "./configuracoes";
