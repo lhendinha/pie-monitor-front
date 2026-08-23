@@ -1,6 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   KeyboardSensor,
@@ -128,6 +128,35 @@ export default function KanbanPage() {
    * O servidor recusa coluna de outro quadro de propósito; aqui isso nem
    * chega a acontecer, porque as colunas oferecidas são as do quadro
    * aberto. A validação existe dos dois lados. */
+  /** ⚠️ Otimista, e não um PATCH solto. Sem isto o cartão VOLTAVA pra coluna
+   * de origem no instante da solta e só pulava pra nova quando o refetch
+   * chegasse -- um pisca-pisca que parece que o arraste falhou. Agora ele
+   * fica onde foi largado, e volta sozinho se o servidor recusar. */
+  const moverMutation = useMutation({
+    mutationFn: ({ tarefa, destino }: { tarefa: Tarefa; destino: string }) =>
+      atualizarTarefa(tarefa.subgrupo_id, tarefa.tarefa_id, { coluna_id: destino }),
+    onMutate: async ({ tarefa, destino }) => {
+      // Cancela o que estiver em voo: um refetch chegando depois do carimbo
+      // otimista o sobrescreveria com a posição antiga.
+      await queryClient.cancelQueries({ queryKey: ["tarefas"] });
+      const anteriores = queryClient.getQueriesData<Tarefa[]>({ queryKey: ["tarefas"] });
+      // Todas as listas em cache, não só a visível: o mesmo cartão aparece
+      // em janelas de data diferentes, e deixar uma delas com a coluna
+      // velha faz o cartão saltar ao trocar o filtro.
+      queryClient.setQueriesData<Tarefa[]>({ queryKey: ["tarefas"] }, (lista) =>
+        lista?.map((t) =>
+          t.tarefa_id === tarefa.tarefa_id ? { ...t, coluna_id: destino } : t,
+        ),
+      );
+      return { anteriores };
+    },
+    onError: (err, _variaveis, contexto) => {
+      contexto?.anteriores.forEach(([chave, dados]) => queryClient.setQueryData(chave, dados));
+      toastErroMutation(toast, err, "Não foi possível mover a tarefa.");
+    },
+    onSettled: invalidar,
+  });
+
   function handleDragEnd(evento: DragEndEvent) {
     const tarefa = evento.active.data.current?.tarefa as Tarefa | undefined;
     const over = evento.over;
@@ -135,12 +164,7 @@ export default function KanbanPage() {
     const tarefaAlvo = over.data.current?.tarefa as Tarefa | undefined;
     const destino = tarefaAlvo ? tarefaAlvo.coluna_id : String(over.id);
     if (!destino || tarefa.coluna_id === destino) return;
-    atualizarTarefa(tarefa.subgrupo_id, tarefa.tarefa_id, { coluna_id: destino })
-      .then(invalidar)
-      .catch((err) => {
-        invalidar();
-        toastErroMutation(toast, err, "Não foi possível mover a tarefa.");
-      });
+    moverMutation.mutate({ tarefa, destino });
   }
 
   const colunas = [...(quadroQuery.data?.colunas || [])].sort((a, b) => a.ordem - b.ordem);

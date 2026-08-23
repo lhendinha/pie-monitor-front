@@ -32,6 +32,16 @@ interface SelectProps {
    * Mostrar desabilitado diz onde a coisa está; esconder deixaria a pessoa
    * sem saber. */
   desabilitado?: boolean;
+  /** As opções ainda estão vindo.
+   *
+   * Trava o controle e troca o texto por "Carregando…". Sem isto, um select
+   * de lista vazia é indistinguível de "não há nenhuma opção" -- e o de
+   * Fase/Situação chega a oferecer só "Nenhuma", que é uma resposta errada
+   * enquanto a lista não chegou.
+   *
+   * A mensagem é genérica de propósito: enumerar o que está vindo obriga a
+   * reescrever a frase toda vez que a tela ganha outra consulta. */
+  carregando?: boolean;
 }
 
 /** Substitui o `<select>` nativo -- mesmo visual do `Select`/`MultiSelect`,
@@ -46,6 +56,7 @@ export function Select({
   largura,
   variante = "padrao",
   desabilitado = false,
+  carregando = false,
 }: SelectProps) {
   const chip = variante === "chip";
   /** Mesmo motivo do `MultiSelect`: com o menu controlado, o `onMenuClose`
@@ -67,10 +78,10 @@ export function Select({
       options={opcoes}
       value={opcoes.find((o) => o.value === valor) ?? null}
       onChange={(opcao) => opcao && escolher(opcao.value)}
-      placeholder={placeholder}
+      placeholder={carregando ? "Carregando…" : placeholder}
       isSearchable={false}
       isClearable={false}
-      isDisabled={desabilitado}
+      isDisabled={desabilitado || carregando}
       openMenuOnFocus
       menuPlacement="auto"
       menuPosition="fixed"

@@ -7,6 +7,11 @@ import type { Cliente, FiltrosProcessos, OpcaoProcesso } from "../../../../types
 
 interface Props {
   carregando: boolean;
+  /** As listas dos CHIPS (clientes, fases, situações), que não são a mesma
+   * espera do `carregando` acima -- aquele é a lista de processos. Sem
+   * distinguir, os filtros abriam vazios afirmando que não há nenhuma
+   * situação cadastrada. */
+  carregandoCatalogos?: boolean;
   total: number;
   /** Total do grupo, ignorando filtros -- é o "de Y" da contagem. Sem ele a
    * frase não diz de quanto o resultado foi recortado. */
@@ -31,6 +36,7 @@ interface Props {
  */
 export default function CabecalhoProcessos({
   carregando,
+  carregandoCatalogos,
   total,
   totalSemFiltro,
   busca,
@@ -77,6 +83,7 @@ export default function CabecalhoProcessos({
           opcoes={situacoes.map((s) => ({ value: s.opcao_id, label: s.rotulo }))}
           selecionados={filtros.situacaoIds}
           onMudar={(v) => onMudarFiltro({ situacaoIds: v })}
+          carregando={carregandoCatalogos}
         />
         <MultiSelect
           variante="chip"
@@ -84,6 +91,7 @@ export default function CabecalhoProcessos({
           opcoes={fases.map((f) => ({ value: f.opcao_id, label: f.rotulo }))}
           selecionados={filtros.faseIds}
           onMudar={(v) => onMudarFiltro({ faseIds: v })}
+          carregando={carregandoCatalogos}
         />
         <Select
           variante="chip"
@@ -91,6 +99,7 @@ export default function CabecalhoProcessos({
           opcoes={clientes.map((c) => ({ value: c.cliente_id, label: c.nome }))}
           valor={filtros.clienteId}
           onMudar={(v) => onMudarFiltro({ clienteId: v })}
+          carregando={carregandoCatalogos}
         />
         <FiltroDatas
           dataVerificarAte={filtros.dataVerificarAte}

@@ -22,6 +22,13 @@ interface MultiSelectProps {
    * quando é um só, "N selecionados" quando são muitos. É por isso que o
    * artifact não precisa de chips removíveis embaixo da barra. */
   variante?: "padrao" | "chip";
+  /** As opções ainda estão vindo.
+   *
+   * Lista vazia significa duas coisas -- "não existe nenhuma" e "ainda não
+   * chegou" -- e um seletor vazio e clicável faz a pessoa concluir a
+   * primeira. Aqui ele fica travado e o texto diz o que está acontecendo,
+   * em vez de mentir por omissão. */
+  carregando?: boolean;
 }
 
 /** Dropdown fechado com checkboxes -- mesmo visual do `Select` de valor
@@ -33,6 +40,7 @@ export function MultiSelect({
   onMudar,
   placeholder = "Selecione",
   variante = "padrao",
+  carregando,
 }: MultiSelectProps) {
   const chip = variante === "chip";
 
@@ -83,7 +91,12 @@ export function MultiSelect({
         if (chip) setRascunho(ids);
         else onMudar(ids);
       }}
-      placeholder={placeholder}
+      /* "Carregando…" seco, de propósito: mensagem que ENUMERA o que está
+         vindo ("Carregando os subgrupos…") vira dívida -- toda consulta
+         nova que a tela ganhar exige reescrever a frase, e quem esquecer
+         deixa uma mentira parcial na tela. */
+      placeholder={carregando ? "Carregando…" : placeholder}
+      isDisabled={carregando}
       isSearchable={false}
       isClearable={false}
       closeMenuOnSelect={false}

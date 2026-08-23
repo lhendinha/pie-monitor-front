@@ -22,6 +22,9 @@ interface Props {
   podeExcluir: (s: Subgrupo) => boolean;
   /** Qual linha está com o nome em edição -- só uma por vez. */
   renomeandoId: string | null;
+  /** O rename da linha em edição já foi enviado. Como só uma edita por vez,
+   * um booleano basta -- não precisa dizer qual. */
+  renomeando?: boolean;
   onIniciarRenome: (s: Subgrupo) => void;
   onRenomear: (s: Subgrupo, nome: string) => void;
   onCancelarRenome: () => void;
@@ -34,6 +37,7 @@ export default function ListaDeSubgrupos({
   podeEditar,
   podeExcluir,
   renomeandoId,
+  renomeando,
   onIniciarRenome,
   onRenomear,
   onCancelarRenome,
@@ -75,6 +79,7 @@ export default function ListaDeSubgrupos({
           }
         >
           <NomeEditavel
+            salvando={renomeando}
             /* A chave inclui o nome pra o rascunho nascer do valor atual:
                renomeado e reaberto, o campo tem que vir com o nome novo. */
             key={s.nome}

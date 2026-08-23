@@ -13,6 +13,12 @@ interface Props {
   onIniciar: () => void;
   onConfirmar: (nome: string) => void;
   onCancelar: () => void;
+  /** O rename já foi enviado e a resposta não voltou.
+   *
+   * Sem isto, confirmar não mudava NADA na tela: o campo seguia editável,
+   * com o texto novo, e a pessoa não sabia se o Enter tinha pegado. Fica em
+   * leitura, apagado, até a linha voltar a ser texto. */
+  salvando?: boolean;
 }
 
 /** Um nome numa linha de lista -- e o campo que ele vira ao ser clicado.
@@ -32,6 +38,7 @@ export default function NomeEditavel({
   onIniciar,
   onConfirmar,
   onCancelar,
+  salvando,
 }: Props) {
   const [rascunho, setRascunho] = useState(nome);
 
@@ -39,6 +46,9 @@ export default function NomeEditavel({
    * desistir -- e não renomear o subgrupo pra "". Igual quando o texto
    * voltou a ser o mesmo: não há o que salvar. */
   function confirmar() {
+    // ⚠️ Sem esta saída, o `onBlur` do campo em leitura reenviava o mesmo
+    // rename enquanto o primeiro ainda estava em voo.
+    if (salvando) return;
     const limpo = rascunho.trim();
     if (!limpo || limpo === nome) onCancelar();
     else onConfirmar(limpo);
@@ -60,6 +70,8 @@ export default function NomeEditavel({
         onChange={(e) => setRascunho(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={confirmar}
+        readOnly={salvando}
+        opacity={salvando ? 0.6 : 1}
         autoFocus
         fontSize="13.5px"
         fontWeight="700"

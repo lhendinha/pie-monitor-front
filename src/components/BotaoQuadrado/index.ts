@@ -23,6 +23,15 @@ export const BotaoQuadrado = chakra("button", {
     color: "fg.muted",
     cursor: "pointer",
     _hover: { bg: "border.subtle", color: "fg" },
+    /* Usado enquanto a ação da linha está EM VOO. Sem isto, clicar na
+       lixeira de uma lista não mudava nada até o servidor responder -- e
+       quem não vê retorno clica de novo. O hover some junto: botão travado
+       que ainda reage ao mouse continua parecendo clicável. */
+    _disabled: {
+      opacity: 0.5,
+      cursor: "default",
+      _hover: { bg: "bg.surface", color: "fg.muted", borderColor: "border" },
+    },
   },
   variants: {
     /** `.btn-sq.danger` do artifact: em repouso é igual ao neutro -- é só

@@ -80,6 +80,7 @@ export default function CamposProcesso({ valores, onMudar }: Props) {
           selecionados={valores.clienteIds || []}
           onMudar={(v) => mudarCampo("clienteIds", v)}
           placeholder="Selecione os clientes"
+          carregando={clientesQuery.isPending}
         />
       </Campo>
 
@@ -99,6 +100,10 @@ export default function CamposProcesso({ valores, onMudar }: Props) {
             opcoes={opcoesComVazio(fases, valores.faseId || "")}
             valor={valores.faseId || ""}
             onMudar={(v) => mudarCampo("faseId", v)}
+            /* Sem isto o campo oferecia só "Nenhuma" enquanto a lista vinha
+               -- uma resposta errada, não uma lista incompleta. Numa
+               EDIÇÃO era pior: a fase já gravada só reaparecia depois. */
+            carregando={fasesQuery.isPending}
           />
         </Campo>
         <Campo rotulo="Situação" para="situacao-processo">
@@ -107,6 +112,7 @@ export default function CamposProcesso({ valores, onMudar }: Props) {
             opcoes={opcoesComVazio(situacoes, valores.situacaoId || "")}
             valor={valores.situacaoId || ""}
             onMudar={(v) => mudarCampo("situacaoId", v)}
+            carregando={situacoesQuery.isPending}
           />
         </Campo>
       </LinhaDeCampos>

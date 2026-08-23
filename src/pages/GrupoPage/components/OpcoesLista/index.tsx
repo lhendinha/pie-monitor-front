@@ -212,6 +212,14 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: Props) {
                 <LinhaDeOpcao
                   key={o.opcao_id}
                   opcao={o}
+                  /* `variables` diz QUAL opção está em voo -- as três
+                     mutations levam o `opcao_id`, então dá pra apontar a
+                     linha certa em vez de travar a lista inteira. */
+                  emAndamento={
+                    (reativarMutation.isPending && reativarMutation.variables === o.opcao_id) ||
+                    (renomearMutation.isPending && renomearMutation.variables?.id === o.opcao_id) ||
+                    (desativarMutation.isPending && desativarMutation.variables === o.opcao_id)
+                  }
                   podeGerenciar={podeGerenciar}
                   editando={renomeandoId === o.opcao_id}
                   onIniciarRenome={() => setRenomeandoId(o.opcao_id)}

@@ -113,6 +113,10 @@ export default function ConvidarPage() {
             selecionados={subgruposSelecionados}
             onMudar={setSubgruposSelecionados}
             placeholder="Selecione os subgrupos"
+            /* Sem isto, o seletor abria vazio e o botão "Convidar" ficava
+               travado por `semSubgrupo` -- sem nada dizendo que era espera
+               e não ausência de subgrupos. */
+            carregando={subgruposQuery.isPending}
           />
         </Campo>
 

@@ -56,6 +56,12 @@ export function useCatalogosDeProcesso() {
      * processo anunciava "Crie um subgrupo primeiro" durante o
      * carregamento, afirmando uma coisa falsa pra quem tem subgrupos. */
     carregandoSubgrupos: subgruposQuery.isPending,
+    /** Clientes, fases e situações -- as três listas que alimentam os
+     * seletores e os chips de filtro. Uma flag só porque quem consome trata
+     * as três igual: enquanto qualquer uma falta, os controles não podem
+     * afirmar que a opção procurada não existe. */
+    carregandoCatalogos:
+      clientesQuery.isPending || fasesQuery.isPending || situacoesQuery.isPending,
     subgrupos,
     clientes,
     fases,

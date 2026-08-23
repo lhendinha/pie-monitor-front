@@ -76,7 +76,10 @@ export default function WorkspacePage() {
             acao={(t) => (
               <BotaoDeConcluir
                 rotulo={`Concluir ${t.titulo}`}
-                desabilitado={concluir.isPending}
+                /* SÓ a tarefa clicada, não a lista toda: travar todas as
+                   linhas ao concluir uma esconde qual delas está indo, e
+                   parece que a tela inteira congelou. */
+                desabilitado={concluir.isPending && concluir.variables?.tarefa_id === t.tarefa_id}
                 onConcluir={() => concluir.mutate(t)}
               />
             )}
@@ -92,7 +95,10 @@ export default function WorkspacePage() {
             responsavel={(t) => (
               <BotaoDeAssumir
                 rotulo={`Assumir ${t.titulo}`}
-                desabilitado={assumir.isPending || !meuEmail}
+                desabilitado={
+                  (assumir.isPending && assumir.variables?.tarefa.tarefa_id === t.tarefa_id) ||
+                  !meuEmail
+                }
                 onAssumir={() => meuEmail && assumir.mutate({ tarefa: t, email: meuEmail })}
               />
             )}

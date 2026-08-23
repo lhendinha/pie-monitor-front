@@ -1,4 +1,4 @@
-import { Flex, Text } from "@chakra-ui/react";
+import { Flex, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -166,9 +166,26 @@ export default function HistoricoPage({ deepLink, onDeepLinkConsumido }: Props) 
         </CartaoDeTabela>
       )}
 
-      {itemAberto && (
-        <Modal titulo="Detalhes do envio" onFechar={() => setItemAberto(null)}>
-          <DetalheHistorico item={itemAberto} />
+      {/* O modal abre JÁ na resolução do link do e-mail, não só quando o
+          registro é encontrado. Quem chega por um link vindo de fora não
+          tem contexto nenhum: sem isto ela cai numa lista comum, sem nada
+          indicando que o item do link está sendo buscado -- e se falhar, só
+          um toast que ela pode nem associar ao link. */}
+      {(itemAberto || deepLinkMutation.isPending) && (
+        <Modal
+          titulo="Detalhes do envio"
+          onFechar={() => setItemAberto(null)}
+        >
+          {itemAberto ? (
+            <DetalheHistorico item={itemAberto} />
+          ) : (
+            <Stack gap="14px" py="6px">
+              <Text fontSize="13.5px" color="fg.subtle">
+                Localizando a notificação do link recebido…
+              </Text>
+              <Esqueleto linhas={3} altura="20px" />
+            </Stack>
+          )}
         </Modal>
       )}
     </>

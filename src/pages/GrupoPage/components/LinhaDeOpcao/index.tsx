@@ -25,6 +25,11 @@ interface Props {
   onCancelarRenome: () => void;
   onDesativar: () => void;
   onReativar: () => void;
+  /** Alguma ação DESTA linha está em voo. Trava os botões dela -- sem isso,
+   * clicar em "Reativar" não muda nada até o refetch chegar, e a pessoa
+   * clica de novo. Por linha, e não pela lista toda: numa lista de vinte
+   * fases, travar tudo esconde qual delas está mudando. */
+  emAndamento?: boolean;
 }
 
 /** Uma opção de Fase ou Situação na lista.
@@ -42,6 +47,7 @@ export default function LinhaDeOpcao({
   onCancelarRenome,
   onDesativar,
   onReativar,
+  emAndamento,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: opcao.opcao_id,
@@ -82,6 +88,7 @@ export default function LinhaDeOpcao({
                 type="button"
                 title="Renomear"
                 aria-label={`Renomear ${opcao.rotulo}`}
+                disabled={emAndamento}
                 onClick={onIniciarRenome}
               >
                 <IconeLapis />
@@ -92,6 +99,7 @@ export default function LinhaDeOpcao({
                   tom="perigo"
                   title="Desativar"
                   aria-label={`Desativar ${opcao.rotulo}`}
+                  disabled={emAndamento}
                   onClick={onDesativar}
                 >
                   <IconeOlhoCortado />
@@ -101,6 +109,7 @@ export default function LinhaDeOpcao({
                   type="button"
                   title="Reativar"
                   aria-label={`Reativar ${opcao.rotulo}`}
+                  disabled={emAndamento}
                   onClick={onReativar}
                 >
                   <IconeOlho />
@@ -115,6 +124,7 @@ export default function LinhaDeOpcao({
             caber na linha. */}
         <Flex align="center" gap="6px" color={opcao.ativo ? undefined : "fg.subtle"}>
           <NomeEditavel
+            salvando={emAndamento}
             key={opcao.rotulo}
             nome={opcao.rotulo}
             rotuloDoCampo={`Novo rótulo de ${opcao.rotulo}`}

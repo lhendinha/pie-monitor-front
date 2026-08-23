@@ -81,6 +81,7 @@ export default function ProcessosPage() {
     <>
       <CabecalhoProcessos
         carregando={carregando}
+        carregandoCatalogos={apoio.carregandoCatalogos}
         total={total}
         totalSemFiltro={totalSemFiltro}
         busca={f.buscaInput}

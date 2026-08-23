@@ -71,7 +71,7 @@ export default function NovoProcessoForm({
       <Modal titulo="Novo processo" onFechar={onFechar}>
         <Stack gap="14px" py="10px">
           <Text fontSize="13.5px" color="fg.subtle">
-            Carregando os subgrupos…
+            Carregando…
           </Text>
           <Esqueleto linhas={3} altura="38px" />
         </Stack>

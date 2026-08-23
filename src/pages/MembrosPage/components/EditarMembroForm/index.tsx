@@ -193,6 +193,12 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
               selecionados={subgruposSelecionados}
               onMudar={setSubgruposSelecionados}
               placeholder="Selecione os subgrupos"
+              /* Duas esperas, e as duas enganam: as OPÇÕES vêm da consulta,
+                 e a SELEÇÃO atual vem do `listarMembrosDoGrupo` de cima.
+                 Sem as duas o seletor aparecia vazio, como se a pessoa não
+                 estivesse em subgrupo nenhum -- e o Salvar travado sem
+                 dizer por quê. */
+              carregando={subgruposDoGrupoQuery.isPending || !subgruposCarregados}
             />
           </Campo>
         </Stack>

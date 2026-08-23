@@ -257,7 +257,7 @@ export default function ModalDeTarefa({
             rotulo="Coluna do quadro"
             para="tf-coluna"
             obrigatorio
-            dica={carregandoColunas ? "Carregando as colunas do quadro…" : undefined}
+            dica={carregandoColunas ? "Carregando…" : undefined}
           >
             <Select
               id="tf-coluna"

@@ -144,7 +144,11 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
         </form>
       }
     >
-      {query.isPending ? (
+      {/* Espera as DUAS: a lista por subgrupo só traz e-mail, e o apelido e
+          o papel vêm da lista do grupo. Com só a primeira, as linhas
+          apareciam com o e-mail cru e a etiqueta de papel vazia, e depois
+          trocavam sozinhas na frente da pessoa. */}
+      {query.isPending || grupoQuery.isPending ? (
         <Esqueleto linhas={2} />
       ) : membros.length === 0 ? (
         <EstadoVazio mensagem="Ninguém neste subgrupo ainda." />
@@ -183,6 +187,12 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: Props) {
                   ml="auto"
                   title="Remover do subgrupo"
                   aria-label={`Remover ${nome} de ${subgrupo.nome}`}
+                  /* `variables` diz QUAL linha está em voo -- travar a lista
+                     inteira num modal de dez membros esconde qual delas
+                     está saindo. */
+                  disabled={
+                    removerMutation.isPending && removerMutation.variables === m.email
+                  }
                   onClick={() => removerMutation.mutate(m.email)}
                 >
                   <IconeLixeira />
