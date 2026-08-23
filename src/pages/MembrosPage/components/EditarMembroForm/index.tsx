@@ -13,7 +13,7 @@ import {
   Select,
   useToast,
 } from "../../../../components";
-import { HIERARQUIA_PAPEIS, NOME_PAPEL } from "../../../../constants";
+import { ESCOLHA_UM_SUBGRUPO, HIERARQUIA_PAPEIS, NOME_PAPEL } from "../../../../constants";
 import {
   atualizarMembro,
   getGrupoId,
@@ -184,11 +184,8 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
             rotulo="Subgrupos"
             para="subgrupos-membro"
             obrigatorio
-            /* Mesma explicação do convite: é o subgrupo que decide o que a
-               pessoa enxerga, e sem nenhum ela fica com conta ativa e
-               inútil. */
-            dica="O subgrupo define quais processos a pessoa vai ver — escolha pelo menos um."
-            erro={semSubgrupo ? "Escolha pelo menos um subgrupo." : undefined}
+            dica={ESCOLHA_UM_SUBGRUPO}
+            erro={semSubgrupo ? ESCOLHA_UM_SUBGRUPO : undefined}
           >
             <MultiSelect
               id="subgrupos-membro"

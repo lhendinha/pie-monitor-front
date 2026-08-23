@@ -11,7 +11,7 @@ import {
   Select,
   useToast,
 } from "../../components";
-import { NOME_PAPEL, PAPEIS_CONVIDAVEIS } from "../../constants";
+import { ESCOLHA_UM_SUBGRUPO, NOME_PAPEL, PAPEIS_CONVIDAVEIS } from "../../constants";
 import { criarConvite, listarSubgrupos } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
@@ -102,11 +102,10 @@ export default function ConvidarPage() {
           rotulo="Subgrupos"
           para="subgrupos-convite"
           obrigatorio
-          /* Diz o que o campo FAZ, e não que ele é obrigatório -- o
-             asterisco já diz isso. Quem convida alguém pela primeira vez
-             não sabe o que um subgrupo decide; essa é a informação que
-             falta na hora de escolher. */
-          dica="O subgrupo define quais processos a pessoa vai ver — escolha pelo menos um."
+          /* Só dica, sem versão de erro: aqui o botão fica desabilitado
+             enquanto não houver subgrupo, então nunca dá pra tentar enviar
+             sem um -- o erro não teria quando aparecer. */
+          dica={ESCOLHA_UM_SUBGRUPO}
         >
           <MultiSelect
             id="subgrupos-convite"

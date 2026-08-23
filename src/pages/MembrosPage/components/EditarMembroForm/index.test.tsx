@@ -29,18 +29,22 @@ beforeEach(() => {
 });
 
 describe("EditarMembroForm", () => {
-  it("achado 20: sem nenhum subgrupo selecionado, mostra o texto de apoio e desabilita Salvar", async () => {
+  it("sem nenhum subgrupo, a instrução vira alerta e o Salvar trava", async () => {
+    // Sem subgrupo, a pessoa fica com conta ativa e sem enxergar processo
+    // nenhum -- o servidor recusa (`SubgruposObrigatorios`), e aqui o botão
+    // nem chega a ficar clicável.
     const membro = montarMembro({ subgrupos: [] });
     mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     renderComProviders(
       <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
-    expect(await screen.findByText("Escolha pelo menos um subgrupo.")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Escolha pelo menos um subgrupo.");
     expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
   });
 
-  it("com subgrupo selecionado, não mostra o texto de apoio e libera o Salvar", async () => {
+  it("com subgrupo, a mesma frase fica só como instrução", async () => {
+    // O texto não muda porque a instrução não muda -- só a urgência dela.
     const membro = montarMembro({ subgrupos: ["s1"] });
     mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     renderComProviders(
@@ -48,7 +52,8 @@ describe("EditarMembroForm", () => {
     );
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).not.toBeDisabled());
-    expect(screen.queryByText("Escolha pelo menos um subgrupo.")).not.toBeInTheDocument();
+    expect(screen.getByText("Escolha pelo menos um subgrupo.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("submete a atualização com os campos do formulário", async () => {
