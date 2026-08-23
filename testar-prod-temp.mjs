@@ -14,7 +14,7 @@ const p = await ctx.newPage();
 
 const erros = [], websockets = [];
 p.on("pageerror", (e) => erros.push("pageerror: " + e.message.slice(0, 160)));
-p.on("console", (m) => m.type() === "error" && erros.push("console: " + m.text().slice(0, 160)));
+p.on("console", (m) => m.type() === "error" && erros.push("console: " + m.text().replace(/token=[^&"]+/, "token=***")));
 p.on("websocket", (ws) => {
   const reg = { url: ws.url().replace(/token=[^&]+/, "token=***"), fechou: false, quadros: 0 };
   websockets.push(reg);
@@ -28,7 +28,7 @@ console.log("1. página abriu em:", new URL(p.url()).pathname);
 await p.getByLabel(/E-mail/i).fill(env.PJE_TEST_EMAIL);
 await p.locator("#senha").fill(env.PJE_TEST_SENHA);
 await p.getByRole("button", { name: /Entrar/i }).click();
-await p.waitForTimeout(6000);
+await p.waitForTimeout(12000);
 console.log("2. depois do login:", new URL(p.url()).pathname);
 
 console.log("\n3. WEBSOCKET:");

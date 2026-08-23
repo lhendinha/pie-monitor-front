@@ -404,6 +404,13 @@ bundle e a variável continua de fora — desmarque, ou faça um push. O sinal
 de que funcionou é o **hash do arquivo em `/assets/` mudar**; enquanto for o
 mesmo nome, é o mesmo build. Perdido tempo com isso em 23/08/2026.
 
+⚠️ **A CSP em `vercel.json` precisa liberar o `wss://` também.** O
+`connect-src` cobre WebSocket, e ele NÃO herda a permissão do `https://` do
+mesmo host — são esquemas diferentes. Sem a entrada
+`wss://*.execute-api.sa-east-1.amazonaws.com`, o navegador bloqueia o canal
+e a única pista é uma linha no console dizendo "The action has been
+blocked". Achado testando em produção, depois de a variável já estar certa.
+
 `VITE_WS_URL` é OPCIONAL: sem ela o sino continua correto, porque a
 consulta é a fonte da verdade — o que se perde é só o tempo real (o aviso
 passa a aparecer quando a aba ganha foco). Por isso o hook simplesmente não
