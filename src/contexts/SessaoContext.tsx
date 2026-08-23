@@ -6,6 +6,10 @@ type Sessao = ReturnType<typeof useSessao>;
 
 const Contexto = createContext<Sessao | null>(null);
 
+interface Props {
+  children: ReactNode;
+}
+
 /** Contexto de sessão -- o ÚNICO estado global de cliente do app.
  *
  * Existe porque, com o router, quem precisa dele está em ramos diferentes da
@@ -19,7 +23,7 @@ const Contexto = createContext<Sessao | null>(null);
  * resolve. Se aparecer a vontade de guardar "a lista de X" aqui, o lugar
  * certo é uma query.
  */
-export function SessaoProvider({ children }: { children: ReactNode }) {
+export function SessaoProvider({ children }: Props) {
   const sessao = useSessao();
   return <Contexto.Provider value={sessao}>{children}</Contexto.Provider>;
 }

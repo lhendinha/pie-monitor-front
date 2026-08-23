@@ -1,8 +1,12 @@
+interface Props {
+  tamanho?: number;
+}
+
 /** Avião de papel (`ICO.send` do artifact): envia o que está escrito no
  * campo ao lado -- o registro novo do atendimento.
  *
  * 15px é a medida de `.btn svg`, e vai como padrão porque é onde ele mora. */
-export default function IconeEnviar({ tamanho = 15 }: { tamanho?: number } = {}) {
+export default function IconeEnviar({ tamanho = 15 }: Props) {
   return (
     <svg
       width={tamanho}

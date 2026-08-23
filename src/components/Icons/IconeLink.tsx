@@ -1,9 +1,13 @@
+interface Props {
+  tamanho?: number;
+}
+
 /** Elo de corrente (`ICO.link` do artifact): marca o que está VINCULADO a
  * outra coisa -- o processo no cabeçalho do atendimento.
  *
  * `tamanho` porque o artifact desenha o mesmo ícone em medidas diferentes
  * conforme o lugar (13px dentro do `.meta-chip`). */
-export default function IconeLink({ tamanho = 15 }: { tamanho?: number } = {}) {
+export default function IconeLink({ tamanho = 15 }: Props) {
   return (
     <svg
       width={tamanho}

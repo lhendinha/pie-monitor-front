@@ -8,12 +8,18 @@ import {
   IconeProcessos,
   IconeWorkspace,
 } from "../Icons";
+import type { ComponentType } from "react";
 
 /** Nome do ícone (como vem de `constants/navegacao`) -> componente.
  *
  * O mapa existe pra que `ITENS_NAVEGACAO` continue sendo dado puro, sem
- * importar JSX -- assim ele pode ser lido e testado sem montar React. */
-export const ICONES_MENU: Record<string, () => JSX.Element> = {
+ * importar JSX -- assim ele pode ser lido e testado sem montar React.
+ *
+ * `ComponentType`, e não `() => JSX.Element`: aquela assinatura exigia
+ * ícone SEM props nenhuma, então bastou um deles ganhar `tamanho` opcional
+ * pra ele deixar de caber no mapa. O menu continua montando `<Icone />`
+ * sem passar nada. */
+export const ICONES_MENU: Record<string, ComponentType> = {
   Workspace: IconeWorkspace,
   Kanban: IconeKanban,
   Agenda: IconeAgenda,
