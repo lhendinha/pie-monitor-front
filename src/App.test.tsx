@@ -1,6 +1,7 @@
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ITENS_NAVEGACAO } from "./constants/navegacao";
 import { renderComProviders } from "./test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
@@ -33,6 +34,8 @@ vi.mock("./pages", () => ({
   WorkspacePage: () => <div>área de trabalho</div>,
   KanbanPage: () => <div>quadro kanban</div>,
   AgendaPage: () => <div>tela de agenda</div>,
+  AtendimentosPage: () => <div>tela de atendimentos</div>,
+  AtendimentoDetalhePage: () => <div>detalhe do atendimento</div>,
   PerfilPage: () => <div>tela de perfil</div>,
   HistoricoPage: ({ deepLink }: { deepLink: { comunicacaoId: string } | null }) => (
     <div>histórico {deepLink ? `deep:${deepLink.comunicacaoId}` : "sem deep"}</div>
@@ -126,14 +129,17 @@ describe("menu lateral", () => {
 
   it("não mostra item de tela ainda não construída", () => {
     renderComProviders(<App />);
-    for (const pendente of ["Atendimentos"]) {
-      expect(screen.queryByRole("link", { name: pendente })).not.toBeInTheDocument();
+    // Nenhuma tela pendente sobrou -- todas as do artifact existem. O teste
+    // fica como guarda pra quando uma nova entrar na lista como pendente.
+    const pendentes = ITENS_NAVEGACAO.filter((i) => i.pendente);
+    for (const item of pendentes) {
+      expect(screen.queryByRole("link", { name: item.rotulo })).not.toBeInTheDocument();
     }
   });
 
   it("mostra as telas que deixaram de ser pendentes", () => {
     renderComProviders(<App />);
-    for (const pronta of ["Área de trabalho", "Gestão kanban", "Agenda"]) {
+    for (const pronta of ["Área de trabalho", "Gestão kanban", "Agenda", "Atendimentos"]) {
       expect(screen.getByRole("link", { name: pronta })).toBeInTheDocument();
     }
   });

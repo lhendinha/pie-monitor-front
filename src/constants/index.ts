@@ -7,6 +7,7 @@ export * from "./abasDoGrupo";
 export * from "./subgrupos";
 export * from "./suporte";
 export * from "./prioridade";
+export * from "./atendimento";
 export * from "./vinculoDaTarefa";
 export * from "./senha";
 export * from "./periodos";

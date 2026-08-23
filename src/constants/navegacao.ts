@@ -28,7 +28,7 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
   { caminho: "/", rotulo: "Área de trabalho", icone: "Workspace" },
   { caminho: "/kanban", rotulo: "Gestão kanban", icone: "Kanban" },
   { caminho: "/agenda", rotulo: "Agenda", icone: "Agenda" },
-  { caminho: "/atendimentos", rotulo: "Atendimentos", icone: "Atendimentos", pendente: true },
+  { caminho: "/atendimentos", rotulo: "Atendimentos", icone: "Atendimentos" },
   { caminho: "/processos", rotulo: "Processos", icone: "Processos" },
   { caminho: "/clientes", rotulo: "Clientes", icone: "Clientes" },
   { caminho: "/historico", rotulo: "Histórico", icone: "Historico" },

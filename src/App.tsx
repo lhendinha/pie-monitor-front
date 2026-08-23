@@ -7,6 +7,8 @@ import {
   ClientesPage,
   GrupoPage,
   AgendaPage,
+  AtendimentoDetalhePage,
+  AtendimentosPage,
   KanbanPage,
   PerfilPage,
   ProcessoDetalhePage,
@@ -39,6 +41,13 @@ function Rotas() {
           <Route index element={<RotaRaiz />} />
           <Route path="/kanban" element={<KanbanPage />} />
           <Route path="/agenda" element={<AgendaPage />} />
+          <Route path="/atendimentos" element={<AtendimentosPage />} />
+          {/* O par (subgrupo, id) porque é a chave primária -- o
+              atendimento não é endereçável só pelo id. */}
+          <Route
+            path="/atendimentos/:subgrupoId/:atendimentoId"
+            element={<AtendimentoDetalhePage />}
+          />
           {/* O link do lembrete de prazo. Abre o quadro do subgrupo com o
               modal da tarefa já carregado -- ver `RotaTarefa`. */}
           <Route path="/tarefas/:subgrupoId/:tarefaId" element={<RotaTarefa />} />

@@ -274,8 +274,38 @@ export interface Tarefa {
   atendimento_id?: string | null;
 }
 
-/** Só o que o campo de vínculo da tarefa precisa -- a tela de Atendimentos
- * ainda não existe, e inventar os campos dela agora seria adivinhar. */
+/** Um registro da linha do tempo do atendimento.
+ *
+ * Append-only: não se edita nem se apaga. É registro de atendimento a
+ * cliente, e reescrever o passado é justamente o que ele não pode
+ * permitir -- o servidor não tem rota pra isso. */
+export interface RegistroDeAtendimento {
+  autor_id: string;
+  registrado_em: string;
+  texto: string;
+}
+
+// Os status possíveis saíram pra `constants/atendimento.ts` -- é valor de
+// runtime, e aqui é lugar de tipo.
+
+export interface Atendimento {
+  subgrupo_id: string;
+  atendimento_id: string;
+  assunto: string;
+  status: string;
+  criado_em: string;
+  criado_por?: string;
+  sequencia?: number;
+  cliente_ids: string[];
+  processo_numero?: string | null;
+  /** A listagem devolve o atendimento inteiro, registros inclusos -- é de
+   * onde sai a prévia do último registro em cada linha. */
+  registros: RegistroDeAtendimento[];
+}
+
+/** O que o campo de vínculo da tarefa precisa. Continua separado de
+ * `Atendimento` porque aquele campo só usa quatro chaves, e exigir a lista
+ * de registros ali obrigaria a inventá-la em todo teste que monta um. */
 export interface AtendimentoResumido {
   subgrupo_id: string;
   atendimento_id: string;

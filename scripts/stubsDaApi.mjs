@@ -77,6 +77,50 @@ const PROCESSOS = {
   total_paginas: 3,
 };
 
+const ATENDIMENTOS = {
+  atendimentos: [
+    {
+      subgrupo_id: "sg-civel",
+      atendimento_id: "at-1",
+      assunto: "Revisão do contrato de locação",
+      status: "Em andamento",
+      criado_em: "2026-08-10T09:00:00+00:00",
+      cliente_ids: ["cli-1"],
+      processo_numero: "00002668720218130559",
+      registros: [
+        {
+          autor_id: "ana@argos.local",
+          registrado_em: "2026-08-10T09:00:00+00:00",
+          texto: "Cliente procurou o escritório para revisar a cláusula de reajuste.",
+        },
+        {
+          autor_id: "joao@argos.local",
+          registrado_em: "2026-08-12T14:30:00+00:00",
+          texto: "Enviei a minuta revisada por e-mail. Aguardando retorno.",
+        },
+      ],
+    },
+    {
+      subgrupo_id: "sg-civel",
+      atendimento_id: "at-2",
+      assunto: "Dúvida sobre execução de sentença",
+      status: "Fechado",
+      criado_em: "2026-07-28T11:00:00+00:00",
+      cliente_ids: ["cli-2"],
+      processo_numero: null,
+      registros: [
+        {
+          autor_id: "ana@argos.local",
+          registrado_em: "2026-07-28T11:00:00+00:00",
+          texto: "Explicado o prazo de cumprimento voluntário.",
+        },
+      ],
+    },
+  ],
+  total: 2,
+  total_paginas: 1,
+};
+
 const RESPOSTAS = [
   // Antes de tudo: o caminho contém "/grupos", e um padrão mais largo
   // capturaria isto e devolveria a lista de grupos pra aba de Configurações.
@@ -118,6 +162,13 @@ const RESPOSTAS = [
     }),
   ],
   [/\/processos/, () => PROCESSOS],
+  // Antes de /atendimentos: o caminho do detalhe contém os dois, e o padrão
+  // da listagem casaria com ele devolvendo um envelope no lugar do item.
+  [
+    /\/subgrupos\/[^/]+\/atendimentos\/[^/]+$/,
+    () => ATENDIMENTOS.atendimentos[0],
+  ],
+  [/\/atendimentos/, () => ATENDIMENTOS],
   [
     /\/tarefas/,
     () => ({

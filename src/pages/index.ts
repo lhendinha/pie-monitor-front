@@ -8,6 +8,8 @@ export { default as ClientesPage } from "./ClientesPage";
 export { default as ClienteDetalhePage } from "./ClienteDetalhePage";
 export { default as HistoricoPage } from "./HistoricoPage";
 export { default as AgendaPage } from "./AgendaPage";
+export { default as AtendimentosPage } from "./AtendimentosPage";
+export { default as AtendimentoDetalhePage } from "./AtendimentoDetalhePage";
 export { default as GrupoPage } from "./GrupoPage";
 export { default as PerfilPage } from "./PerfilPage";
 export { default as WorkspacePage } from "./WorkspacePage";

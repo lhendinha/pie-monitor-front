@@ -16,8 +16,11 @@ export const qk = {
   quadro: (subgrupoId: string) => ["quadro", subgrupoId] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,
   grupos: () => ["grupos"] as const,
-  atendimentos: (params: { pagina?: number; tamanhoPagina?: number } = {}) =>
-    ["atendimentos", params] as const,
+  atendimentos: (
+    params: { busca?: string; status?: string; pagina?: number; tamanhoPagina?: number } = {},
+  ) => ["atendimentos", params] as const,
+  atendimento: (subgrupoId: string, atendimentoId: string) =>
+    ["atendimentos", "detalhe", subgrupoId, atendimentoId] as const,
   configuracoesDoGrupo: () => ["configuracoes-do-grupo"] as const,
   tarefas: (params: Record<string, unknown> = {}) => ["tarefas", params] as const,
   tarefasDoProcesso: (numeroProcesso: string) =>
