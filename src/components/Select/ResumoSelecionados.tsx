@@ -16,7 +16,16 @@ export function ResumoSelecionados(props: ValueContainerProps<Opcao, true, Group
     <components.ValueContainer {...props}>
       {/* mesmo grid-area que o Placeholder/SingleValue padrão da lib usam --
        * sem isso o span cai numa linha própria do grid e estica a control. */}
-      <span className={selecionados.length === 0 ? "muted" : undefined} style={{ gridArea: "1 / 1 / 2 / 3" }}>
+      {/* Sem nada escolhido o texto é placeholder, e placeholder tem cor
+       * própria (`fg.subtle`) -- a mesma dos outros campos do sistema. Vai
+       * inline porque este componente vive dentro do `react-select`, que
+       * monta o DOM dele por fora do Chakra. */}
+      <span
+        style={{
+          gridArea: "1 / 1 / 2 / 3",
+          color: selecionados.length === 0 ? "var(--chakra-colors-fg-subtle)" : undefined,
+        }}
+      >
         {rotuloResumo(selecionados, placeholder)}
       </span>
       {inputFilho}

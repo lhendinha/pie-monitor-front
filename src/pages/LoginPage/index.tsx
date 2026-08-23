@@ -1,28 +1,46 @@
+import { Box, Input, Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
-import { login } from "../../services";
-import { useToast } from "../../components";
 
-interface LoginPageProps {
+import {
+  Botao,
+  BotaoDeLink,
+  Campo,
+  CampoDeSenha,
+  CartaoDeAutenticacao,
+  Faixa,
+  useToast,
+} from "../../components";
+import { login } from "../../services";
+
+interface Props {
+  /** Recado que chega junto com a tela -- hoje só "sua sessão expirou".
+   * Vai DENTRO do cartão porque é sobre este login: solto acima dele
+   * parecia aviso do site inteiro. */
+  aviso?: string;
   onEntrar: () => void;
   onEsqueciSenha: () => void;
 }
 
-export default function LoginPage({ onEntrar, onEsqueciSenha }: LoginPageProps) {
+export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: Props) {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [campoInvalido, setCampoInvalido] = useState(false);
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
   const toast = useToast();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setCampoInvalido(false);
+    setErro("");
     setEnviando(true);
     try {
-      await login(email.trim().toLowerCase(), password);
+      await login(email.trim().toLowerCase(), senha);
       onEntrar();
     } catch (err) {
-      setCampoInvalido(true);
+      /** Marca os dois campos sem dizer qual está errado, e repete a
+       * mensagem do servidor -- que também não distingue e-mail
+       * inexistente de senha errada. Dizer "esse e-mail não existe"
+       * entregaria quem tem conta aqui a quem estiver testando endereços. */
+      setErro("E-mail ou senha incorretos.");
       toast.erro(err instanceof Error ? err.message : "Não foi possível entrar.");
     } finally {
       setEnviando(false);
@@ -30,45 +48,54 @@ export default function LoginPage({ onEntrar, onEsqueciSenha }: LoginPageProps) 
   }
 
   return (
-    <div className="gate">
-      <h2>Entrar</h2>
-      <form className="form-row" onSubmit={handleSubmit}>
-        <div className={`field${campoInvalido ? " field-error" : ""}`}>
-          <label htmlFor="email">E-mail</label>
-          <input
+    <CartaoDeAutenticacao titulo="Entrar">
+      {aviso && (
+        <Box mb="16px">
+          <Faixa tom="aviso" aEsquerda>
+            {aviso}
+          </Faixa>
+        </Box>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <Campo rotulo="E-mail" para="email">
+          <Input
             id="email"
             type="email"
             autoComplete="email"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
-              setCampoInvalido(false);
+              setErro("");
             }}
+            autoFocus
           />
-        </div>
-        <div className={`field${campoInvalido ? " field-error" : ""}`}>
-          <label htmlFor="password">Senha</label>
-          <input
-            id="password"
-            type="password"
+        </Campo>
+
+        <Campo rotulo="Senha" para="senha" erro={erro || undefined}>
+          <CampoDeSenha
+            id="senha"
+            valor={senha}
+            onMudar={(v) => {
+              setSenha(v);
+              setErro("");
+            }}
             autoComplete="current-password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setCampoInvalido(false);
-            }}
-            maxLength={64}
           />
-        </div>
-        <button className="btn" type="submit" disabled={enviando || !email.trim() || !password}>
+        </Campo>
+
+        <Botao type="submit" w="100%" justifyContent="center" disabled={enviando || !email.trim() || !senha}>
           {enviando ? "Entrando…" : "Entrar"}
-        </button>
+        </Botao>
       </form>
-      <p className="gate-link">
-        <button type="button" className="link-button" onClick={onEsqueciSenha}>
-          Esqueci minha senha
-        </button>
-      </p>
-    </div>
+
+      <Stack align="center" mt="16px">
+        <Text>
+          <BotaoDeLink type="button" onClick={onEsqueciSenha}>
+            Esqueci minha senha
+          </BotaoDeLink>
+        </Text>
+      </Stack>
+    </CartaoDeAutenticacao>
   );
 }

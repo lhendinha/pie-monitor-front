@@ -4,7 +4,7 @@ import { ITENS_NAVEGACAO } from "../../../constants";
 import { papelAtende } from "../../../services";
 import BotaoDeSuporte from "../BotaoDeSuporte";
 import ItemMenu from "../ItemMenu";
-import MarcaArgos from "../MarcaArgos";
+import MarcaArgos from "../../MarcaArgos";
 
 /** Menu lateral fixo: marca, navegação e o pé com o Suporte.
  *

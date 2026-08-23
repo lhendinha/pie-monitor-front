@@ -20,8 +20,8 @@ beforeEach(() => {
 });
 
 async function preencherEEnviar(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText("Nova senha"), "senha-forte-123");
-  await user.type(screen.getByLabelText("Confirmar senha"), "senha-forte-123");
+  await user.type(screen.getByLabelText(/^Nova senha/), "senha-forte-123");
+  await user.type(screen.getByLabelText(/^Confirmar senha/), "senha-forte-123");
   await user.click(screen.getByRole("button", { name: "Redefinir senha" }));
 }
 
@@ -59,15 +59,15 @@ describe("RedefinirSenhaPage", () => {
 
     await waitFor(() => expect(mocks.redefinirSenha).toHaveBeenCalled());
     expect(screen.queryByText(/link de recuperação é inválido/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Nova senha")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Nova senha/)).toBeInTheDocument();
   });
 
   it("senhas diferentes bloqueiam o envio antes de chamar a API", async () => {
     const user = userEvent.setup();
     renderComProviders(<RedefinirSenhaPage token="token-x" />);
 
-    await user.type(screen.getByLabelText("Nova senha"), "senha-forte-123");
-    await user.type(screen.getByLabelText("Confirmar senha"), "outra-senha-456");
+    await user.type(screen.getByLabelText(/^Nova senha/), "senha-forte-123");
+    await user.type(screen.getByLabelText(/^Confirmar senha/), "outra-senha-456");
 
     expect(screen.getByRole("button", { name: "Redefinir senha" })).toBeDisabled();
     expect(mocks.redefinirSenha).not.toHaveBeenCalled();

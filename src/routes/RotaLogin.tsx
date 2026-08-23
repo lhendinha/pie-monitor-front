@@ -16,22 +16,15 @@ export default function RotaLogin() {
   const destino = (local.state as { de?: string } | null)?.de || "/";
 
   return (
-    <>
-      {/* Sem isto, quem teve o token expirado é jogado no login sem nenhuma
-          explicação e acha que o sistema perdeu o login dele à toa. O aviso
-          existia no App antigo e quase se perdeu na migração pro router. */}
-      {sessaoExpirada && (
-        <div className="banner" role="status">
-          Sua sessão expirou. Entra de novo.
-        </div>
-      )}
-      <LoginPage
-        onEntrar={() => {
-          entrar();
-          navegar(destino, { replace: true });
-        }}
-        onEsqueciSenha={() => navegar("/esqueci-senha")}
-      />
-    </>
+    <LoginPage
+      /* Sem isto, quem teve o token expirado é jogado no login sem nenhuma
+         explicação e acha que o sistema perdeu o login dele à toa. */
+      aviso={sessaoExpirada ? "Sua sessão expirou. Entre de novo." : undefined}
+      onEntrar={() => {
+        entrar();
+        navegar(destino, { replace: true });
+      }}
+      onEsqueciSenha={() => navegar("/esqueci-senha")}
+    />
   );
 }

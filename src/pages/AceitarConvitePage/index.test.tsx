@@ -25,10 +25,10 @@ describe("AceitarConvitePage", () => {
     const user = userEvent.setup();
     renderComProviders(<AceitarConvitePage token="token-valido" />);
 
-    await user.type(screen.getByLabelText("Senha"), "senha-forte-123");
-    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+    await user.type(screen.getByLabelText(/^Senha/), "senha-forte-123");
+    await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
 
-    expect(await screen.findByText("Conta criada! Redirecionando…")).toBeInTheDocument();
+    expect(await screen.findByText("Conta criada! Entrando…")).toBeInTheDocument();
   });
 
   it("achado 19: link expirado/já usado (410) mostra aviso de link inválido, não destaca a senha", async () => {
@@ -36,14 +36,14 @@ describe("AceitarConvitePage", () => {
     const user = userEvent.setup();
     renderComProviders(<AceitarConvitePage token="token-expirado" />);
 
-    await user.type(screen.getByLabelText("Senha"), "senha-forte-123");
-    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+    await user.type(screen.getByLabelText(/^Senha/), "senha-forte-123");
+    await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
 
     expect(
       await screen.findByText(/link de convite é inválido ou já foi usado/i)
     ).toBeInTheDocument();
     // o formulário some -- não faz sentido deixar o usuário tentar de novo
-    expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Senha/)).not.toBeInTheDocument();
   });
 
   it("erro que não é 410 mantém o formulário e não mostra o aviso de link inválido", async () => {
@@ -51,11 +51,11 @@ describe("AceitarConvitePage", () => {
     const user = userEvent.setup();
     renderComProviders(<AceitarConvitePage token="token-ja-usado-por-conta" />);
 
-    await user.type(screen.getByLabelText("Senha"), "senha-forte-123");
-    await user.click(screen.getByRole("button", { name: "Criar conta" }));
+    await user.type(screen.getByLabelText(/^Senha/), "senha-forte-123");
+    await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
 
     await waitFor(() => expect(mocks.aceitarConvite).toHaveBeenCalled());
     expect(screen.queryByText(/link de convite é inválido/i)).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Senha")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Senha/)).toBeInTheDocument();
   });
 });

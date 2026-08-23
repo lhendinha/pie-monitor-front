@@ -1,45 +1,53 @@
+import { Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
-import { ApiError, redefinirSenha } from "../../services";
-import { useToast } from "../../components";
 
-interface RedefinirSenhaPageProps {
+import {
+  Botao,
+  BotaoDeLink,
+  Campo,
+  CampoDeSenha,
+  CartaoDeAutenticacao,
+  Faixa,
+  useToast,
+} from "../../components";
+import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
+import { ApiError, redefinirSenha } from "../../services";
+
+interface Props {
   token: string;
 }
 
-export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
-  const [password, setPassword] = useState("");
+export default function RedefinirSenhaPage({ token }: Props) {
+  const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
-  const [campoInvalido, setCampoInvalido] = useState(false);
+  const [erro, setErro] = useState("");
   const [linkInvalido, setLinkInvalido] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const toast = useToast();
 
-  const senhasDiferentes = confirmacao.length > 0 && password !== confirmacao;
+  const curtaDemais = senha.length > 0 && senha.length < TAMANHO_MINIMO_DA_SENHA;
+  const senhasDiferentes = confirmacao.length > 0 && senha !== confirmacao;
+  const podeEnviar = senha.length >= TAMANHO_MINIMO_DA_SENHA && senha === confirmacao;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (senhasDiferentes) {
-      setCampoInvalido(true);
-      toast.erro("As senhas não coincidem.");
-      return;
-    }
-    setCampoInvalido(false);
+    setErro("");
     setEnviando(true);
     try {
-      await redefinirSenha(token, password);
+      await redefinirSenha(token, senha);
       setSucesso(true);
       setTimeout(() => {
         window.location.href = "/";
       }, 1500);
     } catch (err) {
-      // Achado 19: link já usado/expirado (410) não é "senha errada" --
-      // destacar os campos de senha nesse caso confundia o usuário, que
-      // tentava senhas diferentes sem nunca conseguir.
+      /** Link já usado ou expirado (410) NÃO é senha errada. Marcar os
+       * campos nesse caso fazia a pessoa tentar senhas diferentes sem
+       * nunca conseguir -- o que falta é um link novo. */
       if (err instanceof ApiError && err.status === 410) {
         setLinkInvalido(true);
       } else {
-        setCampoInvalido(true);
+        setErro("Não foi possível salvar. Tente de novo.");
       }
       toast.erro(err instanceof Error ? err.message : "Não foi possível redefinir a senha.");
     } finally {
@@ -47,56 +55,75 @@ export default function RedefinirSenhaPage({ token }: RedefinirSenhaPageProps) {
     }
   }
 
-  return (
-    <div className="app">
-      <header className="masthead">
-        <p className="masthead-eyebrow">Recuperação de senha</p>
-        <h1 className="masthead-title">Escolher nova senha</h1>
-        <p className="masthead-sub">O link é válido por 1 hora e só funciona uma vez.</p>
-      </header>
+  if (sucesso) {
+    return (
+      <CartaoDeAutenticacao titulo="Escolher nova senha">
+        <Faixa tom="ok">Senha redefinida! Redirecionando…</Faixa>
+      </CartaoDeAutenticacao>
+    );
+  }
 
-      {sucesso ? (
-        <div className="banner banner-ok">Senha redefinida! Redirecionando…</div>
-      ) : linkInvalido ? (
-        <div className="banner">
-          Esse link de recuperação é inválido ou já foi usado. Peça um novo em "Esqueci minha senha".
-        </div>
-      ) : (
-        <div className="gate">
-          <form className="form-row" onSubmit={handleSubmit}>
-            <div className={`field${campoInvalido ? " field-error" : ""}`}>
-              <label htmlFor="password">Nova senha</label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setCampoInvalido(false);
-                }}
-                placeholder="Senha deve conter entre 8 e 64 caracteres"
-                maxLength={64}
-              />
-            </div>
-            <div className={`field${campoInvalido ? " field-error" : ""}`}>
-              <label htmlFor="confirmacao">Confirmar senha</label>
-              <input
-                id="confirmacao"
-                type="password"
-                value={confirmacao}
-                onChange={(e) => {
-                  setConfirmacao(e.target.value);
-                  setCampoInvalido(false);
-                }}
-                maxLength={64}
-              />
-            </div>
-            <button className="btn" type="submit" disabled={enviando || password.length < 8 || password.length > 64 || senhasDiferentes}>
-              {enviando ? "Salvando…" : "Redefinir senha"}
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
+  if (linkInvalido) {
+    return (
+      <CartaoDeAutenticacao titulo="Link expirado">
+        <Faixa tom="aviso" aEsquerda>
+          Esse link de recuperação é inválido ou já foi usado. Peça um novo em “Esqueci minha
+          senha”.
+        </Faixa>
+        <Stack align="center" mt="16px">
+          <Text>
+            <BotaoDeLink type="button" onClick={() => (window.location.href = "/")}>
+              Voltar pro login
+            </BotaoDeLink>
+          </Text>
+        </Stack>
+      </CartaoDeAutenticacao>
+    );
+  }
+
+  return (
+    <CartaoDeAutenticacao
+      titulo="Escolher nova senha"
+      subtitulo="O link é válido por 1 hora e só funciona uma vez."
+    >
+      <form onSubmit={handleSubmit}>
+        <Campo
+          rotulo="Nova senha"
+          para="nova-senha"
+          obrigatorio
+          dica={REGRA_DA_SENHA}
+          erro={curtaDemais ? REGRA_DA_SENHA : erro || undefined}
+        >
+          <CampoDeSenha
+            id="nova-senha"
+            valor={senha}
+            onMudar={(v) => {
+              setSenha(v);
+              setErro("");
+            }}
+            autoComplete="new-password"
+            autoFocus
+          />
+        </Campo>
+
+        <Campo
+          rotulo="Confirmar senha"
+          para="confirmar-senha"
+          obrigatorio
+          erro={senhasDiferentes ? "As senhas não coincidem." : undefined}
+        >
+          <CampoDeSenha
+            id="confirmar-senha"
+            valor={confirmacao}
+            onMudar={setConfirmacao}
+            autoComplete="new-password"
+          />
+        </Campo>
+
+        <Botao type="submit" w="100%" justifyContent="center" disabled={enviando || !podeEnviar}>
+          {enviando ? "Salvando…" : "Redefinir senha"}
+        </Botao>
+      </form>
+    </CartaoDeAutenticacao>
   );
 }
