@@ -1,8 +1,12 @@
 import { useEffect } from "react";
 import ReconnectingWebSocket from "reconnecting-websocket";
 
-import { INTERVALO_DO_PING_MS, RECONEXAO_DO_CANAL } from "../constants";
-import { getAccessToken } from "../services/auth";
+import {
+  INTERVALO_DO_PING_MS,
+  MARGEM_DO_TOKEN_SEGUNDOS,
+  RECONEXAO_DO_CANAL,
+} from "../constants";
+import { getAccessToken, renovarToken, tokenVenceEm } from "../services/auth";
 import type { MensagemDoCanal } from "../types";
 
 /** Abre o canal de tempo real e chama `aoChegar` a cada notificação nova.
@@ -16,27 +20,35 @@ import type { MensagemDoCanal } from "../types";
  * ⚠️ O token vai na QUERY STRING porque o navegador não deixa mandar
  * header no handshake de WebSocket -- não existe `Authorization` ali.
  *
- * 🔴 LIMITAÇÃO CONHECIDA: o token é lido UMA VEZ, na abertura. Se ele
- * expirar com a aba aberta (dura 24h, e uma jornada tem 8), o canal cai e
- * não volta sozinho -- as tentativas se esgotam em `maxRetries` e param.
- * O sino continua correto pela consulta, que renova o token no 401; o que
- * se perde é o tempo real, até um F5. Tratar isso exigiria reabrir a
- * conexão a cada renovação de token, e não vale a complexidade enquanto a
- * janela for de 24h.
  */
 export function useCanalDeNotificacoes(aoChegar: () => void) {
   useEffect(() => {
-    const url = import.meta.env.VITE_WS_URL as string | undefined;
-    const token = getAccessToken();
+    const base = import.meta.env.VITE_WS_URL as string | undefined;
     // Sem URL configurada (ambiente de teste, preview antigo) ou sem sessão,
     // simplesmente não abre. O sino segue funcionando pela consulta.
-    if (!url || !token) return;
+    if (!base || !getAccessToken()) return;
 
-    const socket = new ReconnectingWebSocket(
-      `${url}?token=${encodeURIComponent(token)}`,
-      [],
-      RECONEXAO_DO_CANAL,
-    );
+    /** A URL é montada A CADA TENTATIVA, não uma vez.
+     *
+     * 🔴 Era a limitação conhecida do canal: o token era lido na abertura e
+     * ficava congelado. Quando vencia (dura 24h), a reconexão seguinte
+     * levava o token morto, tomava 401, e o canal desistia -- a pessoa
+     * perdia o tempo real até dar F5, sem nada na tela dizendo isso.
+     *
+     * Aqui ele é lido na hora e RENOVADO se estiver perto de vencer. Como
+     * uma conexão vive no máximo 2h (teto do API Gateway), toda reconexão
+     * passa por este caminho e o canal se recupera sozinho.
+     */
+    async function urlComTokenAtual(): Promise<string> {
+      if (tokenVenceEm(MARGEM_DO_TOKEN_SEGUNDOS)) {
+        // Se a renovação falhar, segue com o que há: quem decide é o
+        // handshake. Insistir aqui atrasaria a reconexão sem melhorar nada.
+        await renovarToken().catch(() => false);
+      }
+      return `${base}?token=${encodeURIComponent(getAccessToken() ?? "")}`;
+    }
+
+    const socket = new ReconnectingWebSocket(urlComTokenAtual, [], RECONEXAO_DO_CANAL);
 
     const pulsar = setInterval(() => {
       if (socket.readyState === socket.OPEN) socket.send(JSON.stringify({ acao: "ping" }));

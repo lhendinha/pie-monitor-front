@@ -97,6 +97,23 @@ export function estaAutenticado(): boolean {
   return Boolean(getAccessToken() && getRefreshToken());
 }
 
+/** O access token está vencido, ou vence nos próximos `margemSegundos`?
+ *
+ * A margem existe porque quem pergunta vai USAR o token em seguida: um que
+ * vence em dois segundos não serve pra abrir uma conexão que devia durar
+ * horas. Sem ela, o canal de notificações reabriria com um token que morre
+ * no caminho.
+ *
+ * `expira_em` é epoch em SEGUNDOS -- é o que o servidor manda em
+ * `TokensResponse`. Sem a chave (sessão antiga, storage limpo), responde
+ * `true`: melhor renovar à toa que seguir com um token que não dá pra
+ * avaliar. */
+export function tokenVenceEm(margemSegundos: number): boolean {
+  const expira = Number(localStorage.getItem(KEYS.expira));
+  if (!expira) return true;
+  return expira - margemSegundos <= Math.floor(Date.now() / 1000);
+}
+
 // Achado 16: logout/expiração de sessão numa aba não se propagava pras
 // outras abas abertas -- elas só percebiam no próximo request que falhasse
 // com 401. O evento `storage` dispara nas OUTRAS abas (nunca na que fez a

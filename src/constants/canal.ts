@@ -37,3 +37,10 @@ export const RECONEXAO_DO_CANAL = {
    * credencial. */
   maxRetries: 20,
 };
+
+/** Margem pra considerar o token "velho demais" antes de abrir o canal.
+ *
+ * Uma conexão de WebSocket vive até 2h (teto do API Gateway), então abrir
+ * com um token que vence em cinco minutos garante uma reconexão logo
+ * adiante. Renovando antes, a conexão nasce com validade de sobra. */
+export const MARGEM_DO_TOKEN_SEGUNDOS = 10 * 60;

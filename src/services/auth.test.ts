@@ -7,6 +7,7 @@ import {
   getAccessToken,
   getApelido,
   getEmail,
+  tokenVenceEm,
   getGrupoId,
   getPapel,
   getRefreshToken,
@@ -262,5 +263,33 @@ describe("limparTokens", () => {
     expect(getApelido()).toBeNull();
     expect(getPapel()).toBeNull();
     expect(getGrupoId()).toBeNull();
+  });
+});
+
+describe("tokenVenceEm", () => {
+  const agora = () => Math.floor(Date.now() / 1000);
+
+  it("token com validade de sobra: não vence", () => {
+    localStorage.setItem("pje-monitor-expira-em", String(agora() + 3600));
+    expect(tokenVenceEm(600)).toBe(false);
+  });
+
+  it("token já expirado: vence", () => {
+    localStorage.setItem("pje-monitor-expira-em", String(agora() - 10));
+    expect(tokenVenceEm(600)).toBe(true);
+  });
+
+  it("🔴 token que vence DENTRO da margem conta como vencido", () => {
+    /* Quem pergunta vai USAR o token em seguida: um que vence em cinco
+     * minutos não serve pra abrir uma conexão que devia durar horas. */
+    localStorage.setItem("pje-monitor-expira-em", String(agora() + 300));
+    expect(tokenVenceEm(600)).toBe(true);
+  });
+
+  it("sem a chave, responde que vence", () => {
+    /* Melhor renovar à toa que seguir com um token que não dá pra
+     * avaliar. */
+    localStorage.removeItem("pje-monitor-expira-em");
+    expect(tokenVenceEm(600)).toBe(true);
   });
 });
