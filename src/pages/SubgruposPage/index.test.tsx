@@ -22,7 +22,13 @@ vi.mock("../../services", () => mocks);
 import { ApiError } from "../../services/api/client";
 import SubgruposPage from "./index";
 
-const VAZIO = { membros: 0, processos: 0, tarefas: 0, atendimentos: 0 };
+const VAZIO = {
+  membros: 0, processos: 0, tarefas: 0, atendimentos: 0,
+  // Quinto impedimento, e o único que não é contagem. Vem do servidor: a
+  // tela não tem como deduzir, porque a listagem de subgrupos é escopada
+  // por participação pra `manager` mas é o grupo inteiro pra `admin`+.
+  ficaria_sem_subgrupo: false,
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -89,7 +95,7 @@ describe("SubgruposPage", () => {
       subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
     });
     mocks.conteudoDoSubgrupo.mockResolvedValue({
-      membros: 6, processos: 6, tarefas: 11, atendimentos: 8,
+      ...VAZIO, membros: 6, processos: 6, tarefas: 11, atendimentos: 8,
     });
     const user = userEvent.setup();
     renderComProviders(<SubgruposPage />);
@@ -147,26 +153,6 @@ describe("SubgruposPage", () => {
       expect(screen.queryByRole("button", { name: /Remover Trabalhista/ })).not.toBeInTheDocument();
     });
 
-    it("avisa em vez de confirmar quando é o único subgrupo dele", async () => {
-      comoManager();
-      mocks.listarSubgrupos.mockResolvedValue({
-        subgrupos: [{ subgrupo_id: "1", nome: "Cível", criado_por: "ana@argos.local" }],
-        total: 1,
-        total_paginas: 1,
-      });
-      const user = userEvent.setup();
-      renderComProviders(<SubgruposPage />);
-
-      await screen.findByText("Cível");
-      await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
-
-      expect(await screen.findByText("Não dá pra excluir ainda")).toBeInTheDocument();
-      expect(screen.getByText(/é o seu único subgrupo/)).toBeInTheDocument();
-      // O ponto do aviso: não pedir uma decisão que o servidor vai recusar.
-      expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
-      expect(mocks.removerSubgrupo).not.toHaveBeenCalled();
-    });
-
     it("confirma normalmente quando ele tem outro subgrupo", async () => {
       comoManager();
       mocks.listarSubgrupos.mockResolvedValue({
@@ -187,6 +173,88 @@ describe("SubgruposPage", () => {
       await user.click(dialogo.getByRole("button", { name: "Excluir" }));
 
       await waitFor(() => expect(mocks.removerSubgrupo).toHaveBeenCalledWith("1"));
+    });
+  });
+
+  describe("aviso de último subgrupo", () => {
+    /** A tela NÃO deduz mais isso da listagem -- ela lê `ficaria_sem_subgrupo`
+     * do servidor. Deduzir só funcionava pra quem não é admin: a listagem é
+     * escopada por participação pra `manager`, mas é o grupo INTEIRO pra
+     * `admin`+, então o mesmo número dizia coisas diferentes.
+     *
+     * É por isso que estes testes mandam listagens com `total` que
+     * CONTRADIZ o campo: se a tela voltar a contar a lista, eles ficam
+     * vermelhos. */
+    it("avisa em vez de confirmar, e o `total` da lista não manda nada", async () => {
+      // Cinco subgrupos na lista -- a dedução antiga (`total === 1`) não
+      // acusaria nada aqui. É o caso do admin membro de 1 entre 5.
+      mocks.listarSubgrupos.mockResolvedValue({
+        subgrupos: [
+          { subgrupo_id: "1", nome: "Cível" },
+          { subgrupo_id: "2", nome: "Trabalhista" },
+          { subgrupo_id: "3", nome: "Família" },
+          { subgrupo_id: "4", nome: "Tributário" },
+          { subgrupo_id: "5", nome: "Previdenciário" },
+        ],
+        total: 5,
+        total_paginas: 1,
+      });
+      mocks.conteudoDoSubgrupo.mockResolvedValue({ ...VAZIO, ficaria_sem_subgrupo: true });
+      const user = userEvent.setup();
+      renderComProviders(<SubgruposPage />);
+
+      await screen.findByText("Cível");
+      await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+
+      expect(await screen.findByText("Não dá pra excluir ainda")).toBeInTheDocument();
+      expect(screen.getByText(/é o único subgrupo em que você participa/)).toBeInTheDocument();
+      // O ponto do aviso: não pedir uma decisão que o servidor vai recusar.
+      expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+      expect(mocks.removerSubgrupo).not.toHaveBeenCalled();
+    });
+
+    it("não avisa quando o servidor diz que não, mesmo com um só na lista", async () => {
+      // Dados propositalmente CONTRADITÓRIOS: um subgrupo na lista (a
+      // dedução antiga avisaria) e o servidor dizendo que não há
+      // impedimento. Quem manda é o servidor. Como manager, porque é onde a
+      // dedução antiga disparava -- de admin ela nem chegava a rodar.
+      mocks.papelAtende.mockImplementation((minimo: string) => minimo !== "admin");
+      mocks.getEmail.mockReturnValue("ana@argos.local");
+      mocks.listarSubgrupos.mockResolvedValue({
+        subgrupos: [{ subgrupo_id: "1", nome: "Cível", criado_por: "ana@argos.local" }],
+        total: 1,
+        total_paginas: 1,
+      });
+      mocks.removerSubgrupo.mockResolvedValue({});
+      const user = userEvent.setup();
+      renderComProviders(<SubgruposPage />);
+
+      await screen.findByText("Cível");
+      await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+      const dialogo = within(await screen.findByRole("dialog"));
+      await user.click(dialogo.getByRole("button", { name: "Excluir" }));
+
+      await waitFor(() => expect(mocks.removerSubgrupo).toHaveBeenCalledWith("1"));
+    });
+
+    it("o aviso de último subgrupo vence o de conteúdo -- é a ordem do servidor", async () => {
+      // Os dois impedimentos ao mesmo tempo. Mostrar o de conteúdo primeiro
+      // faria a pessoa esvaziar o subgrupo pra só então descobrir que ainda
+      // não pode excluir.
+      mocks.listarSubgrupos.mockResolvedValue({
+        subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
+      });
+      mocks.conteudoDoSubgrupo.mockResolvedValue({
+        ...VAZIO, processos: 6, ficaria_sem_subgrupo: true,
+      });
+      const user = userEvent.setup();
+      renderComProviders(<SubgruposPage />);
+
+      await screen.findByText("Cível");
+      await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
+
+      expect(await screen.findByText(/é o único subgrupo em que você participa/)).toBeInTheDocument();
+      expect(screen.queryByText("6 processos")).not.toBeInTheDocument();
     });
   });
 

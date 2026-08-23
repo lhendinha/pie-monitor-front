@@ -71,16 +71,21 @@ export default function SubgruposPage() {
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
 
-  /** O servidor recusa excluir o ÚLTIMO subgrupo de quem não é `admin`+ --
-   * a pessoa ficaria com o app inteiro vazio, porque o escopo de
-   * `user`/`manager` é a participação dela.
+  /** O servidor recusa excluir o último subgrupo de quem pede -- qualquer
+   * papel, `admin` e `super_admin` inclusive. A resposta vem DELE, junto
+   * com as outras contagens de impedimento.
    *
-   * `total` responde isso porque a listagem já vem escopada: pra quem não é
-   * admin, os subgrupos visíveis SÃO os que a pessoa participa. Sem este
-   * aviso a regra apareceria como um toast de 409 escrito "é o último
-   * subgrupo dessa pessoa" -- frase da tela de Membros, que aqui soa como
-   * se falasse de outra pessoa. */
-  const ehMeuUnicoSubgrupo = !papelAtende("admin") && total === 1;
+   * Já foi deduzido aqui, contando a listagem, e estava errado: aquilo só
+   * equivale a "quantos eu participo" pra quem não é admin, porque a
+   * listagem é escopada por participação. Pra `admin`+ ela é o grupo
+   * inteiro, e o mesmo número dizia outra coisa -- admin não membro de um
+   * grupo com um subgrupo via aviso falso, e admin membro de 1 entre 5 não
+   * via aviso nenhum.
+   *
+   * Sem este aviso a regra apareceria como um toast de 409 escrito "é o
+   * último subgrupo dessa pessoa" -- frase da tela de Membros, que aqui soa
+   * como se falasse de outra pessoa. */
+  const ficariaSemSubgrupo = conteudoQuery.data?.ficaria_sem_subgrupo ?? false;
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
@@ -153,15 +158,23 @@ export default function SubgruposPage() {
           pré-teste é conveniência, e quem decide de verdade é o DELETE.
           Sem esta saída, um erro na contagem deixaria a lixeira sem
           resposta nenhuma. */}
-      {/* Vem ANTES da confirmação: perguntar "tem certeza?" pra uma exclusão
-          que o servidor vai recusar é pedir uma decisão que não existe. */}
-      {pedido && ehMeuUnicoSubgrupo && (
+      {/* Vem ANTES dos outros dois: é a ordem em que o servidor checa, então
+          é o erro que a pessoa tomaria de verdade. Mostrar os impedimentos
+          de conteúdo primeiro faria ela esvaziar o subgrupo pra só então
+          descobrir que ainda não pode excluir. */}
+      {pedido && ficariaSemSubgrupo && (
         <ModalDeAviso
           titulo="Não dá pra excluir ainda"
+          /* "em que você participa", e não "o seu único subgrupo": pra
+             `admin`+ a lista mostra o grupo inteiro, então "o seu único"
+             contradiria os outros subgrupos ali na tela.
+             E a consequência citada é a de PARTICIPAÇÃO, não a de
+             visibilidade -- dizer "você ficaria sem ver processos" seria
+             falso justamente pro admin, que enxerga tudo por escopo. */
           mensagem={
             <>
-              <strong>{pedido.nome}</strong> é o seu único subgrupo. Sem nenhum, você ficaria sem
-              ver processos, tarefas e atendimentos.
+              <strong>{pedido.nome}</strong> é o único subgrupo em que você participa. Sem nenhum,
+              você não poderia ser responsável por tarefas nem receber lembretes de prazo.
             </>
           }
           detalhe="Crie ou entre em outro subgrupo antes de excluir este."
@@ -169,7 +182,7 @@ export default function SubgruposPage() {
         />
       )}
 
-      {pedido && !ehMeuUnicoSubgrupo && !conteudoQuery.isPending && impedimentos.length === 0 && (
+      {pedido && !ficariaSemSubgrupo && !conteudoQuery.isPending && impedimentos.length === 0 && (
         <ModalDeConfirmacao
           titulo="Excluir subgrupo"
           mensagem={
@@ -183,7 +196,7 @@ export default function SubgruposPage() {
         />
       )}
 
-      {pedido && !ehMeuUnicoSubgrupo && conteudoQuery.isSuccess && impedimentos.length > 0 && (
+      {pedido && !ficariaSemSubgrupo && conteudoQuery.isSuccess && impedimentos.length > 0 && (
         <ModalDeAviso
           titulo="Não dá pra excluir ainda"
           mensagem={

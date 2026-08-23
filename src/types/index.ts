@@ -25,6 +25,14 @@ export interface ConteudoDoSubgrupo {
   processos: number;
   tarefas: number;
   atendimentos: number;
+  /** Se excluir deixaria QUEM ESTÁ PERGUNTANDO sem subgrupo nenhum no grupo
+   * -- o quinto impedimento, e o único que não é contagem.
+   *
+   * Vem do servidor porque a tela não tem como deduzir: ela só conhece a
+   * listagem de subgrupos, que é escopada por participação pra
+   * `user`/`manager` mas é o grupo INTEIRO pra `admin`+. O mesmo número
+   * significa coisas diferentes conforme o papel. */
+  ficaria_sem_subgrupo: boolean;
 }
 
 export interface Grupo {
