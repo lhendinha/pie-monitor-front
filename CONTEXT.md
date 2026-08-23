@@ -386,15 +386,28 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
 
 ## 4) Blocos de código essenciais
 
-**Única variável de ambiente:**
+**Variáveis de ambiente:**
 
 ```
 VITE_API_URL=<Function URL da AWS, sem barra no final>
+VITE_WS_URL=<endpoint wss do API Gateway WebSocket, com o stage no fim>
 ```
 
 Configurar tanto no `.env` local quanto no Vercel (Settings → Environment
 Variables) — são independentes, precisam ser atualizadas nos dois lugares
-se a URL da API mudar.
+se as URLs mudarem.
+
+⚠️ **Variável do Vite entra no BUILD, não em runtime.** Adicionar no painel
+do Vercel não muda o bundle que já está no ar: é preciso um build NOVO. E
+"Redeploy" com *Use existing Build Cache* marcado (o padrão) reaproveita o
+bundle e a variável continua de fora — desmarque, ou faça um push. O sinal
+de que funcionou é o **hash do arquivo em `/assets/` mudar**; enquanto for o
+mesmo nome, é o mesmo build. Perdido tempo com isso em 23/08/2026.
+
+`VITE_WS_URL` é OPCIONAL: sem ela o sino continua correto, porque a
+consulta é a fonte da verdade — o que se perde é só o tempo real (o aviso
+passa a aparecer quando a aba ganha foco). Por isso o hook simplesmente não
+abre a conexão quando ela falta, em vez de quebrar.
 
 **Comandos:**
 
