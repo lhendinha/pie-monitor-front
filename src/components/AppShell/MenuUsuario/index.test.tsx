@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { renderComProviders } from "../../test/queryTestUtils";
+import { renderComProviders } from "../../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   getApelido: vi.fn(),
@@ -11,12 +11,12 @@ const mocks = vi.hoisted(() => ({
   getPapel: vi.fn(),
 }));
 
-vi.mock("../../services", async () => {
-  const real = await vi.importActual<Record<string, unknown>>("../../services");
+vi.mock("../../../services", async () => {
+  const real = await vi.importActual<Record<string, unknown>>("../../../services");
   return { ...real, ...mocks };
 });
 
-import MenuUsuario from "./MenuUsuario";
+import MenuUsuario from "./index";
 
 function montar(onSair = vi.fn()) {
   renderComProviders(

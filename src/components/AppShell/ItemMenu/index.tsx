@@ -1,8 +1,8 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { NavLink } from "react-router-dom";
 
-import type { ItemNavegacao } from "../../constants";
-import { ICONES_MENU } from "./icones";
+import type { ItemNavegacao } from "../../../constants";
+import { ICONES_MENU } from "../icones";
 
 interface Props {
   item: ItemNavegacao;

@@ -29,3 +29,4 @@ export { default as IconeAlerta } from "./IconeAlerta";
 export { default as IconeCadeado } from "./IconeCadeado";
 export { default as IconeOlho } from "./IconeOlho";
 export { default as IconeOlhoCortado } from "./IconeOlhoCortado";
+export { default as IconeSuporte } from "./IconeSuporte";

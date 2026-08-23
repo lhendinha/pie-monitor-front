@@ -1,8 +1,8 @@
 import { Flex } from "@chakra-ui/react";
 
-import IconeSino from "../Icons/IconeSino";
-import BotaoDeIcone from "../BotaoDeIcone";
-import MenuUsuario from "./MenuUsuario";
+import IconeSino from "../../Icons/IconeSino";
+import BotaoDeIcone from "../../BotaoDeIcone";
+import MenuUsuario from "../MenuUsuario";
 
 interface Props {
   onSair: () => void;

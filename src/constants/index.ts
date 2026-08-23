@@ -5,3 +5,4 @@ export * from "./navegacao";
 export * from "./calendario";
 export * from "./abasDoGrupo";
 export * from "./subgrupos";
+export * from "./suporte";

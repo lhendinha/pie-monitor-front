@@ -1,11 +1,11 @@
 import { Box, Menu, Portal, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { getApelido, getEmail } from "../../services";
-import Avatar from "../Avatar";
-import { BotaoNu } from "../BotaoNu";
-import IconeChevron from "../Icons/IconeChevron";
-import { OPCAO_DE_MENU, PAINEL_DE_MENU } from "../../theme/menu";
+import { getApelido, getEmail } from "../../../services";
+import Avatar from "../../Avatar";
+import { BotaoNu } from "../../BotaoNu";
+import IconeChevron from "../../Icons/IconeChevron";
+import { OPCAO_DE_MENU, PAINEL_DE_MENU } from "../../../theme/menu";
 
 
 interface Props {
