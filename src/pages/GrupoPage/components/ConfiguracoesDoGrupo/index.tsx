@@ -19,13 +19,15 @@ import { qk } from "../../../../services/queryKeys";
 import { contar } from "../../../../utils";
 import type { ConfiguracoesDoGrupo as Configuracoes } from "../../../../types";
 
-/** Sub-aba "Configurações" da tela de Grupo.
+/** Sub-aba "Configurações" da tela de Grupo: nome do grupo e prazo de
+ * arquivamento.
  *
- * Hoje só o prazo de arquivamento. Nasce como aba própria em vez de um campo
- * solto em Subgrupos porque é definição do ESCRITÓRIO, como Fases e
- * Situações -- e porque é o lugar natural pro que vier depois.
+ * Nasce como aba própria em vez de um campo solto em Subgrupos porque é
+ * definição do ESCRITÓRIO, como Fases e Situações -- e porque é o lugar
+ * natural pro que vier depois.
  */
 export default function ConfiguracoesDoGrupo() {
+  const [nome, setNome] = useState("");
   const [dias, setDias] = useState("");
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -35,22 +37,29 @@ export default function ConfiguracoesDoGrupo() {
     queryFn: () => lerConfiguracoesDoGrupo() as Promise<Configuracoes>,
   });
 
-  /* O campo nasce do que está salvo. Sem isto ele abriria vazio e um
+  /* Os campos nascem do que está salvo. Sem isto abririam vazios e um
      "Salvar" sem querer gravaria... nada, ou o mínimo. */
   useEffect(() => {
-    if (query.data) setDias(String(query.data.dias_para_arquivar));
+    if (query.data) {
+      setNome(query.data.nome);
+      setDias(String(query.data.dias_para_arquivar));
+    }
   }, [query.data]);
 
   const salvar = useMutation({
-    mutationFn: (valor: number) => atualizarConfiguracoesDoGrupo(valor),
+    mutationFn: (campos: { nome?: string; dias_para_arquivar?: number }) =>
+      atualizarConfiguracoesDoGrupo(campos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.configuracoesDoGrupo() });
-      toast.sucesso("Prazo de arquivamento salvo.");
+      /* A listagem de grupos (tela de Membros, do super_admin) mostra este
+         nome vindo de outra consulta -- sem isto ela ficaria com o antigo. */
+      queryClient.invalidateQueries({ queryKey: qk.grupos() });
+      toast.sucesso("Configurações salvas.");
     },
     onError: (err) => toastErroMutation(toast, err, "Não foi possível salvar."),
   });
 
-  if (query.isPending) return <Esqueleto linhas={2} />;
+  if (query.isPending) return <Esqueleto linhas={3} />;
   if (query.isError) {
     return (
       <CartaoDeTabela>
@@ -64,31 +73,73 @@ export default function ConfiguracoesDoGrupo() {
   }
 
   const config = query.data!;
+
+  const nomeLimpo = nome.trim();
+  const nomeInvalido = nomeLimpo === "" || nomeLimpo.length > config.nome_tamanho_maximo;
+
   const numero = Number(dias);
   /* Os limites vêm do SERVIDOR junto do valor -- repeti-los aqui seria dois
      lugares pra manter em acordo, e quem manda continua sendo ele. */
-  const invalido =
+  const diasInvalido =
     dias.trim() === "" ||
     !Number.isInteger(numero) ||
     numero < config.dias_para_arquivar_minimo ||
     numero > config.dias_para_arquivar_maximo;
-  const inalterado = numero === config.dias_para_arquivar;
+
+  /* Só o que MUDOU vai no PATCH. Mandar os dois sempre faria um "Salvar" do
+     nome sobrescrever um prazo que outra pessoa acabou de alterar. */
+  const nomeMudou = nomeLimpo !== config.nome;
+  const diasMudou = numero !== config.dias_para_arquivar;
+
+  const invalido = nomeInvalido || diasInvalido;
+  const inalterado = !nomeMudou && !diasMudou;
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!invalido && !inalterado) salvar.mutate(numero);
+    if (invalido || inalterado) return;
+    salvar.mutate({
+      ...(nomeMudou ? { nome: nomeLimpo } : {}),
+      ...(diasMudou ? { dias_para_arquivar: numero } : {}),
+    });
   }
 
   return (
     <CartaoDeTabela>
       <Stack as="form" onSubmit={handleSubmit} gap="0" p="18px 20px" maxW="440px">
         <Campo
+          rotulo="Nome do grupo"
+          para="nome-do-grupo"
+          obrigatorio
+          /* Diz que o nome é único ANTES de a pessoa tentar: descobrir isso
+             pelo 409 depois de digitar é o caminho pior. */
+          /* Nada de prometer onde o nome aparece: hoje ele só é exibido na
+             listagem de grupos do super_admin. */
+          dica={`Não pode repetir o nome de outro grupo. Até ${config.nome_tamanho_maximo} caracteres.`}
+          /* Mostra o erro assim que fica inválido, sem esperar digitar: os
+             dois campos NASCEM com o valor salvo, então nunca há erro antes
+             de a pessoa mexer -- e esvaziar sem explicação deixaria o
+             Salvar desligado sem dizer por quê. */
+          erro={
+            nomeInvalido
+              ? `Informe um nome de 1 a ${config.nome_tamanho_maximo} caracteres.`
+              : undefined
+          }
+        >
+          <Input
+            id="nome-do-grupo"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            maxLength={config.nome_tamanho_maximo}
+          />
+        </Campo>
+
+        <Campo
           rotulo="Arquivar concluídas depois de"
           para="dias-arquivar"
           /* Diz o QUE acontece, não só o que o campo aceita: "de 1 a 365" é
              a regra, mas a consequência é o que a pessoa precisa saber. */
           dica={`A tarefa sai da coluna de conclusão e vai pra Arquivado. Ela continua contando como concluída. De ${config.dias_para_arquivar_minimo} a ${config.dias_para_arquivar_maximo} dias.`}
-          erro={invalido && dias.trim() !== "" ? "Informe um número de dias dentro do limite." : undefined}
+          erro={diasInvalido ? "Informe um número de dias dentro do limite." : undefined}
         >
           <Stack direction="row" align="center" gap="10px">
             <Input
@@ -114,7 +165,7 @@ export default function ConfiguracoesDoGrupo() {
           {/* O padrão fica dito, e não escondido no código: é a resposta
               pra "qual era mesmo o valor normal?". */}
           <Text fontSize="11.5px" color="fg.subtle">
-            Padrão: {contar(config.dias_para_arquivar_padrao, "dia", "dias")}
+            Prazo padrão: {contar(config.dias_para_arquivar_padrao, "dia", "dias")}
           </Text>
         </Stack>
       </Stack>

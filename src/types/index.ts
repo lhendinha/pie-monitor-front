@@ -211,10 +211,12 @@ export type SubAbaId =
  * Os limites vêm do servidor junto do valor: a tela valida antes de mandar,
  * e repetir os números aqui seria dois lugares pra manter em acordo. */
 export interface ConfiguracoesDoGrupo {
+  nome: string;
   dias_para_arquivar: number;
   dias_para_arquivar_minimo: number;
   dias_para_arquivar_maximo: number;
   dias_para_arquivar_padrao: number;
+  nome_tamanho_maximo: number;
 }
 
 export interface SubAbaConfig {

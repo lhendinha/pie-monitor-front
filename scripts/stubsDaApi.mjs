@@ -78,6 +78,19 @@ const PROCESSOS = {
 };
 
 const RESPOSTAS = [
+  // Antes de tudo: o caminho contém "/grupos", e um padrão mais largo
+  // capturaria isto e devolveria a lista de grupos pra aba de Configurações.
+  [
+    /\/grupos\/configuracoes/,
+    () => ({
+      nome: "Silva Advogados",
+      nome_tamanho_maximo: 120,
+      dias_para_arquivar: 7,
+      dias_para_arquivar_minimo: 1,
+      dias_para_arquivar_maximo: 365,
+      dias_para_arquivar_padrao: 7,
+    }),
+  ],
   [/\/situacoes/, () => opcoes(SITUACOES, "situacao")],
   [/\/fases/, () => opcoes(FASES, "fase")],
   [
