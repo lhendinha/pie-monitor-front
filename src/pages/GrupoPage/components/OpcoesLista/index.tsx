@@ -88,7 +88,14 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: OpcoesListaP
   const opcoes = ordemLocal ?? opcoesServidor;
 
   function invalidar() {
-    queryClient.invalidateQueries({ queryKey: qk.opcoesProcesso(tipo) });
+    // 🔴 PREFIXO, não `qk.opcoesProcesso(tipo)`.
+    //
+    // Aquela é `["opcoesProcesso", tipo, {}]`, e o `partialMatchKey` compara
+    // o terceiro elemento: `{}` casa com `{pagina:1}` da listagem paginada,
+    // mas não com a string `"todos"` de `qk.todasAsOpcoes`. Resultado:
+    // renomear ou desativar uma fase não atualizava a tabela de Processos
+    // nem o select de "Novo processo" -- só a lista da própria tela.
+    queryClient.invalidateQueries({ queryKey: qk.prefixoOpcoesProcesso(tipo) });
   }
 
   const criarMutation = useMutation({

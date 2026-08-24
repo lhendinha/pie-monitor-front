@@ -130,11 +130,23 @@ describe("ClienteDetalhePage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Excluir" }));
 
-    expect(
-      await screen.findByText(
-        "Não dá pra excluir: está vinculado a 1 processo. Desvincule antes.",
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/está vinculado a 1 processo/)).toBeInTheDocument();
+
+    /* 🔴 E o botão de confirmar NÃO existe.
+     *
+     * A versão anterior mostrava o impedimento no `aviso` de um
+     * `ModalDeConfirmacao`, cujo "Excluir" continuava ativo: confirmar
+     * disparava um DELETE que o servidor recusa com 409. O teste antigo
+     * conferia só o TEXTO, então passava com o botão ativo -- prometer
+     * impossibilidade e deixar o caminho aberto é pior que não avisar.
+     *
+     * `SubgruposPage` já usava `ModalDeAviso` (sem botão) pro mesmo caso. */
+    /* ⚠️ Escopado ao DIÁLOGO: o "Excluir" do cabeçalho da página continua
+     * existindo -- é ele que abre este modal. Procurar na tela inteira
+     * encontraria aquele e o teste passaria sem provar nada. */
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).queryByRole("button", { name: /^Excluir$/ })).not.toBeInTheDocument();
+    expect(within(dialogo).getByRole("button", { name: "Entendi" })).toBeInTheDocument();
   });
 
   it("cliente em uso por processo mostra a mensagem que a API deu", async () => {

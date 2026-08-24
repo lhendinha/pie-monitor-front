@@ -70,6 +70,15 @@ export const qk = {
   //
   // O prefixo continua o mesmo (`["clientes"]`, `["subgrupos"]`,
   // `["opcoesProcesso", tipo]`), então invalidar por prefixo derruba os dois.
+  //
+  // ⚠️ Invalidar tem que usar o PREFIXO, não a chave de página. `qk.clientes()`
+  // é `["clientes", {}]`, e o `partialMatchKey` do React Query compara o
+  // terceiro elemento: `{}` casa com `{pagina:1}` (objeto contra objeto), mas
+  // NÃO casa com a string `"todos"`. Por isso os prefixos abaixo.
+  prefixoClientes: () => ["clientes"] as const,
+  prefixoSubgrupos: () => ["subgrupos"] as const,
+  prefixoOpcoesProcesso: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo] as const,
+
   todosOsClientes: () => ["clientes", "todos"] as const,
   todosOsSubgrupos: () => ["subgrupos", "todos"] as const,
   todasAsOpcoes: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo, "todos"] as const,

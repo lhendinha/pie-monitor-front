@@ -8,6 +8,7 @@ import {
   Cartao,
   IconeSeta,
   Esqueleto,
+  ModalDeAviso,
   ModalDeConfirmacao,
   useToast,
 } from "../../components";
@@ -102,7 +103,30 @@ export default function ClienteDetalhePage() {
         </Cartao>
       </Box>
 
-      {confirmandoRemocao && (
+      {/* 🔴 Exclusão BLOQUEADA usa `ModalDeAviso`, sem botão de confirmar.
+          O `ModalDeConfirmacao` não tem como desabilitar o "Excluir": o
+          aviso dizia "Não dá pra excluir... Desvincule antes" e o botão
+          continuava ativo, então confirmar disparava um DELETE que o
+          servidor recusa com 409. Prometer impossibilidade e deixar o
+          caminho aberto é pior que não avisar.
+
+          É o mesmo arranjo de `SubgruposPage`, que já separava
+          "impedimento" de "confirmação" -- porta irmã que ficou aberta. */}
+      {confirmandoRemocao && processosLigados > 0 && (
+        <ModalDeAviso
+          titulo="Não dá pra excluir ainda"
+          mensagem={
+            <>
+              <strong>{query.data.nome}</strong> está vinculado a{" "}
+              {contar(processosLigados, "processo", "processos")}.
+            </>
+          }
+          detalhe="Desvincule o cliente desses processos antes de excluir."
+          onFechar={() => setConfirmandoRemocao(false)}
+        />
+      )}
+
+      {confirmandoRemocao && processosLigados === 0 && (
         <ModalDeConfirmacao
           titulo="Excluir cliente"
           mensagem={
@@ -110,25 +134,10 @@ export default function ClienteDetalhePage() {
               O cliente <strong>{query.data.nome}</strong> será removido.
             </>
           }
-          /* 🔴 O texto dizia que os processos "perdem esse cliente" -- o
-             desfecho de DESVINCULAR, que só vale pra atendimento. Pra
-             processo o servidor SEMPRE recusa (409 `ClienteEmUso`), então o
-             aviso descrevia uma consequência que nunca acontecia: a pessoa
-             confirmava esperando uma coisa e recebia um erro. O comentário
-             vinte linhas acima neste mesmo arquivo já dizia "o backend
-             recusa excluir cliente ainda vinculado a processo". */
-          aviso={
-            processosLigados
-              ? `Não dá pra excluir: está vinculado a ${contar(
-                  processosLigados, "processo", "processos",
-                )}. Desvincule antes.`
-              : undefined
-          }
-          /* Mesma razão do detalhe do processo: o aviso é a consequência
-             da exclusão, e confirmar antes dele chegar é decidir às
-             cegas. */
-          /* Mesma razão do detalhe do processo: em falha a contagem cai
-             pra 0, o aviso some e a exclusão seria confirmada às cegas. */
+          /* O aviso é a consequência da exclusão, e confirmar antes de ele
+             chegar é decidir às cegas. Em falha a contagem cai pra 0 -- e
+             aí o modal de impedimento acima nem apareceria --, então a
+             espera precisa cobrir os dois casos. */
           verificando={processosQuery.isPending || processosQuery.isError}
           falhouAVerificacao={processosQuery.isError}
           mensagemDeEspera={

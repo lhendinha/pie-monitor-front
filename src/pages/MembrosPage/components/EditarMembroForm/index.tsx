@@ -75,6 +75,14 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
   useEffect(() => {
     listarTodosOsMembrosDoGrupo()
       .then((d: RespostaDeMembros) => {
+        // 🔴 O flag é liberado ANTES do `return` antecipado.
+        //
+        // Trocar o Grupo enquanto esta busca estava em voo fazia os dois
+        // ramos saírem sem nunca marcar `subgruposCarregados` -- e aí o
+        // "Salvar" ficava desabilitado e o MultiSelect em "carregando" pra
+        // sempre, até fechar e reabrir o modal. O `ref` existe pra descartar
+        // o RESULTADO obsoleto, não pra deixar o formulário travado.
+        setSubgruposCarregados(true);
         if (grupoAlteradoRef.current) return;
         const fresco = d.membros.find((m) => m.email === membro.email);
         if (fresco) setSubgruposSelecionados(fresco.subgrupos || []);
@@ -84,7 +92,6 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
         // o conjunto que veio na prop e o Salvar segue liberado -- é o
         // comportamento de antes, e o servidor recusa se estiver errado.
         // (sem ação: ver comentário acima)
-        setSubgruposCarregados(true);
       })
       // 🔴 O `.catch` faltava, e o `.finally` NÃO converte rejeição -- ela
       // virava unhandled promise rejection e nada aparecia pra pessoa,
@@ -100,9 +107,9 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
       // É exatamente a falha que o comentário acima descreve como o motivo
       // deste efeito existir.
       .catch(() => {
+        setSubgruposCarregados(true);
         if (grupoAlteradoRef.current) return;
         setFalhouAoRecarregar(true);
-        setSubgruposCarregados(true);
       });
   }, [membro.email]);
 
