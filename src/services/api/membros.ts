@@ -59,6 +59,21 @@ export function adicionarMembro(subgrupoId: string, email: string) {
   return chamar(`/subgrupos/${subgrupoId}/membros`, { method: "POST", body: { email } });
 }
 
+/** `true` quando a pessoa ENTROU agora; `false` quando já era membro.
+ *
+ * ⚠️ A comparação de string fica AQUI, num lugar só.
+ *
+ * A tela decidia o texto do toast comparando `resp.mensagem === "adicionado"`
+ * direto no componente -- contrato não declarado, espalhado, que quebraria em
+ * silêncio se o servidor trocasse a palavra. O sinal mais robusto seria o
+ * status HTTP (o servidor responde 201 quando adiciona e 200 quando já era
+ * membro), mas `chamar` descarta o status no sucesso, e expô-lo por causa
+ * deste único caso não se paga. Centralizar é o ganho real: se a palavra
+ * mudar, muda um lugar. */
+export function entrouAgora(resposta: { mensagem?: string }): boolean {
+  return resposta.mensagem === "adicionado";
+}
+
 export function removerMembro(subgrupoId: string, email: string) {
   return chamar(`/subgrupos/${subgrupoId}/membros/${encodeURIComponent(email)}`, { method: "DELETE" });
 }

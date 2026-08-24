@@ -42,6 +42,10 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
         email: email.trim(),
       }),
     onSuccess: () => {
+      // Todas as outras criações do sistema confirmam; estas duas não
+      // confirmavam nada, e quem cadastrasse estando na página 3 ou com
+      // filtro via o modal fechar e a tela não mudar.
+      toast.sucesso("Cliente cadastrado.");
       onCadastrado();
       onFechar();
     },

@@ -384,6 +384,68 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   telefone BR. Não havia teste cobrindo 10 dígitos, foi por isso que
   passou despercebido.
 
+### Paginação: o contrato é do servidor, e ele MUDA
+
+Duas telas ficaram defasadas quando o backend passou a paginar rotas que
+antes devolviam tudo -- e nos dois casos o comentário do front afirmava o
+contrário do que a API fazia:
+
+- `GET /grupos/membros` virou paginada e o front chamava sem query nenhuma.
+  A partir da 11ª pessoa o grupo ficava invisível, e como o total local era
+  `pessoas.length`, a `Pagination` se escondia sozinha -- não havia página 2
+  pra clicar.
+- `GET /processos` passou a paginar a busca FILTRADA, e o front continuava
+  descartando `pagina`/`tamanhoPagina` quando havia filtro.
+
+Duas regras que saíram disso:
+
+1. **Quem precisa do conjunto inteiro percorre as páginas.** Use
+   `todasAsPaginas` (`services/api/paginacao.ts`) ou o laço de
+   `useTarefasDoQuadro`. Pedir `tamanhoPagina: TETO_POR_PAGINA` **não** é
+   "traz tudo" -- 100 é o máximo que a API aceita, e acima disso a lista vem
+   cortada em silêncio.
+2. **Chave de cache por FORMATO.** `qk.membros(params)` guarda uma página;
+   `qk.todosOsMembros()` guarda o conjunto. Compartilhar chave entre dois
+   formatos foi o que quebrou o arraste do Kanban -- ver abaixo.
+
+### Prefixo de `queryKey` é contrato: dois formatos não dividem a mesma chave
+
+O carimbo otimista do arraste fazia
+`setQueriesData<Tarefa[]>({ queryKey: ["tarefas"] }, ...)`. Esse prefixo era
+compartilhado por consultas que guardam **objeto**, não array -- a Área de
+trabalho e o detalhe do processo. O `.map` lançava dentro do `onMutate`, e
+quando o `onMutate` lança **o React Query nunca chama o `mutationFn`**: o
+PATCH não saía e o cartão não mudava de coluna no servidor.
+
+Ao mexer em `setQueriesData`/`getQueriesData` por prefixo, restrinja com
+`predicate` ao formato esperado.
+
+### Leitura de `localStorage` no render é congelada pelo React Compiler
+
+O compilador está ligado (`vite.config.ts`). Uma chamada sem dependência
+reativa -- `getApelido()` no corpo do componente -- é memoizada por todo o
+*mount*, e o `AppShell` não desmonta ao navegar: o nome antigo ficava na
+topbar a sessão inteira depois de editar o perfil.
+
+Estado que muda em runtime vive no `SessaoContext` (`apelido`,
+`trocarApelido`). `localStorage` continua sendo a persistência; o contexto é
+quem faz a tela reagir.
+
+### Auditoria de 23-24/08/2026
+
+Revisão completa do front (~19.900 linhas) em 6 frentes paralelas, junto com
+a da API. Os defeitos e as decisões acima saíram dela. A suíte foi de 490
+para 501 testes, cada correção com regressão verificada por mutação.
+
+Três testes que eu tinha escrito passavam com o defeito de volta -- o da
+paginação com filtro precisou esperar o debounce de 300ms antes de olhar a
+tela. Vale desconfiar de teste que passa de primeira.
+
+O projeto também ganhou **ESLint** (`eslint.config.js`, `yarn lint`): antes
+só o `tsc --noEmit` rodava. A config é enxuta e focada no que pega bug --
+`react-hooks/exhaustive-deps` e variável não usada como erro, sem regra de
+estilo.
+
 ## 4) Blocos de código essenciais
 
 **Variáveis de ambiente:**
@@ -438,9 +500,8 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
    desenvolvimento/depuração do backend; se o backend for redeployado de um
    jeito que force recriação da Function URL, o `VITE_API_URL` do Vercel
    precisa ser atualizado manualmente de novo.
-2. Testes cobrem `services/`/`utils/` (lógica pura); nenhum teste de
-   componente/página ainda (`pages/`, `components/Toast`, `Select`,
-   `Pagination` sem cobertura própria).
+2. ~~Nenhum teste de componente/página~~ -- **resolvido**: 51 arquivos, 501
+   testes, cobrindo páginas e componentes. `yarn test`.
 3. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
    específico do Vercel, em vez de `"*"` (pendência do lado do backend, mas
    afeta o front se for feito).

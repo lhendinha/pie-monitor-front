@@ -67,8 +67,18 @@ describe("avisoDeTentativas", () => {
     expect(r.erro).toBe("Muitas tentativas. Tente de novo em 1 minuto.");
   });
 
-  it("erro que não é da API cai na mensagem genérica", () => {
-    expect(avisoDeTentativas(new Error("rede caiu")).erro).toBe("E-mail ou senha incorretos.");
+  it("🔴 falha de REDE não é 'senha incorreta'", () => {
+    /* Este teste fixava o comportamento antigo: tudo que não fosse
+     * `ApiError` caía em "E-mail ou senha incorretos" -- inclusive Wi-Fi
+     * caído e 502 do gateway. A pessoa digitava a senha CERTA, a tela
+     * afirmava que estava errada, e ela ia redefinir uma senha perfeita.
+     *
+     * Não revelar se o e-mail existe não exige confundir "não consegui
+     * falar com o servidor" com "credencial recusada": o sigilo é sobre a
+     * EXISTÊNCIA da conta, e a mensagem de rede não diz nada sobre isso. */
+    expect(avisoDeTentativas(new Error("rede caiu")).erro).toBe(
+      "Não foi possível falar com o servidor. Verifique sua conexão.",
+    );
   });
 
   it("NUNCA revela se o e-mail existe", () => {

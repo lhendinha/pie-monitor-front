@@ -14,6 +14,28 @@ export function formatarData(data?: string): string {
   return `${dia}/${mes}/${ano}`;
 }
 
+/** Só a DATA de um INSTANTE (dd/mm/aaaa), convertendo o fuso.
+ *
+ * 🔴 Não confundir com `formatarData`, que é pra campo só-data
+ * (`prazo_final`, `Tarefa.data`) e recorta a string sem converter nada.
+ * Aplicado a um instante UTC ele mostrava o dia errado: um atendimento
+ * criado às 21h30 de 20/08 em São Paulo é gravado como
+ * `2026-08-21T00:30:00+00:00`, e a lista dizia 21/08 enquanto o detalhe --
+ * que usa `formatarDataHora` -- dizia 20/08 21:30. A mesma tela discordava
+ * de si mesma. */
+export function formatarDataDeInstante(iso?: string): string {
+  if (!iso) return "";
+  try {
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
 /** Formata um ISO 8601 no padrão brasileiro (dd/mm/aaaa hh:mm). Devolve a
  * string original se não conseguir interpretar (mais seguro que quebrar a UI). */
 export function formatarDataHora(iso?: string): string {

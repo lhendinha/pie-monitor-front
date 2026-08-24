@@ -18,6 +18,7 @@ import {
 } from "../../../../components";
 import {
   adicionarMembro,
+  entrouAgora,
   listarTodosOsMembrosDoGrupo,
   listarMembrosDoSubgrupo,
   removerMembro,
@@ -86,7 +87,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
       // O servidor distingue "adicionei" de "já era membro". Dizer
       // "adicionado" nos dois casos esconderia que nada mudou.
       toast.sucesso(
-        resp.mensagem === "adicionado"
+        entrouAgora(resp)
           ? `${resp.email} entrou no ${subgrupo.nome}.`
           : `${resp.email} já estava no ${subgrupo.nome}.`
       );

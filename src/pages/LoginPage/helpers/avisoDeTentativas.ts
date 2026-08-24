@@ -25,7 +25,16 @@ interface Aviso {
  */
 export function avisoDeTentativas(err: unknown): Aviso {
   const generico = "E-mail ou senha incorretos.";
-  if (!(err instanceof ApiError)) return { erro: generico };
+  // 🔴 Falha de REDE não é credencial errada.
+  //
+  // Tudo que não fosse `ApiError` caía na mensagem genérica -- inclusive
+  // Wi-Fi caído e 502 do gateway. A pessoa digitava a senha CERTA, a tela
+  // afirmava que estava errada, e ela ia redefinir uma senha que estava
+  // perfeita. Não revelar se o e-mail existe não exige confundir "não
+  // consegui falar com o servidor" com "credencial recusada".
+  if (!(err instanceof ApiError)) {
+    return { erro: "Não foi possível falar com o servidor. Verifique sua conexão." };
+  }
 
   if (err.status === 429) {
     const segundos = Number(err.corpo.retry_after_segundos) || 0;

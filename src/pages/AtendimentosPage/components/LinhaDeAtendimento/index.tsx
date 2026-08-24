@@ -2,7 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 
 import { Avatar, BotaoNu, Etiqueta, IconeClientes } from "../../../../components";
 import { coresDoStatus } from "../../../../theme/atendimento";
-import { formatarData } from "../../../../utils";
+import { formatarDataDeInstante } from "../../../../utils";
 import type { Atendimento } from "../../../../types";
 
 interface LinhaDeAtendimentoProps {
@@ -66,7 +66,7 @@ export default function LinhaDeAtendimento({
       <Box flex="1" minW="0">
         <Flex align="center" gap="8px" wrap="wrap" fontWeight="800" fontSize="13.5px">
           <Text as="span" color="fg.brand" fontFamily="mono" fontWeight="700">
-            {formatarData(atendimento.criado_em)}
+            {formatarDataDeInstante(atendimento.criado_em)}
           </Text>
           <Text as="span">— {atendimento.assunto}</Text>
           <Etiqueta cores={coresDoStatus(atendimento.status)}>{atendimento.status}</Etiqueta>
@@ -108,7 +108,7 @@ export default function LinhaDeAtendimento({
         <Flex align="center" gap="12px" flex="0 0 auto">
           <Avatar nome={nomeDoAutor(ultimo.autor_id)} tamanho="pequeno" />
           <Text fontSize="11px" color="fg.subtle" textAlign="right" whiteSpace="nowrap">
-            {formatarData(ultimo.registrado_em)}
+            {formatarDataDeInstante(ultimo.registrado_em)}
           </Text>
         </Flex>
       )}
