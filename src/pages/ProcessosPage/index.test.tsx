@@ -429,4 +429,40 @@ describe("filtro e página", () => {
       ),
     );
   });
+
+  it("🔴 mudar de filtro não dispara requisição com a página VELHA", async () => {
+    /* Com `setPagina(1)` num `useEffect`, o reset rodava DEPOIS da
+     * renderização que já carregava os filtros novos: saía um
+     * `GET ...&pagina=2` (filtros novos, página velha) só pra ser
+     * descartado pelo pedido correto. Duas requisições por mudança de
+     * filtro, e a primeira existia só pra ser jogada fora.
+     *
+     * O teste vizinho usa `toHaveBeenLastCalledWith`, que convive com o
+     * desperdício. Este olha TODAS as chamadas. */
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO], total: 40, total_paginas: 4,
+    });
+    const user = userEvent.setup();
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await screen.findByText(PROCESSO.apelido);
+
+    await user.click(await screen.findByRole("button", { name: "2" }));
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ pagina: 2 }),
+      ),
+    );
+
+    mocks.listarProcessos.mockClear();
+    await user.type(
+      screen.getByLabelText("Pesquisar processo por número, cliente ou apelido"),
+      "zzz",
+    );
+
+    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+    const comPaginaVelha = mocks.listarProcessos.mock.calls.filter(
+      ([p]: [Record<string, unknown>]) => p?.pagina === 2,
+    );
+    expect(comPaginaVelha).toEqual([]);
+  });
 });

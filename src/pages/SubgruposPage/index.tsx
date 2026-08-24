@@ -158,6 +158,7 @@ export default function SubgruposPage() {
           podeExcluir={podeExcluirSubgrupo}
           renomeandoId={renomeandoId}
           renomeando={renomearMutation.isPending}
+          renomeFalhou={renomearMutation.isError}
           onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
           onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
           onCancelarRenome={() => setRenomeandoId(null)}

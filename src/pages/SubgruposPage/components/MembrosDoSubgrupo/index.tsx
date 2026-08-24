@@ -118,6 +118,18 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
   const membros = query.data?.membros || [];
 
   return (
+    /* ⚠️ O diálogo de confirmação é IRMÃO do `<Modal>`, não filho.
+     *
+     * 🔴 `pilhaDeModais` assume "quem registrou por último está por cima",
+     * e isso se INVERTE com aninhamento: o React roda os efeitos dos FILHOS
+     * antes dos do pai, então um modal aninhado se registra ANTES do que o
+     * contém -- e o Escape fecharia o de fora. Hoje está mascarado pelo
+     * mount adiado e por callbacks estáveis do React Compiler, mas é
+     * mascaramento, não correção.
+     *
+     * Todos os outros diálogos do sistema já são irmãos (`SubgruposPage`,
+     * `ClientesPage`). Este era a exceção. */
+    <>
     <Modal
       titulo={`Membros do ${subgrupo.nome}`}
       /* Quantos, no cabeçalho: a lista responde isso enquanto cabe na tela,
@@ -219,6 +231,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
           })}
         </Stack>
       )}
+    </Modal>
       {/* 🔴 Tirar alguém de um subgrupo SOLTA as tarefas dela lá dentro --
           `membros_service.remover` chama `desvincular_responsavel`. A
           lixeira executava direto, e o toast só dizia "fulano saiu do X".
@@ -245,6 +258,6 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
           onFechar={() => setAConfirmarSaida(null)}
         />
       )}
-    </Modal>
+    </>
   );
 }

@@ -25,6 +25,8 @@ interface ListaDeSubgruposProps {
   /** O rename da linha em edição já foi enviado. Como só uma edita por vez,
    * um booleano basta -- não precisa dizer qual. */
   renomeando?: boolean;
+  /** O último rename foi recusado -- ver `NomeEditavel.falhou`. */
+  renomeFalhou?: boolean;
   onIniciarRenome: (s: Subgrupo) => void;
   onRenomear: (s: Subgrupo, nome: string) => void;
   onCancelarRenome: () => void;
@@ -38,6 +40,7 @@ export default function ListaDeSubgrupos({
   podeExcluir,
   renomeandoId,
   renomeando,
+  renomeFalhou,
   onIniciarRenome,
   onRenomear,
   onCancelarRenome,
@@ -79,6 +82,7 @@ export default function ListaDeSubgrupos({
           }
         >
           <NomeEditavel
+              falhou={renomeFalhou}
             salvando={renomeando}
             /* A chave inclui o nome pra o rascunho nascer do valor atual:
                renomeado e reaberto, o campo tem que vir com o nome novo. */

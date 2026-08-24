@@ -1,5 +1,5 @@
 import { Input, Text } from "@chakra-ui/react";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent, useRef } from "react";
 
 interface NomeEditavelProps {
   nome: string;
@@ -13,6 +13,11 @@ interface NomeEditavelProps {
   onIniciar: () => void;
   onConfirmar: (nome: string) => void;
   onCancelar: () => void;
+  /** O servidor recusou o último rename (nome duplicado, por exemplo).
+   *
+   * O campo continua aberto pra correção -- mas sair dele sem mudar o texto
+   * passa a ser "desisti" em vez de reenviar o mesmo pedido que já falhou. */
+  falhou?: boolean;
   /** O rename já foi enviado e a resposta não voltou.
    *
    * Sem isto, confirmar não mudava NADA na tela: o campo seguia editável,
@@ -38,6 +43,7 @@ export default function NomeEditavel({
   onIniciar,
   onConfirmar,
   onCancelar,
+  falhou = false,
   salvando,
 }: NomeEditavelProps) {
   const [rascunho, setRascunho] = useState(nome);
@@ -60,12 +66,29 @@ export default function NomeEditavel({
   /** Nome vazio não apaga o que já existe: sem texto, sair do campo é
    * desistir -- e não renomear o subgrupo pra "". Igual quando o texto
    * voltou a ser o mesmo: não há o que salvar. */
+  /** O último rascunho que o servidor recusou.
+   *
+   * 🔴 Sem isto, um rename rejeitado (nome duplicado -> 409) entrava em
+   * laço: o campo fica aberto de propósito, pra pessoa corrigir a digitação,
+   * mas o rascunho continua DIFERENTE do nome atual -- então cada clique
+   * fora disparava `onBlur` -> `confirmar()` -> o mesmo 409, indefinidamente.
+   * Só Escape ou editar o texto quebrava.
+   *
+   * Guardando o que foi recusado, sair do campo sem mudar nada passa a ser
+   * "desisti", como já é quando o texto voltou ao original. Reenviar exige
+   * um gesto explícito: Enter, ou trocar o texto. */
+  const recusadoRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (falhou) recusadoRef.current = rascunho.trim();
+  }, [falhou, rascunho]);
+
   function confirmar() {
     // ⚠️ Sem esta saída, o `onBlur` do campo em leitura reenviava o mesmo
     // rename enquanto o primeiro ainda estava em voo.
     if (salvando) return;
     const limpo = rascunho.trim();
-    if (!limpo || limpo === nome) onCancelar();
+    if (!limpo || limpo === nome || limpo === recusadoRef.current) onCancelar();
     else onConfirmar(limpo);
   }
 

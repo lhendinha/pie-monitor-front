@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -72,9 +72,26 @@ export default function ProcessosPage() {
    * A assinatura é comparada como string porque `f.filtros` é um objeto
    * novo a cada render. */
   const assinaturaDosFiltros = JSON.stringify(f.filtros);
-  useEffect(() => {
+
+  /* 🔴 Ajuste DURANTE a renderização, não num efeito.
+   *
+   * Com `useEffect`, o `setPagina(1)` roda DEPOIS da renderização que já
+   * carregava os filtros novos -- então saía um
+   * `GET /processos?...&pagina=3` com os filtros novos e a página velha,
+   * imediatamente descartado pelo pedido correto com `pagina=1`. Duas
+   * requisições por mudança de filtro, e a primeira só existia pra ser
+   * jogada fora. O teste desta tela tinha sido trocado pra
+   * `toHaveBeenLastCalledWith` justamente pra conviver com isso.
+   *
+   * É o padrão que o React documenta pra estado derivado: comparar com o
+   * valor anterior e ajustar no corpo do componente. O React descarta a
+   * renderização em andamento e refaz com o valor novo, sem chegar a pedir
+   * nada. */
+  const [assinaturaAnterior, setAssinaturaAnterior] = useState(assinaturaDosFiltros);
+  if (assinaturaAnterior !== assinaturaDosFiltros) {
+    setAssinaturaAnterior(assinaturaDosFiltros);
     setPagina(1);
-  }, [assinaturaDosFiltros]);
+  }
 
   const parametrosBusca = { ...f.filtros, pagina, tamanhoPagina };
 
