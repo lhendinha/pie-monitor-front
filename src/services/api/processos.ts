@@ -1,5 +1,4 @@
 import { chamar } from "./client";
-import type { ValorQuery } from "./client";
 
 /** Parâmetros de busca do `GET /processos`.
  *
@@ -62,24 +61,32 @@ function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {
   };
 }
 
-/** GET /processos -- paginado de verdade (backend faz Query por intervalo de
- * sequência, nunca carrega tudo). Se qualquer filtro vier preenchido
- * (`temFiltroAtivo`), ignora pagina/tamanhoPagina -- é uma busca/filtro
- * pontual, não paginado (mesmo corte que processos_router.py usa). */
+/** GET /processos -- paginado de verdade, COM ou SEM filtro.
+ *
+ * 🔴 A paginação era descartada quando havia filtro. O backend mudou na
+ * Fase 1a -- o comentário dele diz "busca/filtro agora pagina igual à
+ * listagem sem filtro: antes devolvia o resultado inteiro num payload só, e
+ * o front tinha que esconder a paginação" -- e o front não acompanhou.
+ *
+ * Resultado: filtrar por uma situação com 40 processos mostrava 10, a
+ * contagem dizia 40, e não havia barra de páginas nem seletor de "Por
+ * página". Os outros 30 eram inalcançáveis.
+ */
 export function listarProcessos(opcoes: OpcoesListarProcessos = {}) {
   const { pagina, tamanhoPagina, busca, clienteId, faseIds, situacaoIds, dataVerificarAte, prazoFinalAte } = opcoes;
-  const query: Record<string, ValorQuery> = temFiltroAtivo(opcoes)
-    ? {
-        busca,
-        cliente_id: clienteId,
-        // Repetidos: `?fase_id=a&fase_id=b`. Ver `montarQuery`.
-        fase_id: faseIds,
-        situacao_id: situacaoIds,
-        data_verificar_ate: dataVerificarAte,
-        prazo_final_ate: prazoFinalAte,
-      }
-    : { pagina: pagina ? String(pagina) : undefined, tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined };
-  return chamar("/processos", { query });
+  return chamar("/processos", {
+    query: {
+      busca,
+      cliente_id: clienteId,
+      // Repetidos: `?fase_id=a&fase_id=b`. Ver `montarQuery`.
+      fase_id: faseIds,
+      situacao_id: situacaoIds,
+      data_verificar_ate: dataVerificarAte,
+      prazo_final_ate: prazoFinalAte,
+      pagina: pagina ? String(pagina) : undefined,
+      tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
+    },
+  });
 }
 
 export function criarProcesso(

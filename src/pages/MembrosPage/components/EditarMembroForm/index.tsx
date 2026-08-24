@@ -13,7 +13,12 @@ import {
   Select,
   useToast,
 } from "../../../../components";
-import { ESCOLHA_UM_SUBGRUPO, HIERARQUIA_PAPEIS, NOME_PAPEL } from "../../../../constants";
+import {
+  ESCOLHA_UM_SUBGRUPO,
+  FALHOU_AO_CONFERIR_SUBGRUPOS,
+  HIERARQUIA_PAPEIS,
+  NOME_PAPEL,
+} from "../../../../constants";
 import {
   atualizarMembro,
   getGrupoId,
@@ -50,6 +55,10 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
     membro.subgrupos || []
   );
   const [subgruposCarregados, setSubgruposCarregados] = useState(false);
+  /** A leitura fresca falhou (ou não achou a pessoa). Sem ela, o conjunto de
+   * subgrupos na tela pode estar velho -- e salvar por cima remove
+   * participação que alguém acabou de criar. Melhor travar e dizer. */
+  const [falhouAoRecarregar, setFalhouAoRecarregar] = useState(false);
   const grupoAlteradoRef = useRef(false);
   const toast = useToast();
 
@@ -69,8 +78,27 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
         if (grupoAlteradoRef.current) return;
         const fresco = d.membros.find((m) => m.email === membro.email);
         if (fresco) setSubgruposSelecionados(fresco.subgrupos || []);
+        else setFalhouAoRecarregar(true);
+        setSubgruposCarregados(true);
       })
-      .finally(() => setSubgruposCarregados(true));
+      // 🔴 O `.catch` faltava, e o `.finally` NÃO converte rejeição -- ela
+      // virava unhandled promise rejection e nada aparecia pra pessoa,
+      // enquanto `subgruposCarregados` ficava `true` do mesmo jeito e o
+      // Salvar destravava com o conjunto VELHO da prop.
+      //
+      // O servidor reconcilia pelo conjunto exato enviado e, pra cada
+      // subgrupo removido, solta as tarefas de quem saiu. Então um blip de
+      // rede aqui, num "Editar" aberto só pra corrigir o apelido, tirava a
+      // pessoa de um subgrupo que alguém tinha acabado de adicionar -- e as
+      // tarefas dela lá ficavam sem responsável. Sem aviso nenhum.
+      //
+      // É exatamente a falha que o comentário acima descreve como o motivo
+      // deste efeito existir.
+      .catch(() => {
+        if (grupoAlteradoRef.current) return;
+        setFalhouAoRecarregar(true);
+        setSubgruposCarregados(true);
+      });
   }, [membro.email]);
 
   const subgruposDoGrupoQuery = useQuery<RespostaDeSubgrupos>({
@@ -127,7 +155,12 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
           <Botao
             type="submit"
             form={idFormulario}
-            disabled={atualizarMutation.isPending || !subgruposCarregados || semSubgrupo}
+            disabled={
+              atualizarMutation.isPending ||
+              !subgruposCarregados ||
+              semSubgrupo ||
+              falhouAoRecarregar
+            }
           >
             {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
           </Botao>
@@ -189,7 +222,13 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
             para="subgrupos-membro"
             obrigatorio
             dica={ESCOLHA_UM_SUBGRUPO}
-            erro={semSubgrupo ? ESCOLHA_UM_SUBGRUPO : undefined}
+            erro={
+              falhouAoRecarregar
+                ? FALHOU_AO_CONFERIR_SUBGRUPOS
+                : semSubgrupo
+                  ? ESCOLHA_UM_SUBGRUPO
+                  : undefined
+            }
           >
             <MultiSelect
               id="subgrupos-membro"

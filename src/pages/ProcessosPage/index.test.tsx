@@ -56,10 +56,14 @@ describe("ProcessosPage", () => {
   it("mostra a lista de processos depois de carregar, com pagina/tamanhoPagina", async () => {
     renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
     expect(await screen.findByText("Meu processo")).toBeInTheDocument();
-    expect(mocks.listarProcessos).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
+    // `objectContaining` porque a chamada agora leva os filtros vazios
+    // junto -- a paginação vai SEMPRE, com ou sem filtro.
+    expect(mocks.listarProcessos).toHaveBeenCalledWith(
+      expect.objectContaining({ pagina: 1, tamanhoPagina: 10 }),
+    );
   });
 
-  it("busca troca os parâmetros (ignora pagina/tamanhoPagina) -- texto livre, não só número", async () => {
+  it("🔴 busca MANTÉM a paginação -- o servidor pagina o filtro desde a Fase 1a", async () => {
     const user = userEvent.setup();
     renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
     await screen.findByText("Meu processo");
@@ -67,6 +71,10 @@ describe("ProcessosPage", () => {
     await user.type(screen.getByLabelText("Pesquisar processo por número, cliente ou apelido"), "cobrança de honorários");
 
     await waitFor(() =>
+      /* Este teste travava o contrato ANTIGO: afirmava que a busca descarta
+       * `pagina`/`tamanhoPagina`. Era por isso que a suíte passava verde com
+       * o defeito -- filtrar tornava inalcançável tudo além dos 10
+       * primeiros, e o teste dizia que estava certo. */
       expect(mocks.listarProcessos).toHaveBeenCalledWith({
         busca: "cobrança de honorários",
         clienteId: "",
@@ -74,6 +82,8 @@ describe("ProcessosPage", () => {
         situacaoIds: [],
         dataVerificarAte: "",
         prazoFinalAte: "",
+        pagina: 1,
+        tamanhoPagina: 10,
       })
     );
   });
@@ -293,7 +303,9 @@ describe("ProcessosPage", () => {
     await user.click(screen.getByRole("button", { name: "Aplicar" }));
 
     await waitFor(() =>
-      expect(mocks.listarProcessos).toHaveBeenLastCalledWith({ pagina: 1, tamanhoPagina: 10 }),
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ situacaoIds: [], pagina: 1, tamanhoPagina: 10 }),
+      ),
     );
   });
 
@@ -340,7 +352,44 @@ describe("ProcessosPage", () => {
     await user.click(await screen.findByRole("button", { name: "Todos os clientes" }));
 
     await waitFor(() =>
-      expect(mocks.listarProcessos).toHaveBeenLastCalledWith({ pagina: 1, tamanhoPagina: 10 }),
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ situacaoIds: [], pagina: 1, tamanhoPagina: 10 }),
+      ),
     );
+  });
+});
+
+describe("paginação com filtro ativo", () => {
+  it("🔴 a barra de páginas NÃO some quando há filtro", async () => {
+    /* O servidor pagina o filtro desde a Fase 1a -- o comentário dele diz
+     * "antes devolvia o resultado inteiro num payload só, e o front tinha
+     * que esconder a paginação". O front não acompanhou: filtrar por uma
+     * situação com 40 processos mostrava 10, a contagem dizia 40, e não
+     * havia barra de páginas nem seletor de "Por página". Os outros 30 não
+     * tinham como ser vistos. */
+    const user = userEvent.setup();
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO],
+      total: 40,
+      total_paginas: 4,
+    });
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await screen.findByText("Meu processo");
+
+    await user.type(
+      screen.getByLabelText("Pesquisar processo por número, cliente ou apelido"),
+      "cobrança",
+    );
+
+    // ⚠️ Espera o filtro ficar ATIVO antes de olhar a barra. A busca tem 300ms
+    // de debounce: sem esta espera o teste conferia a tela ainda sem filtro,
+    // e passava mesmo com o defeito de volta.
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenCalledWith(
+        expect.objectContaining({ busca: "cobrança" }),
+      ),
+    );
+
+    expect(await screen.findByRole("button", { name: "2" })).toBeInTheDocument();
   });
 });

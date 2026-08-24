@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { estaAutenticado, limparTokens, logout } from "../services";
+import { estaAutenticado, getApelido, limparTokens, logout, salvarApelido } from "../services";
 import { setAutenticacaoInvalidaListener } from "../services/authBridge";
 
 /** Estado de sessão do app: autenticado, sessão expirada, entrar e sair.
@@ -13,10 +13,31 @@ import { setAutenticacaoInvalidaListener } from "../services/authBridge";
 export function useSessao() {
   const [autenticado, setAutenticado] = useState(() => estaAutenticado());
   const [sessaoExpirada, setSessaoExpirada] = useState(false);
+  /** 🔴 O apelido precisa ser ESTADO, não leitura de `localStorage` no render.
+   *
+   * `getApelido()` era chamado direto no corpo de cinco componentes. Com o
+   * React Compiler ligado (vite.config.ts), uma chamada sem dependência é
+   * memoizada por todo o mount -- e o `AppShell` não desmonta ao navegar.
+   * Resultado: a pessoa editava o apelido, via "Perfil atualizado", e a
+   * topbar logo acima continuava com o nome antigo a SESSÃO INTEIRA, até um
+   * F5. No formulário era pior: `apelidoSalvo` ficava velho, então "Salvar"
+   * continuava habilitado (parecia que não tinha salvo) e "Cancelar"
+   * devolvia o nome ANTIGO, que já não era o do servidor.
+   *
+   * É exatamente o que o docstring de `salvarApelido` diz existir pra
+   * evitar -- e não evitava, porque ninguém re-renderizava. */
+  const [apelido, setApelidoEstado] = useState(() => getApelido() || "");
+
+  const trocarApelido = useCallback((novo: string) => {
+    salvarApelido(novo);
+    setApelidoEstado(novo);
+  }, []);
 
   const entrar = useCallback(() => {
     setAutenticado(true);
     setSessaoExpirada(false);
+    // O login acabou de gravar o apelido -- traz pro estado.
+    setApelidoEstado(getApelido() || "");
   }, []);
 
   /** ⚠️ NÃO espera a rede. `logout()` apaga os tokens locais de forma
@@ -52,5 +73,5 @@ export function useSessao() {
     return () => setAutenticacaoInvalidaListener(null);
   }, [expirar]);
 
-  return { autenticado, sessaoExpirada, entrar, sair, expirar };
+  return { autenticado, sessaoExpirada, apelido, entrar, sair, expirar, trocarApelido };
 }

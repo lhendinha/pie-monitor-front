@@ -1,7 +1,9 @@
 import { Box, Menu, Portal, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
-import { getApelido, getEmail } from "../../../services";
+import { useSessaoContexto } from "../../../contexts/SessaoContext";
+
+import { getEmail } from "../../../services";
 import Avatar from "../../Avatar";
 import { BotaoNu } from "../../BotaoNu";
 import IconeChevron from "../../Icons/IconeChevron";
@@ -24,7 +26,12 @@ interface MenuUsuarioProps {
  */
 export default function MenuUsuario({ onSair }: MenuUsuarioProps) {
   const navegar = useNavigate();
-  const nome = getApelido() || getEmail() || "";
+  // ⚠️ Do CONTEXTO, não de `getApelido()` no render: com o React Compiler
+  // ligado, a leitura sem dependência fica memoizada por todo o mount -- e
+  // o AppShell não desmonta ao navegar, então o nome antigo ficava na tela
+  // a sessão inteira depois de editar o perfil.
+  const { apelido } = useSessaoContexto();
+  const nome = apelido || getEmail() || "";
 
   return (
     <Menu.Root>

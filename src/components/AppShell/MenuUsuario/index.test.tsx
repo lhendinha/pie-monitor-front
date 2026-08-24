@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SessaoProvider, useSessaoContexto } from "../../../contexts/SessaoContext";
 import { renderComProviders } from "../../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
@@ -19,9 +20,14 @@ vi.mock("../../../services", async () => {
 import MenuUsuario from "./index";
 
 function montar(onSair = vi.fn()) {
+  // O nome vem do contexto de sessão agora, não de `getApelido()` no render
+  // -- o React Compiler congelava a leitura direta e a topbar ficava com o
+  // nome antigo a sessão inteira depois de editar o perfil.
   renderComProviders(
     <MemoryRouter>
-      <MenuUsuario onSair={onSair} />
+      <SessaoProvider>
+        <MenuUsuario onSair={onSair} />
+      </SessaoProvider>
     </MemoryRouter>,
   );
   return onSair;
@@ -74,5 +80,43 @@ describe("MenuUsuario", () => {
     mocks.getApelido.mockReturnValue(null);
     montar();
     expect(screen.getByText("ana@x.com")).toBeInTheDocument();
+  });
+});
+
+describe("apelido reativo", () => {
+  it("🔴 o nome novo aparece sem recarregar a página", async () => {
+    /* `getApelido()` era chamado no corpo do render. Com o React Compiler
+     * ligado (vite.config.ts), uma leitura sem dependência é memoizada por
+     * todo o mount -- e o AppShell não desmonta ao navegar. A pessoa editava
+     * o apelido, via "Perfil atualizado", e a topbar logo acima continuava
+     * com o nome antigo A SESSÃO INTEIRA, até um F5. É exatamente o que o
+     * docstring de `salvarApelido` diz existir pra evitar. */
+    function Cenario() {
+      const { trocarApelido } = useSessaoContexto();
+      return (
+        <>
+          <MenuUsuario onSair={vi.fn()} />
+          <button type="button" onClick={() => trocarApelido("Nome Novo")}>
+            trocar
+          </button>
+        </>
+      );
+    }
+
+    mocks.getApelido.mockReturnValue("Nome Antigo");
+    const user = userEvent.setup();
+    renderComProviders(
+      <MemoryRouter>
+        <SessaoProvider>
+          <Cenario />
+        </SessaoProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("Nome Antigo")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "trocar" }));
+
+    expect(await screen.findByText("Nome Novo")).toBeInTheDocument();
+    expect(screen.queryByText("Nome Antigo")).not.toBeInTheDocument();
   });
 });

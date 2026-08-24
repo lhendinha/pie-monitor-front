@@ -53,7 +53,14 @@ export default function ProcessosPage() {
   const apoio = useCatalogosDeProcesso();
   const queryClient = useQueryClient();
 
-  const parametrosBusca = f.filtroAtivo ? f.filtros : { pagina, tamanhoPagina };
+  /** 🔴 A paginação vai SEMPRE, com ou sem filtro.
+   *
+   * O servidor passou a paginar a busca filtrada na Fase 1a; aqui os
+   * parâmetros de página eram descartados quando havia filtro. Filtrar por
+   * uma situação com 40 processos mostrava 10, a contagem dizia 40, e não
+   * havia barra de páginas nem seletor de "Por página" -- os outros 30 não
+   * tinham como ser vistos. */
+  const parametrosBusca = { ...f.filtros, pagina, tamanhoPagina };
 
   const processosQuery = useQuery<RespostaDeProcessosPaginada>({
     queryKey: qk.processos(parametrosBusca),
@@ -145,7 +152,10 @@ export default function ProcessosPage() {
           {/* A paginação fica FORA do apagado: é o controle que a pessoa
               acabou de usar, e apagá-lo junto sugeriria que ele também
               parou de funcionar. */}
-          {!f.filtroAtivo && processos.length > 0 && (
+          {/* 🔴 Sem `!f.filtroAtivo`: o servidor pagina o filtro desde a
+              Fase 1a, e esconder a barra tornava inalcançável tudo que
+              passasse da primeira página do conjunto filtrado. */}
+          {processos.length > 0 && (
             <Pagination
               pagina={pagina}
               totalPaginas={totalPaginas}

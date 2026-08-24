@@ -82,3 +82,29 @@ describe("EditarMembroForm", () => {
     expect(onFechar).toHaveBeenCalled();
   });
 });
+
+describe("conferência dos subgrupos atuais", () => {
+  it("🔴 falha ao conferir TRAVA o salvar, em vez de salvar o conjunto velho", async () => {
+    /* O efeito anti-staleness usava `.then().finally()` SEM `.catch()`. O
+     * `.finally` não converte rejeição: virava unhandled promise rejection,
+     * nada aparecia pra pessoa, e `subgruposCarregados` virava `true` do
+     * mesmo jeito -- o Salvar destravava com o conjunto VELHO da prop.
+     *
+     * O servidor reconcilia pelo conjunto exato enviado e solta as tarefas
+     * de quem sai. Então um blip de rede num "Editar" aberto só pra corrigir
+     * o apelido tirava a pessoa de um subgrupo que alguém tinha acabado de
+     * adicionar, e as tarefas dela lá ficavam sem responsável. Sem aviso. */
+    const membro = montarMembro({ subgrupos: ["s1"] });
+    mocks.listarTodosOsMembrosDoGrupo.mockRejectedValue(new Error("rede caiu"));
+    renderComProviders(
+      <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
+    );
+
+    expect(
+      await screen.findByText(/Não foi possível conferir os subgrupos atuais/),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /Salvar/ })).toBeDisabled(),
+    );
+  });
+});

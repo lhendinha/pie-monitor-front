@@ -11,7 +11,8 @@ import {
   RotuloDeSecao,
   useToast,
 } from "../../../../components";
-import { atualizarMeuPerfil, getApelido, getEmail, salvarApelido } from "../../../../services";
+import { useSessaoContexto } from "../../../../contexts/SessaoContext";
+import { atualizarMeuPerfil, getEmail } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 
 interface FormularioIdentificacaoProps {
@@ -25,16 +26,20 @@ interface FormularioIdentificacaoProps {
  */
 export default function FormularioIdentificacao({ onAlterarSenha }: FormularioIdentificacaoProps) {
   const email = getEmail() || "";
-  const apelidoSalvo = getApelido() || "";
+  // ⚠️ `apelidoSalvo` vem do CONTEXTO. Lido de `getApelido()` no render, o
+  // React Compiler o congelava: depois de salvar, `mudou` continuava `true`
+  // (o botão "Salvar" parecia não ter funcionado) e "Cancelar" devolvia o
+  // nome ANTIGO, que já não era o do servidor.
+  const { apelido: apelidoSalvo, trocarApelido } = useSessaoContexto();
   const [apelido, setApelido] = useState(apelidoSalvo);
   const toast = useToast();
 
   const salvarMutation = useMutation({
     mutationFn: () => atualizarMeuPerfil(apelido.trim()),
     onSuccess: () => {
-      // A topbar lê o apelido da sessão a cada render: sem gravar aqui, ela
-      // seguiria com o nome antigo e a edição pareceria não ter salvado.
-      salvarApelido(apelido.trim());
+      // Grava no storage E no estado da sessão -- é o estado que faz a
+      // topbar e este formulário re-renderizarem com o nome novo.
+      trocarApelido(apelido.trim());
       toast.sucesso("Perfil atualizado.");
     },
     onError: (err) => toastErroMutation(toast, err, "Não foi possível salvar."),
