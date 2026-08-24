@@ -23,13 +23,12 @@ import {
   ModalDeTarefa,
   useToast,
 } from "../../components";
-import { PERIODO_TODOS, TETO_POR_PAGINA } from "../../constants";
+import { PERIODO_TODOS } from "../../constants";
 import {
   atualizarTarefa,
   detalhesTarefa,
   listarTodosOsMembrosDoGrupo,
   listarQuadro,
-  listarSubgrupos,
   papelAtende,
 } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
@@ -44,11 +43,11 @@ import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type {
   RespostaDeMembros,
-  RespostaDeSubgrupos,
   RespostaDoQuadro,
 } from "../../types/respostas";
 import type { Tarefa } from "../../types";
 import type { MoverTarefa, TarefaDoLink } from "./types";
+import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
  * (`PERIODS = { kanban: 'mes' }`).
@@ -106,12 +105,9 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
-    queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-  });
+  const subgruposQuery = useTodosOsSubgrupos();
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
-  const subgrupos = subgruposQuery.data?.subgrupos || [];
+  const subgrupos = subgruposQuery.data || [];
 
   // Um subgrupo abre por padrão -- sem isso a tela ficaria em branco
   // esperando uma escolha que quase sempre é a mesma. É o ÚLTIMO da lista,

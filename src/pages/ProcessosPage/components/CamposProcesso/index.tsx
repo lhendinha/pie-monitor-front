@@ -1,5 +1,4 @@
 import { Input, Textarea } from "@chakra-ui/react";
-import { useQuery } from "@tanstack/react-query";
 
 import {
   Campo,
@@ -8,16 +7,10 @@ import {
   Select,
   SeletorData,
 } from "../../../../components";
-import { TETO_POR_PAGINA } from "../../../../constants";
-import { listarClientes, listarOpcoesProcesso } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
-import { qk } from "../../../../services/queryKeys";
 import type { OpcaoProcesso } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
-import type {
-  RespostaDeClientes,
-  RespostaDeOpcoes,
-} from "../../../../types/respostas";
+import { useOpcoesDeProcesso, useTodosOsClientes } from "../../../../hooks/useCatalogos";
 
 interface CamposProcessoProps {
   valores: CamposOpcionaisProcesso;
@@ -36,26 +29,17 @@ interface CamposProcessoProps {
  * (fase/situação), prazos e por fim as anotações.
  */
 export default function CamposProcesso({ valores, onMudar }: CamposProcessoProps) {
-  const clientesQuery = useQuery<RespostaDeClientes>({
-    queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),
-  });
+  const clientesQuery = useTodosOsClientes();
   useToastOnQueryError(clientesQuery.error, "Não foi possível carregar os clientes.");
-  const clientes = clientesQuery.data?.clientes || [];
+  const clientes = clientesQuery.data || [];
 
-  const fasesQuery = useQuery<RespostaDeOpcoes>({
-    queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
-  });
+  const fasesQuery = useOpcoesDeProcesso("fase");
   useToastOnQueryError(fasesQuery.error, "Não foi possível carregar as fases.");
-  const fases = fasesQuery.data?.opcoes || [];
+  const fases = fasesQuery.data || [];
 
-  const situacoesQuery = useQuery<RespostaDeOpcoes>({
-    queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
-  });
+  const situacoesQuery = useOpcoesDeProcesso("situacao");
   useToastOnQueryError(situacoesQuery.error, "Não foi possível carregar as situações.");
-  const situacoes = situacoesQuery.data?.opcoes || [];
+  const situacoes = situacoesQuery.data || [];
 
   /** O dropdown só oferece as ativas como escolha nova, mas preserva o valor
    * atual mesmo se ele apontar pra uma opção já desativada. O "Nenhuma"

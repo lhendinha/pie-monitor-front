@@ -17,7 +17,6 @@ import {
   listarAtendimentos,
   listarTodosOsMembrosDoGrupo,
   listarQuadro,
-  listarSubgrupos,
   papelAtende,
 } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -45,10 +44,10 @@ import type { FiltrosDaAgenda as Filtros } from "./types";
 import type {
   RespostaDeAtendimentosResumidos,
   RespostaDeMembros,
-  RespostaDeSubgrupos,
   RespostaDoQuadro,
 } from "../../types/respostas";
 import type { Tarefa } from "../../types";
+import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 
 /** Agenda: as tarefas do escritório projetadas por data.
  *
@@ -75,12 +74,9 @@ export default function AgendaPage() {
 
   const isoDeHoje = hojeISO();
 
-  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
-    queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-  });
+  const subgruposQuery = useTodosOsSubgrupos();
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
-  const subgrupos = subgruposQuery.data?.subgrupos || [];
+  const subgrupos = subgruposQuery.data || [];
 
   const membrosQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.todosOsMembros(),

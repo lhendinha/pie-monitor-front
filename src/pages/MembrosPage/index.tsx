@@ -4,16 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CartaoDeTabela, EstadoDeErro, Esqueleto, Pagination } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
-import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo, listarSubgrupos } from "../../services";
+import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import EditarMembroForm from "./components/EditarMembroForm";
 import TabelaDeMembros from "./components/TabelaDeMembros";
 import type { Membro } from "../../types";
+import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 import type {
   RespostaDeGrupos,
   RespostaDeMembrosPaginada,
-  RespostaDeSubgrupos,
 } from "../../types/respostas";
 
 /** Sub-aba "Membros" da tela de Grupo.
@@ -40,13 +40,7 @@ export default function MembrosPage() {
   });
   useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
-  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
-    // A lista inteira, e não uma página: os nomes daqui resolvem os ids
-    // que vêm em `membro.subgrupos`, e qualquer pessoa pode estar em
-    // qualquer subgrupo do grupo.
-    queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
-  });
+  const subgruposQuery = useTodosOsSubgrupos();
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
   const gruposQuery = useQuery<RespostaDeGrupos>({
@@ -57,7 +51,7 @@ export default function MembrosPage() {
   useToastOnQueryError(gruposQuery.error, "Não foi possível carregar os grupos.");
 
   const pessoas = membrosQuery.data?.membros || [];
-  const subgrupos = subgruposQuery.data?.subgrupos || [];
+  const subgrupos = subgruposQuery.data || [];
   const grupos = gruposQuery.data?.grupos || [];
 
   /** 🔴 O recorte agora é do SERVIDOR.
@@ -76,7 +70,13 @@ export default function MembrosPage() {
   const nomePorSubgrupoId = new Map(subgrupos.map((s) => [s.subgrupo_id, s.nome]));
 
   function recarregarTudo() {
-    queryClient.invalidateQueries({ queryKey: qk.membros() });
+    // 🔴 PREFIXO nu, não `qk.membros()`. A chave virou `["membros", {}]`, e o
+    // `partialMatchKey` do React Query rejeita `{}` contra a string `"todos"`
+    // por tipo -- então invalidar com `qk.membros()` não alcançava
+    // `qk.todosOsMembros()` nem os membros de subgrupo. O sino fica montado a
+    // sessão inteira: editar o apelido de alguém não derrubava o cache dele,
+    // e o nome antigo seguia na tela até a janela recuperar o foco.
+    queryClient.invalidateQueries({ queryKey: ["membros"] });
     queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
     if (podeEditar) queryClient.invalidateQueries({ queryKey: qk.grupos() });
   }

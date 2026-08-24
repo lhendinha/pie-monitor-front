@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -60,6 +60,22 @@ export default function ProcessosPage() {
    * uma situação com 40 processos mostrava 10, a contagem dizia 40, e não
    * havia barra de páginas nem seletor de "Por página" -- os outros 30 não
    * tinham como ser vistos. */
+  /** 🔴 Trocar o filtro volta pra página 1.
+   *
+   * Enquanto a paginação era descartada com filtro ativo, `pagina` parada em
+   * 3 era inofensiva. Agora que ela vai sempre, filtrar estando na página 3
+   * pede a página 3 do conjunto FILTRADO -- que costuma não existir. O
+   * servidor devolve lista vazia, e como a barra de páginas só aparece com
+   * `processos.length > 0`, ela some junto: não sobra nem o botão "1" pra
+   * clicar. A pessoa fica presa até limpar o filtro.
+   *
+   * A assinatura é comparada como string porque `f.filtros` é um objeto
+   * novo a cada render. */
+  const assinaturaDosFiltros = JSON.stringify(f.filtros);
+  useEffect(() => {
+    setPagina(1);
+  }, [assinaturaDosFiltros]);
+
   const parametrosBusca = { ...f.filtros, pagina, tamanhoPagina };
 
   const processosQuery = useQuery<RespostaDeProcessosPaginada>({

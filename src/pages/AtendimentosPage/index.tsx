@@ -12,13 +12,11 @@ import {
   Esqueleto,
   Pagination,
 } from "../../components";
-import { TAMANHO_PAGINA_PADRAO, TETO_POR_PAGINA } from "../../constants";
+import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import {
   listarAtendimentos,
-  listarClientes,
   listarTodosOsMembrosDoGrupo,
-  listarSubgrupos,
   papelAtende,
 } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -27,11 +25,10 @@ import CabecalhoAtendimentos from "./components/CabecalhoAtendimentos";
 import LinhaDeAtendimento from "./components/LinhaDeAtendimento";
 import NovoAtendimentoForm from "./components/NovoAtendimentoForm";
 import { STATUS_TODOS, statusParaApi } from "./constants";
+import { useTodosOsClientes, useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 import type {
   RespostaDeAtendimentosPaginada,
-  RespostaDeClientes,
   RespostaDeMembros,
-  RespostaDeSubgrupos,
 } from "../../types/respostas";
 
 /** Listagem de atendimentos.
@@ -77,22 +74,16 @@ export default function AtendimentosPage() {
   /** Os subgrupos são do modal de criação, e ele precisa deles ABERTO --
    * por isso a consulta fica aqui, não lá dentro: assim ela já está pronta
    * (ou a caminho) quando o modal abre, em vez de começar no clique. */
-  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
-    queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-  });
+  const subgruposQuery = useTodosOsSubgrupos();
 
   /** Nomes dos clientes, pra linha mostrar nome em vez de id.
    *
    * Uma consulta pra lista inteira, não uma por linha: dez atendimentos com
    * dois clientes cada seriam vinte requisições pra mostrar vinte palavras.
    */
-  const clientesQuery = useQuery<RespostaDeClientes>({
-    queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }) as Promise<RespostaDeClientes>,
-  });
+  const clientesQuery = useTodosOsClientes();
   const nomePorId = useMemo(
-    () => new Map((clientesQuery.data?.clientes || []).map((c) => [c.cliente_id, c.nome])),
+    () => new Map((clientesQuery.data || []).map((c) => [c.cliente_id, c.nome])),
     [clientesQuery.data],
   );
 
@@ -204,7 +195,7 @@ export default function AtendimentosPage() {
 
       {modalAberto && (
         <NovoAtendimentoForm
-          subgrupos={subgruposQuery.data?.subgrupos || []}
+          subgrupos={subgruposQuery.data || []}
           carregandoSubgrupos={subgruposQuery.isPending}
           onSalvo={() => {
             setModalAberto(false);

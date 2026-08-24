@@ -393,3 +393,40 @@ describe("paginação com filtro ativo", () => {
     expect(await screen.findByRole("button", { name: "2" })).toBeInTheDocument();
   });
 });
+
+describe("filtro e página", () => {
+  it("🔴 aplicar filtro volta pra página 1 -- senão a pessoa fica presa numa tela vazia", async () => {
+    /* Regressão introduzida ao fazer a paginação valer também com filtro:
+     * `pagina` só era resetada ao trocar o TAMANHO da página. Filtrar
+     * estando na página 3 pedia a página 3 do conjunto filtrado, que
+     * costuma não existir -- o servidor devolvia lista vazia e a barra de
+     * páginas sumia junto (ela só aparece com `processos.length > 0`).
+     * Não sobrava nem o botão "1" pra clicar. */
+    const user = userEvent.setup();
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO],
+      total: 40,
+      total_paginas: 4,
+    });
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await screen.findByText("Meu processo");
+
+    await user.click(await screen.findByRole("button", { name: "3" }));
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ pagina: 3 }),
+      ),
+    );
+
+    await user.type(
+      screen.getByLabelText("Pesquisar processo por número, cliente ou apelido"),
+      "cobrança",
+    );
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ busca: "cobrança", pagina: 1 }),
+      ),
+    );
+  });
+});

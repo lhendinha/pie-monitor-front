@@ -1,6 +1,6 @@
 import { Input } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
@@ -17,14 +17,11 @@ import {
   PAPEIS_CONVIDAVEIS,
   PAPEL_PADRAO_DO_CONVITE,
 } from "../../constants";
-import { criarConvite, listarSubgrupos } from "../../services";
+import { criarConvite } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
-import { qk } from "../../services/queryKeys";
 import { emailValido } from "../../utils";
 import type { Papel } from "../../types";
-import type {
-  RespostaDeSubgrupos,
-} from "../../types/respostas";
+import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 
 /** Sub-aba "Convidar" da tela de Grupo.
  *
@@ -39,13 +36,9 @@ export default function ConvidarPage() {
   const [erro, setErro] = useState("");
   const toast = useToast();
 
-  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
-    // O MultiSelect precisa da lista inteira, não de uma página.
-    queryKey: qk.subgrupos({ tamanhoPagina: 100 }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: 100 }),
-  });
+  const subgruposQuery = useTodosOsSubgrupos();
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
-  const subgrupos = subgruposQuery.data?.subgrupos || [];
+  const subgrupos = subgruposQuery.data || [];
 
   const convidarMutation = useMutation({
     mutationFn: () => criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados),

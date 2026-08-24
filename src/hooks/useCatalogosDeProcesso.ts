@@ -1,65 +1,38 @@
-import { useQuery } from "@tanstack/react-query";
 
-import { listarClientes, listarOpcoesProcesso, listarSubgrupos } from "../services";
 import { useToastOnQueryError } from "../services/queryClient";
-import { qk } from "../services/queryKeys";
-import { TETO_POR_PAGINA } from "../constants";
-import { todasAsPaginas } from "../services/api/paginacao";
-import type { Cliente, OpcaoProcesso, Subgrupo } from "../types";
+import { useOpcoesDeProcesso, useTodosOsClientes, useTodosOsSubgrupos } from "./useCatalogos";
+import type { OpcaoProcesso } from "../types";
 import type { ComClientes } from "../types";
-import type {
-  RespostaDeClientes,
-  RespostaDeOpcoes,
-  RespostaDeSubgrupos,
-} from "../types/respostas";
 
 /** As quatro listas que a tela de Processos usa pra traduzir id em nome:
  * subgrupos, clientes, fases e situações.
  *
- * ⚠️ `todasAsPaginas` e não uma página só. O docstring abaixo sempre disse
- * que "precisa do conjunto inteiro, não de uma página" -- mas o código
- * pedia `TETO_POR_PAGINA`, que é o MÁXIMO que a API aceita (100). Acima de
- * 100 clientes a lista vinha cortada e o `rotuloOpcao` caía pro id cru na
- * tela, com o fallback documentado como se fosse só "ainda carregando". O
- * padrão de percorrer páginas já existia em `useTarefasDoQuadro`.
+ * ⚠️ Vem tudo de `useCatalogos.ts`, que é onde cada catálogo tem UMA função
+ * de busca.
  *
- * As **mesmas queryKeys** que os formulários usam -- é isso que faz o cache
- * ser compartilhado em vez de refazer o fetch só porque outra tela montou.
+ * Antes as consultas viviam aqui e dividiam a `queryKey` com nove outras
+ * espalhadas pelas telas, que pediam uma página só. O React Query deduplica
+ * por chave e roda o `queryFn` de quem registra primeiro -- e
+ * `CamposProcesso`, que monta DENTRO da ProcessosPage, sobrescrevia o
+ * catálogo completo com a versão truncada em 100.
  *
  * Precisa do conjunto inteiro, não de uma página: um processo qualquer da
  * lista pode apontar pra qualquer subgrupo ou cliente, e com meia lista o
  * nome viraria o id cru na tela.
  */
 export function useCatalogosDeProcesso() {
-  const subgruposQuery = useQuery<RespostaDeSubgrupos>({
-    queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: async () => ({ subgrupos: await todasAsPaginas<Subgrupo>(listarSubgrupos, "subgrupos") }),
-  });
+  // Uma chave, uma função de busca -- ver `useCatalogos.ts`.
+  const subgruposQuery = useTodosOsSubgrupos();
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
-  const clientesQuery = useQuery<RespostaDeClientes>({
-    queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: async () => ({ clientes: await todasAsPaginas<Cliente>(listarClientes, "clientes") }),
-  });
+  const clientesQuery = useTodosOsClientes();
+  const fasesQuery = useOpcoesDeProcesso("fase");
+  const situacoesQuery = useOpcoesDeProcesso("situacao");
 
-  const fasesQuery = useQuery<RespostaDeOpcoes>({
-    queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: async () => ({
-      opcoes: await todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso("fase", o), "opcoes"),
-    }),
-  });
-
-  const situacoesQuery = useQuery<RespostaDeOpcoes>({
-    queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: async () => ({
-      opcoes: await todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso("situacao", o), "opcoes"),
-    }),
-  });
-
-  const subgrupos = subgruposQuery.data?.subgrupos || [];
-  const clientes = clientesQuery.data?.clientes || [];
-  const fases = fasesQuery.data?.opcoes || [];
-  const situacoes = situacoesQuery.data?.opcoes || [];
+  const subgrupos = subgruposQuery.data || [];
+  const clientes = clientesQuery.data || [];
+  const fases = fasesQuery.data || [];
+  const situacoes = situacoesQuery.data || [];
 
   /** Cai pro próprio id quando o nome não é encontrado. Mostrar o id é feio,
    * mas some da tela é pior -- e acontece de verdade enquanto as listas

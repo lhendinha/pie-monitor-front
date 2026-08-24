@@ -19,12 +19,11 @@ import {
   Select,
   useToast,
 } from "../../components";
-import { STATUS_DE_ATENDIMENTO, TETO_POR_PAGINA } from "../../constants";
+import { STATUS_DE_ATENDIMENTO } from "../../constants";
 import {
   adicionarRegistro,
   atualizarAtendimento,
   detalhesAtendimento,
-  listarClientes,
   listarTodosOsMembrosDoGrupo,
   papelAtende,
   removerAtendimento,
@@ -36,8 +35,8 @@ import { contar, mascararNumeroProcesso } from "../../utils";
 import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
 import type { Atendimento } from "../../types";
+import { useTodosOsClientes } from "../../hooks/useCatalogos";
 import type {
-  RespostaDeClientes,
   RespostaDeMembros,
 } from "../../types/respostas";
 
@@ -63,12 +62,9 @@ export default function AtendimentoDetalhePage() {
     retry: false,
   });
 
-  const clientesQuery = useQuery<RespostaDeClientes>({
-    queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }) as Promise<RespostaDeClientes>,
-  });
+  const clientesQuery = useTodosOsClientes();
   const nomePorCliente = useMemo(
-    () => new Map((clientesQuery.data?.clientes || []).map((c) => [c.cliente_id, c.nome])),
+    () => new Map((clientesQuery.data || []).map((c) => [c.cliente_id, c.nome])),
     [clientesQuery.data],
   );
 

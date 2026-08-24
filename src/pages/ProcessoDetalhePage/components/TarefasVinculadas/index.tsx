@@ -31,7 +31,7 @@ export default function TarefasVinculadas({ numeroProcesso }: TarefasVinculadasP
   // coisas diferentes sobre o mesmo dado.
   if (query.isError) {
     return (
-      <Text fontSize="13px" color="status-bad-text">
+      <Text fontSize="13px" color="status.bad.text">
         Não foi possível carregar as tarefas deste processo.
       </Text>
     );

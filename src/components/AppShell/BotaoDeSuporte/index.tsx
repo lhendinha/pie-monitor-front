@@ -1,8 +1,9 @@
 import { Link, Text } from "@chakra-ui/react";
 
-import { getApelido, getEmail } from "../../../services";
+import { getEmail } from "../../../services";
 import { montarLinkDeSuporte } from "../../../utils";
 import { IconeSuporte } from "../../Icons";
+import { useSessaoContexto } from "../../../contexts/SessaoContext";
 
 /** "Suporte" no pé do menu lateral.
  *
@@ -14,7 +15,11 @@ import { IconeSuporte } from "../../Icons";
  * que nunca fica ativo -- não é uma tela do sistema, é uma saída dele.
  */
 export default function BotaoDeSuporte() {
-  const href = montarLinkDeSuporte({ apelido: getApelido(), email: getEmail() });
+  // Do CONTEXTO: este componente vive no rodapé do menu lateral, dentro do
+  // AppShell que não desmonta ao navegar -- lido no render, o apelido ficava
+  // congelado e o `mailto:` levava o nome antigo a sessão inteira.
+  const { apelido } = useSessaoContexto();
+  const href = montarLinkDeSuporte({ apelido, email: getEmail() });
 
   return (
     <Link

@@ -1,5 +1,5 @@
 import { chamar } from "./client";
-import { TETO_POR_PAGINA } from "../../constants";
+import { todasAsPaginas } from "./paginacao";
 import type { DadosDoMembro } from "../../types/requisicoes";
 import type { Membro } from "../../types";
 
@@ -35,20 +35,12 @@ export function listarMembrosDoGrupo(opcoes: OpcoesListarMembros = {}) {
  * `useTarefasDoQuadro`.
  */
 export async function listarTodosOsMembrosDoGrupo(): Promise<{ membros: Membro[] }> {
-  const juntos: Membro[] = [];
-  let pagina = 1;
-  for (;;) {
-    const resposta = (await listarMembrosDoGrupo({
-      pagina,
-      tamanhoPagina: TETO_POR_PAGINA,
-    })) as { membros: Membro[]; total: number; total_paginas: number };
-    juntos.push(...resposta.membros);
-    // Para quando juntou o `total` anunciado. O segundo limite é rede de
-    // segurança: se as duas contas discordarem, melhor parar que girar.
-    if (juntos.length >= resposta.total || pagina >= resposta.total_paginas) break;
-    pagina += 1;
-  }
-  return { membros: juntos };
+  // ⚠️ `todasAsPaginas` e não um laço próprio. O laço que estava aqui não
+  // tinha as duas proteções que o helper ganhou horas depois, na mesma
+  // auditoria: parar quando a página vem VAZIA, e tolerar `total`/
+  // `total_paginas` ausentes. Sem elas, uma resposta sem contagem fazia o
+  // laço girar pra sempre martelando `GET /grupos/membros`.
+  return { membros: await todasAsPaginas<Membro>(listarMembrosDoGrupo, "membros") };
 }
 
 export function listarMembrosDoSubgrupo(subgrupoId: string) {

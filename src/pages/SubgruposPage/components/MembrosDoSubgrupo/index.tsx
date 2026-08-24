@@ -238,7 +238,6 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
           aviso="As tarefas dela neste subgrupo ficam sem responsável."
           rotulo="Remover"
           reversivel
-          confirmando={removerMutation.isPending}
           onConfirmar={() => {
             removerMutation.mutate(aConfirmarSaida);
             setAConfirmarSaida(null);

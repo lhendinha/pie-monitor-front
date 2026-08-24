@@ -58,4 +58,19 @@ export const qk = {
   clientes: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) => ["clientes", params] as const,
   opcoesProcesso: (tipo: "fase" | "situacao", params: { pagina?: number; tamanhoPagina?: number } = {}) =>
     ["opcoesProcesso", tipo, params] as const,
+
+  // --- catálogos completos ---------------------------------------------
+  //
+  // 🔴 Chave PRÓPRIA pra "todas as páginas", separada da chave de uma
+  // página. Sem isso, duas funções de busca diferentes dividiam a mesma
+  // chave: o React Query deduplica por chave e roda o `queryFn` de quem
+  // registra primeiro, então o resultado dependia da ordem de montagem --
+  // e `CamposProcesso`, que monta DENTRO da ProcessosPage, sobrescrevia o
+  // catálogo completo com a versão truncada em 100.
+  //
+  // O prefixo continua o mesmo (`["clientes"]`, `["subgrupos"]`,
+  // `["opcoesProcesso", tipo]`), então invalidar por prefixo derruba os dois.
+  todosOsClientes: () => ["clientes", "todos"] as const,
+  todosOsSubgrupos: () => ["subgrupos", "todos"] as const,
+  todasAsOpcoes: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo, "todos"] as const,
 };

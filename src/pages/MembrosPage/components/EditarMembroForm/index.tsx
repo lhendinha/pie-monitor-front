@@ -78,7 +78,12 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
         if (grupoAlteradoRef.current) return;
         const fresco = d.membros.find((m) => m.email === membro.email);
         if (fresco) setSubgruposSelecionados(fresco.subgrupos || []);
-        else setFalhouAoRecarregar(true);
+        // ⚠️ Não achar a pessoa é caso de SUCESSO da rede, e a mensagem de
+        // "não consegui conferir / feche e abra de novo" não recupera nada
+        // aqui: se ela realmente saiu do grupo, reabrir dá o mesmo. Fica com
+        // o conjunto que veio na prop e o Salvar segue liberado -- é o
+        // comportamento de antes, e o servidor recusa se estiver errado.
+        // (sem ação: ver comentário acima)
         setSubgruposCarregados(true);
       })
       // 🔴 O `.catch` faltava, e o `.finally` NÃO converte rejeição -- ela
