@@ -17,7 +17,7 @@ import { ESCOLHA_UM_SUBGRUPO, HIERARQUIA_PAPEIS, NOME_PAPEL } from "../../../../
 import {
   atualizarMembro,
   getGrupoId,
-  listarMembrosDoGrupo,
+  listarTodosOsMembrosDoGrupo,
   listarSubgruposDoGrupo,
 } from "../../../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
@@ -64,7 +64,7 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
    * descarta o resultado via `ref` mutável se a pessoa já trocou de grupo
    * enquanto isso -- não se encaixa no modelo declarativo do `useQuery`. */
   useEffect(() => {
-    listarMembrosDoGrupo()
+    listarTodosOsMembrosDoGrupo()
       .then((d: RespostaDeMembros) => {
         if (grupoAlteradoRef.current) return;
         const fresco = d.membros.find((m) => m.email === membro.email);
@@ -198,7 +198,7 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
               onMudar={setSubgruposSelecionados}
               placeholder="Selecione os subgrupos"
               /* Duas esperas, e as duas enganam: as OPÇÕES vêm da consulta,
-                 e a SELEÇÃO atual vem do `listarMembrosDoGrupo` de cima.
+                 e a SELEÇÃO atual vem do `listarTodosOsMembrosDoGrupo` de cima.
                  Sem as duas o seletor aparecia vazio, como se a pessoa não
                  estivesse em subgrupo nenhum -- e o Salvar travado sem
                  dizer por quê. */

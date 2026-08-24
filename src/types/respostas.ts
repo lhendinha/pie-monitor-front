@@ -107,6 +107,7 @@ export interface RespostaDeAtendimentosPaginada
   extends RespostaDeAtendimentos,
     ContagemDaPagina {}
 
+export interface RespostaDeMembrosPaginada extends RespostaDeMembros, ContagemDaPagina {}
 export interface RespostaDeProcessosPaginada extends RespostaDeProcessos, ContagemDaPagina {}
 export interface RespostaDeHistoricoPaginada extends RespostaDeHistorico, ContagemDaPagina {}
 

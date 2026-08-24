@@ -5,7 +5,7 @@ import { renderComProviders } from "../../../../test/queryTestUtils";
 import type { Grupo, Membro, Subgrupo } from "../../../../types";
 
 const mocks = vi.hoisted(() => ({
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   listarSubgruposDoGrupo: vi.fn(),
   atualizarMembro: vi.fn(),
   getGrupoId: vi.fn(),
@@ -34,7 +34,7 @@ describe("EditarMembroForm", () => {
     // nenhum -- o servidor recusa (`SubgruposObrigatorios`), e aqui o botão
     // nem chega a ficar clicável.
     const membro = montarMembro({ subgrupos: [] });
-    mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     renderComProviders(
       <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
@@ -46,7 +46,7 @@ describe("EditarMembroForm", () => {
   it("com subgrupo, a mesma frase fica só como instrução", async () => {
     // O texto não muda porque a instrução não muda -- só a urgência dela.
     const membro = montarMembro({ subgrupos: ["s1"] });
-    mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     renderComProviders(
       <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
@@ -58,7 +58,7 @@ describe("EditarMembroForm", () => {
 
   it("submete a atualização com os campos do formulário", async () => {
     const membro = montarMembro({ subgrupos: ["s1"] });
-    mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     mocks.atualizarMembro.mockResolvedValue({});
     const onAtualizado = vi.fn();
     const onFechar = vi.fn();

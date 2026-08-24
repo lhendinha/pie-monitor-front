@@ -1,25 +1,31 @@
 import { useNavigate, useParams } from "react-router-dom";
 
-import { useSessaoContexto } from "../contexts/SessaoContext";
 import { RedefinirSenhaPage } from "../pages";
 
 /** Liga a `RedefinirSenhaPage` ao router.
  *
- * `redefinirSenha` já devolve a sessão aberta, então o caminho é o mesmo do
- * convite: avisar o estado de sessão e navegar, em vez do reload completo
- * que estava aqui.
+ * ⚠️ Redefinir senha NÃO abre sessão -- o backend responde só
+ * `{"mensagem": "senha redefinida"}`. Quem devolve tokens é o
+ * `aceitarConvite`, e este arquivo dizia o contrário. Por isso o destino
+ * aqui é o `/login`, não a área logada.
  */
 export default function RotaRedefinirSenha() {
   const { token = "" } = useParams();
   const navegar = useNavigate();
-  const { entrar } = useSessaoContexto();
 
   return (
     <RedefinirSenhaPage
       token={token}
       onConcluido={() => {
-        entrar();
-        navegar("/", { replace: true });
+        // 🔴 NÃO chama `entrar()`: `redefinirSenha` não abre sessão nenhuma.
+        //
+        // O backend responde só `{"mensagem": "senha redefinida"}` -- quem
+        // devolve tokens é o `aceitarConvite`. Chamar `entrar()` marcava a
+        // sessão como válida sem token no `localStorage`: a pessoa caía na
+        // Área de trabalho, a primeira requisição saía com `Bearer ` vazio,
+        // tomava 401, e ela era mandada de volta ao login com "Sua sessão
+        // expirou. Entre de novo." -- logo após um reset bem-sucedido.
+        navegar("/login", { replace: true });
       }}
     />
   );

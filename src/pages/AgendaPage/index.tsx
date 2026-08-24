@@ -15,7 +15,7 @@ import {
 import { TETO_POR_PAGINA } from "../../constants";
 import {
   listarAtendimentos,
-  listarMembrosDoGrupo,
+  listarTodosOsMembrosDoGrupo,
   listarQuadro,
   listarSubgrupos,
   papelAtende,
@@ -83,8 +83,8 @@ export default function AgendaPage() {
   const subgrupos = subgruposQuery.data?.subgrupos || [];
 
   const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+    queryKey: qk.todosOsMembros(),
+    queryFn: listarTodosOsMembrosDoGrupo,
     enabled: papelAtende("manager"),
   });
   const membros = membrosQuery.data?.membros || [];

@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   listarSubgrupos: vi.fn(),
   listarQuadro: vi.fn(),
   listarTarefas: vi.fn(),
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   detalhesTarefa: vi.fn(),
   atualizarTarefa: vi.fn(),
   papelAtende: vi.fn(),
@@ -63,7 +63,7 @@ beforeEach(() => {
   });
   // A listagem do quadro NÃO contém a tarefa do link -- é o ponto.
   mocks.listarTarefas.mockResolvedValue({ tarefas: [], total: 0, total_paginas: 0 });
-  mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [] });
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
   mocks.detalhesTarefa.mockResolvedValue(TAREFA_DO_LINK);
 });
 
@@ -163,5 +163,33 @@ describe("KanbanPage — link do lembrete de prazo", () => {
 
     await screen.findByRole("heading", { name: "Gestão kanban" });
     expect(mocks.detalhesTarefa).not.toHaveBeenCalled();
+  });
+});
+
+describe("busca por texto", () => {
+  it("🔴 filtra de verdade -- antes casava com TODO cartão", async () => {
+    /* `(t.processo_numero || "").includes(busca.replace(/\D/g, ""))`: com
+     * uma busca sem número, o segundo argumento vira `""`, e `"".includes("")`
+     * é `true` -- para toda tarefa, inclusive as sem processo. Digitar
+     * "recurso" no campo não mudava nada no quadro, e o estado vazio nunca
+     * aparecia. Só funcionava digitando número. */
+    const user = userEvent.setup();
+    mocks.listarTarefas.mockResolvedValue({
+      tarefas: [
+        { ...TAREFA_DO_LINK, tarefa_id: "t-a", titulo: "Protocolar recurso", data: "2026-08-20" },
+        { ...TAREFA_DO_LINK, tarefa_id: "t-b", titulo: "Audiência de conciliação", data: "2026-08-20" },
+      ],
+      total: 2,
+      total_paginas: 1,
+    });
+    montar();
+
+    await screen.findByText("Protocolar recurso");
+    await user.type(screen.getByLabelText(/Pesquisar cartão/), "recurso");
+
+    await waitFor(() =>
+      expect(screen.queryByText("Audiência de conciliação")).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("Protocolar recurso")).toBeInTheDocument();
   });
 });

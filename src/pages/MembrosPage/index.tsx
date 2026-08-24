@@ -12,7 +12,7 @@ import TabelaDeMembros from "./components/TabelaDeMembros";
 import type { Membro } from "../../types";
 import type {
   RespostaDeGrupos,
-  RespostaDeMembros,
+  RespostaDeMembrosPaginada,
   RespostaDeSubgrupos,
 } from "../../types/respostas";
 
@@ -31,9 +31,12 @@ export default function MembrosPage() {
 
   const podeEditar = ehSuperAdmin();
 
-  const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+  // 🔴 A rota É paginada no servidor. Esta tela agora pede a página que está
+  // vendo, em vez de receber as 10 primeiras e fatiar por cima delas.
+  const membrosQuery = useQuery<RespostaDeMembrosPaginada>({
+    queryKey: qk.membros({ pagina, tamanhoPagina }),
+    queryFn: () => listarMembrosDoGrupo({ pagina, tamanhoPagina }),
+    placeholderData: (anterior) => anterior,
   });
   useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
@@ -57,12 +60,17 @@ export default function MembrosPage() {
   const subgrupos = subgruposQuery.data?.subgrupos || [];
   const grupos = gruposQuery.data?.grupos || [];
 
-  /** `GET /grupos/membros` devolve o grupo inteiro de uma vez -- não é rota
-   * paginada. A página é recortada aqui mesmo; num grupo com dezenas de
-   * pessoas, a tabela sem corte viraria uma rolagem sem fim. */
-  const inicio = (pagina - 1) * tamanhoPagina;
-  const pessoasDaPagina = pessoas.slice(inicio, inicio + tamanhoPagina);
-  const totalPaginas = Math.ceil(pessoas.length / tamanhoPagina);
+  /** 🔴 O recorte agora é do SERVIDOR.
+   *
+   * Antes esta tela chamava a rota sem query nenhuma, recebia as 10
+   * primeiras pessoas e fatiava por cima -- e o total era `pessoas.length`,
+   * ou seja, 10. Como `Pagination` se esconde quando o total cabe na menor
+   * página, a barra sumia: num escritório de 14 pessoas, 4 não existiam na
+   * tela e não havia página 2 pra clicar. O comentário aqui afirmava que a
+   * rota "devolve o grupo inteiro de uma vez"; nunca devolveu. */
+  const pessoasDaPagina = pessoas;
+  const total = membrosQuery.data?.total ?? 0;
+  const totalPaginas = membrosQuery.data?.total_paginas ?? 1;
 
   /** `membro.subgrupos` traz ids, e id não diz nada pra quem lê. */
   const nomePorSubgrupoId = new Map(subgrupos.map((s) => [s.subgrupo_id, s.nome]));
@@ -104,7 +112,7 @@ export default function MembrosPage() {
           <Pagination
             pagina={pagina}
             totalPaginas={totalPaginas}
-            total={pessoas.length}
+            total={total}
             tamanhoPagina={tamanhoPagina}
             onMudarPagina={setPagina}
             onMudarTamanho={(t) => {

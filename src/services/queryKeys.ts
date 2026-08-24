@@ -11,7 +11,17 @@ export const qk = {
   subgrupos: (params: { pagina?: number; tamanhoPagina?: number } = {}) => ["subgrupos", params] as const,
   subgruposDoGrupo: (grupoId: string) => ["subgrupos", "grupo", grupoId] as const,
   conteudoDoSubgrupo: (subgrupoId: string) => ["subgrupos", "conteudo", subgrupoId] as const,
-  membros: () => ["membros"] as const,
+  /** Uma PÁGINA de `GET /grupos/membros` -- a tabela da tela de Membros. */
+  membros: (params: Record<string, unknown> = {}) => ["membros", params] as const,
+  /** TODAS as pessoas do grupo, para resolver apelido/papel e popular
+   * seletores.
+   *
+   * ⚠️ Chave própria de propósito. Compartilhar `["membros", {}]` com a
+   * página 1 da tabela faria dois formatos diferentes ocuparem o mesmo
+   * cache -- o mesmo tipo de colisão que já mordeu o carimbo otimista do
+   * Kanban sob o prefixo `["tarefas"]`. O prefixo continua o mesmo, então
+   * `invalidateQueries({ queryKey: ["membros"] })` derruba os dois. */
+  todosOsMembros: () => ["membros", "todos"] as const,
   resumo: () => ["resumo"] as const,
   quadro: (subgrupoId: string) => ["quadro", subgrupoId] as const,
   membrosDoSubgrupo: (subgrupoId: string) => ["membros", "subgrupo", subgrupoId] as const,

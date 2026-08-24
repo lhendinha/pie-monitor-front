@@ -17,7 +17,7 @@ import {
 } from "../../../../components";
 import {
   adicionarMembro,
-  listarMembrosDoGrupo,
+  listarTodosOsMembrosDoGrupo,
   listarMembrosDoSubgrupo,
   removerMembro,
 } from "../../../../services";
@@ -62,8 +62,8 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
    * grupo, que já tem os três -- em vez de pedir um join novo no backend.
    * Mesmo piso (`manager`) das outras duas rotas desta tela. */
   const grupoQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+    queryKey: qk.todosOsMembros(),
+    queryFn: listarTodosOsMembrosDoGrupo,
   });
   const dadosPorEmail = new Map((grupoQuery.data?.membros || []).map((m) => [m.email, m]));
 
@@ -72,7 +72,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
     // A contagem da linha vem da listagem de subgrupos: sem isto, o modal
     // mostraria uma coisa e a linha atrás outra.
     queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
-    queryClient.invalidateQueries({ queryKey: qk.membros() });
+    queryClient.invalidateQueries({ queryKey: qk.todosOsMembros() });
   }
 
   const adicionarMutation = useMutation({

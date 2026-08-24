@@ -25,7 +25,7 @@ import {
   atualizarAtendimento,
   detalhesAtendimento,
   listarClientes,
-  listarMembrosDoGrupo,
+  listarTodosOsMembrosDoGrupo,
   papelAtende,
   removerAtendimento,
 } from "../../services";
@@ -75,8 +75,8 @@ export default function AtendimentoDetalhePage() {
   /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
    * não vem, e a linha do tempo mostra o e-mail, que ainda identifica. */
   const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+    queryKey: qk.todosOsMembros(),
+    queryFn: listarTodosOsMembrosDoGrupo,
     enabled: papelAtende("manager"),
   });
   const apelidoPorEmail = useMemo(

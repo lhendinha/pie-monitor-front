@@ -17,7 +17,7 @@ import { useValorComEspera } from "../../hooks/useValorComEspera";
 import {
   listarAtendimentos,
   listarClientes,
-  listarMembrosDoGrupo,
+  listarTodosOsMembrosDoGrupo,
   listarSubgrupos,
   papelAtende,
 } from "../../services";
@@ -99,8 +99,8 @@ export default function AtendimentosPage() {
   /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
    * não vem, e o avatar cai nas iniciais do e-mail, que ainda identifica. */
   const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+    queryKey: qk.todosOsMembros(),
+    queryFn: listarTodosOsMembrosDoGrupo,
     enabled: papelAtende("manager"),
   });
   const apelidoPorEmail = useMemo(

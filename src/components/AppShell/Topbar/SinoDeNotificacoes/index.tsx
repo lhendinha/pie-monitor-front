@@ -14,7 +14,7 @@ import {
   MAXIMO_NO_BADGE,
 } from "../../../../constants";
 import { useNotificacoes } from "../../../../hooks/useNotificacoes";
-import { listarMembrosDoGrupo, papelAtende } from "../../../../services";
+import { listarTodosOsMembrosDoGrupo, papelAtende } from "../../../../services";
 import { qk } from "../../../../services/queryKeys";
 import { destinoDaNotificacao } from "../../../../utils/notificacao";
 import type { RespostaDeMembros } from "../../../../types/respostas";
@@ -45,8 +45,8 @@ export default function SinoDeNotificacoes() {
   /** Apelidos de quem agiu. `manager` pra cima -- pra `user` a lista não
    * vem, e a frase mostra o e-mail, que ainda identifica. */
   const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+    queryKey: qk.todosOsMembros(),
+    queryFn: listarTodosOsMembrosDoGrupo,
     enabled: papelAtende("manager"),
   });
   const nomeDoAutor = (email: string) =>

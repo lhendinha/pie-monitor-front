@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   listarAtendimentos: vi.fn(),
   listarClientes: vi.fn(),
   listarSubgrupos: vi.fn(),
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   listarProcessos: vi.fn(),
   criarAtendimento: vi.fn(),
   papelAtende: vi.fn(),
@@ -59,7 +59,7 @@ beforeEach(() => {
     subgrupos: [{ subgrupo_id: "s1", nome: "Cível" }],
   });
   mocks.listarProcessos.mockResolvedValue({ processos: [] });
-  mocks.listarMembrosDoGrupo.mockResolvedValue({
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
     membros: [{ email: "ana@x.com", apelido: "Ana Paula" }],
   });
   comLista([atendimento()]);
@@ -122,7 +122,7 @@ describe("autor do último registro", () => {
   it("cai no e-mail quando o apelido não existe", async () => {
     // Pra `user` a lista de membros não vem -- as iniciais do e-mail ainda
     // identificam, e sumir com o avatar seria pior.
-    mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [] });
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
     await montar();
     expect(await screen.findByText("AN")).toBeInTheDocument();
   });

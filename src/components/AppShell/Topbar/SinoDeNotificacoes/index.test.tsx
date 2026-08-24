@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   listarNotificacoes: vi.fn(),
   marcarNotificacaoLida: vi.fn(),
   marcarTodasLidas: vi.fn(),
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   papelAtende: vi.fn(),
   getAccessToken: vi.fn(),
 }));
@@ -54,7 +54,7 @@ beforeEach(() => {
   // Sem token, o hook do canal nem tenta abrir WebSocket -- é o que deixa
   // estes testes rodarem em jsdom sem stub de rede.
   mocks.getAccessToken.mockReturnValue(null);
-  mocks.listarMembrosDoGrupo.mockResolvedValue({
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
     membros: [{ email: "ana@x.com", apelido: "Ana Paula" }],
   });
   mocks.marcarNotificacaoLida.mockResolvedValue({});
@@ -99,7 +99,7 @@ describe("painel", () => {
 
   it("cai no e-mail quando o apelido não existe", async () => {
     // Pra `user` a lista de membros não vem -- o e-mail ainda identifica.
-    mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [] });
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
     comSino([notificacao()]);
     await abrirPainel();
     expect(await screen.findByText("ana@x.com atribuiu uma tarefa a você")).toBeInTheDocument();

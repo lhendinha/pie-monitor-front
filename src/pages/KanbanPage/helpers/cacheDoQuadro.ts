@@ -16,5 +16,16 @@ export function moverTarefaNaLista(
   tarefaId: string,
   destino: string,
 ): Tarefa[] | undefined {
-  return tarefas?.map((t) => (t.tarefa_id === tarefaId ? { ...t, coluna_id: destino } : t));
+  // 🔴 A guarda não é paranoia: nem todo cache sob o prefixo `["tarefas"]`
+  // guarda um ARRAY. `qk.tarefas(params)` da Área de trabalho guarda
+  // `{tarefas, total, total_paginas}`, e `qk.tarefasDoProcesso` também é um
+  // objeto. Sem isto, o `.map` lançava `TypeError` DENTRO do `onMutate` --
+  // e quando o `onMutate` lança, o React Query nunca chama o `mutationFn`:
+  // o arraste falhava com "Não foi possível mover a tarefa" e o PATCH nem
+  // saía. Bastava passar pela Área de trabalho (que é a rota inicial) e ir
+  // pro Kanban dentro dos 5 min de cache.
+  //
+  // Quem chama já filtra por `Array.isArray`; isto é a segunda barreira.
+  if (!Array.isArray(tarefas)) return tarefas;
+  return tarefas.map((t) => (t.tarefa_id === tarefaId ? { ...t, coluna_id: destino } : t));
 }

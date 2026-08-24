@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   adicionarRegistro: vi.fn(),
   removerAtendimento: vi.fn(),
   listarClientes: vi.fn(),
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   papelAtende: vi.fn(),
   getApelido: vi.fn(),
   getEmail: vi.fn(),
@@ -49,7 +49,7 @@ beforeEach(() => {
   mocks.listarClientes.mockResolvedValue({
     clientes: [{ cliente_id: "c1", nome: "Maria Souza", grupo_id: "g1" }],
   });
-  mocks.listarMembrosDoGrupo.mockResolvedValue({
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
     membros: [
       { email: "ana@x.com", apelido: "Ana Paula" },
       { email: "joao@x.com", apelido: "João" },
@@ -93,7 +93,7 @@ describe("linha do tempo", () => {
   it("cai no e-mail quando o apelido não existe", async () => {
     // Pra `user` a lista de membros não vem -- o e-mail ainda identifica,
     // e sumir com o autor seria pior.
-    mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [] });
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
     await montar();
     expect(await screen.findByText("ana@x.com")).toBeInTheDocument();
   });

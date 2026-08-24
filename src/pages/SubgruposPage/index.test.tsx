@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   removerSubgrupo: vi.fn(),
   conteudoDoSubgrupo: vi.fn(),
   listarMembrosDoSubgrupo: vi.fn(),
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   adicionarMembro: vi.fn(),
   removerMembro: vi.fn(),
   papelAtende: vi.fn(),
@@ -35,7 +35,7 @@ beforeEach(() => {
   mocks.papelAtende.mockReturnValue(true);
   mocks.conteudoDoSubgrupo.mockResolvedValue(VAZIO);
   mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [{ email: "ana@argos.local" }] });
-  mocks.listarMembrosDoGrupo.mockResolvedValue({
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
     membros: [{ email: "ana@argos.local", apelido: "Ana Paula", papel: "admin" }],
   });
 });
@@ -444,7 +444,7 @@ describe("SubgruposPage", () => {
       subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
       total: 1, total_paginas: 1,
     });
-    mocks.listarMembrosDoGrupo.mockReturnValue(new Promise(() => {}));
+    mocks.listarTodosOsMembrosDoGrupo.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
     renderComProviders(<SubgruposPage />);
 
@@ -469,7 +469,7 @@ describe("SubgruposPage", () => {
     mocks.listarMembrosDoSubgrupo.mockResolvedValue({
       membros: [{ email: "ana@argos.local" }, { email: "bruno@argos.local" }],
     });
-    mocks.listarMembrosDoGrupo.mockResolvedValue({
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
       membros: [
         { email: "ana@argos.local", apelido: "Ana Paula", papel: "admin" },
         { email: "bruno@argos.local", apelido: "Bruno Reis", papel: "user" },

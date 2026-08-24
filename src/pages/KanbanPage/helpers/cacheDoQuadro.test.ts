@@ -54,3 +54,18 @@ describe("moverTarefaNaLista", () => {
     expect(moverTarefaNaLista(undefined, "t1", "fazendo")).toBeUndefined();
   });
 });
+
+describe("caches que não guardam lista", () => {
+  it("🔴 um objeto entra e sai intacto, em vez de estourar", () => {
+    /* O prefixo `["tarefas"]` é compartilhado por consultas de formatos
+     * diferentes: a Área de trabalho guarda `{tarefas, total, total_paginas}`
+     * e o detalhe do processo guarda outro objeto. O `.map` lançava
+     * `TypeError` DENTRO do `onMutate` do arraste -- e quando o `onMutate`
+     * lança, o React Query nunca chama o `mutationFn`: o PATCH não saía e o
+     * cartão não mudava de coluna no servidor. Bastava passar pela Área de
+     * trabalho (a rota inicial) e ir pro Kanban dentro dos 5 min de cache. */
+    const paginada = { tarefas: [], total: 0, total_paginas: 0 } as unknown as undefined;
+    expect(() => moverTarefaNaLista(paginada, "t1", "c2")).not.toThrow();
+    expect(moverTarefaNaLista(paginada, "t1", "c2")).toBe(paginada);
+  });
+});

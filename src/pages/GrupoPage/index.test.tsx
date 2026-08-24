@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   listarSubgrupos: vi.fn(),
   criarSubgrupo: vi.fn(),
   removerSubgrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   listarMembrosDoGrupo: vi.fn(),
   listarGrupos: vi.fn(),
   ehSuperAdmin: vi.fn(),
@@ -34,7 +35,8 @@ import GrupoPage from "./index";
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [], total: 0, total_paginas: 0 });
-  mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [] });
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
+  mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [], total: 0, total_paginas: 1 });
   mocks.listarGrupos.mockResolvedValue({ grupos: [] });
   mocks.ehSuperAdmin.mockReturnValue(false);
   mocks.listarOpcoesProcesso.mockResolvedValue({ opcoes: [], total: 0, total_paginas: 0 });
@@ -77,6 +79,7 @@ describe("GrupoPage", () => {
     expect(screen.queryByRole("tab", { name: "Convidar" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: "Membros" }));
+    // A aba de Membros usa a rota paginada; a completa é do formulário de edição.
     expect(mocks.listarMembrosDoGrupo).toHaveBeenCalled();
   });
 

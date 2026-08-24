@@ -7,7 +7,7 @@ import { renderComProviders } from "../../test/queryTestUtils";
 const mocks = vi.hoisted(() => ({
   listarTarefas: vi.fn(),
   listarSubgrupos: vi.fn(),
-  listarMembrosDoGrupo: vi.fn(),
+  listarTodosOsMembrosDoGrupo: vi.fn(),
   listarQuadro: vi.fn(),
   listarAtendimentos: vi.fn(),
   listarProcessos: vi.fn(),
@@ -65,7 +65,7 @@ beforeEach(() => {
       { subgrupo_id: "s2", nome: "Trabalhista" },
     ],
   });
-  mocks.listarMembrosDoGrupo.mockResolvedValue({
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
     membros: [{ email: "ana@x.com", apelido: "Ana" }],
   });
   mocks.listarQuadro.mockResolvedValue({ colunas: COLUNAS });

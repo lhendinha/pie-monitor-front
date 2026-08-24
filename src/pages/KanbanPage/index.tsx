@@ -1,6 +1,7 @@
 import { Flex } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Query } from "@tanstack/react-query";
 import {
   DndContext,
   KeyboardSensor,
@@ -26,7 +27,7 @@ import { PERIODO_TODOS, TETO_POR_PAGINA } from "../../constants";
 import {
   atualizarTarefa,
   detalhesTarefa,
-  listarMembrosDoGrupo,
+  listarTodosOsMembrosDoGrupo,
   listarQuadro,
   listarSubgrupos,
   papelAtende,
@@ -137,8 +138,8 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   /** Nomes de quem é responsável. `manager` pra cima -- pra `user` a lista
    * não vem, e o cartão mostra o e-mail, que ainda identifica. */
   const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.membros(),
-    queryFn: listarMembrosDoGrupo,
+    queryKey: qk.todosOsMembros(),
+    queryFn: listarTodosOsMembrosDoGrupo,
     enabled: papelAtende("manager"),
   });
   const membros = membrosQuery.data?.membros || [];
@@ -207,11 +208,21 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
       // Cancela o que estiver em voo: um refetch chegando depois do carimbo
       // otimista o sobrescreveria com a posição antiga.
       await queryClient.cancelQueries({ queryKey: ["tarefas"] });
-      const anteriores = queryClient.getQueriesData<Tarefa[]>({ queryKey: ["tarefas"] });
+      // 🔴 Só as consultas que guardam LISTA.
+      //
+      // O prefixo `["tarefas"]` é compartilhado por caches de formatos
+      // diferentes: `qk.tarefas(params)` da Área de trabalho guarda
+      // `{tarefas, total, total_paginas}` e `qk.tarefasDoProcesso` guarda
+      // outro objeto. Sem o predicado, o carimbo otimista chamava `.map`
+      // neles, lançava dentro do `onMutate`, e o React Query nem chegava a
+      // executar o `mutationFn` -- o cartão não mudava de coluna no servidor
+      // e a pessoa via só "Não foi possível mover a tarefa".
+      const soListas = { queryKey: ["tarefas"], predicate: (q: Query) => Array.isArray(q.state.data) };
+      const anteriores = queryClient.getQueriesData<Tarefa[]>(soListas);
       // Todas as listas em cache, não só a visível: o mesmo cartão aparece
       // em janelas de data diferentes, e deixar uma delas com a coluna
       // velha faz o cartão saltar ao trocar o filtro.
-      queryClient.setQueriesData<Tarefa[]>({ queryKey: ["tarefas"] }, (lista) =>
+      queryClient.setQueriesData<Tarefa[]>(soListas, (lista) =>
         moverTarefaNaLista(lista, tarefa.tarefa_id, destino),
       );
       return { anteriores };
@@ -244,10 +255,15 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   const busca = filtros.busca.trim().toLowerCase();
 
   const visiveis = (tarefasQuery.data || []).filter((t) => {
+    // 🔴 `digitos` precisa ser conferido antes de usar: `"".includes("")` é
+    // `true`, então uma busca sem número ("recurso") casava com TODA tarefa
+    // pelo segundo ramo, inclusive as sem processo -- e o quadro continuava
+    // mostrando tudo, como se a busca não existisse.
+    const digitos = busca.replace(/\D/g, "");
     const bateBusca =
       !busca ||
       t.titulo.toLowerCase().includes(busca) ||
-      (t.processo_numero || "").includes(busca.replace(/\D/g, ""));
+      (digitos !== "" && (t.processo_numero || "").includes(digitos));
     const batePessoa =
       filtros.pessoa === "todas" ||
       (filtros.pessoa === "sem" ? !t.responsavel_id : t.responsavel_id === filtros.pessoa);
