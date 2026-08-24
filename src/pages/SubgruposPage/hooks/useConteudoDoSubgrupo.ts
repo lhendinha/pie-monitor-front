@@ -21,6 +21,14 @@ export function useConteudoDoSubgrupo(id: string | null) {
      * ter esvaziado o subgrupo, e um número desatualizado a impediria de
      * excluir algo que já está vazio. */
     staleTime: 0,
+    // 🔴 `staleTime: 0` só MARCA como stale -- o `data` do cache é entregue
+    // na hora e `isPending` fica `false`. Do 2º clique na lixeira em diante
+    // (dentro dos 5 min de `gcTime` padrão) o diálogo abria com a contagem
+    // ANTIGA e o botão "Excluir" já liberado, sem passar pelo "Verificando".
+    // Nos dois sentidos: bloqueava o que já estava vazio, e liberava o que
+    // já tinha conteúdo -- mandando um DELETE que volta 409 como toast
+    // solto, o erro que toda esta pré-verificação existe pra evitar.
+    gcTime: 0,
   });
 }
 

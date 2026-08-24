@@ -110,15 +110,18 @@ export default function ClienteDetalhePage() {
               O cliente <strong>{query.data.nome}</strong> será removido.
             </>
           }
-          /* Lista só o que existe: "0 processos" é ruído. E o recado é que
-             os processos NÃO somem junto -- eles perdem o cliente. */
+          /* 🔴 O texto dizia que os processos "perdem esse cliente" -- o
+             desfecho de DESVINCULAR, que só vale pra atendimento. Pra
+             processo o servidor SEMPRE recusa (409 `ClienteEmUso`), então o
+             aviso descrevia uma consequência que nunca acontecia: a pessoa
+             confirmava esperando uma coisa e recebia um erro. O comentário
+             vinte linhas acima neste mesmo arquivo já dizia "o backend
+             recusa excluir cliente ainda vinculado a processo". */
           aviso={
             processosLigados
-              ? `Está vinculado a ${contar(processosLigados, "processo", "processos")}, que ${
-                  processosLigados === 1
-                    ? "continua existindo, mas perde"
-                    : "continuam existindo, mas perdem"
-                } esse cliente.`
+              ? `Não dá pra excluir: está vinculado a ${contar(
+                  processosLigados, "processo", "processos",
+                )}. Desvincule antes.`
               : undefined
           }
           /* Mesma razão do detalhe do processo: o aviso é a consequência

@@ -17,3 +17,9 @@ export const HIERARQUIA_PAPEIS: Papel[] = ["user", "manager", "admin", "super_ad
  * alguém pela tela de Membros, e um convite que cria super admin direto é
  * uma escalada de privilégio à espera de um e-mail digitado errado. */
 export const PAPEIS_CONVIDAVEIS: Papel[] = ["user", "manager", "admin"];
+
+/** Com o que o formulário de convite nasce, e pro que ele VOLTA depois de
+ * enviar. `PAPEIS_CONVIDAVEIS` inclui `admin`, então deixar o papel do
+ * convite anterior no seletor era jeito fácil de promover alguém sem
+ * querer. */
+export const PAPEL_PADRAO_DO_CONVITE: Papel = "user";

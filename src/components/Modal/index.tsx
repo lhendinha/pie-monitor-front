@@ -27,15 +27,33 @@ interface ModalProps {
  * mais alto que a janela precisa rolar por fora, senão o rodapé com os
  * botões fica inalcançável em tela baixa.
  */
+/** Pilha dos modais abertos. O último a montar é o de cima.
+ *
+ * 🔴 Sem ela, cada Modal registrava o próprio listener no `document` e TODOS
+ * respondiam ao Escape. Abrir uma tarefa, clicar em "Excluir" (que monta o
+ * ModalDeConfirmacao como irmão) e apertar Esc fechava os dois: quem só quis
+ * desistir da exclusão perdia o formulário inteiro e as edições não salvas.
+ */
+const pilhaDeModais: symbol[] = [];
+
 export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, children }: ModalProps) {
   // Esc fecha -- é o que se espera de qualquer diálogo, e sem isso quem
-  // navega por teclado fica preso dentro dele.
+  // navega por teclado fica preso dentro dele. Mas só o de CIMA fecha.
   useEffect(() => {
+    const meuLugar = Symbol("modal");
+    pilhaDeModais.push(meuLugar);
+
     function aoTeclar(evento: KeyboardEvent) {
-      if (evento.key === "Escape") onFechar();
+      if (evento.key !== "Escape") return;
+      if (pilhaDeModais[pilhaDeModais.length - 1] !== meuLugar) return;
+      onFechar();
     }
     document.addEventListener("keydown", aoTeclar);
-    return () => document.removeEventListener("keydown", aoTeclar);
+    return () => {
+      document.removeEventListener("keydown", aoTeclar);
+      const onde = pilhaDeModais.indexOf(meuLugar);
+      if (onde >= 0) pilhaDeModais.splice(onde, 1);
+    };
   }, [onFechar]);
 
   return (

@@ -4,7 +4,8 @@ import { listarClientes, listarOpcoesProcesso, listarSubgrupos } from "../servic
 import { useToastOnQueryError } from "../services/queryClient";
 import { qk } from "../services/queryKeys";
 import { TETO_POR_PAGINA } from "../constants";
-import type { OpcaoProcesso } from "../types";
+import { todasAsPaginas } from "../services/api/paginacao";
+import type { Cliente, OpcaoProcesso, Subgrupo } from "../types";
 import type { ComClientes } from "../types";
 import type {
   RespostaDeClientes,
@@ -15,9 +16,15 @@ import type {
 /** As quatro listas que a tela de Processos usa pra traduzir id em nome:
  * subgrupos, clientes, fases e situações.
  *
- * Todas com `TETO_POR_PAGINA` e **as mesmas queryKeys** que os
- * formulários usam -- é isso que faz o cache ser compartilhado em vez de
- * refazer o fetch só porque outra tela montou.
+ * ⚠️ `todasAsPaginas` e não uma página só. O docstring abaixo sempre disse
+ * que "precisa do conjunto inteiro, não de uma página" -- mas o código
+ * pedia `TETO_POR_PAGINA`, que é o MÁXIMO que a API aceita (100). Acima de
+ * 100 clientes a lista vinha cortada e o `rotuloOpcao` caía pro id cru na
+ * tela, com o fallback documentado como se fosse só "ainda carregando". O
+ * padrão de percorrer páginas já existia em `useTarefasDoQuadro`.
+ *
+ * As **mesmas queryKeys** que os formulários usam -- é isso que faz o cache
+ * ser compartilhado em vez de refazer o fetch só porque outra tela montou.
  *
  * Precisa do conjunto inteiro, não de uma página: um processo qualquer da
  * lista pode apontar pra qualquer subgrupo ou cliente, e com meia lista o
@@ -26,23 +33,27 @@ import type {
 export function useCatalogosDeProcesso() {
   const subgruposQuery = useQuery<RespostaDeSubgrupos>({
     queryKey: qk.subgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarSubgrupos({ tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: async () => ({ subgrupos: await todasAsPaginas<Subgrupo>(listarSubgrupos, "subgrupos") }),
   });
   useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
   const clientesQuery = useQuery<RespostaDeClientes>({
     queryKey: qk.clientes({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarClientes({ tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: async () => ({ clientes: await todasAsPaginas<Cliente>(listarClientes, "clientes") }),
   });
 
   const fasesQuery = useQuery<RespostaDeOpcoes>({
     queryKey: qk.opcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarOpcoesProcesso("fase", { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: async () => ({
+      opcoes: await todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso("fase", o), "opcoes"),
+    }),
   });
 
   const situacoesQuery = useQuery<RespostaDeOpcoes>({
     queryKey: qk.opcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarOpcoesProcesso("situacao", { tamanhoPagina: TETO_POR_PAGINA }),
+    queryFn: async () => ({
+      opcoes: await todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso("situacao", o), "opcoes"),
+    }),
   });
 
   const subgrupos = subgruposQuery.data?.subgrupos || [];

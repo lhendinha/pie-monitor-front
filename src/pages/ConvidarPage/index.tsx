@@ -11,7 +11,12 @@ import {
   Select,
   useToast,
 } from "../../components";
-import { ESCOLHA_UM_SUBGRUPO, NOME_PAPEL, PAPEIS_CONVIDAVEIS } from "../../constants";
+import {
+  ESCOLHA_UM_SUBGRUPO,
+  NOME_PAPEL,
+  PAPEIS_CONVIDAVEIS,
+  PAPEL_PADRAO_DO_CONVITE,
+} from "../../constants";
 import { criarConvite, listarSubgrupos } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
@@ -29,7 +34,7 @@ import type {
  */
 export default function ConvidarPage() {
   const [email, setEmail] = useState("");
-  const [papelInicial, setPapelInicial] = useState<Papel>("user");
+  const [papelInicial, setPapelInicial] = useState<Papel>(PAPEL_PADRAO_DO_CONVITE);
   const [subgruposSelecionados, setSubgruposSelecionados] = useState<string[]>([]);
   const [erro, setErro] = useState("");
   const toast = useToast();
@@ -48,6 +53,12 @@ export default function ConvidarPage() {
       toast.sucesso(`Convite enviado pra ${email.trim().toLowerCase()}.`);
       setEmail("");
       setSubgruposSelecionados([]);
+      // 🔴 O papel também. Limpar e-mail e subgrupos e DEIXAR o papel fazia
+      // o formulário se apresentar como novo com metade do estado antigo:
+      // quem convidou alguém como Admin e não reparasse no seletor mandava
+      // o convite seguinte como Admin também. `PAPEIS_CONVIDAVEIS` inclui
+      // `admin`.
+      setPapelInicial(PAPEL_PADRAO_DO_CONVITE);
     },
     onError: (err) => {
       // O erro comum é o e-mail já ter conta ou convite aberto, e a mensagem

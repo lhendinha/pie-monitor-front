@@ -13,6 +13,7 @@ import {
   IconeLixeira,
   IconePlus,
   Modal,
+  ModalDeConfirmacao,
   useToast,
 } from "../../../../components";
 import {
@@ -48,6 +49,7 @@ interface MembrosDoSubgrupoProps {
  */
 export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgrupoProps) {
   const [novoEmail, setNovoEmail] = useState("");
+  const [aConfirmarSaida, setAConfirmarSaida] = useState<string | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
   const queryKey = qk.membrosDoSubgrupo(subgrupo.subgrupo_id);
@@ -207,7 +209,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
                   disabled={
                     removerMutation.isPending && removerMutation.variables === m.email
                   }
-                  onClick={() => removerMutation.mutate(m.email)}
+                  onClick={() => setAConfirmarSaida(m.email)}
                 >
                   <IconeLixeira />
                 </BotaoQuadrado>
@@ -215,6 +217,33 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
             );
           })}
         </Stack>
+      )}
+      {/* 🔴 Tirar alguém de um subgrupo SOLTA as tarefas dela lá dentro --
+          `membros_service.remover` chama `desvincular_responsavel`. A
+          lixeira executava direto, e o toast só dizia "fulano saiu do X".
+          A própria página declara a convenção oposta: "Excluir é a exceção:
+          é irreversível, então passa pelo diálogo de confirmação como toda
+          exclusão do sistema" -- e excluir o SUBGRUPO, que é bem menos
+          destrutivo, tinha diálogo completo. */}
+      {aConfirmarSaida && (
+        <ModalDeConfirmacao
+          titulo="Remover do subgrupo"
+          mensagem={
+            <>
+              Remover <strong>{dadosPorEmail.get(aConfirmarSaida)?.apelido || aConfirmarSaida}</strong>{" "}
+              de <strong>{subgrupo.nome}</strong>?
+            </>
+          }
+          aviso="As tarefas dela neste subgrupo ficam sem responsável."
+          rotulo="Remover"
+          reversivel
+          confirmando={removerMutation.isPending}
+          onConfirmar={() => {
+            removerMutation.mutate(aConfirmarSaida);
+            setAConfirmarSaida(null);
+          }}
+          onFechar={() => setAConfirmarSaida(null)}
+        />
       )}
     </Modal>
   );

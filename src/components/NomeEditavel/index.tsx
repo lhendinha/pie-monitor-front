@@ -1,5 +1,5 @@
 import { Input, Text } from "@chakra-ui/react";
-import { useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 
 interface NomeEditavelProps {
   nome: string;
@@ -41,6 +41,21 @@ export default function NomeEditavel({
   salvando,
 }: NomeEditavelProps) {
   const [rascunho, setRascunho] = useState(nome);
+
+  /** 🔴 Ressincroniza o rascunho a cada vez que a edição ABRE.
+   *
+   * O componente é renderizado sempre (editando ou não) por `LinhaDeOpcao`,
+   * `ListaDeSubgrupos` e `LinhaDeColuna`, então a instância sobrevive entre
+   * edições -- e o `useState(nome)` só valia na primeira montagem.
+   *
+   * Sem isto: a pessoa digitava "Trabalhista" sobre "Cível", apertava
+   * Escape (desistiu), clicava no nome de novo, e o campo reabria com
+   * "Trabalhista". Sair do campo sem tocar em nada disparava o `onBlur` ->
+   * `confirmar()` -> e o rename que ela cancelou era COMITADO. Valia pra
+   * subgrupo, fase e coluna. */
+  useEffect(() => {
+    if (editando) setRascunho(nome);
+  }, [editando, nome]);
 
   /** Nome vazio não apaga o que já existe: sem texto, sair do campo é
    * desistir -- e não renomear o subgrupo pra "". Igual quando o texto

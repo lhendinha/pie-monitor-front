@@ -66,7 +66,7 @@ describe("chamar", () => {
     expect(mocks.limparTokens).not.toHaveBeenCalled();
   });
 
-  it("em 401 sem conseguir renovar, lança ApiError e limpa os tokens -- não refaz a chamada", async () => {
+  it("em 401 sem conseguir renovar, lança ApiError -- não refaz a chamada", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(respostaFetch(401, { detail: "Autenticação inválida" }));
     mocks.renovarToken.mockResolvedValueOnce(false);
 
@@ -75,10 +75,22 @@ describe("chamar", () => {
       message: "Autenticação inválida",
     });
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(mocks.limparTokens).toHaveBeenCalledTimes(1);
   });
 
-  it("em 401 mesmo depois de renovar e tentar de novo, limpa os tokens", async () => {
+  it("🔴 NÃO limpa os tokens por conta própria -- quem sabe se foi recusa ou rede é o renovarToken", async () => {
+    /* `renovarToken` devolve `false` tanto pro refresh token recusado
+     * (e aí ele mesmo limpa) quanto pra falha de REDE (e aí não limpa, de
+     * propósito). O `limparTokens()` incondicional daqui desfazia essa
+     * distinção: um segundo de instabilidade no POST /refresh custava a
+     * sessão inteira, com o refresh token ainda válido no servidor. */
+    vi.mocked(fetch).mockResolvedValueOnce(respostaFetch(401, { detail: "x" }));
+    mocks.renovarToken.mockResolvedValueOnce(false);   // como numa queda de rede
+
+    await expect(chamar("/processos")).rejects.toMatchObject({ status: 401 });
+    expect(mocks.limparTokens).not.toHaveBeenCalled();
+  });
+
+  it("em 401 mesmo depois de renovar e tentar de novo, desiste sem terceira tentativa", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce(respostaFetch(401, { detail: "x" }))
       .mockResolvedValueOnce(respostaFetch(401, { detail: "x" }));
@@ -86,7 +98,6 @@ describe("chamar", () => {
 
     await expect(chamar("/processos")).rejects.toMatchObject({ status: 401 });
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(mocks.limparTokens).toHaveBeenCalledTimes(1);
   });
 
   it("achado 9: 2 chamadas concorrentes que tomam 401 disparam só 1 renovarToken", async () => {

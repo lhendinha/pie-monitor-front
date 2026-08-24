@@ -101,9 +101,19 @@ export default function AgendaPage() {
     : subgrupos.map((s) => s.subgrupo_id);
   const {
     carregando: carregandoQuadros,
+    algumFalhou: quadrosFalharam,
     estaConcluida,
     nomeDaColuna,
   } = useQuadrosDosSubgrupos(subgruposExibidos);
+
+  // 🔴 Sem este aviso, uma falha ao carregar os quadros fazia a Agenda
+  // afirmar o contrário do que é: toda tarefa concluída aparecia em aberto,
+  // sem tachado e sem o nome da coluna. O toast é o mesmo tratamento que as
+  // outras consultas da página já recebem.
+  useToastOnQueryError(
+    quadrosFalharam ? new Error("quadros") : null,
+    "Não foi possível carregar os quadros -- o que está concluído pode aparecer como pendente.",
+  );
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */

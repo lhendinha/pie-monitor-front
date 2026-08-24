@@ -1,10 +1,10 @@
-import { getAccessToken, renovarToken, limparTokens } from "../auth";
+import { getAccessToken, renovarToken } from "../auth";
 import type { OpcoesRequisicao } from "../../types";
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 if (!API_URL) {
-  // eslint-disable-next-line no-console
+   
   console.warn(
     "VITE_API_URL não configurada. Defina no .env (veja .env.example) ou nas variáveis de ambiente do Vercel."
   );
@@ -62,7 +62,7 @@ interface RespostaCrua {
 // só 1 renovação, todos aguardando o mesmo resultado.
 let renovacaoEmAndamento: Promise<boolean> | null = null;
 
-function renovarTokenCompartilhado(): Promise<boolean> {
+export function renovarTokenCompartilhado(): Promise<boolean> {
   if (!renovacaoEmAndamento) {
     renovacaoEmAndamento = renovarToken().finally(() => {
       renovacaoEmAndamento = null;
@@ -102,8 +102,14 @@ export async function chamar<T = any>(path: string, opcoes: OpcoesRequisicao = {
   }
 
   if (!ok) {
-    if (status === 401) limparTokens();
-    throw new ApiError(dados.detail || "Erro desconhecido", status);
+    // 🔴 NÃO limpa aqui. Quem sabe distinguir "o servidor recusou o refresh
+    // token" de "a rede caiu no meio" é o `renovarToken`, e ele já faz a
+    // coisa certa: limpa no primeiro caso, não limpa no segundo.
+    //
+    // Este `limparTokens()` incondicional desfazia essa distinção -- um
+    // segundo de instabilidade no POST /refresh custava a sessão inteira,
+    // com o refresh token ainda válido no servidor.
+    throw new ApiError(dados.detail || "Erro desconhecido", status, dados);
   }
   return dados as T;
 }

@@ -104,3 +104,52 @@ describe("NomeEditavel — estado de salvando", () => {
     expect(onCancelar).toHaveBeenCalled();
   });
 });
+
+/** O componente é renderizado sempre -- editando ou não --, então a
+ * instância sobrevive entre edições. É isso que fazia o rascunho velho
+ * voltar. Este wrapper reproduz o uso real (`LinhaDeOpcao`,
+ * `ListaDeSubgrupos`, `LinhaDeColuna`). */
+function Cenario({ onConfirmar }: { onConfirmar: (nome: string) => void }) {
+  const [editando, setEditando] = useState(false);
+  return (
+    <NomeEditavel
+      nome="Cível"
+      podeRenomear
+      editando={editando}
+      onIniciar={() => setEditando(true)}
+      onConfirmar={(n) => {
+        setEditando(false);
+        onConfirmar(n);
+      }}
+      onCancelar={() => setEditando(false)}
+    />
+  );
+}
+
+describe("NomeEditavel", () => {
+  it("🔴 texto cancelado com Escape NÃO volta na próxima edição", async () => {
+    /* `useState(nome)` só vale na primeira montagem, e o Escape não
+     * ressincronizava o rascunho. A pessoa digitava "Trabalhista" sobre
+     * "Cível", apertava Escape (desistiu), clicava no nome de novo -- e o
+     * campo reabria com "Trabalhista". Sair do campo sem tocar em nada
+     * disparava o `onBlur` -> `confirmar()`, e o rename CANCELADO era
+     * comitado. Valia para subgrupo, fase e coluna. */
+    const onConfirmar = vi.fn();
+    const user = userEvent.setup();
+    renderComProviders(<Cenario onConfirmar={onConfirmar} />);
+
+    await user.click(screen.getByText("Cível"));
+    const campo = screen.getByRole("textbox");
+    await user.clear(campo);
+    await user.type(campo, "Trabalhista");
+    await user.keyboard("{Escape}");
+
+    // Reabre: o campo tem que trazer o nome REAL, não o rascunho abandonado.
+    await user.click(screen.getByText("Cível"));
+    expect(screen.getByRole("textbox")).toHaveValue("Cível");
+
+    // E sair do campo não pode comitar nada.
+    await user.tab();
+    expect(onConfirmar).not.toHaveBeenCalled();
+  });
+});

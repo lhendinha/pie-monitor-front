@@ -6,7 +6,8 @@ import {
   MARGEM_DO_TOKEN_SEGUNDOS,
   RECONEXAO_DO_CANAL,
 } from "../constants";
-import { getAccessToken, renovarToken, tokenVenceEm } from "../services/auth";
+import { renovarTokenCompartilhado } from "../services/api/client";
+import { getAccessToken, tokenVenceEm } from "../services/auth";
 import type { MensagemDoCanal } from "../types";
 
 /** Abre o canal de tempo real e chama `aoChegar` a cada notificação nova.
@@ -43,7 +44,16 @@ export function useCanalDeNotificacoes(aoChegar: () => void) {
       if (tokenVenceEm(MARGEM_DO_TOKEN_SEGUNDOS)) {
         // Se a renovação falhar, segue com o que há: quem decide é o
         // handshake. Insistir aqui atrasaria a reconexão sem melhorar nada.
-        await renovarToken().catch(() => false);
+        // 🔴 A promise COMPARTILHADA, não `renovarToken()` cru.
+        //
+        // O refresh token é rotacionado e de uso único. O canal reconecta
+        // sozinho (o API Gateway derruba a conexão a cada 2h), e se isso
+        // coincidir com uma query tomando 401, as duas liam o mesmo refresh
+        // token: a segunda recebia 401 e `limparTokens()` apagava o que a
+        // primeira acabou de salvar -- sessão morta no meio do uso. É o
+        // mesmo achado que `renovarTokenCompartilhado` já resolvia do outro
+        // lado.
+        await renovarTokenCompartilhado().catch(() => false);
       }
       return `${base}?token=${encodeURIComponent(getAccessToken() ?? "")}`;
     }

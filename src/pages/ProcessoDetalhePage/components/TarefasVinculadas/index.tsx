@@ -22,6 +22,21 @@ export default function TarefasVinculadas({ numeroProcesso }: TarefasVinculadasP
 
   if (query.isPending) return <Esqueleto linhas={2} />;
 
+  // 🔴 Erro não é "não tem tarefa".
+  //
+  // Sem este ramo, uma falha de rede deixava `data` indefinido, a lista caía
+  // pra `[]` e o cartão AFIRMAVA que o processo não tem tarefa nenhuma. O
+  // toast some em 4,5s; a afirmação falsa fica. Pior: o diálogo de exclusão
+  // desta mesma página já trata `isError` com rigor -- a tela dizia duas
+  // coisas diferentes sobre o mesmo dado.
+  if (query.isError) {
+    return (
+      <Text fontSize="13px" color="status-bad-text">
+        Não foi possível carregar as tarefas deste processo.
+      </Text>
+    );
+  }
+
   const tarefas = query.data?.tarefas || [];
   if (tarefas.length === 0) {
     return (

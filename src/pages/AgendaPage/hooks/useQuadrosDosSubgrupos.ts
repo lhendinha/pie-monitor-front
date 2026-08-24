@@ -43,11 +43,30 @@ export function useQuadrosDosSubgrupos(subgrupoIds: string[]) {
     })),
   });
 
+  // 🔴 `isError` conta como "não sei", não como "está vazio".
+  //
+  // `carregando` olhava só `isPending`. Em erro ele é `false` e `data` é
+  // `undefined`, então `concluem` e `nomes` ficavam vazios -- e a Agenda
+  // renderizava normalmente afirmando o CONTRÁRIO do que é: toda tarefa
+  // concluída aparecia em aberto, sem tachado, e a linha perdia o nome da
+  // coluna. É o mesmo mal que o cabeçalho deste arquivo diz existir pra
+  // evitar, pelo caminho do erro.
+  const algumFalhou = consultas.some((c) => c.isError);
   const carregando = consultas.some((c) => c.isPending);
   /* Um array novo a cada render refaria os mapas sem necessidade; a string
      junta o que importa num valor comparável. */
+  // ⚠️ As MARCAS entram na assinatura. Com só `id:nome`, mudar qual coluna
+  // é a de conclusão não mudava a string -- o memo devolvia os conjuntos
+  // velhos e a Agenda seguia riscando a coluna antiga até ser remontada.
+  // Numa variável, não inline no array de deps: o React Compiler exige
+  // expressões simples ali, e o valor é o mesmo.
+  const chaveDosSubgrupos = subgrupoIds.join(",");
   const assinatura = consultas
-    .map((c) => (c.data?.colunas || []).map((col) => `${col.coluna_id}:${col.nome}`).join(","))
+    .map((c) =>
+      (c.data?.colunas || [])
+        .map((col) => `${col.coluna_id}:${col.nome}:${col.e_conclusao}:${col.e_arquivado}`)
+        .join(","),
+    )
     .join("|");
 
   const { concluem, nomes } = useMemo(() => {
@@ -62,12 +81,13 @@ export function useQuadrosDosSubgrupos(subgrupoIds: string[]) {
     });
     return { concluem, nomes };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assinatura, subgrupoIds.join(",")]);
+  }, [assinatura, chaveDosSubgrupos]);
 
   const chaveDe = (tarefa: Tarefa) => `${tarefa.subgrupo_id}:${tarefa.coluna_id}`;
 
   return {
     carregando,
+    algumFalhou,
     estaConcluida: (tarefa: Tarefa) => concluem.has(chaveDe(tarefa)),
     /** `undefined` quando o quadro não conhece a coluna -- a linha então
      * omite o pedaço em vez de mostrar um id cru. */

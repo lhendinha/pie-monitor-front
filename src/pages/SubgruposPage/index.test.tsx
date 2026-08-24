@@ -430,6 +430,13 @@ describe("SubgruposPage", () => {
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await user.click(await screen.findByRole("button", { name: "Remover Ana Paula de Cível" }));
 
+    // 🔴 Passa pelo diálogo agora. Tirar alguém do subgrupo SOLTA as tarefas
+    // dela lá dentro, e a lixeira executava direto -- enquanto excluir o
+    // subgrupo, que é menos destrutivo, já tinha confirmação. A própria
+    // página declara essa convenção.
+    expect(await screen.findByText(/As tarefas dela neste subgrupo/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Remover" }));
+
     await waitFor(() =>
       expect(mocks.removerMembro).toHaveBeenCalledWith("1", "ana@argos.local"),
     );
@@ -481,8 +488,12 @@ describe("SubgruposPage", () => {
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await user.click(await screen.findByRole("button", { name: "Remover Ana Paula de Cível" }));
+    // A lixeira abre o diálogo; a remoção começa ao confirmar.
+    await user.click(await screen.findByRole("button", { name: "Remover" }));
 
-    expect(screen.getByRole("button", { name: "Remover Ana Paula de Cível" })).toBeDisabled();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Remover Ana Paula de Cível" })).toBeDisabled(),
+    );
     // A outra linha continua utilizável.
     expect(screen.getByRole("button", { name: "Remover Bruno Reis de Cível" })).toBeEnabled();
   });

@@ -55,7 +55,11 @@ export default function CabecalhoAtendimentos({
           rotulo="Buscar atendimentos"
           valor={busca}
           onMudar={onBuscar}
-          placeholder="Buscar por assunto ou cliente"
+          // 🔴 Só "assunto": `atendimentos_service.listar_pagina` compara
+          // apenas `a.assunto`, nunca `cliente_ids`. Prometer cliente fazia a
+          // pessoa digitar o nome que estava vendo na coluna, receber
+          // "Nenhum atendimento" e concluir que ela não tinha nenhum.
+          placeholder="Buscar por assunto"
         />
         <PilulaDeMenu
           opcoes={OPCOES_DE_STATUS.map((o) => ({ id: o.id, rotulo: o.rotulo }))}

@@ -105,14 +105,20 @@ export default function SubgruposPage() {
 
   const renomearMutation = useMutation({
     mutationFn: ({ id, nome }: RenomearSubgrupo) => atualizarSubgrupo(id, nome),
+    // 🔴 Fecha o campo só no SUCESSO.
+    //
+    // Era `onSettled`, que roda no erro também: a pessoa via o toast do 409
+    // e a linha já tinha voltado a ser texto lido -- pra corrigir a
+    // digitação, clicar no lápis e reescrever do zero.
+    // `FormularioNovoSubgrupo` mantém o texto e ainda marca o erro embaixo.
     onSuccess: () => {
+      setRenomeandoId(null);
       invalidar();
       toast.sucesso("Subgrupo renomeado.");
     },
     // O servidor recusa nome repetido dentro do grupo -- a mensagem dele já
     // diz qual é o problema.
     onError: (err) => toastErroMutation(toast, err, "Não foi possível renomear."),
-    onSettled: () => setRenomeandoId(null),
   });
 
   const removerMutation = useMutation({

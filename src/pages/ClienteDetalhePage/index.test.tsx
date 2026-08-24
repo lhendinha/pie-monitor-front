@@ -116,8 +116,10 @@ describe("ClienteDetalhePage", () => {
     expect(await screen.findByText("lista de clientes")).toBeInTheDocument();
   });
 
-  it("o diálogo avisa que os processos perdem o cliente", async () => {
-    // Eles não somem junto -- ficam sem esse cliente.
+  it("🔴 o diálogo diz que a exclusão está BLOQUEADA, não que os processos perdem o cliente", async () => {
+    /* O texto antigo descrevia o desfecho de DESVINCULAR, que só vale pra
+     * atendimento. Pra processo o servidor sempre recusa (409 `ClienteEmUso`),
+     * então a pessoa confirmava esperando uma coisa e recebia um erro. */
     mocks.listarProcessos.mockResolvedValue({
       processos: [
         { subgrupo_id: "sg1", numero_processo: "00002668720218130559", apelido: "x" },
@@ -130,7 +132,7 @@ describe("ClienteDetalhePage", () => {
 
     expect(
       await screen.findByText(
-        "Está vinculado a 1 processo, que continua existindo, mas perde esse cliente.",
+        "Não dá pra excluir: está vinculado a 1 processo. Desvincule antes.",
       ),
     ).toBeInTheDocument();
   });
