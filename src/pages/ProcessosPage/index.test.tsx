@@ -460,8 +460,11 @@ describe("filtro e página", () => {
     );
 
     await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+    /* ⚠️ Sem anotar o parâmetro: a anotação `[p]: [Record<string, unknown>]`
+     * não é atribuível ao predicado de `filter` e quebrava o `tsc -b` do
+     * `yarn build` com TS2769 -- verde no vitest, vermelho no CI. */
     const comPaginaVelha = mocks.listarProcessos.mock.calls.filter(
-      ([p]: [Record<string, unknown>]) => p?.pagina === 2,
+      (chamada) => (chamada[0] as { pagina?: number })?.pagina === 2,
     );
     expect(comPaginaVelha).toEqual([]);
   });

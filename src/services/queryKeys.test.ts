@@ -66,32 +66,27 @@ describe("nenhuma invalidação usa chave de PÁGINA", () => {
    */
   const PAGINADAS = ["opcoesProcesso", "clientes", "subgrupos", "processos", "historico", "atendimentos"];
 
-  it("todo invalidateQueries usa prefixo, nunca a chave paginada", async () => {
-    const { readFileSync, readdirSync } = await import("node:fs");
-    const { join } = await import("node:path");
-
-    // ⚠️ `globSync` de `node:fs` não existe no runtime do vitest aqui --
-    // a primeira versão usava e o teste quebrava por TypeError, não por
-    // achado. Varredura manual é chata e funciona.
-    const arquivos: string[] = [];
-    const percorrer = (dir: string) => {
-      for (const item of readdirSync(dir, { withFileTypes: true })) {
-        const caminho = join(dir, item.name);
-        if (item.isDirectory()) percorrer(caminho);
-        else if (/\.tsx?$/.test(item.name) && !/\.test\.tsx?$/.test(item.name)) arquivos.push(caminho);
-      }
-    };
-    percorrer("src");
+  it("todo invalidateQueries usa prefixo, nunca a chave paginada", () => {
+    /* ⚠️ `import.meta.glob` do Vite, não `node:fs`.
+     *
+     * A primeira versão importava `node:fs`/`node:path`: o vitest rodava,
+     * mas `tsc -b` (que o `yarn build` chama) falhava com TS2307, porque o
+     * projeto não tem `@types/node`. Teste verde e build quebrado -- e a
+     * quebra só apareceria no CI ou no deploy. */
+    const fontes = import.meta.glob("../**/*.{ts,tsx}", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
 
     const suspeitas: string[] = [];
-    for (const arquivo of arquivos) {
-      const texto = readFileSync(arquivo, "utf8");
+    for (const [arquivo, texto] of Object.entries(fontes)) {
+      if (/\.test\.tsx?$/.test(arquivo)) continue;
       const re = /invalidateQueries\(\s*\{\s*queryKey:\s*qk\.(\w+)\(/g;
       let m: RegExpExecArray | null;
       while ((m = re.exec(texto))) {
-        const fn = m[1];
-        if (PAGINADAS.includes(fn)) {
-          suspeitas.push(`${arquivo}: invalidateQueries com qk.${fn}() -- use qk.prefixo...`);
+        if (PAGINADAS.includes(m[1])) {
+          suspeitas.push(`${arquivo}: invalidateQueries com qk.${m[1]}() -- use qk.prefixo...`);
         }
       }
     }

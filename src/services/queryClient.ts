@@ -1,11 +1,26 @@
 import { useEffect, useRef } from "react";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { ApiError } from "./api";
+import { estaAutenticado } from "./auth";
 import { useToast } from "../components";
 import { dispararAutenticacaoInvalida } from "./authBridge";
 
 function ehSessaoExpirada(erro: unknown): boolean {
-  return erro instanceof ApiError && erro.status === 401;
+  if (!(erro instanceof ApiError) || erro.status !== 401) return false;
+
+  /* 🔴 401 sozinho NÃO é sessão expirada.
+   *
+   * `chamar` tenta renovar antes de desistir; se a renovação não deu certo,
+   * ele propaga o 401 ORIGINAL -- e aí este handler deslogava, mesmo quando
+   * a falha tinha sido de rede e o refresh token seguia válido no servidor.
+   * Tirar o `limparTokens()` de dentro do `chamar` não resolveu nada: o
+   * caminho que desloga é este aqui.
+   *
+   * `renovarToken` já faz a distinção certa e é a fonte a consultar: ele
+   * limpa os tokens QUANDO o servidor recusa o refresh, e não limpa quando
+   * a rede caiu. Então "ainda tenho tokens" significa "a renovação falhou
+   * por motivo transitório" -- e a sessão continua de pé. */
+  return !estaAutenticado();
 }
 
 /** Achado 15: erro 4xx (400/403/404/409...) é determinístico -- tentar de

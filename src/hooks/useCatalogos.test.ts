@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+
 
 describe("catálogos compartilham chave E forma", () => {
   /**
@@ -18,7 +18,12 @@ describe("catálogos compartilham chave E forma", () => {
    * no cache.
    */
   it("useTodosOsMembros guarda a resposta inteira e desembrulha no select", () => {
-    const fonte = readFileSync("src/hooks/useCatalogos.ts", "utf8");
+    /* ⚠️ `import.meta.glob` do Vite, não `node:fs` -- o projeto não tem
+     * `@types/node`, e a versão anterior passava no vitest mas quebrava o
+     * `tsc -b` do `yarn build`. */
+    const fonte = (import.meta.glob("./useCatalogos.ts", {
+      query: "?raw", import: "default", eager: true,
+    }) as Record<string, string>)["./useCatalogos.ts"];
     const bloco = fonte.slice(fonte.indexOf("export function useTodosOsMembros"));
     const corpo = bloco.slice(0, bloco.indexOf("\n}"));
 
@@ -38,8 +43,13 @@ describe("catálogos compartilham chave E forma", () => {
       "src/pages/AtendimentosPage/index.tsx",
       "src/pages/SubgruposPage/components/MembrosDoSubgrupo/index.tsx",
     ];
+    const fontes = import.meta.glob("../**/*.tsx", {
+      query: "?raw", import: "default", eager: true,
+    }) as Record<string, string>;
     for (const arquivo of consumidores) {
-      const fonte = readFileSync(arquivo, "utf8");
+      const chave = arquivo.replace("src/", "../");
+      const fonte = fontes[chave];
+      expect(fonte, `não achei ${arquivo}`).toBeDefined();
       const i = fonte.indexOf("qk.todosOsMembros()");
       expect(i, `${arquivo} deixou de usar a chave`).toBeGreaterThan(-1);
       const janela = fonte.slice(i, i + 200);

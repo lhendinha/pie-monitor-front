@@ -145,6 +145,18 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
     // Subgrupo pertence a um grupo: manter a seleção anterior mandaria pro
     // servidor ids que não existem no grupo novo.
     setSubgruposSelecionados([]);
+    /* 🔴 E o bloqueio por falha de recarga sai junto.
+     *
+     * `falhouAoRecarregar` desabilita o Salvar porque a seleção pode estar
+     * desatualizada -- e enviar dado velho REMOVE a pessoa de subgrupos que
+     * alguém acabou de adicionar. Mas ele nunca era limpo, e o efeito que o
+     * define só reage a `[membro.email]`: depois de um blip de rede, o
+     * formulário ficava travado até fechar e reabrir o modal.
+     *
+     * Trocando o grupo, a seleção antiga é descartada na linha acima -- não
+     * há mais dado velho pra enviar, então o motivo do bloqueio deixou de
+     * existir. */
+    setFalhouAoRecarregar(false);
     toast.sucesso("Grupo trocado — selecione os subgrupos desse grupo.");
   }
 

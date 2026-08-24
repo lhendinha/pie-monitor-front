@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import {
+  Faixa,
   Botao,
   CabecalhoDePagina,
   Cartao,
@@ -102,14 +103,17 @@ export default function AgendaPage() {
     nomeDaColuna,
   } = useQuadrosDosSubgrupos(subgruposExibidos);
 
-  // 🔴 Sem este aviso, uma falha ao carregar os quadros fazia a Agenda
-  // afirmar o contrário do que é: toda tarefa concluída aparecia em aberto,
-  // sem tachado e sem o nome da coluna. O toast é o mesmo tratamento que as
-  // outras consultas da página já recebem.
-  useToastOnQueryError(
-    quadrosFalharam ? new Error("quadros") : null,
-    "Não foi possível carregar os quadros -- o que está concluído pode aparecer como pendente.",
-  );
+  /* 🔴 Aviso PERSISTENTE, não toast.
+   *
+   * Falha ao carregar os quadros faz a Agenda afirmar o contrário do que é:
+   * toda tarefa concluída aparece em aberto, sem tachado, e a linha perde o
+   * nome da coluna. O toast sumia em ~4,5s e não repetia (`jaAvisado`), e
+   * daí em diante a tela seguia mentindo em silêncio.
+   *
+   * A lista continua útil -- datas, títulos, responsáveis estão certos --,
+   * então esconder tudo atrás de um esqueleto eterno seria pior. O que
+   * precisa ficar visível é QUAL parte não é confiável, e por quanto tempo
+   * ela não for. */
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */
@@ -167,6 +171,14 @@ export default function AgendaPage() {
 
   return (
     <Box>
+      {quadrosFalharam && (
+        <Box mb="12px">
+          <Faixa tom="aviso" aEsquerda>
+            Não foi possível carregar os quadros. O que está concluído pode aparecer como
+            pendente, e o nome da coluna não é exibido.
+          </Faixa>
+        </Box>
+      )}
       <CabecalhoDePagina
         titulo="Agenda"
         subtitulo="As tarefas do escritório organizadas por data."

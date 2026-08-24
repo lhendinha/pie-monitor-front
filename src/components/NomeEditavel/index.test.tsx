@@ -153,3 +153,85 @@ describe("NomeEditavel", () => {
     expect(onConfirmar).not.toHaveBeenCalled();
   });
 });
+
+/** Monta com `falhou` controlado por quem CHAMA `onConfirmar` -- é assim que
+ * a página real se comporta: o pedido sai, o servidor recusa, e só então
+ * `falhou` vira true.
+ *
+ * ⚠️ Montar já com `falhou: true` não modela nada: o efeito que registra o
+ * recusado dispara na TRANSIÇÃO, e a primeira versão deste teste passava
+ * pelo motivo errado. */
+function montarComFalhaNoEnvio() {
+  const onConfirmar = vi.fn();
+  const onCancelar = vi.fn();
+
+  function Wrapper() {
+    const [falhou, setFalhou] = useState(false);
+    return (
+      <NomeEditavel
+        nome="Cível"
+        editando
+        podeRenomear
+        falhou={falhou}
+        onIniciar={vi.fn()}
+        onConfirmar={(n) => {
+          onConfirmar(n);
+          setFalhou(true); // o servidor recusou
+        }}
+        onCancelar={onCancelar}
+      />
+    );
+  }
+
+  renderComProviders(<Wrapper />);
+  return { onConfirmar, onCancelar };
+}
+
+describe("NomeEditavel — depois de um rename recusado", () => {
+  /* 🔴 Estes dois testes cobrem os DOIS lados de uma correção minha que, na
+   * primeira versão, consertou um lado e quebrou o outro.
+   *
+   * O problema original: rename recusado (409 de nome duplicado) deixava o
+   * campo aberto -- de propósito, pra corrigir a digitação --, mas cada
+   * clique fora disparava `onBlur` -> `confirmar()` -> o mesmo 409, em laço.
+   *
+   * A primeira correção guardava `rascunho.trim()` num efeito que dependia
+   * de `rascunho`: enquanto `falhou` fosse true, cada TECLA regravava o
+   * recusado, e `confirmar()` sempre caía no ramo de cancelar. Enter e
+   * clique fora passaram a DESCARTAR o rename em silêncio, pra sempre. */
+
+  it("sair do campo sem mudar o texto recusado não reenvia", async () => {
+    const user = userEvent.setup();
+    const { onConfirmar } = montarComFalhaNoEnvio();
+
+    await user.clear(campo());
+    await user.type(campo(), "Trabalhista");
+    await user.tab();
+
+    // Primeira tentativa sai; o `falhou` só passa a valer depois dela.
+    expect(onConfirmar).toHaveBeenCalledTimes(1);
+    onConfirmar.mockClear();
+
+    // Sair de novo, com o MESMO texto que já foi recusado: desiste.
+    await user.click(campo());
+    await user.tab();
+    expect(onConfirmar).not.toHaveBeenCalled();
+  });
+
+  it("🔴 mas trocar o texto reenvia -- a correção não pode matar o rename", async () => {
+    const user = userEvent.setup();
+    const { onConfirmar } = montarComFalhaNoEnvio();
+
+    await user.clear(campo());
+    await user.type(campo(), "Trabalhista");
+    await user.tab();
+    onConfirmar.mockClear();
+
+    await user.click(campo());
+    await user.clear(campo());
+    await user.type(campo(), "Previdenciário");
+    await user.tab();
+
+    expect(onConfirmar).toHaveBeenCalledWith("Previdenciário");
+  });
+});

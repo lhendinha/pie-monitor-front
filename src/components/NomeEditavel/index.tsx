@@ -77,19 +77,36 @@ export default function NomeEditavel({
    * Guardando o que foi recusado, sair do campo sem mudar nada passa a ser
    * "desisti", como já é quando o texto voltou ao original. Reenviar exige
    * um gesto explícito: Enter, ou trocar o texto. */
+  /** O texto que ENVIAMOS, e o que voltou recusado. */
+  const enviadoRef = useRef<string | null>(null);
   const recusadoRef = useRef<string | null>(null);
 
+  /* ⚠️ Depende só de `falhou`, e guarda o que foi ENVIADO.
+   *
+   * 🔴 A primeira versão tinha `rascunho` nas dependências e gravava
+   * `rascunho.trim()`. Enquanto `falhou` fosse true, cada TECLA regravava o
+   * recusado com o que estava sendo digitado -- e aí `confirmar()` sempre
+   * caía no ramo de cancelar. Depois de um único 409, Enter e clique fora
+   * DESCARTAVAM o rename em silêncio, em todas as linhas, pra sempre.
+   * Consertar o laço quebrou a funcionalidade inteira.
+   *
+   * O que precisa ser lembrado é o texto que o servidor recusou, não o que
+   * a pessoa está escrevendo agora. */
   useEffect(() => {
-    if (falhou) recusadoRef.current = rascunho.trim();
-  }, [falhou, rascunho]);
+    if (falhou) recusadoRef.current = enviadoRef.current;
+  }, [falhou]);
 
   function confirmar() {
     // ⚠️ Sem esta saída, o `onBlur` do campo em leitura reenviava o mesmo
     // rename enquanto o primeiro ainda estava em voo.
     if (salvando) return;
     const limpo = rascunho.trim();
-    if (!limpo || limpo === nome || limpo === recusadoRef.current) onCancelar();
-    else onConfirmar(limpo);
+    if (!limpo || limpo === nome || limpo === recusadoRef.current) {
+      onCancelar();
+      return;
+    }
+    enviadoRef.current = limpo;
+    onConfirmar(limpo);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
