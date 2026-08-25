@@ -1,15 +1,17 @@
 import { Flex } from "@chakra-ui/react";
 
-import { MultiSelect, PilulaDeMenu } from "../../../../components";
+import { MultiSelect, Select } from "../../../../components";
+import { comOpcaoEscolhida, comOpcoesEscolhidas } from "../../../../hooks/useOpcoesBuscaveis";
 import SeletorDeVisao from "../SeletorDeVisao";
 import type { FiltrosDaAgenda as Filtros } from "../../types";
-import type { Membro, Subgrupo } from "../../../../types";
+import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
 
 interface FiltrosDaAgendaProps {
-  subgrupos: Subgrupo[];
-  membros: Membro[];
+  /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */
+  subgrupos: OpcoesBuscaveis;
+  /** Idem, pras pessoas. Só carrega quando a pílula abre. */
+  pessoas: OpcoesBuscaveis;
   filtros: Filtros;
-  carregandoSubgrupos?: boolean;
   onMudar: (parcial: Partial<Filtros>) => void;
 }
 
@@ -26,11 +28,16 @@ interface FiltrosDaAgendaProps {
  */
 export default function FiltrosDaAgenda({
   subgrupos,
-  membros,
+  pessoas,
   filtros,
-  carregandoSubgrupos,
   onMudar,
 }: FiltrosDaAgendaProps) {
+  const opcoesDeSubgrupo = comOpcoesEscolhidas(
+    subgrupos.opcoes,
+    filtros.subgrupoIds,
+    filtros.subgrupoNomes,
+  );
+
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="14px">
       <SeletorDeVisao visao={filtros.visao} onMudar={(visao) => onMudar({ visao })} />
@@ -38,21 +45,50 @@ export default function FiltrosDaAgenda({
       <MultiSelect
         variante="chip"
         placeholder="Todos os subgrupos"
-        opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
+        opcoes={opcoesDeSubgrupo}
         selecionados={filtros.subgrupoIds}
-        onMudar={(subgrupoIds) => onMudar({ subgrupoIds })}
-        carregando={carregandoSubgrupos}
+        /* Guarda o NOME de cada escolhido junto: sem isso, um subgrupo fora
+           da primeira página sumiria do próprio valor na reabertura. */
+        onMudar={(subgrupoIds) =>
+          onMudar({
+            subgrupoIds,
+            subgrupoNomes: Object.fromEntries(
+              subgrupoIds.map((id) => [
+                id,
+                opcoesDeSubgrupo.find((o) => o.value === id)?.label ?? id,
+              ]),
+            ),
+          })
+        }
+        permitirLimpar
+        carregando={subgrupos.carregando}
+        onBuscar={subgrupos.buscar}
+        placeholderBusca="Buscar subgrupo"
+        erro={subgrupos.erro}
+        onTentarDeNovo={subgrupos.tentarDeNovo}
       />
 
-      <PilulaDeMenu
+      {/* Mesma tradução do Kanban: "Todas as pessoas" é a linha do topo do
+          painel, e o estado que corresponde a ela é `"todas"`. */}
+      <Select
+        variante="chip"
+        placeholder="Todas as pessoas"
         opcoes={[
-          { id: "todas", rotulo: "Todas as pessoas" },
-          { id: "sem", rotulo: "Sem responsável" },
-          ...membros.map((m) => ({ id: m.email, rotulo: m.apelido || m.email })),
+          { value: "sem", label: "Sem responsável" },
+          ...comOpcaoEscolhida(
+            pessoas.opcoes,
+            filtros.pessoa === "todas" || filtros.pessoa === "sem" ? "" : filtros.pessoa,
+            filtros.pessoa,
+          ),
         ]}
-        selecionado={filtros.pessoa}
-        ativo={filtros.pessoa !== "todas"}
-        onEscolher={(pessoa) => onMudar({ pessoa })}
+        valor={filtros.pessoa === "todas" ? "" : filtros.pessoa}
+        onMudar={(pessoa) => onMudar({ pessoa: pessoa || "todas" })}
+        permitirLimpar
+        carregando={pessoas.carregando}
+        onBuscar={pessoas.buscar}
+        placeholderBusca="Buscar pessoa"
+        erro={pessoas.erro}
+        onTentarDeNovo={pessoas.tentarDeNovo}
       />
     </Flex>
   );

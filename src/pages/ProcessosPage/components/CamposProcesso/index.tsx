@@ -1,37 +1,61 @@
 import { Input, Textarea } from "@chakra-ui/react";
+import { useState } from "react";
 
 import {
   Campo,
+  CampoDeClientes,
   LinhaDeCampos,
-  MultiSelect,
   Select,
   SeletorData,
 } from "../../../../components";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import type { OpcaoProcesso } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../types";
-import { useOpcoesDeProcesso, useTodosOsClientes } from "../../../../hooks/useCatalogos";
+import { useOpcoesDeProcesso } from "../../../../hooks/useCatalogos";
 
 interface CamposProcessoProps {
   valores: CamposOpcionaisProcesso;
   onMudar: (valores: CamposOpcionaisProcesso) => void;
+  /** Nome de cada id em `valores.clienteIds`, na MESMA ordem -- é o
+   * `cliente_nomes` que a resposta do processo já traz.
+   *
+   * Prop separada, e não um campo de `CamposOpcionaisProcesso`, porque
+   * aquele tipo é o CORPO da requisição de salvar: um nome ali seria
+   * mandado de volta ao servidor como se fosse dado a gravar. Aqui ele só
+   * serve pra etiqueta na tela de EDIÇÃO -- no cadastro não existe nada
+   * escolhido ainda. */
+  nomesDosClientes?: string[];
 }
 
 /** Campos opcionais compartilhados entre cadastro (`NovoProcessoForm`) e
  * edição (`ProcessoDetalhePage`) de processo.
  *
- * É quem chama `GET /clientes`/`/fases`/`/situacoes` -- o cache do React
- * Query evita refetch duplicado mesmo montando em cadastro e edição, e
- * também compartilha com os filtros de `ProcessosPage`, que pedem o mesmo
- * `TETO_POR_PAGINA`.
+ * Chama `GET /fases` e `GET /situacoes` -- o cache do React Query evita
+ * refetch duplicado mesmo montando em cadastro e edição, e compartilha com
+ * os filtros de `ProcessosPage`.
+ *
+ * 🔴 Cliente NÃO vem mais por catálogo. Este componente monta DENTRO da
+ * `ProcessosPage`, então abrir "Novo processo" baixava a lista inteira de
+ * clientes uma segunda vez, na mesma tela. Agora é `CampoDeClientes`: nada é
+ * pedido antes de a pessoa tocar no campo, e o que chega é a primeira página
+ * em ordem alfabética.
  *
  * A ordem dos campos é a do artifact: identificação, partes, classificação
  * (fase/situação), prazos e por fim as anotações.
  */
-export default function CamposProcesso({ valores, onMudar }: CamposProcessoProps) {
-  const clientesQuery = useTodosOsClientes();
-  useToastOnQueryError(clientesQuery.error, "Não foi possível carregar os clientes.");
-  const clientes = clientesQuery.data || [];
+export default function CamposProcesso({
+  valores,
+  onMudar,
+  nomesDosClientes,
+}: CamposProcessoProps) {
+  /* Semeado uma vez, na montagem: depois quem manda é o próprio campo. Os
+     dois arrays vêm pareados por índice do servidor (`cliente_nomes` cai pro
+     próprio id quando o cliente sumiu), então o `??` só cobre o caso de a
+     prop não ter sido passada -- o cadastro, onde não há nada escolhido. */
+  const [nomes, setNomes] = useState<Map<string, string>>(
+    () =>
+      new Map((valores.clienteIds || []).map((id, i) => [id, nomesDosClientes?.[i] ?? id])),
+  );
 
   const fasesQuery = useOpcoesDeProcesso("fase");
   useToastOnQueryError(fasesQuery.error, "Não foi possível carregar as fases.");
@@ -62,13 +86,14 @@ export default function CamposProcesso({ valores, onMudar }: CamposProcessoProps
   return (
     <>
       <Campo rotulo="Clientes" para="cliente-processo">
-        <MultiSelect
+        <CampoDeClientes
           id="cliente-processo"
-          opcoes={clientes.map((c) => ({ value: c.cliente_id, label: c.nome }))}
-          selecionados={valores.clienteIds || []}
-          onMudar={(v) => mudarCampo("clienteIds", v)}
-          placeholder="Selecione os clientes"
-          carregando={clientesQuery.isPending}
+          valor={valores.clienteIds || []}
+          nomes={nomes}
+          onMudar={(ids, novosNomes) => {
+            setNomes(novosNomes);
+            mudarCampo("clienteIds", ids);
+          }}
         />
       </Campo>
 

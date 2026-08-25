@@ -24,6 +24,10 @@ const PESSOA = {
   apelido: "Ana Paula",
   papel: "admin" as const,
   subgrupos: ["s1"],
+  /* 🔴 O NOME vem na própria pessoa desde 25/08/2026. Antes a tela baixava o
+     catálogo de subgrupos só pra traduzir id em nome -- e até ele chegar a
+     coluna ficava vazia, sugerindo que ninguém está em subgrupo nenhum. */
+  subgrupo_nomes: ["Cível"],
 };
 
 beforeEach(() => {
@@ -47,8 +51,8 @@ describe("MembrosPage", () => {
 
     expect(await screen.findByText("Ana Paula")).toBeInTheDocument();
     expect(screen.getByText("Admin")).toBeInTheDocument();
-    // Nome do subgrupo, e não o id: `membro.subgrupos` traz ids, e id não
-    // diz nada pra quem lê.
+    // Nome do subgrupo, e não o id -- e vindo de `subgrupo_nomes`, que a
+    // resposta já traz.
     expect(screen.getAllByText("Cível").length).toBeGreaterThan(0);
   });
 

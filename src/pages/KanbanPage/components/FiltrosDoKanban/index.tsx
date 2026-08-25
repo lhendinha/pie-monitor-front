@@ -3,18 +3,25 @@ import { Flex } from "@chakra-ui/react";
 import {
   CampoDeBusca,
   PilulaDeFiltro,
-  PilulaDeMenu,
+  Select,
   SeletorDePeriodo,
 } from "../../../../components";
+import { comOpcaoEscolhida } from "../../../../hooks/useOpcoesBuscaveis";
 
 import type { FiltrosDoQuadro } from "../../types";
-import type { Membro, Subgrupo } from "../../../../types";
+import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
 
 interface FiltrosDoKanbanProps {
-  subgrupos: Subgrupo[];
-  membros: Membro[];
+  /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */
+  subgrupos: OpcoesBuscaveis;
+  /** O nome do subgrupo em uso, que pode estar fora da primeira página. */
+  subgrupoNome: string;
+  /** Idem, pras pessoas. Só carrega quando a pílula abre. */
+  pessoas: OpcoesBuscaveis;
   filtros: FiltrosDoQuadro;
   onMudar: (parcial: Partial<FiltrosDoQuadro>) => void;
+  /** Trocar de quadro é o que a memória do subgrupo precisa observar. */
+  onEscolherSubgrupo: (id: string, nome: string) => void;
 }
 
 /** A barra de filtros do quadro (`.filter-bar` do artifact).
@@ -26,17 +33,32 @@ interface FiltrosDoKanbanProps {
  */
 export default function FiltrosDoKanban({
   subgrupos,
-  membros,
+  subgrupoNome,
+  pessoas,
   filtros,
   onMudar,
+  onEscolherSubgrupo,
 }: FiltrosDoKanbanProps) {
+  const opcoesDeSubgrupo = comOpcaoEscolhida(subgrupos.opcoes, filtros.subgrupoId, subgrupoNome);
+
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="18px">
-      <PilulaDeMenu
-        opcoes={subgrupos.map((s) => ({ id: s.subgrupo_id, rotulo: s.nome }))}
-        selecionado={filtros.subgrupoId}
-        ativo
-        onEscolher={(id) => onMudar({ subgrupoId: id })}
+      {/* Sem "Todas as X" e sem X de limpar: esta pílula ESCOLHE o quadro, não
+          filtra. Limpar deixaria a tela sem quadro nenhum. */}
+      <Select
+        variante="chip"
+        placeholder="Subgrupo"
+        opcoes={opcoesDeSubgrupo}
+        valor={filtros.subgrupoId}
+        onMudar={(id) =>
+          onEscolherSubgrupo(id, opcoesDeSubgrupo.find((o) => o.value === id)?.label ?? "")
+        }
+        comOpcaoTodas={false}
+        carregando={subgrupos.carregando}
+        onBuscar={subgrupos.buscar}
+        placeholderBusca="Buscar subgrupo"
+        erro={subgrupos.erro}
+        onTentarDeNovo={subgrupos.tentarDeNovo}
       />
 
       <SeletorDePeriodo
@@ -47,15 +69,32 @@ export default function FiltrosDoKanban({
         }
       />
 
-      <PilulaDeMenu
+      {/* "Todas as pessoas" é a linha do topo do painel (`placeholder`), e o
+          estado que corresponde a ela é `"todas"` -- daí a tradução nos dois
+          sentidos. "Sem responsável" é opção de verdade: não é ausência de
+          filtro, é um filtro por ausência.
+
+          O e-mail serve de rótulo pra quem está fora da primeira página:
+          identifica a pessoa, que é o que a etiqueta precisa fazer. */}
+      <Select
+        variante="chip"
+        placeholder="Todas as pessoas"
         opcoes={[
-          { id: "todas", rotulo: "Todas as pessoas" },
-          { id: "sem", rotulo: "Sem responsável" },
-          ...membros.map((m) => ({ id: m.email, rotulo: m.apelido || m.email })),
+          { value: "sem", label: "Sem responsável" },
+          ...comOpcaoEscolhida(
+            pessoas.opcoes,
+            filtros.pessoa === "todas" || filtros.pessoa === "sem" ? "" : filtros.pessoa,
+            filtros.pessoa,
+          ),
         ]}
-        selecionado={filtros.pessoa}
-        ativo={filtros.pessoa !== "todas"}
-        onEscolher={(id) => onMudar({ pessoa: id })}
+        valor={filtros.pessoa === "todas" ? "" : filtros.pessoa}
+        onMudar={(v) => onMudar({ pessoa: v || "todas" })}
+        permitirLimpar
+        carregando={pessoas.carregando}
+        onBuscar={pessoas.buscar}
+        placeholderBusca="Buscar pessoa"
+        erro={pessoas.erro}
+        onTentarDeNovo={pessoas.tentarDeNovo}
       />
 
       {/* Sem "Limpar filtros" aqui, por escolha, DIVERGINDO do artifact --
@@ -71,7 +110,6 @@ export default function FiltrosDoKanban({
           outras pílulas da barra -- e não a ação. */}
       <PilulaDeFiltro
         ativo={filtros.mostrarArquivadas}
-        semSeta
         aria-pressed={filtros.mostrarArquivadas}
         onClick={() => onMudar({ mostrarArquivadas: !filtros.mostrarArquivadas })}
       >

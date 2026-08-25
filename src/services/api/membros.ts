@@ -6,6 +6,11 @@ import type { Membro } from "../../types";
 interface OpcoesListarMembros {
   pagina?: number;
   tamanhoPagina?: number;
+  /** Filtra no SERVIDOR, por apelido OU e-mail
+   * (`membros_service.listar_pessoas_do_grupo`). Os dois porque nem todo
+   * mundo tem apelido: buscar só por apelido esconderia quem acabou de ser
+   * convidado, que é justamente quem se procura. */
+  busca?: string;
 }
 
 /** Uma página de `GET /grupos/membros`.
@@ -18,11 +23,12 @@ interface OpcoesListarMembros {
  * página 2 pra clicar.
  */
 export function listarMembrosDoGrupo(opcoes: OpcoesListarMembros = {}) {
-  const { pagina, tamanhoPagina } = opcoes;
+  const { pagina, tamanhoPagina, busca } = opcoes;
   return chamar("/grupos/membros", {
     query: {
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
+      busca: busca || undefined,
     },
   });
 }

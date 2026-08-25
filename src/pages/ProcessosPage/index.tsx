@@ -18,6 +18,7 @@ import CabecalhoProcessos from "./components/CabecalhoProcessos";
 import TabelaProcessos from "./components/TabelaProcessos";
 import NovoProcessoForm from "./components/NovoProcessoForm";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
+import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import { useFiltrosProcessos } from "./hooks/useFiltrosProcessos";
 import type { FiltrosProcessos } from "../../types";
 import type {
@@ -51,6 +52,8 @@ export default function ProcessosPage() {
 
   const f = useFiltrosProcessos(filtrosIniciais, navegacao?.processoEmDestaque);
   const apoio = useCatalogosDeProcesso();
+  /** Não pede nada até a pílula abrir -- ver `useOpcoesBuscaveis`. */
+  const clientes = useClientesBuscaveis();
   const queryClient = useQueryClient();
 
   /** 🔴 A paginação vai SEMPRE, com ou sem filtro.
@@ -145,9 +148,13 @@ export default function ProcessosPage() {
         onBuscar={f.setBuscaInput}
         filtros={f.aplicados}
         onMudarFiltro={f.mudar}
-        clientes={apoio.clientes}
+        clientes={clientes}
         fases={apoio.fases}
         situacoes={apoio.situacoes}
+        erroNasFases={apoio.erroNasFases}
+        erroNasSituacoes={apoio.erroNasSituacoes}
+        onRecarregarFases={apoio.recarregarFases}
+        onRecarregarSituacoes={apoio.recarregarSituacoes}
         onNovoProcesso={() => setModalAberto(true)}
       />
 

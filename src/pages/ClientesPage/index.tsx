@@ -65,6 +65,7 @@ export default function ClientesPage() {
       <CabecalhoClientes
         carregando={carregando}
         total={total}
+        exibidos={clientes.length}
         busca={buscaInput}
         /* Duas fases, e as duas são "o que você vê não é o que você
            escreveu": a espera entre teclas (o input já mudou, `busca` não) e

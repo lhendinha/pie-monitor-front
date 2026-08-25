@@ -10,7 +10,6 @@ interface LinhaDeAtendimentoProps {
   /** Nome de cada cliente vinculado. O atendimento guarda só os ids, e quem
    * resolve os nomes é a página -- numa consulta só pra lista inteira, em
    * vez de uma por linha. */
-  nomeDoCliente: (id: string) => string | undefined;
   /** Apelido de quem escreveu o último registro. O registro guarda só o
    * e-mail, e o avatar tira as iniciais do que receber -- sem resolver, a
    * lista mostrava as iniciais do E-MAIL ("jo") enquanto o detalhe mostrava
@@ -36,7 +35,6 @@ interface LinhaDeAtendimentoProps {
  */
 export default function LinhaDeAtendimento({
   atendimento,
-  nomeDoCliente,
   nomeDoAutor,
   onAbrir,
   ultima,
@@ -46,7 +44,9 @@ export default function LinhaDeAtendimento({
 
   /* Id que não resolve cai no próprio id -- some da tela seria pior: a
      linha não diria a quem o atendimento pertence. */
-  const clientes = atendimento.cliente_ids.map((id) => nomeDoCliente(id) ?? id).join(", ");
+  const clientes = (
+    atendimento.cliente_nomes?.length ? atendimento.cliente_nomes : atendimento.cliente_ids
+  ).join(", ");
 
   return (
     <BotaoNu

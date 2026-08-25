@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   listarTarefas: vi.fn(),
   listarSubgrupos: vi.fn(),
   listarTodosOsMembrosDoGrupo: vi.fn(),
+  /* ⚠️ Uma PÁGINA de membros, que é o que a pílula de pessoas passou a usar
+     -- ela não baixa mais o grupo inteiro. Sem este mock a consulta ia pra
+     rede de verdade, falhava, e o painel abria mostrando a falha em vez das
+     opções. */
+  listarMembrosDoGrupo: vi.fn(),
   listarQuadro: vi.fn(),
   listarMembrosDoSubgrupo: vi.fn(),
   listarAtendimentos: vi.fn(),
@@ -69,6 +74,11 @@ beforeEach(() => {
   });
   mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
     membros: [{ email: "ana@x.com", apelido: "Ana" }],
+  });
+  mocks.listarMembrosDoGrupo.mockResolvedValue({
+    membros: [{ email: "ana@x.com", apelido: "Ana" }],
+    total: 1,
+    total_paginas: 1,
   });
   mocks.listarQuadro.mockResolvedValue({ colunas: COLUNAS });
   mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [{ email: "ana@x.com", apelido: "Ana" }] });
@@ -344,8 +354,11 @@ describe("filtro de pessoa", () => {
     await trocarVisao("Por dia");
     await screen.findAllByText("Da Ana");
 
-    await userEvent.click(screen.getByRole("button", { name: /Todas as pessoas/ }));
-    await userEvent.click(await screen.findByRole("menuitem", { name: "Sem responsável" }));
+    /* ⚠️ A pílula virou `Select` (pra ganhar busca, X e os estados de
+       espera/falha), então o gatilho não é mais um `button` e as opções são
+       `option`, num portal fora da barra -- e não `menuitem`. */
+    await userEvent.click(screen.getByText("Todas as pessoas"));
+    await userEvent.click(await screen.findByRole("option", { name: "Sem responsável" }));
 
     await waitFor(() => expect(screen.queryByText("Da Ana")).not.toBeInTheDocument());
     expect(screen.getAllByText("De ninguém").length).toBeGreaterThan(0);

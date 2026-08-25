@@ -43,7 +43,10 @@ describe("invalidação alcança o catálogo completo, não só a página", () =
 
   it("prefixos de clientes e subgrupos alcançam os dois lados", () => {
     expect(invalidaria(qk.clientes({ pagina: 2 }), qk.prefixoClientes())).toBe(true);
-    expect(invalidaria(qk.todosOsClientes(), qk.prefixoClientes())).toBe(true);
+    /* Cliente não tem mais catálogo completo -- a chave de BUSCA é que
+       precisa ser alcançada pelo prefixo, senão cadastrar um cliente não
+       aparece na pílula de filtro. */
+    expect(invalidaria(qk.clientes({ busca: "sil" }), qk.prefixoClientes())).toBe(true);
     expect(invalidaria(qk.subgrupos({ pagina: 2 }), qk.prefixoSubgrupos())).toBe(true);
     expect(invalidaria(qk.todosOsSubgrupos(), qk.prefixoSubgrupos())).toBe(true);
   });

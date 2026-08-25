@@ -1,14 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
 import {
-  listarClientes,
   listarOpcoesProcesso,
   listarSubgrupos,
   listarTodosOsMembrosDoGrupo,
 } from "../services";
 import { todasAsPaginas } from "../services/api/paginacao";
 import { qk } from "../services/queryKeys";
-import type { Cliente, Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from "../types";
+import type { Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from "../types";
 
 /** Os catálogos do sistema, cada um com UMA função de busca.
  *
@@ -50,12 +49,17 @@ import type { Cliente, Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from
  * `staleTime`: é parar de caminhar todas as páginas só pra rotular tarefa,
  * e buscar os assuntos dos ids que estão na tela.
  */
-export function useTodosOsClientes() {
-  return useQuery({
-    queryKey: qk.todosOsClientes(),
-    queryFn: () => todasAsPaginas<Cliente>(listarClientes, "clientes"),
-  });
-}
+/* 🔴 `useTodosOsClientes` foi REMOVIDO, e a ausência é o ponto.
+ *
+ * Era o último lugar que baixava o catálogo inteiro de clientes -- a única
+ * das listas daqui que cresce sem limite de verdade. Os três consumidores
+ * viraram busca: a coluna da tabela lê `cliente_nomes` (que vem no próprio
+ * processo), e os dois seletores pedem a primeira página quando abrem
+ * (`useOpcoesBuscaveis`, `CampoDeClientes`).
+ *
+ * Os hooks que sobraram continuam percorrendo todas as páginas de propósito:
+ * subgrupo e opção de processo são cadastro de escritório, medido em 8 e 88
+ * itens em produção -- lá a caminhada é UMA requisição. */
 
 export function useTodosOsSubgrupos() {
   return useQuery({

@@ -50,6 +50,19 @@ const COLUNAS_CIVEL = [
   { subgrupo_id: "sg-civel", coluna_id: "cv2", nome: "Sentenciado", ordem: 2, e_conclusao: true, e_arquivado: false },
 ];
 
+/** Abre a tela já no quadro do Trabalhista -- o único dos dois que tem
+ * coluna de Arquivado, e o dono das colunas que as tarefas de teste usam.
+ *
+ * Explícito de propósito. Antes esses testes dependiam de o quadro padrão
+ * ser "o último da lista", que era uma regra implícita e hoje nem existe
+ * mais: o que decide é a memória do último subgrupo usado. */
+function lembrarTrabalhista() {
+  localStorage.setItem(
+    "pje-monitor-ultimo-subgrupo-kanban",
+    JSON.stringify({ id: "sg-trab", nome: "Trabalhista" }),
+  );
+}
+
 function montar(tarefaDoLink?: { subgrupoId: string; tarefaId: string }) {
   return renderComProviders(
     <MemoryRouter>
@@ -60,6 +73,9 @@ function montar(tarefaDoLink?: { subgrupoId: string; tarefaId: string }) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  /* ⚠️ O quadro padrão passou a ser LEMBRADO em `localStorage`. Sem limpar,
+     o subgrupo escolhido num teste decide em qual quadro o próximo abre. */
+  localStorage.clear();
   mocks.papelAtende.mockReturnValue(true);
   mocks.listarSubgrupos.mockResolvedValue({
     subgrupos: [
@@ -94,8 +110,42 @@ describe("KanbanPage — link do lembrete de prazo", () => {
   });
 
   it("abre o quadro DO SUBGRUPO da tarefa, não o padrão", async () => {
-    // Sem isto o quadro abriria no último da lista e a tarefa do link
-    // apareceria num quadro que não é o dela.
+    // Sem isto a tarefa do link apareceria num quadro que não é o dela.
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+
+    await waitFor(() => expect(mocks.listarQuadro).toHaveBeenCalledWith("sg-trab"));
+  });
+
+  it("🔴 sem nada lembrado, abre no PRIMEIRO da lista", async () => {
+    /* Era `subgrupos[subgrupos.length - 1]`, com o comentário "o último da
+     * lista, que é o mais recente, que é o que costuma estar em uso" -- e
+     * nenhuma das três afirmações valia. A listagem passou a vir em ordem
+     * ALFABÉTICA, então o último é só o último do alfabeto. */
+    montar();
+
+    await waitFor(() => expect(mocks.listarQuadro).toHaveBeenCalledWith("sg-civel"));
+  });
+
+  it("🔴 mas abre no ÚLTIMO QUE A PESSOA USOU, quando há um lembrado", async () => {
+    /* Quem trabalha sempre no mesmo subgrupo trocava a pílula toda vez que
+     * entrava na tela. A memória acerta em quem tem rotina e não piora nada
+     * pra quem não tem -- na primeira visita o comportamento é o mesmo. */
+    localStorage.setItem(
+      "pje-monitor-ultimo-subgrupo-kanban",
+      JSON.stringify({ id: "sg-trab", nome: "Trabalhista" }),
+    );
+    montar();
+
+    await waitFor(() => expect(mocks.listarQuadro).toHaveBeenCalledWith("sg-trab"));
+  });
+
+  it("e o link do lembrete VENCE a memória", async () => {
+    /* A memória é um palpite; o link é uma instrução. Ela não pode desviar
+     * quem clicou num e-mail apontando pra uma tarefa específica. */
+    localStorage.setItem(
+      "pje-monitor-ultimo-subgrupo-kanban",
+      JSON.stringify({ id: "sg-trab", nome: "Trabalhista" }),
+    );
     montar({ subgrupoId: "sg-civel", tarefaId: "t-atrasada" });
 
     await waitFor(() => expect(mocks.listarQuadro).toHaveBeenCalledWith("sg-civel"));
@@ -139,6 +189,7 @@ describe("KanbanPage — link do lembrete de prazo", () => {
   it("o Arquivado NÃO aparece no quadro por padrão", async () => {
     /* Depósito do que já saiu do fluxo -- à vista o tempo todo, rouba uma
      * coluna de largura pro que ninguém está tocando. */
+    lembrarTrabalhista();
     montar();
 
     expect(await screen.findByText("A Fazer")).toBeInTheDocument();
@@ -147,6 +198,7 @@ describe("KanbanPage — link do lembrete de prazo", () => {
 
   it("a pílula revela a coluna, e o rótulo diz o ESTADO", async () => {
     const user = userEvent.setup();
+    lembrarTrabalhista();
     montar();
 
     await user.click(await screen.findByRole("button", { name: "Sem arquivadas" }));
@@ -161,6 +213,7 @@ describe("KanbanPage — link do lembrete de prazo", () => {
      * preferência de visualização. Limpar não pode desfazer o que a pessoa
      * acabou de revelar. */
     const user = userEvent.setup();
+    lembrarTrabalhista();
     montar();
 
     await user.click(await screen.findByRole("button", { name: "Sem arquivadas" }));
@@ -197,6 +250,7 @@ describe("busca por texto", () => {
       total: 2,
       total_paginas: 1,
     });
+    lembrarTrabalhista();
     montar();
 
     await screen.findByText("Protocolar recurso");
@@ -227,9 +281,9 @@ describe("criar tarefa em OUTRO subgrupo", () => {
     await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
     const modal = await screen.findByRole("dialog");
 
-    // O quadro abre no último subgrupo da lista (Trabalhista).
-    await within(modal).findByText("A Fazer");
-    await user.click(within(modal).getByText("Trabalhista"));
+    // O quadro abre no primeiro subgrupo da lista (Cível).
+    await within(modal).findByText("Triagem");
+    await user.click(within(modal).getByText("Cível"));
     /* ⚠️ `screen`, não `within(modal)`: o `Select` manda o menu pra um
        portal em `document.body` (`menuPortalTarget`), então as opções
        ficam FORA do diálogo. Por `role="option"` também não colide com o
@@ -239,24 +293,24 @@ describe("criar tarefa em OUTRO subgrupo", () => {
   }
 
   it("oferece as colunas do subgrupo ESCOLHIDO, não as do quadro aberto", async () => {
-    const { modal } = await abrirNovaTarefaETrocarPara("Cível");
+    const { modal } = await abrirNovaTarefaETrocarPara("Trabalhista");
 
-    expect(await within(modal).findByText("Triagem")).toBeInTheDocument();
+    expect(await within(modal).findByText("A Fazer")).toBeInTheDocument();
     // A coluna do quadro anterior não pode sobreviver à troca: era ela que
     // o servidor recusava.
-    expect(within(modal).queryByText("A Fazer")).not.toBeInTheDocument();
+    expect(within(modal).queryByText("Triagem")).not.toBeInTheDocument();
   });
 
   it("salva com a coluna do quadro do subgrupo escolhido", async () => {
-    const { user, modal } = await abrirNovaTarefaETrocarPara("Cível");
-    await within(modal).findByText("Triagem");
+    const { user, modal } = await abrirNovaTarefaETrocarPara("Trabalhista");
+    await within(modal).findByText("A Fazer");
 
     await user.type(within(modal).getByLabelText(/Descrição da tarefa/), "Petição inicial");
     await user.click(within(modal).getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => expect(mocks.criarTarefa).toHaveBeenCalled());
     expect(mocks.criarTarefa).toHaveBeenCalledWith(
-      expect.objectContaining({ subgrupo_id: "sg-civel", coluna_id: "cv1" }),
+      expect.objectContaining({ subgrupo_id: "sg-trab", coluna_id: "c1" }),
     );
   });
 
@@ -265,10 +319,10 @@ describe("criar tarefa em OUTRO subgrupo", () => {
      * membro do subgrupo. A lista vinha do grupo inteiro, então escolher
      * alguém de fora dava "Responsável não é membro do subgrupo" -- o mesmo
      * defeito da coluna, num campo diferente. */
-    await abrirNovaTarefaETrocarPara("Cível");
+    await abrirNovaTarefaETrocarPara("Trabalhista");
 
     await waitFor(() =>
-      expect(mocks.listarMembrosDoSubgrupo).toHaveBeenCalledWith("sg-civel"),
+      expect(mocks.listarMembrosDoSubgrupo).toHaveBeenCalledWith("sg-trab"),
     );
   });
 });
@@ -309,7 +363,7 @@ describe("nome de quem pode ser responsável", () => {
     montar();
     await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
     const modal = await screen.findByRole("dialog");
-    await within(modal).findByText("A Fazer");
+    await within(modal).findByText("Triagem");
     await user.click(within(modal).getByText("Sem responsável"));
 
     expect(await screen.findByRole("option", { name: "João Meireles" })).toBeInTheDocument();
@@ -326,7 +380,7 @@ describe("nome de quem pode ser responsável", () => {
     montar();
     await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
     const modal = await screen.findByRole("dialog");
-    await within(modal).findByText("A Fazer");
+    await within(modal).findByText("Triagem");
     await user.click(within(modal).getByText("Sem responsável"));
 
     expect(await screen.findByRole("option", { name: "sem.apelido@x.com" })).toBeInTheDocument();
@@ -347,7 +401,7 @@ describe("nome de quem pode ser responsável", () => {
     montar();
     await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
     const modal = await screen.findByRole("dialog");
-    await within(modal).findByText("A Fazer");
+    await within(modal).findByText("Triagem");
     await user.click(within(modal).getByText("Sem responsável"));
 
     expect(await screen.findByRole("option", { name: "Eu Mesmo" })).toBeInTheDocument();

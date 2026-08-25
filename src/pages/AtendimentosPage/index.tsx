@@ -25,7 +25,7 @@ import CabecalhoAtendimentos from "./components/CabecalhoAtendimentos";
 import LinhaDeAtendimento from "./components/LinhaDeAtendimento";
 import NovoAtendimentoForm from "./components/NovoAtendimentoForm";
 import { STATUS_TODOS, statusParaApi } from "./constants";
-import { useTodosOsClientes, useTodosOsSubgrupos } from "../../hooks/useCatalogos";
+import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import type {
   RespostaDeAtendimentosPaginada,
   RespostaDeMembros,
@@ -73,19 +73,15 @@ export default function AtendimentosPage() {
 
   /** Os subgrupos são do modal de criação, e ele precisa deles ABERTO --
    * por isso a consulta fica aqui, não lá dentro: assim ela já está pronta
-   * (ou a caminho) quando o modal abre, em vez de começar no clique. */
-  const subgruposQuery = useTodosOsSubgrupos();
-
-  /** Nomes dos clientes, pra linha mostrar nome em vez de id.
+   * (ou a caminho) quando o modal abre, em vez de começar no clique.
    *
-   * Uma consulta pra lista inteira, não uma por linha: dez atendimentos com
-   * dois clientes cada seriam vinte requisições pra mostrar vinte palavras.
-   */
-  const clientesQuery = useTodosOsClientes();
-  const nomePorId = useMemo(
-    () => new Map((clientesQuery.data || []).map((c) => [c.cliente_id, c.nome])),
-    [clientesQuery.data],
-  );
+   * ⚠️ Primeira página, não o catálogo. Quem precisar de um subgrupo fora
+   * dela digita dentro do próprio seletor. */
+  const subgrupos = useSubgruposBuscaveis(true);
+
+  /* O nome do cliente vem em `cliente_nomes`, DENTRO de cada atendimento --
+     campo derivado que o servidor resolve pra página pedida. Aqui havia uma
+     consulta ao catálogo inteiro de clientes só pra traduzir id em nome. */
 
   /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
    * não vem, e o avatar cai nas iniciais do e-mail, que ainda identifica. */
@@ -168,7 +164,6 @@ export default function AtendimentosPage() {
                   <LinhaDeAtendimento
                     key={`${atendimento.subgrupo_id}:${atendimento.atendimento_id}`}
                     atendimento={atendimento}
-                    nomeDoCliente={(id) => nomePorId.get(id)}
                     nomeDoAutor={(email) => apelidoPorEmail.get(email) ?? email}
                     onAbrir={(a) =>
                       navigate(`/atendimentos/${a.subgrupo_id}/${a.atendimento_id}`)
@@ -195,8 +190,7 @@ export default function AtendimentosPage() {
 
       {modalAberto && (
         <NovoAtendimentoForm
-          subgrupos={subgruposQuery.data || []}
-          carregandoSubgrupos={subgruposQuery.isPending}
+          subgrupos={subgrupos}
           onSalvo={() => {
             setModalAberto(false);
             queryClient.invalidateQueries({ queryKey: ["atendimentos"] });

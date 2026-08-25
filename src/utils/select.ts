@@ -102,6 +102,23 @@ export function estilosSelect(
       color: cores.slate,
       textAlign: "center" as const,
     }),
+    /* Mesma moldura da mensagem de "nenhuma opção": as duas ocupam o lugar
+       da lista, e com paddings diferentes o painel mudava de altura entre
+       "carregando" e "carregou vazio" -- um pulo visível a cada busca.
+
+*/
+    loadingMessage: (base) => ({
+      ...base,
+      padding: MENSAGEM_VAZIA.padding,
+      fontSize: MENSAGEM_VAZIA.fonte,
+      color: cores.slate,
+      textAlign: "center" as const,
+    }),
+    /* Os três pontinhos que pulsam DENTRO da pílula, no azul da marca.
+       Em cinza eles se confundiam com a borda do próprio controle -- é o
+       único sinal de que abrir disparou uma busca, e precisa ser visto. */
+    loadingIndicator: (base) => ({ ...base, color: cores.brand }),
+    clearIndicator: (base) => ({ ...base, padding: 0, cursor: "pointer", color: "inherit" }),
     menuPortal: estilosMenuPortal,
   };
 }
@@ -181,6 +198,23 @@ export function estilosChip(
       color: cores.slate,
       textAlign: "center" as const,
     }),
+    /* Mesma moldura da mensagem de "nenhuma opção": as duas ocupam o lugar
+       da lista, e com paddings diferentes o painel mudava de altura entre
+       "carregando" e "carregou vazio" -- um pulo visível a cada busca.
+
+*/
+    loadingMessage: (base) => ({
+      ...base,
+      padding: MENSAGEM_VAZIA.padding,
+      fontSize: MENSAGEM_VAZIA.fonte,
+      color: cores.slate,
+      textAlign: "center" as const,
+    }),
+    /* Os três pontinhos que pulsam DENTRO da pílula, no azul da marca.
+       Em cinza eles se confundiam com a borda do próprio controle -- é o
+       único sinal de que abrir disparou uma busca, e precisa ser visto. */
+    loadingIndicator: (base) => ({ ...base, color: cores.brand }),
+    clearIndicator: (base) => ({ ...base, padding: 0, cursor: "pointer", color: "inherit" }),
     menuPortal: estilosMenuPortal,
   };
 }

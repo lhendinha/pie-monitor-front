@@ -37,6 +37,11 @@ export function useFiltrosProcessos(
     ...iniciais,
   });
 
+  /* ⚠️ `clienteNome` fica DE FORA: este objeto vira `queryKey` e query
+     string. O nome é rótulo de tela, não critério de busca -- deixá-lo aqui
+     faria a mesma consulta virar duas entradas de cache (id com nome e id
+     sem nome, que é o que chega pelo atalho da Área de trabalho) e faria
+     `temFiltroAtivo` contar um filtro que não filtra nada. */
   const filtros = {
     busca,
     clienteId: aplicados.clienteId,
@@ -50,6 +55,8 @@ export function useFiltrosProcessos(
     buscaInput,
     setBuscaInput,
     filtros,
+    /** Só pra desenhar o rótulo da pílula -- ver `FiltrosProcessos`. */
+    clienteNome: aplicados.clienteNome,
     filtroAtivo: temFiltroAtivo(filtros),
     aplicados,
     mudar: (parcial: Partial<FiltrosProcessos>) =>

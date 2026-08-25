@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import {
   Botao,
   Campo,
+  CampoDeClientes,
   Modal,
   RodapeDeAcoes,
   Select,
@@ -12,17 +13,13 @@ import {
 } from "../../../../components";
 import { criarAtendimento } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
-import CampoDeClientes from "../CampoDeClientes";
 import CampoDeProcesso from "../CampoDeProcesso";
 import type { ProcessoEscolhido } from "../../types";
-import type { Subgrupo } from "../../../../types";
+import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
 
 interface NovoAtendimentoFormProps {
-  subgrupos: Subgrupo[];
-  /** Os subgrupos ainda estão vindo. O botão "Adicionar" aparece antes
-   * deles, então dá pra abrir este modal com o seletor vazio -- e aí o
-   * Salvar ficava travado sem dizer por quê. */
-  carregandoSubgrupos?: boolean;
+  /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */
+  subgrupos: OpcoesBuscaveis;
   onSalvo: () => void;
   onFechar: () => void;
 }
@@ -36,7 +33,6 @@ interface NovoAtendimentoFormProps {
  */
 export default function NovoAtendimentoForm({
   subgrupos,
-  carregandoSubgrupos,
   onSalvo,
   onFechar,
 }: NovoAtendimentoFormProps) {
@@ -46,13 +42,19 @@ export default function NovoAtendimentoForm({
   const [clientes, setClientes] = useState<string[]>([]);
   const [nomesDosClientes, setNomesDosClientes] = useState(new Map<string, string>());
   const [assunto, setAssunto] = useState("");
-  /* O último da lista, como no Kanban: a listagem vem na ordem de criação,
-     então o último é o mais recente -- o que costuma estar em uso. */
+  /* 🔴 O PRIMEIRO da lista. Era o último, com o comentário "a listagem vem
+     na ordem de criação, então o último é o mais recente -- o que costuma
+     estar em uso": a listagem passou a vir em ordem ALFABÉTICA, então o
+     último virou só o último do alfabeto. Sem sinal nenhum sobre qual a
+     pessoa quer, o primeiro da lista não finge saber mais do que sabe -- e
+     o campo é editável. */
   const [subgrupoId, setSubgrupoId] = useState("");
   const [processo, setProcesso] = useState<ProcessoEscolhido | null>(null);
   const [registro, setRegistro] = useState("");
 
-  const subgrupoEscolhido = subgrupoId || subgrupos[subgrupos.length - 1]?.subgrupo_id || "";
+  /* ⚠️ `primeiraPagina`: `opcoes` encolhe enquanto a pessoa digita NESTE
+     mesmo campo, e o padrão passaria a ser o primeiro resultado da busca. */
+  const subgrupoEscolhido = subgrupoId || subgrupos.primeiraPagina[0]?.value || "";
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -121,10 +123,13 @@ export default function NovoAtendimentoForm({
         <Campo rotulo="Subgrupo" para={`${prefixo}-subgrupo`} obrigatorio>
           <Select
             id={`${prefixo}-subgrupo`}
-            opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
+            opcoes={subgrupos.opcoes}
             valor={subgrupoEscolhido}
             onMudar={setSubgrupoId}
-            carregando={carregandoSubgrupos}
+            carregando={subgrupos.carregandoPrimeiraVez}
+            onBuscar={subgrupos.buscar}
+            erro={subgrupos.erro}
+            onTentarDeNovo={subgrupos.tentarDeNovo}
           />
         </Campo>
 

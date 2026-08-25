@@ -19,9 +19,9 @@ Front reescrito em TypeScript, estrutura em camadas (`pages/`, `services/`,
 `utils/`, `components/`, `constants/`), usando **Yarn** (não npm), deployado
 no **Vercel** em `pie-monitor-front.vercel.app`. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
-de testes com `vitest` + `@testing-library/react` (`yarn test`): 56 arquivos,
-546 testes, cobrindo `pages/` (26 arquivos), `components/` (11), `utils/`
-(8), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
+de testes com `vitest` + `@testing-library/react` (`yarn test`): 58 arquivos,
+555 testes, cobrindo `pages/` (27 arquivos), `components/` (11), `utils/`
+(9), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
 `react-hooks` e passa sem erros.
 
 ⚠️ Este parágrafo dizia que a suíte cobria "`services/` e `utils/`" -- ficou
@@ -108,6 +108,207 @@ AgendaPage/
   hooks/useTarefasDaAgenda.ts  …
   components/VisaoPorMes/index.tsx  …
 ```
+
+### O catálogo inteiro pra traduzir um id (25/08/2026)
+
+Sete telas baixavam um catálogo completo só pra virar id em nome. **A
+Agenda já tinha sido corrigida** com `/atendimentos/resumos`; faltavam as
+que dependem do catálogo de CLIENTES -- o único que cresce sem limite
+(equipe e subgrupos são dezenas por natureza).
+
+O nome agora vem em `cliente_nomes`, DENTRO de cada processo/atendimento.
+`AtendimentosPage` e `AtendimentoDetalhePage` deixaram de pedir `/clientes`
+por completo -- verificado em Chrome: **zero requisições**.
+
+**Os seletores foram os últimos, e fecharam em 25/08/2026** -- ver *Toda
+lista que pode crescer sem limite* logo abaixo. `useTodosOsClientes` não
+existe mais: era o último lugar que baixava o catálogo de clientes.
+
+⚠️ A leitura é `cliente_nomes ?? cliente_ids`, e NÃO um `map` indexado sobre
+os ids. A primeira versão fazia isso e a tabela de Processos apareceu vazia
+na verificação em Chrome: o stub tinha `cliente_nomes` sem `cliente_ids`, e
+iterar pelos ids não produzia nada. Jsdom não pegou -- as fixtures dos testes
+tinham os dois campos.
+
+### Toda lista que pode crescer sem limite carrega a primeira página (25/08/2026)
+
+A regra que passou a valer no sistema inteiro, em duas frases:
+
+> **Toda lista que pode crescer sem limite carrega a primeira página e se
+> completa por busca. E todo dado que precisa de rótulo traz o rótulo
+> consigo.**
+
+Com um corolário que vale pra qualquer painel:
+
+> **Nenhum painel mostra lista vazia sem dizer por quê.**
+
+Lista vazia significa três coisas -- "ainda não chegou", "não deu pra saber"
+e "não existe nenhuma" -- e quem lê precisa distinguir. Os seis filtros em
+pílula têm os três estados: `Carregando…` na primeira abertura, a lista
+anterior esmaecida com a faixa `Buscando…` durante uma busca, e a falha com
+"Tentar de novo" DENTRO do painel.
+
+**O que mudou de lugar**
+
+| tela | antes | agora |
+| --- | --- | --- |
+| Processos, chip de cliente | catálogo inteiro na montagem | 1ª página ao ABRIR a pílula |
+| Processos, campo de cliente do formulário | catálogo inteiro | `CampoDeClientes`, 1ª página ao focar |
+| Processos, coluna "Cliente" | catálogo inteiro | `cliente_nomes`, na resposta |
+| Kanban, pílula de subgrupo | catálogo inteiro | 1ª página na montagem (é ela que escolhe o quadro padrão) |
+| Kanban, pílula de pessoas | todos os membros do grupo | 1ª página ao ABRIR |
+| Kanban, responsável no cartão | todos os membros do grupo | `responsavel_nome`, na tarefa |
+| Agenda, pílula de subgrupos | catálogo inteiro | 1ª página na montagem |
+| Agenda, pílula de pessoas | todos os membros do grupo | 1ª página ao ABRIR |
+| Membros, coluna "Subgrupos" | catálogo inteiro | `subgrupo_nomes`, na pessoa |
+| Convidar / Novo atendimento / Modal de tarefa | catálogo inteiro | 1ª página + digitação |
+
+`PRIMEIRA_PAGINA_DE_OPCOES = 50`, igual ao teto do servidor
+(`MAXIMO_DE_RESULTADOS_DE_BUSCA`). Pedir mais daria lista cortada sem aviso;
+pedir menos deixaria de fora resultado que o servidor já mandou.
+
+**Onde a caixa de digitar fica, e por quê**
+
+Na PÍLULA ela vai no topo do painel (`CampoDeBuscaDoPainel`). O controle da
+pílula É o rótulo ("3 selecionados"), com largura de rótulo e caixa alta:
+digitar ali apagaria o texto e a faria pular de tamanho a cada letra. Só é
+possível porque o painel do chip é controlado (`menuIsOpen`) -- com o menu da
+lib, tirar o foco do controle o fecharia.
+
+No campo de FORMULÁRIO é o `isSearchable` da própria lib, que é onde se
+espera digitar. Nos dois casos o filtro é nosso (`contemTermo`), e não o da
+lib: o dela compara texto cru, então "angela" não acharia "Ângela" -- e quem
+digita sem acento concluiria que o cliente não está cadastrado.
+
+**🔴 O delay ao digitar voltou, e só a medição pegou**
+
+Já tinha acontecido no protótipo. Voltou no componente de verdade, pela mesma
+causa: o react-select desenha uma linha de DOM por opção, sem virtualização.
+Medido em Chrome, com 5.000 itens por trás de cada lista:
+
+```
+pílula de cliente (o servidor corta em 50)    22ms por tecla
+pílula de situação, filtro local SEM teto    170ms por tecla
+pílula de situação, COM teto de 50            22ms por tecla
+```
+
+E 22ms continua com 20.000 -- o custo era o DOM, não o filtro. O teto local é
+o mesmo 50, e **o corte é DITO**: o painel mostra "+N não exibidos — digite
+mais pra refinar". Lista truncada em silêncio se lê como lista inteira, e
+quem procura o que ficou de fora conclui que não existe.
+
+`scripts/medir-digitacao.mjs` guarda a medição. Ele existe porque o defeito
+voltou duas vezes e nas duas só apareceu medindo -- lendo o código, não.
+
+**O X, e o fim das setas**
+
+Toda pílula tem um × (`IconeX`) que limpa sem precisar abrir o painel,
+inclusive as de escolha única: cheguei a defender que ali seria redundante
+por causa da linha "Todas as X", mas é o mesmo argumento que eu tinha usado
+A FAVOR dele no múltiplo -- ele derruba os dois casos ou nenhum.
+
+E nenhuma pílula tem seta. Ela existia só nas desenhadas à mão
+(`PilulaDeFiltro`) e não nas do react-select, que são a maioria: metade do
+conjunto anunciava "abre um painel" e a outra metade abria o mesmo painel
+calada. Havia um `semSeta` pra desligá-la caso a caso; um enfeite que precisa
+de exceção em cada uso é enfeite errado. A prop foi removida.
+
+⚠️ O `IconeX` é SVG, não o caractere `✕`. Caractere não é ícone: a espessura
+do traço vem do peso da fonte, então dentro da pílula (700, caixa alta) ele
+saía visivelmente mais gordo que o resto do conjunto -- e o desenho muda
+entre plataformas.
+
+**O quadro padrão do Kanban era uma afirmação falsa em três partes**
+
+Era `subgrupos[subgrupos.length - 1]`, com o comentário *"o último da lista,
+que é o mais recente, que é o que costuma estar em uso"*. Nenhuma das três
+valia: a listagem passou a vir em ordem ALFABÉTICA (então o último é o último
+do alfabeto); mesmo na ordem antiga, "mais recente" não é "mais usado"; e
+quem trabalha sempre no mesmo subgrupo trocava a pílula toda vez que entrava
+na tela.
+
+Agora a ordem é: o que a pessoa escolheu nesta sessão → o do link do lembrete
+→ **o último que ela usou** (`useUltimoSubgrupo`, em `localStorage`, com o
+NOME junto do id) → o primeiro da primeira página. O link do lembrete VENCE a
+memória: a memória é um palpite, o link é uma instrução.
+
+**Três armadilhas que a verificação em Chrome pegou**
+
+1. *A falha não aparecia.* Com `keepPreviousData` a lista anterior continua
+   na tela, o painel nunca fica vazio, e a mensagem de erro -- que entrava
+   pelo `noOptionsMessage` -- não tinha lugar. Pior: aquela lista velha era
+   apresentada como resposta à busca nova.
+2. *Consertar isso quebrou outra coisa.* Esvaziar TODAS as opções na falha
+   levava junto as que não vieram do servidor: no filtro de pessoas, "Sem
+   responsável" sumia porque a lista de gente falhou. Hoje o aviso CONVIVE
+   com o que sobrou; só o resultado remoto é descartado.
+3. *O erro demora ~7s.* O `QueryClient` repete erro transitório 3x com espera
+   crescente. Uma verificação que esperava 2,5s dava "não mostrou" pra um
+   painel que mostra.
+
+**⚠️ O rótulo do escolhido não pode depender da lista carregada**
+
+`comOpcaoEscolhida` / `comOpcoesEscolhidas` reinjetam a opção escolhida
+quando ela não está na página atual. No múltiplo o estrago é maior que um
+rótulo feio: o `MultiSelect` monta o `value` filtrando as opções pelos ids, e
+um id ausente SOME do valor -- a pílula cai de "3 selecionados" pra "1" sem
+ninguém ter desmarcado nada. É por isso que o NOME é guardado junto do id no
+estado (`FiltrosProcessos.clienteNome`, `FiltrosDaAgenda.subgrupoNomes`).
+
+⚠️ E o nome fica **fora** do objeto que vira `queryKey` e query string: é
+rótulo de tela, não critério de busca. Dentro, a mesma consulta viraria duas
+entradas de cache e `temFiltroAtivo` contaria um filtro que não filtra nada.
+
+### Auditoria da rodada de 25/08/2026 — cinco defeitos, todos em Chrome
+
+Feita antes de commitar, sobre o diff da própria rodada. Nenhum apareceu
+lendo o código; todos precisaram de navegador, e **três só com latência**
+(na máquina local a resposta é instantânea e o defeito não existe).
+
+**A raiz de três deles era a mesma:** a página e a pílula liam a MESMA lista,
+e digitar é da pílula.
+
+1. **Fechar a pílula sem escolher deixava a lista da página filtrada, pra
+   sempre.** Buscar "zzz", não achar nada e apertar Esc desabilitava o botão
+   "Nova tarefa" da Agenda -- a tela passava a achar que não existe subgrupo
+   nenhum. `useBuscaDoPainel` zerava o termo ao fechar mas não avisava o pai,
+   porque o aviso era barrado justamente por estar fechado. Hoje FECHAR envia
+   termo vazio.
+2. **Digitar na pílula de subgrupo trocava o quadro inteiro por um
+   esqueleto**, letra a letra. A tela usava `carregando`, que inclui a espera
+   de cada busca. Virou `carregandoPrimeiraVez`.
+3. **O modal de tarefa dividia o hook com a pílula da página**: digitar
+   "famil" dentro do modal filtrava a barra de filtros atrás dele. Agora ele
+   chama `useSubgruposBuscaveis` por conta própria -- o que já era a regra
+   escrita pro quadro e pros membros (*"O modal de tarefa busca os próprios
+   dados"*).
+
+A correção estrutural dos três é `OpcoesBuscaveis.primeiraPagina`: a pílula
+lê `opcoes` (que encolhe ao digitar) e a página lê `primeiraPagina` (que
+não). São duas consultas na mesma chave enquanto não há busca, então o React
+Query faz uma requisição só.
+
+4. **No múltiplo de formulário, escolher não limpava o que tinha sido
+   digitado.** Marcar "Família" depois de digitar "famil" deixava o campo
+   dizendo "famil" -- e como `ResumoSelecionados` esconde o "N selecionados"
+   enquanto há texto, não sobrava nenhum sinal de que algo fora escolhido. O
+   react-select limpa sozinho quando é ele que controla o campo; como aqui
+   quem controla somos nós, faltava tratar a ação `set-value`.
+5. **A tela de Clientes anunciava "120 clientes" com 50 linhas embaixo.**
+   Efeito colateral do teto de busca que a API ganhou nesta mesma rodada.
+   Hoje a linha diz *"Mostrando 50 de 120 clientes — refine a busca"*.
+
+   ⚠️ E a primeira tentativa de consertar criou outro: passou a dizer
+   "Mostrando 10 de 120 — refine a busca" na tela SEM busca, onde a saída
+   certa é clicar na página 2. O aviso só vale com busca ativa **e** com a
+   tabela já correspondendo ao que foi digitado -- durante a espera entre
+   teclas ela ainda mostra o resultado anterior.
+
+**O que a auditoria confirmou que NÃO era defeito:** Backspace num campo de
+busca não apaga o valor escolhido (o `onChange(null)` que o X introduziu
+chega a existir, mas `backspaceRemovesValue` não dispara aqui), e a barra de
+páginas não aparece durante a busca de clientes -- o `total_paginas` que a
+API devolve ali não vira página clicável.
 
 ### Teto de campo: o front discordava de si mesmo (25/08/2026)
 
@@ -556,9 +757,16 @@ limite refaria a caminhada de páginas a cada montagem e a cada foco de
 janela, e eu adicionei cinco minutos de validade **sem medir**. Depois medi,
 em produção:
 
+⚠️ **Clientes saiu desta lista em 25/08/2026** -- não há mais catálogo
+completo de clientes. `useTodosOsClientes` foi removido; quem precisa de
+cliente busca a primeira página (ver *Toda lista que pode crescer sem
+limite*). Os que sobraram continuam caminhando as páginas de propósito:
+subgrupo e opção de processo são cadastro de escritório, e a caminhada é uma
+requisição.
+
 | catálogo | itens | páginas |
 |---|---|---|
-| clientes | 2 | 1 |
+| clientes (removido) | 2 | 1 |
 | subgrupos | 8 | 1 |
 | atendimentos | 1 | 1 |
 | membros | 15 | 1 |
@@ -787,8 +995,21 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
    desenvolvimento/depuração do backend; se o backend for redeployado de um
    jeito que force recriação da Function URL, o `VITE_API_URL` do Vercel
    precisa ser atualizado manualmente de novo.
-2. ~~Nenhum teste de componente/página~~ -- **resolvido**: 51 arquivos, 501
+2. ~~Nenhum teste de componente/página~~ -- **resolvido**: 57 arquivos, 551
    testes, cobrindo páginas e componentes. `yarn test`.
 3. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
    específico do Vercel, em vez de `"*"` (pendência do lado do backend, mas
    afeta o front se for feito).
+4. **O sino ainda baixa todos os membros do grupo, em toda tela.**
+   `SinoDeNotificacoes` chama `listarTodosOsMembrosDoGrupo` só pra traduzir
+   e-mail em apelido na frase da notificação -- exatamente o padrão que a
+   varredura de 25/08/2026 tirou de todo o resto. A saída é a mesma das
+   outras: a notificação trazer `autor_nome` junto, resolvido no servidor.
+   Precisa de mudança na API, e por isso ficou fora dos nove itens daquela
+   rodada.
+5. **A Agenda pede um quadro POR SUBGRUPO exibido.** Sem filtro, são N
+   requisições -- e com a lista limitada à primeira página, um grupo com mais
+   de 50 subgrupos veria só os 50 primeiros. Não é regressão (a versão
+   anterior já faria N requisições e travaria antes), mas o desenho certo é
+   o servidor dizer qual coluna é de conclusão, não a tela perguntar quadro
+   por quadro.

@@ -1,18 +1,13 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 
-import { BotaoNu } from "../../../../components";
-import { ESPERA_DA_BUSCA_MS } from "../../../../constants/busca";
-import { MINIMO_PRA_BUSCAR, RESULTADOS_POR_TIPO } from "../../../../constants/vinculoDaTarefa";
-import { Z_INDEX_CALENDARIO } from "../../../../constants/camadaFlutuante";
-import { useValorComEspera } from "../../../../hooks/useValorComEspera";
-import { listarClientes } from "../../../../services";
-import { OPCAO_LINHA } from "../../../../theme/painelFiltro";
-import type { Cliente } from "../../../../types";
-import type {
-  RespostaDeClientes,
-} from "../../../../types/respostas";
+import { BotaoNu } from "../BotaoNu";
+import { IconeX } from "../Icons";
+import { ESPERA_DA_BUSCA_MS } from "../../constants/busca";
+import { Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
+import { useValorComEspera } from "../../hooks/useValorComEspera";
+import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { OPCAO_LINHA } from "../../theme/painelFiltro";
 
 interface CampoDeClientesProps {
   id: string;
@@ -25,21 +20,36 @@ interface CampoDeClientesProps {
   onMudar: (ids: string[], nomes: Map<string, string>) => void;
 }
 
-/** Busca de clientes com escolha MÚLTIPLA (o `af-cliente-*` do artifact).
+/** Escolha de vários clientes, por busca.
  *
  * Busca, e não um seletor com a lista toda: um escritório tem centenas de
- * clientes, e carregá-los todos pra escolher dois é o que o artifact evita
- * de propósito.
+ * clientes, e carregá-los todos pra escolher dois é o custo que este campo
+ * existe pra evitar.
  *
- * A partir de 3 caracteres e com espera entre teclas, como as outras buscas
- * do sistema. Quem já foi escolhido não volta a aparecer nos resultados --
- * escolher duas vezes o mesmo cliente não significa nada.
+ * 🔴 A lista aparece ao FOCAR, com a primeira página em ordem alfabética --
+ * antes exigia três caracteres antes de mostrar qualquer coisa, e até lá o
+ * campo era uma caixa de texto muda: quem não lembrava a grafia do nome não
+ * tinha por onde começar. É a mesma regra das pílulas de filtro (*toda lista
+ * que pode crescer sem limite carrega a primeira página e se completa por
+ * busca*), e as duas telas que oferecem cliente passam a se comportar igual.
+ *
+ * ⚠️ Vive em `components/`, e não dentro de uma página: Atendimentos e
+ * Processos usam os dois.
  */
 export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeClientesProps) {
   const [texto, setTexto] = useState("");
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDivElement>(null);
+
+  const clientes = useClientesBuscaveis();
+  const { buscar } = clientes;
+
+  /* Nada é pedido antes de a pessoa mexer no campo -- a primeira chamada
+     acontece no foco, e as seguintes acompanham o que ela digita. */
+  useEffect(() => {
+    if (aberto) buscar(termo);
+  }, [aberto, termo, buscar]);
 
   /* Fecha ao clicar fora. O campo vive DENTRO de um modal, então não dá pra
      depender do descarte do modal -- ele fecharia a tela inteira. */
@@ -51,21 +61,13 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
     return () => document.removeEventListener("mousedown", aoClicar);
   }, []);
 
-  const busca = termo.length >= MINIMO_PRA_BUSCAR ? termo : "";
+  /* Escolher duas vezes o mesmo cliente não significa nada. */
+  const achados = clientes.opcoes.filter((o) => !valor.includes(o.value));
 
-  const query = useQuery<RespostaDeClientes>({
-    queryKey: ["busca-clientes", busca],
-    enabled: Boolean(busca),
-    queryFn: () =>
-      listarClientes({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<RespostaDeClientes>,
-  });
-
-  const achados = (query.data?.clientes || []).filter((c) => !valor.includes(c.cliente_id));
-
-  function escolher(cliente: Cliente) {
+  function escolher(opcao: { value: string; label: string }) {
     const novos = new Map(nomes);
-    novos.set(cliente.cliente_id, cliente.nome);
-    onMudar([...valor, cliente.cliente_id], novos);
+    novos.set(opcao.value, opcao.label);
+    onMudar([...valor, opcao.value], novos);
     setTexto("");
     setAberto(false);
   }
@@ -87,13 +89,14 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
         autoComplete="off"
         placeholder="Digite o nome do cliente"
         value={texto}
+        onFocus={() => setAberto(true)}
         onChange={(e) => {
           setTexto(e.target.value);
           setAberto(true);
         }}
       />
 
-      {aberto && busca && (
+      {aberto && (
         <Box
           position="absolute"
           top="100%"
@@ -109,7 +112,26 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
           boxShadow="md"
           overflow="hidden"
         >
-          {query.isPending ? (
+          {/* Três respostas diferentes pra uma lista vazia -- ver
+              `FalhaDoPainel`. "Nada encontrado" dito depois de uma consulta
+              que falhou é uma afirmação sobre o cadastro do escritório
+              tirada de um erro de rede. */}
+          {clientes.erro ? (
+            <Flex direction="column" gap="8px" align="flex-start" p={OPCAO_LINHA.padding}>
+              <Text fontSize={OPCAO_LINHA.fonte} color="status.bad" fontWeight="600">
+                Não foi possível carregar a lista.
+              </Text>
+              <BotaoNu
+                type="button"
+                onClick={clientes.tentarDeNovo}
+                fontSize={OPCAO_LINHA.fonte}
+                fontWeight="700"
+                textDecoration="underline"
+              >
+                Tentar de novo
+              </BotaoNu>
+            </Flex>
+          ) : clientes.carregando && achados.length === 0 ? (
             <Text p={OPCAO_LINHA.padding} fontSize={OPCAO_LINHA.fonte} color="fg.subtle">
               Carregando…
             </Text>
@@ -118,20 +140,24 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
               Nada encontrado
             </Text>
           ) : (
-            achados.map((cliente) => (
-              <BotaoNu
-                key={cliente.cliente_id}
-                type="button"
-                onClick={() => escolher(cliente)}
-                display="block"
-                w="100%"
-                p={OPCAO_LINHA.padding}
-                fontSize={OPCAO_LINHA.fonte}
-                _hover={{ bg: "bg.canvas" }}
-              >
-                {cliente.nome}
-              </BotaoNu>
-            ))
+            /* Mantém o resultado anterior na tela enquanto o próximo vem,
+               esmaecido. Esvaziar a cada tecla fazia o painel piscar. */
+            <Box opacity={clientes.carregando ? 0.45 : 1} transition="opacity 120ms">
+              {achados.map((opcao) => (
+                <BotaoNu
+                  key={opcao.value}
+                  type="button"
+                  onClick={() => escolher(opcao)}
+                  display="block"
+                  w="100%"
+                  p={OPCAO_LINHA.padding}
+                  fontSize={OPCAO_LINHA.fonte}
+                  _hover={{ bg: "bg.canvas" }}
+                >
+                  {opcao.label}
+                </BotaoNu>
+              ))}
+            </Box>
           )}
         </Box>
       )}
@@ -154,18 +180,15 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
               {/* Nome, nunca o id: a etiqueta é o único lugar onde a pessoa
                   confere se escolheu o cliente certo. */}
               {nomes.get(clienteId) ?? clienteId}
-              {/* Mesmo "✕" do fechar do Modal -- é caractere, não ícone, e
-                  ter um SVG só pra este X faria dois desenhos pro mesmo
-                  gesto. */}
               <BotaoNu
                 type="button"
                 aria-label={`Remover ${nomes.get(clienteId) ?? clienteId}`}
                 onClick={() => remover(clienteId)}
                 display="flex"
                 color="inherit"
-                fontSize="11px"
+                css={{ "& svg": { width: "11px", height: "11px" } }}
               >
-                ✕
+                <IconeX />
               </BotaoNu>
             </Flex>
           ))}

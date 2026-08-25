@@ -10,6 +10,14 @@ export type VisaoDaAgenda = "lista" | "dia" | "semana" | "mes";
 export interface FiltrosDaAgenda {
   visao: VisaoDaAgenda;
   subgrupoIds: string[];
+  /** Nome de cada id em `subgrupoIds`.
+   *
+   * 🔴 A pílula só carrega a primeira página de subgrupos, e o `MultiSelect`
+   * monta o valor filtrando as opções pelos ids escolhidos: um id fora dessa
+   * página SOME do valor -- a pílula cai de "3 selecionados" pra "1" sem
+   * ninguém ter desmarcado nada. O nome guardado aqui é o que reconstrói a
+   * opção que falta. */
+  subgrupoNomes: Record<string, string>;
   /** "todas", "sem" (sem responsável) ou o e-mail de alguém -- mesmos
    * valores do Kanban, pra que as duas telas não divirjam. */
   pessoa: string;

@@ -49,6 +49,10 @@ export interface Processo {
   sequencia?: number;
   ultima_verificacao?: string | null;
   cliente_ids?: string[];
+  /** Nome de cada cliente, NA MESMA ORDEM de `cliente_ids` -- derivado, o
+   * servidor resolve pra página pedida (cai pro próprio id quando o cliente
+   * não existe mais). Mesmo campo de `ComClientes`. */
+  cliente_nomes?: string[];
   objeto_assunto?: string | null;
   proxima_providencia?: string | null;
   data_verificar?: string | null;
@@ -103,6 +107,15 @@ export interface OpcaoProcesso {
  * também como no artifact. */
 export interface FiltrosProcessos {
   clienteId: string;
+  /** O NOME do cliente escolhido, guardado junto do id.
+   *
+   * 🔴 A pílula só carrega a primeira página de clientes, e o escolhido quase
+   * nunca está nela -- sem o nome aqui, ela ficaria azul e sem texto, ou
+   * mostrando o id cru. Rótulo é dado de exibição e não entra na consulta:
+   * ele fica FORA do objeto que vira `queryKey` e query string
+   * (`useFiltrosProcessos`), senão a mesma busca viraria duas entradas de
+   * cache -- e `temFiltroAtivo` contaria um filtro que não filtra nada. */
+  clienteNome: string;
   faseIds: string[];
   situacaoIds: string[];
   dataVerificarAte: string;
@@ -116,6 +129,14 @@ export interface Membro {
   criado_em?: string;
   adicionado_em?: string;
   subgrupos?: string[];
+  /** Nome de cada id em `subgrupos`, na mesma ordem -- derivado, o servidor
+   * resolve pra página pedida (`membros_service.listar_pessoas_do_grupo`).
+   *
+   * 🔴 Vem junto porque a alternativa era a tela de Membros baixar o
+   * catálogo inteiro de subgrupos só pra traduzir id em nome -- e até ele
+   * chegar, a coluna ficava vazia, sugerindo que a pessoa não está em
+   * subgrupo nenhum. */
+  subgrupo_nomes?: string[];
 }
 
 export interface Comunicacao {
@@ -257,6 +278,15 @@ export interface Tarefa {
   coluna_id: string;
   prioridade: string;
   responsavel_id?: string | null;
+  /** Apelido de quem é responsável -- derivado, o servidor resolve pra
+   * página pedida (`tarefas_router._com_nome_do_responsavel`).
+   *
+   * 🔴 Vem junto porque a alternativa era o cartão baixar TODAS as pessoas
+   * do grupo só pra traduzir e-mail em apelido -- e essa lista só chegava
+   * pra `manager` pra cima, então o cartão de quem é `user` mostrava e-mail
+   * cru pra sempre. Ausente quando a pessoa não tem apelido; aí o e-mail
+   * continua sendo o rótulo, que ainda identifica. */
+  responsavel_nome?: string | null;
   /** O vínculo da tarefa. Um OU o outro, nunca os dois -- é assim que o
    * backend grava, e o campo da tela reflete isso sendo um só. */
   processo_numero?: string | null;
@@ -286,6 +316,17 @@ export interface Atendimento {
   criado_por?: string;
   sequencia?: number;
   cliente_ids: string[];
+  /** Nome de cada cliente, NA MESMA ORDEM de `cliente_ids`.
+   *
+   * 🔴 Campo derivado que o servidor resolve só pra página pedida. Antes a
+   * tela baixava o catálogo INTEIRO de clientes pra traduzir id em nome --
+   * com 5.000 clientes eram 50 requisições por abertura, e até a última
+   * chegar a coluna mostrava o id cru e se corrigia sozinha na frente da
+   * pessoa.
+   *
+   * Opcional porque nem toda rota o devolve (o vínculo da tarefa, por
+   * exemplo, não precisa). Ausente, quem mostra cai no id. */
+  cliente_nomes?: string[];
   processo_numero?: string | null;
   /** A listagem devolve o atendimento inteiro, registros inclusos -- é de
    * onde sai a prévia do último registro em cada linha. */
@@ -348,6 +389,9 @@ export interface ComOrdem {
  * ids. */
 export interface ComClientes {
   cliente_ids?: string[];
+  /** Nome de cada cliente, NA MESMA ORDEM de `cliente_ids` -- campo derivado
+   * que o servidor resolve pra página pedida. Ver `Atendimento`. */
+  cliente_nomes?: string[];
 }
 
 

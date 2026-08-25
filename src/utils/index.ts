@@ -11,3 +11,4 @@ export * from "./prazo";
 export * from "./periodo";
 export * from "./ordemFracionaria";
 export * from "./notificacao";
+export * from "./texto";

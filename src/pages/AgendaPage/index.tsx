@@ -1,6 +1,5 @@
 import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 
 import {
   Faixa,
@@ -13,9 +12,7 @@ import {
   IconePlus,
   ModalDeTarefa,
 } from "../../components";
-import { listarTodosOsMembrosDoGrupo, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
-import { qk } from "../../services/queryKeys";
 import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
 import { hojeISO } from "../../utils";
 import { paraIso } from "../../utils/calendario";
@@ -37,9 +34,8 @@ import {
   somarDias,
 } from "./periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros } from "./types";
-import type { RespostaDeMembros } from "../../types/respostas";
-import type { Tarefa } from "../../types";
-import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
+import type { OpcaoDeSelect, Tarefa } from "../../types";
+import { usePessoasBuscaveis, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 
 /** Agenda: as tarefas do escritório projetadas por data.
  *
@@ -59,6 +55,7 @@ export default function AgendaPage() {
   const [filtros, setFiltros] = useState<Filtros>({
     visao: "mes",
     subgrupoIds: [],
+    subgrupoNomes: {},
     pessoa: "todas",
   });
   const [tarefaAberta, setTarefaAberta] = useState<Tarefa | null>(null);
@@ -66,16 +63,11 @@ export default function AgendaPage() {
 
   const isoDeHoje = hojeISO();
 
-  const subgruposQuery = useTodosOsSubgrupos();
-  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
-  const subgrupos = subgruposQuery.data || [];
-
-  const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.todosOsMembros(),
-    queryFn: listarTodosOsMembrosDoGrupo,
-    enabled: papelAtende("manager"),
-  });
-  const membros = membrosQuery.data?.membros || [];
+  /* A primeira página já na montagem: "nenhum escolhido = todos" precisa de
+     uma lista pra saber de quais subgrupos buscar o quadro. */
+  const subgrupos = useSubgruposBuscaveis(true);
+  /* Só quando a pílula de pessoas abrir. */
+  const pessoas = usePessoasBuscaveis();
 
   const intervalo = intervaloDaVisao(filtros.visao, dataVisivel);
   const tarefasQuery = useTarefasDaAgenda(filtros.subgrupoIds, intervalo);
@@ -86,7 +78,11 @@ export default function AgendaPage() {
      tarefas também traz. */
   const subgruposExibidos = filtros.subgrupoIds.length
     ? filtros.subgrupoIds
-    : subgrupos.map((s) => s.subgrupo_id);
+    /* ⚠️ `primeiraPagina`, NUNCA `opcoes`: "nenhum escolhido = TODOS", e
+       `opcoes` encolhe enquanto a pessoa digita na pílula. Lendo dali, buscar
+       "fam" fazia a agenda passar a mostrar só Família -- sem ninguém ter
+       aplicado nada. */
+    : subgrupos.primeiraPagina.map((o: OpcaoDeSelect) => o.value);
   const {
     carregando: carregandoQuadros,
     algumFalhou: quadrosFalharam,
@@ -125,8 +121,13 @@ export default function AgendaPage() {
      primeiro exibido. Daí em diante quem manda é o seletor do próprio modal,
      que carrega o quadro e os membros do subgrupo escolhido. Buscar o quadro
      aqui era o que prendia a criação ao subgrupo da tela. */
-  const subgrupoDoModal =
-    tarefaAberta?.subgrupo_id || subgruposExibidos[subgruposExibidos.length - 1] || "";
+  /** 🔴 O primeiro, não o último. O comentário antigo dizia que o último era
+   * "o mais recente"; a listagem passou a vir em ordem ALFABÉTICA, então o
+   * último é só o último do alfabeto -- e mesmo antes, "mais recente" nunca
+   * foi "o que a pessoa quer". Aqui o padrão importa pouco (é só o subgrupo
+   * em que o modal ABRE, e o campo é editável ao criar), então o primeiro da
+   * lista visível basta e não finge saber mais do que sabe. */
+  const subgrupoDoModal = tarefaAberta?.subgrupo_id || subgruposExibidos[0] || "";
 
   function abrirDia(iso: string) {
     // `T00:00:00` força leitura LOCAL: `new Date("2026-08-19")` é meia-noite
@@ -145,7 +146,7 @@ export default function AgendaPage() {
      contrário do que é. Custa uma onda a mais (subgrupos -> quadros), e o
      cache é o mesmo do Kanban, então em geral já vem quente. */
   const carregando =
-    subgruposQuery.isPending || tarefasQuery.isPending || carregandoQuadros;
+    subgrupos.carregandoPrimeiraVez || tarefasQuery.isPending || carregandoQuadros;
 
   return (
     <Box>
@@ -161,7 +162,7 @@ export default function AgendaPage() {
         titulo="Agenda"
         subtitulo="As tarefas do escritório organizadas por data."
         acoes={
-          <Botao onClick={() => setCriando(true)} disabled={subgrupos.length === 0}>
+          <Botao onClick={() => setCriando(true)} disabled={subgrupos.primeiraPagina.length === 0}>
             <IconePlus />
             Nova tarefa
           </Botao>
@@ -170,9 +171,8 @@ export default function AgendaPage() {
 
       <FiltrosDaAgenda
         subgrupos={subgrupos}
-        membros={membros}
+        pessoas={pessoas}
         filtros={filtros}
-        carregandoSubgrupos={subgruposQuery.isPending}
         onMudar={(parcial) => setFiltros((atual) => ({ ...atual, ...parcial }))}
       />
 
@@ -247,7 +247,11 @@ export default function AgendaPage() {
         <ModalDeTarefa
           tarefa={tarefaAberta}
           subgrupoAtual={subgrupoDoModal}
-          subgrupos={subgrupos}
+          subgrupoAtualNome={
+            subgrupos.primeiraPagina.find((o: OpcaoDeSelect) => o.value === subgrupoDoModal)?.label ??
+            filtros.subgrupoNomes[subgrupoDoModal] ??
+            ""
+          }
           dataInicial={
             criando ? dataPadraoDaNovaTarefa(filtros.visao, dataVisivel, hoje) : undefined
           }

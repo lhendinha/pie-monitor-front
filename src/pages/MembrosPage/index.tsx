@@ -10,7 +10,6 @@ import { qk } from "../../services/queryKeys";
 import EditarMembroForm from "./components/EditarMembroForm";
 import TabelaDeMembros from "./components/TabelaDeMembros";
 import type { Membro } from "../../types";
-import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 import type {
   RespostaDeGrupos,
   RespostaDeMembrosPaginada,
@@ -40,8 +39,6 @@ export default function MembrosPage() {
   });
   useToastOnQueryError(membrosQuery.error, "Não foi possível carregar os membros.");
 
-  const subgruposQuery = useTodosOsSubgrupos();
-  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
 
   const gruposQuery = useQuery<RespostaDeGrupos>({
     queryKey: qk.grupos(),
@@ -51,7 +48,6 @@ export default function MembrosPage() {
   useToastOnQueryError(gruposQuery.error, "Não foi possível carregar os grupos.");
 
   const pessoas = membrosQuery.data?.membros || [];
-  const subgrupos = subgruposQuery.data || [];
   const grupos = gruposQuery.data?.grupos || [];
 
   /** 🔴 O recorte agora é do SERVIDOR.
@@ -65,9 +61,6 @@ export default function MembrosPage() {
   const pessoasDaPagina = pessoas;
   const total = membrosQuery.data?.total ?? 0;
   const totalPaginas = membrosQuery.data?.total_paginas ?? 1;
-
-  /** `membro.subgrupos` traz ids, e id não diz nada pra quem lê. */
-  const nomePorSubgrupoId = new Map(subgrupos.map((s) => [s.subgrupo_id, s.nome]));
 
   function recarregarTudo() {
     // 🔴 PREFIXO nu, não `qk.membros()`. A chave virou `["membros", {}]`, e o
@@ -105,7 +98,6 @@ export default function MembrosPage() {
         <CartaoDeTabela>
           <TabelaDeMembros
             membros={pessoasDaPagina}
-            nomeDoSubgrupo={(id) => nomePorSubgrupoId.get(id) || ""}
             podeEditar={podeEditar}
             onEditar={setMembroEmEdicao}
           />

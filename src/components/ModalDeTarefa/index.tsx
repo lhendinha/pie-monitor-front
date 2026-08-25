@@ -23,11 +23,12 @@ import {
 } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
+import { comOpcaoEscolhida, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import { hojeISO, mascararNumeroProcesso } from "../../utils";
 import { PRIORIDADES, TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA } from "../../constants";
 import VinculoDaTarefa from "./VinculoDaTarefa";
 
-import type { Subgrupo, Tarefa, VinculosDaTarefa } from "../../types";
+import type { Tarefa, VinculosDaTarefa } from "../../types";
 import type { RespostaDeMembros, RespostaDoQuadro } from "../../types/respostas";
 
 interface ModalDeTarefaProps {
@@ -36,7 +37,10 @@ interface ModalDeTarefaProps {
   /** Subgrupo em que o modal ABRE. Depois disso quem manda é o seletor:
    * ao criar, a pessoa pode escolher outro. */
   subgrupoAtual: string;
-  subgrupos: Subgrupo[];
+  /** O NOME do subgrupo atual, pra quando ele estiver fora da primeira
+   * página: editando, este campo existe só pra DIZER a que subgrupo a tarefa
+   * pertence, e sem o nome ele diria o id. */
+  subgrupoAtualNome?: string;
   /** Coluna pré-escolhida, quando veio do "+ Nova atividade" de uma coluna. */
   colunaInicial?: string;
   /** Data pré-escolhida ao CRIAR -- é o dia que a Agenda tem à vista.
@@ -71,7 +75,7 @@ interface ModalDeTarefaProps {
 export default function ModalDeTarefa({
   tarefa,
   subgrupoAtual,
-  subgrupos,
+  subgrupoAtualNome,
   colunaInicial,
   dataInicial,
   onSalvo,
@@ -101,6 +105,19 @@ export default function ModalDeTarefa({
    * As chaves são as mesmas que as páginas já usam (`qk.quadro`,
    * `qk.membrosDoSubgrupo`), então o caso comum -- criar no subgrupo que já
    * está aberto -- sai do cache, sem requisição nova. */
+  /** 🔴 A lista de subgrupos é DESTE modal, não da página.
+   *
+   * Ela chegava por prop, e a página passava o MESMO objeto pra pílula de
+   * filtro e pra cá -- então digitar "famil" aqui dentro filtrava a pílula
+   * atrás do modal. Reproduzido em Chrome.
+   *
+   * É a mesma razão que já tinha trazido o quadro e os membros pra cá: o que
+   * o formulário oferece segue o que ELE tem escolhido, não o que a tela
+   * está exibindo. O React Query deduplica por chave, então o caso comum --
+   * a página já ter pedido a primeira página -- sai do cache, sem
+   * requisição nova. */
+  const subgrupos = useSubgruposBuscaveis(true);
+
   const quadroQuery = useQuery<RespostaDoQuadro>({
     queryKey: qk.quadro(subgrupoId),
     queryFn: () => listarQuadro(subgrupoId) as Promise<RespostaDoQuadro>,
@@ -168,12 +185,17 @@ export default function ModalDeTarefa({
 
   /** Quem está na lista + quem JÁ é o responsável, mesmo que tenha saído do
    * subgrupo. Sem essa segunda parte, abrir a tarefa de alguém que saiu
-   * mostraria "Sem responsável" e salvar apagaria a atribuição em silêncio. */
+   * mostraria "Sem responsável" e salvar apagaria a atribuição em silêncio.
+   *
+   * 🔴 E com o NOME de quem saiu, não o e-mail cru: a tarefa passou a trazer
+   * `responsavel_nome` junto. Quem saiu do subgrupo não está na lista de
+   * membros -- era exatamente o caso em que a etiqueta caía pro e-mail, e é
+   * o caso em que a pessoa mais precisa reconhecer de quem se trata. */
   const opcoesDeResponsavel = [
     { value: "", label: "Sem responsável" },
     ...membros.map((m) => ({ value: m.email, label: m.apelido || m.email })),
     ...(responsavel && !membros.some((m) => m.email === responsavel)
-      ? [{ value: responsavel, label: responsavel }]
+      ? [{ value: responsavel, label: tarefa?.responsavel_nome ?? responsavel }]
       : []),
   ];
 
@@ -327,10 +349,22 @@ export default function ModalDeTarefa({
             >
               <Select
                 id="tf-subgrupo"
-                opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
+                /* O atual entra na lista mesmo fora da primeira página --
+                   editando, este campo existe só pra DIZER a que subgrupo a
+                   tarefa pertence, e sem o nome ele diria o id. */
+                opcoes={comOpcaoEscolhida(subgrupos.opcoes, subgrupoId, subgrupoAtualNome ?? "")}
                 valor={subgrupoId}
                 onMudar={trocarSubgrupo}
                 desabilitado={editando}
+                /* Sem busca quando está desabilitado: não há o que escolher. */
+                {...(editando
+                  ? {}
+                  : {
+                      onBuscar: subgrupos.buscar,
+                      carregando: subgrupos.carregando,
+                      erro: subgrupos.erro,
+                      onTentarDeNovo: subgrupos.tentarDeNovo,
+                    })}
               />
             </Campo>
           </LinhaDeCampos>

@@ -9,7 +9,6 @@ import type { ColunaDoQuadro as Coluna, Tarefa } from "../../../../types";
 interface ColunaDoQuadroProps {
   coluna: Coluna;
   tarefas: Tarefa[];
-  apelidoPorEmail: (email?: string | null) => string | undefined;
   onAbrirTarefa: (tarefa: Tarefa) => void;
   onNovaTarefa: (colunaId: string) => void;
 }
@@ -24,7 +23,6 @@ interface ColunaDoQuadroProps {
 export default function ColunaDoQuadro({
   coluna,
   tarefas,
-  apelidoPorEmail,
   onAbrirTarefa,
   onNovaTarefa,
 }: ColunaDoQuadroProps) {
@@ -89,7 +87,13 @@ export default function ColunaDoQuadro({
           <CartaoDeTarefa
             key={t.tarefa_id}
             tarefa={t}
-            responsavel={apelidoPorEmail(t.responsavel_id)}
+            /* 🔴 O nome vem NA TAREFA (`responsavel_nome`), resolvido pelo
+               servidor pra página pedida. Antes a página baixava todas as
+               pessoas do grupo só pra traduzir e-mail em apelido -- e como
+               essa lista só vinha pra `manager` pra cima, o cartão de quem é
+               `user` mostrava e-mail cru pra sempre, não "enquanto
+               carregava". */
+            responsavel={t.responsavel_nome || t.responsavel_id || undefined}
             onAbrir={onAbrirTarefa}
           />
         ))}

@@ -469,3 +469,44 @@ describe("filtro e página", () => {
     expect(comPaginaVelha).toEqual([]);
   });
 });
+
+describe("coluna de cliente", () => {
+  /* 🔴 A tela baixava o catálogo INTEIRO de clientes só pra traduzir id em
+   * nome nesta coluna. Medido em Chrome com 60 ms de latência: a tabela
+   * aparecia sempre em ~500 ms, mas o nome só chegava aos 3.802 ms com
+   * 5.000 clientes -- e até lá a célula mostrava o id cru e se corrigia
+   * sozinha na frente da pessoa. Não era tela lenta: era tela mostrando a
+   * coisa errada por quase quatro segundos.
+   *
+   * O nome agora vem em `cliente_nomes`, DENTRO do processo. */
+
+  it("mostra o nome que veio no processo, não o id", async () => {
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [{ ...PROCESSO, cliente_ids: ["cli-1"], cliente_nomes: ["Construtora Alfa"] }],
+      total: 1,
+      total_paginas: 1,
+    });
+    // Catálogo VAZIO de propósito: se a célula ainda dependesse dele, o
+    // nome não apareceria e este teste falharia.
+    mocks.listarClientes.mockResolvedValue({ clientes: [] });
+
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+
+    expect(await screen.findByText("Construtora Alfa")).toBeInTheDocument();
+    expect(screen.queryByText("cli-1")).not.toBeInTheDocument();
+  });
+
+  it("cai no id quando o nome não veio", async () => {
+    // Mostrar o id é feio; deixar a célula vazia é pior -- some a única
+    // pista de quem é a parte.
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [{ ...PROCESSO, cliente_ids: ["cli-9"] }],
+      total: 1,
+      total_paginas: 1,
+    });
+
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+
+    expect(await screen.findByText("cli-9")).toBeInTheDocument();
+  });
+});

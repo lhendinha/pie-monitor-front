@@ -6,8 +6,9 @@ import type { OpcaoDeSelect } from "../../types";
 
 /** A seta do select padrão, que gira ao abrir -- como no artifact.
  *
- * Os filtros em pílula não a usam (lá o glifo `▾` faz parte do rótulo), por
- * isso ela é ligada só na variante padrão. */
+ * Só na variante `padrao`, que é a de FORMULÁRIO: ali a seta diz "isto é um
+ * campo de escolher", que é o que distingue um select de um texto qualquer.
+ * As pílulas de filtro não têm seta nenhuma -- ver `PilulaDeFiltro`. */
 export function SetaDoSelect(props: DropdownIndicatorProps<OpcaoDeSelect, boolean, GroupBase<OpcaoDeSelect>>) {
   return (
     <components.DropdownIndicator

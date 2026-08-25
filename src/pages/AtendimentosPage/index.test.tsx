@@ -31,6 +31,7 @@ function atendimento(parcial: Record<string, unknown> = {}) {
     status: "Em andamento",
     criado_em: "2026-08-10T09:00:00+00:00",
     cliente_ids: ["c1"],
+    cliente_nomes: ["Maria Souza"],
     /* Data do registro DIFERENTE da criação de propósito: a linha mostra as
        duas (criação à esquerda, último registro à direita), e com a mesma
        data não dá pra distinguir qual está sendo verificada. */
@@ -75,7 +76,9 @@ describe("lista", () => {
     await montar();
     expect(await screen.findByText(/Revisão de contrato/)).toBeInTheDocument();
     expect(screen.getByText("Em andamento")).toBeInTheDocument();
-    // 🔴 O atendimento guarda só `cliente_ids`; mostrar "c1" não diz nada.
+    /* 🔴 Mostrar "c1" não diz nada a ninguém. O nome vem em
+       `cliente_nomes`, DENTRO do atendimento -- antes a tela baixava o
+       catálogo inteiro de clientes pra traduzir. */
     expect(screen.getByText("Maria Souza")).toBeInTheDocument();
     expect(screen.queryByText("c1")).not.toBeInTheDocument();
   });

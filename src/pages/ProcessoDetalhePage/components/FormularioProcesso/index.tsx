@@ -103,7 +103,14 @@ export default function FormularioProcesso({
             placeholder="Um nome curto pra identificar o processo"
           />
         </Campo>
-        <CamposProcesso valores={campos} onMudar={setCampos} />
+        <CamposProcesso
+          valores={campos}
+          onMudar={setCampos}
+          /* Sem isto a etiqueta mostraria o id cru de quem já está no
+             processo: a busca só traz a primeira página, e o cliente
+             escolhido meses atrás quase nunca está nela. */
+          nomesDosClientes={processo.cliente_nomes}
+        />
       </Cartao>
     </form>
   );

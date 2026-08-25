@@ -94,7 +94,31 @@ yarn test         # roda uma vez (CI)
 yarn test:watch   # modo watch
 ```
 
-`vitest` + `@testing-library/react` + `jsdom`. 546 testes em 57 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+`vitest` + `@testing-library/react` + `jsdom`. 555 testes em 58 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+
+## Filtros em pílula: primeira página + busca
+
+Toda lista que pode crescer sem limite (cliente, subgrupo, pessoa) carrega a
+**primeira página de 50** e se completa por digitação; as curtas e fechadas
+(fase, situação) já vêm com a tela e filtram no navegador. Nenhuma delas pede
+nada antes de a pílula ABRIR — exceto as duas que escolhem qual quadro a tela
+mostra (Kanban e Agenda), que precisam de uma lista pra ter um padrão.
+
+Todas têm três estados e um × que limpa sem abrir o painel. Nenhuma tem seta.
+
+⚠️ **Mexeu numa pílula? Meça a digitação.** O travamento ao digitar já voltou
+duas vezes, e nas duas só apareceu medindo:
+
+```bash
+yarn dev --port 5174           # numa aba
+node scripts/medir-digitacao.mjs   # noutra
+```
+
+Acima de ~50ms por tecla a digitação "gruda". O que causa isso é sempre
+trabalho proporcional ao tamanho da lista rodando a cada tecla — o
+react-select desenha uma linha de DOM por opção, sem virtualização, e por
+isso o filtro local tem teto de 50 (com o painel dizendo quantos ficaram de
+fora).
 
 ## Segurança (headers)
 
@@ -132,12 +156,16 @@ src/
   theme/                    -- tokens e paletas de design
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
-  components/               -- 53 componentes gerais, cada um em pasta com index.tsx
+  components/               -- 55 componentes gerais, cada um em pasta com index.tsx
   pages/                    -- 19 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
 vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)
                                + security headers (CSP etc.)
+scripts/                    -- verificação visual em Chrome DE VERDADE, com janela
+  verificar-tela.mjs        -- abre uma tela com a API stubada
+  medir-digitacao.mjs       -- custo POR TECLA nas pílulas com busca (ver abaixo)
+  medir-painel.mjs, comparar-painel.mjs, screenshot.mjs
 vite.config.ts              -- Vite + React Compiler + vitest (jsdom)
 eslint.config.js            -- config enxuta, focada no que pega bug
 ```

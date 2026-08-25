@@ -35,7 +35,6 @@ import { contar, mascararNumeroProcesso } from "../../utils";
 import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
 import type { Atendimento } from "../../types";
-import { useTodosOsClientes } from "../../hooks/useCatalogos";
 import type {
   RespostaDeMembros,
 } from "../../types/respostas";
@@ -62,11 +61,9 @@ export default function AtendimentoDetalhePage() {
     retry: false,
   });
 
-  const clientesQuery = useTodosOsClientes();
-  const nomePorCliente = useMemo(
-    () => new Map((clientesQuery.data || []).map((c) => [c.cliente_id, c.nome])),
-    [clientesQuery.data],
-  );
+  /* O nome de cada cliente vem em `cliente_nomes`, DENTRO do atendimento.
+     Aqui havia uma consulta ao catálogo inteiro de clientes -- numa tela que
+     mostra UM atendimento. */
 
   /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
    * não vem, e a linha do tempo mostra o e-mail, que ainda identifica. */
@@ -168,12 +165,12 @@ export default function AtendimentoDetalhePage() {
                 coisas de naturezas diferentes -- quem é o cliente e a que
                 processo isto se liga --, e sem o ícone as duas pílulas
                 ficam indistinguíveis à primeira vista. */}
-            {atendimento.cliente_ids.map((id) => (
+            {atendimento.cliente_ids.map((id, i) => (
               <EtiquetaDeMetadado key={id}>
                 <Box color="fg.subtle" display="flex">
                   <IconeClientes tamanho={13} />
                 </Box>
-                {nomePorCliente.get(id) ?? id}
+                {atendimento.cliente_nomes?.[i] || id}
               </EtiquetaDeMetadado>
             ))}
             {atendimento.processo_numero && (

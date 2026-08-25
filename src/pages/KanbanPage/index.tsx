@@ -27,7 +27,6 @@ import { PERIODO_TODOS } from "../../constants";
 import {
   atualizarTarefa,
   detalhesTarefa,
-  listarTodosOsMembrosDoGrupo,
   listarQuadro,
   papelAtende,
 } from "../../services";
@@ -41,13 +40,11 @@ import FiltrosDoKanban from "./components/FiltrosDoKanban";
 import ModalDoQuadro from "./components/ModalDoQuadro";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
-import type {
-  RespostaDeMembros,
-  RespostaDoQuadro,
-} from "../../types/respostas";
+import type { RespostaDoQuadro } from "../../types/respostas";
 import type { Tarefa } from "../../types";
 import type { MoverTarefa, TarefaDoLink } from "./types";
-import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
+import { usePessoasBuscaveis, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useUltimoSubgrupo } from "../../hooks/useUltimoSubgrupo";
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
  * (`PERIODS = { kanban: 'mes' }`).
@@ -105,15 +102,38 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const subgruposQuery = useTodosOsSubgrupos();
-  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
-  const subgrupos = subgruposQuery.data || [];
+  /* A primeira página já na montagem: é dela que sai o quadro padrão. */
+  const subgrupos = useSubgruposBuscaveis(true);
+  /* Só quando a pílula de pessoas abrir -- o quadro não precisa da lista pra
+     mostrar responsável, isso vem em `responsavel_nome` na própria tarefa. */
+  const pessoas = usePessoasBuscaveis();
+  const { lembrado, lembrar } = useUltimoSubgrupo("kanban");
 
-  // Um subgrupo abre por padrão -- sem isso a tela ficaria em branco
-  // esperando uma escolha que quase sempre é a mesma. É o ÚLTIMO da lista,
-  // não o primeiro: a listagem vem na ordem de criação, então o último é o
-  // mais recente, que é o que costuma estar em uso.
-  const subgrupoId = filtros.subgrupoId || subgrupos[subgrupos.length - 1]?.subgrupo_id || "";
+  /** 🔴 Qual quadro abre, em ordem de prioridade.
+   *
+   * 1. O que a pessoa escolheu nesta sessão.
+   * 2. O do link do lembrete (já entra em `filtros.subgrupoId`).
+   * 3. O ÚLTIMO QUE ELA USOU, lembrado entre visitas.
+   * 4. O primeiro da primeira página.
+   *
+   * O 3 é o que mudou. Antes era `subgrupos[subgrupos.length - 1]`, com o
+   * comentário "o último da lista, que é o mais recente, que é o que costuma
+   * estar em uso" -- e as três afirmações eram falsas: a listagem passou a
+   * vir em ordem ALFABÉTICA (então o último é o último do alfabeto), "mais
+   * recente" nunca foi "mais usado", e quem trabalha sempre no mesmo
+   * subgrupo trocava a pílula toda vez que entrava na tela.
+   *
+   * ⚠️ O lembrado é usado mesmo fora da primeira página: é por isso que o
+   * NOME é guardado junto (`useUltimoSubgrupo`). */
+  /* ⚠️ `primeiraPagina`, NUNCA `opcoes`: `opcoes` é o que a pílula mostra, e
+     encolhe conforme a pessoa digita. Lendo dali, o quadro trocava sozinho no
+     meio da busca -- e uma busca fechada sem escolher deixava a lista
+     filtrada, então o padrão virava o resultado de um filtro que ninguém
+     aplicou. */
+  const subgrupoId =
+    filtros.subgrupoId || lembrado?.id || subgrupos.primeiraPagina[0]?.value || "";
+  const subgrupoNome =
+    subgrupos.primeiraPagina.find((o) => o.value === subgrupoId)?.label ?? lembrado?.nome ?? "";
 
   const quadroQuery = useQuery<RespostaDoQuadro>({
     queryKey: qk.quadro(subgrupoId),
@@ -130,15 +150,6 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
     intervalo ? { dataDe: intervalo.de, dataAte: intervalo.ate } : {},
   );
   useToastOnQueryError(tarefasQuery.error, "Não foi possível carregar as tarefas.");
-
-  /** Nomes de quem é responsável. `manager` pra cima -- pra `user` a lista
-   * não vem, e o cartão mostra o e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.todosOsMembros(),
-    queryFn: listarTodosOsMembrosDoGrupo,
-    enabled: papelAtende("manager"),
-  });
-  const membros = membrosQuery.data?.membros || [];
 
   /** Carrega a tarefa do link direto pelo par que a identifica.
    *
@@ -168,8 +179,6 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
       setLinkConsumido(true);
     }
   }, [tarefaDoLinkQuery.data, linkConsumido]);
-  const apelidoPorEmail = new Map(membros.map((m) => [m.email, m.apelido || m.email]));
-
   const sensors = useSensors(
     /* 4px antes de virar arraste: sem isso, o clique que abre o cartão
        seria engolido pelo início de um arraste de zero pixel. */
@@ -276,16 +285,20 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
     setFiltros((f) => ({ ...f, ...FILTROS_VAZIOS, periodoId: PERIODO_TODOS }));
   }
 
-  const carregando = subgruposQuery.isPending || quadroQuery.isPending || tarefasQuery.isPending;
+  /* ⚠️ `carregandoPrimeiraVez`, e não `carregando`: aquele inclui a espera de
+     CADA busca, então digitar na pílula de subgrupo trocava o quadro inteiro
+     por um esqueleto, letra a letra. Não aparece na máquina local, onde a
+     resposta é instantânea; apareceu com 700ms de latência. */
+  const carregando =
+    subgrupos.carregandoPrimeiraVez || quadroQuery.isPending || tarefasQuery.isPending;
   /* Sem isto, uma falha de rede pintava o quadro vazio com "Nenhuma tarefa
      com os filtros atuais" -- acusando o filtro por um erro que não é dele,
      e oferecendo "Limpar filtros", que não resolve nada. */
-  const falhou = subgruposQuery.isError || quadroQuery.isError || tarefasQuery.isError;
-  const tentandoDeNovo =
-    subgruposQuery.isFetching || quadroQuery.isFetching || tarefasQuery.isFetching;
+  const falhou = subgrupos.erro || quadroQuery.isError || tarefasQuery.isError;
+  const tentandoDeNovo = quadroQuery.isFetching || tarefasQuery.isFetching;
 
   function recarregarQuadro() {
-    if (subgruposQuery.isError) subgruposQuery.refetch();
+    if (subgrupos.erro) subgrupos.tentarDeNovo();
     if (quadroQuery.isError) quadroQuery.refetch();
     if (tarefasQuery.isError) tarefasQuery.refetch();
   }
@@ -296,7 +309,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
         titulo="Gestão kanban"
         subtitulo="Cada subgrupo tem seu próprio quadro. Arraste os cartões entre colunas ou abra pra editar."
         acoes={
-          subgrupos.length > 0 && (
+          subgrupos.primeiraPagina.length > 0 && (
             <>
               {/* O quadro é configuração do escritório -- `admin`, como o
                   servidor exige. A tarefa é trabalho do dia e fica aberta a
@@ -317,7 +330,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
 
       {/* Grupo recém-criado não tem subgrupo nenhum -- é o PRIMEIRO estado
           que um cliente novo vê, não um caso raro. */}
-      {!subgruposQuery.isPending && subgrupos.length === 0 ? (
+      {!subgrupos.carregandoPrimeiraVez && subgrupos.primeiraPagina.length === 0 ? (
         <EstadoVazio
           mensagem="Nenhum subgrupo ainda. O quadro é por subgrupo, então crie um primeiro."
           acao={
@@ -332,9 +345,14 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
         <>
           <FiltrosDoKanban
             subgrupos={subgrupos}
-            membros={membros}
+            subgrupoNome={subgrupoNome}
+            pessoas={pessoas}
             filtros={{ ...filtros, subgrupoId }}
             onMudar={(parcial) => setFiltros((f) => ({ ...f, subgrupoId, ...parcial }))}
+            onEscolherSubgrupo={(id, nome) => {
+              lembrar(id, nome);
+              setFiltros((f) => ({ ...f, subgrupoId: id }));
+            }}
           />
 
           {falhou ? (
@@ -366,7 +384,6 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
                     key={c.coluna_id}
                     coluna={c}
                     tarefas={visiveis.filter((t) => t.coluna_id === c.coluna_id)}
-                    apelidoPorEmail={(email) => (email ? apelidoPorEmail.get(email) || email : undefined)}
                     onAbrirTarefa={setTarefaAberta}
                     onNovaTarefa={setCriandoNaColuna}
                   />
@@ -380,7 +397,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
       {editandoQuadro && (
         <ModalDoQuadro
           subgrupoId={subgrupoId}
-          subgrupoNome={subgrupos.find((s) => s.subgrupo_id === subgrupoId)?.nome ?? ""}
+          subgrupoNome={subgrupoNome}
           colunas={colunas}
           onFechar={() => setEditandoQuadro(false)}
         />
@@ -390,7 +407,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
         <ModalDeTarefa
           tarefa={tarefaAberta}
           subgrupoAtual={subgrupoId}
-          subgrupos={subgrupos}
+          subgrupoAtualNome={subgrupoNome}
           colunaInicial={criandoNaColuna ?? undefined}
           onSalvo={invalidar}
           onFechar={() => {

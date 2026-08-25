@@ -33,13 +33,22 @@ export function ResumoSelecionados(props: ValueContainerProps<OpcaoDeSelect, tru
   const corDoPlaceholder =
     selecionados.length === 0 && !ehPilula ? "var(--chakra-colors-fg-subtle)" : undefined;
 
+  /* ⚠️ O resumo some enquanto se digita. Ele e o input dividem a MESMA
+     célula do grid, então com os dois visíveis o texto digitado sai por cima
+     de "3 selecionados" -- duas frases empilhadas no mesmo lugar. É o
+     comportamento normal do react-select; só precisava valer aqui também,
+     agora que a versão de formulário aceita digitação. */
+  const digitando = Boolean(props.selectProps.inputValue);
+
   return (
     <components.ValueContainer {...props}>
       {/* mesmo grid-area que o Placeholder/SingleValue padrão da lib usam --
        * sem isso o span cai numa linha própria do grid e estica a control. */}
-      <span style={{ gridArea: "1 / 1 / 2 / 3", color: corDoPlaceholder }}>
-        {rotuloResumo(selecionados, placeholder)}
-      </span>
+      {!digitando && (
+        <span style={{ gridArea: "1 / 1 / 2 / 3", color: corDoPlaceholder }}>
+          {rotuloResumo(selecionados, placeholder)}
+        </span>
+      )}
       {inputFilho}
     </components.ValueContainer>
   );

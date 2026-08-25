@@ -32,3 +32,4 @@ export { default as IconeCadeado } from "./IconeCadeado";
 export { default as IconeOlho } from "./IconeOlho";
 export { default as IconeOlhoCortado } from "./IconeOlhoCortado";
 export { default as IconeSuporte } from "./IconeSuporte";
+export { default as IconeX } from "./IconeX";

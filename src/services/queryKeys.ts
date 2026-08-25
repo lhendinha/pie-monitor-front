@@ -8,7 +8,8 @@
  * `subgrupo` passados pra cada <SubgrupoMembros>, o que já refaz o fetch de
  * cada um deles por causa da troca de referência nas deps do useCallback. */
 export const qk = {
-  subgrupos: (params: { pagina?: number; tamanhoPagina?: number } = {}) => ["subgrupos", params] as const,
+  subgrupos: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) =>
+    ["subgrupos", params] as const,
   subgruposDoGrupo: (grupoId: string) => ["subgrupos", "grupo", grupoId] as const,
   conteudoDoSubgrupo: (subgrupoId: string) => ["subgrupos", "conteudo", subgrupoId] as const,
   /** Uma PÁGINA de `GET /grupos/membros` -- a tabela da tela de Membros. */
@@ -93,7 +94,6 @@ export const qk = {
    * antes, senão a mesma tela em outra ordem vira outra entrada no cache. */
   resumosDeAtendimentos: (pares: string[]) => ["atendimentos", "resumos", pares] as const,
 
-  todosOsClientes: () => ["clientes", "todos"] as const,
   todosOsSubgrupos: () => ["subgrupos", "todos"] as const,
   todasAsOpcoes: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo, "todos"] as const,
 };

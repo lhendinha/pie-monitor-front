@@ -11,14 +11,16 @@ describe("chaves dos catálogos", () => {
      * montagem. Pior: `CamposProcesso` monta DENTRO da ProcessosPage, então
      * abrir "Novo processo" sobrescrevia o catálogo completo com a versão
      * truncada em 100 -- num grupo com 150 clientes, o nome na tabela virava
-     * o id cru. */
-    expect(qk.todosOsClientes()).not.toEqual(qk.clientes({ tamanhoPagina: 100 }));
+     * o id cru.
+     *
+     * ⚠️ Cliente saiu da lista porque não tem mais catálogo completo: os dois
+     * seletores dele viraram busca. A regra continua valendo pros que
+     * sobraram, e é ela que este teste guarda. */
     expect(qk.todosOsSubgrupos()).not.toEqual(qk.subgrupos({ tamanhoPagina: 100 }));
     expect(qk.todasAsOpcoes("fase")).not.toEqual(qk.opcoesProcesso("fase", { tamanhoPagina: 100 }));
   });
 
   it("mas o PREFIXO continua o mesmo, pra invalidação alcançar os dois", () => {
-    expect(qk.todosOsClientes()[0]).toBe(qk.clientes()[0]);
     expect(qk.todosOsSubgrupos()[0]).toBe(qk.subgrupos()[0]);
     expect(qk.todasAsOpcoes("fase").slice(0, 2)).toEqual(qk.opcoesProcesso("fase").slice(0, 2));
   });

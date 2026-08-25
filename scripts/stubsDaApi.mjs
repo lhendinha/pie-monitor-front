@@ -16,7 +16,30 @@ const SITUACOES = [
   "Arquivado",
 ];
 const FASES = ["Conhecimento (1º Grau)", "Recursal (2º Grau)", "Execução", "Cumprimento de sentença"];
-const CLIENTES = ["Construtora Alfa", "Marina Duarte", "Transportes Beta", "Rogério Lima"];
+const CLIENTES = [
+  "Ângela Fontes",
+  "Construtora Alfa",
+  "Marina Duarte",
+  "Rogério Lima",
+  "Silveira & Associados",
+  "Transportes Beta",
+  "Zuleica Andrade",
+];
+
+/** Filtro por `busca` igual ao do servidor: sem acento, sem caixa.
+ *
+ * ⚠️ Stub que IGNORA `busca` faz a verificação visual passar com o filtro
+ * quebrado -- a lista continuaria completa e parecendo certa. */
+function filtrar(itens, url, campo) {
+  const termo = (url?.searchParams.get("busca") || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+  if (!termo) return itens;
+  return itens.filter((i) =>
+    String(i[campo]).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").includes(termo),
+  );
+}
 
 function opcoes(rotulos, tipo) {
   return {
@@ -37,6 +60,7 @@ const PROCESSOS = {
       subgrupo_id: "sg-civel",
       numero_processo: "08012345620258050001",
       apelido: "Ação de cobrança — Alfa",
+      cliente_ids: ["cli-1"],
       cliente_nomes: ["Construtora Alfa"],
       subgrupo_nome: "Cível",
       fase_rotulo: "Conhecimento (1º Grau)",
@@ -49,6 +73,7 @@ const PROCESSOS = {
       subgrupo_id: "sg-trab",
       numero_processo: "08076543220258050001",
       apelido: "Reclamação trabalhista — Beta",
+      cliente_ids: ["cli-3"],
       cliente_nomes: ["Transportes Beta"],
       subgrupo_nome: "Trabalhista",
       fase_rotulo: "Recursal (2º Grau)",
@@ -63,6 +88,7 @@ const PROCESSOS = {
       subgrupo_id: "sg-civel",
       numero_processo: "08098765420258050001",
       apelido: "Execução fiscal — Rio Verde",
+      cliente_ids: ["cli-4"],
       cliente_nomes: ["Comércio Rio Verde ME"],
       subgrupo_nome: "Financeiro",
       fase_rotulo: "Execução",
@@ -86,6 +112,10 @@ const ATENDIMENTOS = {
       status: "Em andamento",
       criado_em: "2026-08-10T09:00:00+00:00",
       cliente_ids: ["cli-1"],
+      // ⚠️ Acompanha `cliente_ids` na ordem. A API passou a resolver o nome
+      // na leitura (25/08/2026); stub sem isto mostraria o id cru e a
+      // verificação visual passaria assim mesmo.
+      cliente_nomes: ["Construtora Alfa"],
       processo_numero: "00002668720218130559",
       registros: [
         {
@@ -107,6 +137,7 @@ const ATENDIMENTOS = {
       status: "Fechado",
       criado_em: "2026-07-28T11:00:00+00:00",
       cliente_ids: ["cli-2"],
+      cliente_nomes: ["Marina Duarte"],
       processo_numero: null,
       registros: [
         {
@@ -169,10 +200,11 @@ const RESPOSTAS = [
   [/\/fases/, () => opcoes(FASES, "fase")],
   [
     /\/clientes/,
-    () => ({
-      clientes: CLIENTES.map((nome, i) => ({ cliente_id: `cli-${i + 1}`, nome })),
-      total: CLIENTES.length,
-    }),
+    (url) => {
+      const todos = CLIENTES.map((nome, i) => ({ cliente_id: `cli-${i + 1}`, nome }));
+      const achados = filtrar(todos, url, "nome");
+      return { clientes: achados, total: achados.length };
+    },
   ],
   // Precisa vir ANTES de `/processos`: o detalhe é `/processos/{n}/detalhes`.
   [
@@ -250,13 +282,17 @@ const RESPOSTAS = [
   ],
   [
     /\/grupos\/membros/,
-    () => ({
-      membros: [
-        { email: "ana@argos.local", apelido: "Ana Paula", papel: "admin", subgrupos: ["sg-civel"] },
-        { email: "joao@argos.local", apelido: "João Meireles", papel: "manager", subgrupos: ["sg-civel"] },
-        { email: "marina@argos.local", apelido: "Marina Duarte", papel: "user", subgrupos: ["sg-civel", "sg-trab"] },
-      ],
-    }),
+    (url) => {
+      // ⚠️ Com `subgrupo_nomes`: a rota passou a devolvê-lo (25/08/2026), pra
+      // MembrosPage não precisar do catálogo de subgrupos só pra rotular.
+      const todos = [
+        { email: "ana@argos.local", apelido: "Ana Paula", papel: "admin", subgrupos: ["sg-civel"], subgrupo_nomes: ["Cível"] },
+        { email: "joao@argos.local", apelido: "João Meireles", papel: "manager", subgrupos: ["sg-civel"], subgrupo_nomes: ["Cível"] },
+        { email: "marina@argos.local", apelido: "Marina Duarte", papel: "user", subgrupos: ["sg-civel", "sg-trab"], subgrupo_nomes: ["Cível", "Trabalhista"] },
+      ];
+      const achados = filtrar(todos, url, "apelido");
+      return { membros: achados, total: achados.length, total_paginas: 1 };
+    },
   ],
   [
     // ⚠️ Com `apelido`: a rota passou a devolvê-lo (25/08/2026), pra tela não
@@ -285,17 +321,18 @@ const RESPOSTAS = [
   ],
   [
     /\/subgrupos|\/grupos/,
-    () => ({
-      grupos: [],
+    (url) => {
       // `membros`/`colunas` vêm da própria listagem (contagens derivadas):
       // a linha da tela de Grupo mostra "N membros · N colunas".
-      subgrupos: [
+      // Em ordem alfabética, como o servidor passou a devolver.
+      const todos = [
         { subgrupo_id: "sg-civel", nome: "Cível", membros: 3, colunas: 3 },
+        { subgrupo_id: "sg-fam", nome: "Família", membros: 2, colunas: 3 },
         { subgrupo_id: "sg-trab", nome: "Trabalhista", membros: 1, colunas: 4 },
-      ],
-      total: 2,
-      total_paginas: 1,
-    }),
+      ];
+      const achados = filtrar(todos, url, "nome");
+      return { grupos: [], subgrupos: achados, total: achados.length, total_paginas: 1 };
+    },
   ],
 ];
 
@@ -324,7 +361,10 @@ export async function instalarStubs(contexto) {
     }
     const caminho = new URL(requisicao.url()).pathname;
     const achado = RESPOSTAS.find(([padrao]) => padrao.test(caminho));
-    return rota.fulfill({ json: achado ? achado[1]() : {} });
+    /* A URL INTEIRA, não só o caminho: quem responde precisa da query pra
+       honrar `busca` -- um stub que a ignora deixa a verificação visual
+       passar com o filtro quebrado. */
+    return rota.fulfill({ json: achado ? achado[1](new URL(requisicao.url())) : {} });
   });
 }
 

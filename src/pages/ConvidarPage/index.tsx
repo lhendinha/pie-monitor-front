@@ -18,10 +18,10 @@ import {
   PAPEL_PADRAO_DO_CONVITE,
 } from "../../constants";
 import { criarConvite } from "../../services";
-import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
+import { toastErroMutation } from "../../services/queryClient";
 import { emailValido } from "../../utils";
 import type { Papel } from "../../types";
-import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
+import { comOpcoesEscolhidas, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 
 /** Sub-aba "Convidar" da tela de Grupo.
  *
@@ -36,9 +36,19 @@ export default function ConvidarPage() {
   const [erro, setErro] = useState("");
   const toast = useToast();
 
-  const subgruposQuery = useTodosOsSubgrupos();
-  useToastOnQueryError(subgruposQuery.error, "Não foi possível carregar os subgrupos.");
-  const subgrupos = subgruposQuery.data || [];
+  /* Ligado desde a montagem: este formulário EXISTE pra escolher subgrupo, e
+     o botão fica travado até haver um. Esperar a pessoa abrir o seletor pra
+     só então pedir a lista atrasaria a única coisa que a tela faz. */
+  const subgrupos = useSubgruposBuscaveis(true);
+  /* Guarda o nome de quem foi escolhido: com só a primeira página carregada,
+     digitar pra achar o segundo subgrupo tiraria o primeiro da lista -- e
+     ele sumiria do valor, não só do rótulo. */
+  const [nomesEscolhidos, setNomesEscolhidos] = useState<Record<string, string>>({});
+  const opcoesDeSubgrupo = comOpcoesEscolhidas(
+    subgrupos.opcoes,
+    subgruposSelecionados,
+    nomesEscolhidos,
+  );
 
   const convidarMutation = useMutation({
     mutationFn: () => criarConvite(email.trim().toLowerCase(), papelInicial, subgruposSelecionados),
@@ -116,14 +126,26 @@ export default function ConvidarPage() {
         >
           <MultiSelect
             id="subgrupos-convite"
-            opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
+            opcoes={opcoesDeSubgrupo}
             selecionados={subgruposSelecionados}
-            onMudar={setSubgruposSelecionados}
+            onMudar={(ids) => {
+              setSubgruposSelecionados(ids);
+              setNomesEscolhidos(
+                Object.fromEntries(
+                  ids.map((id) => [id, opcoesDeSubgrupo.find((o) => o.value === id)?.label ?? id]),
+                ),
+              );
+            }}
             placeholder="Selecione os subgrupos"
             /* Sem isto, o seletor abria vazio e o botão "Convidar" ficava
                travado por `semSubgrupo` -- sem nada dizendo que era espera
-               e não ausência de subgrupos. */
-            carregando={subgruposQuery.isPending}
+               e não ausência de subgrupos.
+               ⚠️ `carregandoPrimeiraVez`, e não `carregando`: aquele inclui a
+               espera de cada busca, e travaria o campo a cada tecla. */
+            carregando={subgrupos.carregandoPrimeiraVez}
+            onBuscar={subgrupos.buscar}
+            erro={subgrupos.erro}
+            onTentarDeNovo={subgrupos.tentarDeNovo}
           />
         </Campo>
 

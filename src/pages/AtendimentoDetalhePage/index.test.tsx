@@ -33,6 +33,7 @@ const ATENDIMENTO = {
   status: "Em andamento",
   criado_em: "2026-08-10T09:00:00+00:00",
   cliente_ids: ["c1"],
+  cliente_nomes: ["Maria Souza"],
   processo_numero: "00002668720218130559",
   registros: [
     { autor_id: "ana@x.com", registrado_em: "2026-08-10T09:00:00+00:00", texto: "Primeiro contato" },

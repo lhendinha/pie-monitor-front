@@ -2,8 +2,10 @@ import { Box, Button, Flex, Heading, Text, Wrap } from "@chakra-ui/react";
 
 import { CampoDeBusca, MultiSelect, Select } from "../../../../components";
 import FiltroDatas from "../FiltroDatas";
+import { comOpcaoEscolhida } from "../../../../hooks/useOpcoesBuscaveis";
 import { contar } from "../../../../utils";
-import type { Cliente, FiltrosProcessos, OpcaoProcesso } from "../../../../types";
+import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
+import type { FiltrosProcessos, OpcaoProcesso } from "../../../../types";
 
 interface CabecalhoProcessosProps {
   carregando: boolean;
@@ -22,9 +24,17 @@ interface CabecalhoProcessosProps {
   onBuscar: (valor: string) => void;
   filtros: FiltrosProcessos;
   onMudarFiltro: (parcial: Partial<FiltrosProcessos>) => void;
-  clientes: Cliente[];
+  /** A lista de clientes NÃO chega pronta: ela se completa por busca. Ver
+   * `useClientesBuscaveis`. */
+  clientes: OpcoesBuscaveis;
   fases: OpcaoProcesso[];
   situacoes: OpcaoProcesso[];
+  /** Fase e situação vieram com a tela; se a busca delas falhou, o painel
+   * precisa dizer isso em vez de oferecer "Nenhuma". */
+  erroNasFases?: boolean;
+  erroNasSituacoes?: boolean;
+  onRecarregarFases?: () => void;
+  onRecarregarSituacoes?: () => void;
   onNovoProcesso: () => void;
 }
 
@@ -49,6 +59,10 @@ export default function CabecalhoProcessos({
   clientes,
   fases,
   situacoes,
+  erroNasFases,
+  erroNasSituacoes,
+  onRecarregarFases,
+  onRecarregarSituacoes,
   onNovoProcesso,
 }: CabecalhoProcessosProps) {
   return (
@@ -79,7 +93,13 @@ export default function CabecalhoProcessos({
       <Wrap gap="10px" mb="10px">
         {/* Situação e fase aceitam VÁRIOS valores (é o que o artifact faz,
             e o backend passou a suportar em 21/08). Cliente é valor único --
-            no artifact o painel dele usa botões, não caixas. */}
+            no artifact o painel dele usa botões, não caixas.
+
+            As três aceitam digitação, por motivos diferentes: as duas
+            primeiras já têm a lista inteira aqui e filtram na hora (são 39
+            situações, 22 delas começando com "Aguardando" -- rolar não
+            resolve); a de cliente pede ao servidor, porque a lista dela não
+            tem teto. */}
         <MultiSelect
           variante="chip"
           placeholder="Todas as situações"
@@ -87,6 +107,11 @@ export default function CabecalhoProcessos({
           selecionados={filtros.situacaoIds}
           onMudar={(v) => onMudarFiltro({ situacaoIds: v })}
           carregando={carregandoCatalogos}
+          permitirBusca
+          placeholderBusca="Buscar situação"
+          permitirLimpar
+          erro={erroNasSituacoes}
+          onTentarDeNovo={onRecarregarSituacoes}
         />
         <MultiSelect
           variante="chip"
@@ -95,14 +120,33 @@ export default function CabecalhoProcessos({
           selecionados={filtros.faseIds}
           onMudar={(v) => onMudarFiltro({ faseIds: v })}
           carregando={carregandoCatalogos}
+          permitirBusca
+          placeholderBusca="Buscar fase"
+          permitirLimpar
+          erro={erroNasFases}
+          onTentarDeNovo={onRecarregarFases}
         />
         <Select
           variante="chip"
           placeholder="Todos os clientes"
-          opcoes={clientes.map((c) => ({ value: c.cliente_id, label: c.nome }))}
+          /* O escolhido entra na lista mesmo fora da página atual, senão a
+             pílula fica acesa e sem rótulo -- ver `comOpcaoEscolhida`. */
+          opcoes={comOpcaoEscolhida(clientes.opcoes, filtros.clienteId, filtros.clienteNome)}
           valor={filtros.clienteId}
-          onMudar={(v) => onMudarFiltro({ clienteId: v })}
-          carregando={carregandoCatalogos}
+          /* Guarda o NOME junto do id: é o rótulo da pílula, e ele não pode
+             depender de a lista certa estar carregada. */
+          onMudar={(v) =>
+            onMudarFiltro({
+              clienteId: v,
+              clienteNome: clientes.opcoes.find((o) => o.value === v)?.label ?? "",
+            })
+          }
+          carregando={clientes.carregando}
+          onBuscar={clientes.buscar}
+          placeholderBusca="Buscar cliente"
+          permitirLimpar
+          erro={clientes.erro}
+          onTentarDeNovo={clientes.tentarDeNovo}
         />
         <FiltroDatas
           dataVerificarAte={filtros.dataVerificarAte}

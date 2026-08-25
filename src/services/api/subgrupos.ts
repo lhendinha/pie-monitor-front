@@ -3,16 +3,26 @@ import { chamar } from "./client";
 interface OpcoesListarSubgrupos {
   pagina?: number;
   tamanhoPagina?: number;
+  /** Filtra por nome no SERVIDOR, sem acento e sem caixa
+   * (`subgrupos_service.listar_pagina`). É o que permite a pílula trazer a
+   * primeira página e completar por digitação, em vez de baixar a lista
+   * inteira pra filtrar aqui. */
+  busca?: string;
 }
 
 /** GET /subgrupos -- paginado de verdade (mesmo mecanismo de /processos e
- * /historico). Quem precisa da lista inteira pra popular um seletor (ex.:
- * MembrosPage, ProcessosPage, ConvidarPage) pede `tamanhoPagina: 100`
- * (teto já usado pelo resto do app) em vez de paginar de verdade. */
+ * /historico), em ordem alfabética e com filtro por nome.
+ *
+ * ⚠️ O recorte de ESCOPO vem antes do filtro de texto no servidor: quem só
+ * vê dois subgrupos busca dentro dos dois, nunca no grupo inteiro. */
 export function listarSubgrupos(opcoes: OpcoesListarSubgrupos = {}) {
-  const { pagina, tamanhoPagina } = opcoes;
+  const { pagina, tamanhoPagina, busca } = opcoes;
   return chamar("/subgrupos", {
-    query: { pagina: pagina ? String(pagina) : undefined, tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined },
+    query: {
+      pagina: pagina ? String(pagina) : undefined,
+      tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
+      busca: busca || undefined,
+    },
   });
 }
 
