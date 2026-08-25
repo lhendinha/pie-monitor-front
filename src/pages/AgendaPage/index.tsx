@@ -13,7 +13,6 @@ import {
   IconePlus,
   ModalDeTarefa,
 } from "../../components";
-import { TETO_POR_PAGINA } from "../../constants";
 import {
   listarAtendimentos,
   listarTodosOsMembrosDoGrupo,
@@ -21,6 +20,7 @@ import {
   papelAtende,
 } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
+import { todasAsPaginas } from "../../services/api/paginacao";
 import { qk } from "../../services/queryKeys";
 import { hojeISO } from "../../utils";
 import { paraIso } from "../../utils/calendario";
@@ -43,11 +43,10 @@ import {
 } from "./helpers/periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros } from "./types";
 import type {
-  RespostaDeAtendimentosResumidos,
   RespostaDeMembros,
   RespostaDoQuadro,
 } from "../../types/respostas";
-import type { Tarefa } from "../../types";
+import type { AtendimentoResumido, Tarefa } from "../../types";
 import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 
 /** Agenda: as tarefas do escritório projetadas por data.
@@ -117,14 +116,26 @@ export default function AgendaPage() {
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */
-  const atendimentosQuery = useQuery<RespostaDeAtendimentosResumidos>({
-    queryKey: qk.atendimentos({ tamanhoPagina: TETO_POR_PAGINA }),
-    queryFn: () => listarAtendimentos({ tamanhoPagina: TETO_POR_PAGINA }),
+  /* 🔴 TODAS as páginas, não a primeira.
+   *
+   * Era `tamanhoPagina: TETO_POR_PAGINA` (100), que bate com o `le=100` da
+   * API e por isso não dava erro -- só truncava. Passando de 100
+   * atendimentos, a tarefa vinculada a um do fim da lista perdia o assunto
+   * e a linha deixava de dizer a que ela se liga.
+   *
+   * Chave PRÓPRIA (`todosOsAtendimentos`), separada da chave paginada, pelo
+   * mesmo motivo dos outros catálogos: duas funções de busca dividindo uma
+   * chave fazem o React Query rodar a de quem monta primeiro, e o conteúdo
+   * do cache passa a depender da ordem de montagem. */
+  const atendimentosQuery = useQuery({
+    queryKey: qk.todosOsAtendimentos(),
+    queryFn: () =>
+      todasAsPaginas<AtendimentoResumido>(listarAtendimentos, "atendimentos"),
   });
   const assuntoPorId = useMemo(
     () =>
       new Map(
-        (atendimentosQuery.data?.atendimentos || []).map((a) => [a.atendimento_id, a.assunto]),
+        (atendimentosQuery.data || []).map((a) => [a.atendimento_id, a.assunto]),
       ),
     [atendimentosQuery.data],
   );

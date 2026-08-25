@@ -155,14 +155,34 @@ describe("renovarToken", () => {
     expect(getAccessToken()).toBe(novaResposta.access_token);
   });
 
-  it("em falha (refresh token inválido/expirado), limpa os tokens e devolve false", async () => {
+  it("401 do servidor (token inválido/expirado) limpa os tokens", async () => {
     localStorage.setItem("pje-monitor-refresh-token", "refresh-expirado");
     localStorage.setItem("pje-monitor-access-token", "algum-token");
-    vi.mocked(fetch).mockResolvedValueOnce({ ok: false, json: async () => ({}) } as Response);
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) } as Response);
 
     expect(await renovarToken()).toBe(false);
     expect(getAccessToken()).toBeNull();
     expect(getRefreshToken()).toBeNull();
+  });
+
+  it("🔴 5xx NÃO limpa os tokens -- deploy não é sessão expirada", async () => {
+    /* `limparTokens()` incondicional apagava a sessão num 502/503, que é o
+     * que a API Gateway devolve durante um deploy: o refresh token seguia
+     * válido e a pessoa era deslogada por dez segundos de
+     * indisponibilidade.
+     *
+     * E `queryClient.ehSessaoExpirada` passou a usar "ainda tenho tokens?"
+     * pra distinguir falha transitória de sessão morta, apoiado num
+     * comentário que dizia que esta função só limpava em recusa do
+     * servidor. A afirmação estava errada, então a guarda de lá não
+     * protegia o caso que ela descreve. */
+    localStorage.setItem("pje-monitor-refresh-token", "refresh-valido");
+    localStorage.setItem("pje-monitor-access-token", "algum-token");
+    vi.mocked(fetch).mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) } as Response);
+
+    expect(await renovarToken()).toBe(false);
+    expect(getRefreshToken()).toBe("refresh-valido");
+    expect(getAccessToken()).toBe("algum-token");
   });
 
   it("em erro de rede, devolve false sem lançar (best-effort)", async () => {

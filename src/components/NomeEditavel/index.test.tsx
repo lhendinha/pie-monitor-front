@@ -234,4 +234,28 @@ describe("NomeEditavel — depois de um rename recusado", () => {
 
     expect(onConfirmar).toHaveBeenCalledWith("Previdenciário");
   });
+
+  it("🔴 Enter reenvia o MESMO texto recusado -- só o blur desiste", async () => {
+    /* `falhou` vem de `mutation.isError`, true pra QUALQUER falha -- não só
+     * o 409 de nome duplicado pro qual a guarda foi escrita. Aplicá-la
+     * também ao Enter fazia um blip de rede tornar o nome inalcançável pra
+     * sempre: apertar Enter de novo com o mesmo texto não mandava pedido
+     * nenhum e não dizia nada.
+     *
+     * Enter é gesto explícito -- quem aperta está pedindo de novo de
+     * propósito. Sair do campo é que é ambíguo, e era de lá que vinha o
+     * laço. */
+    const user = userEvent.setup();
+    const { onConfirmar } = montarComFalhaNoEnvio();
+
+    await user.clear(campo());
+    await user.type(campo(), "Trabalhista{Enter}");
+    expect(onConfirmar).toHaveBeenCalledTimes(1);
+    onConfirmar.mockClear();
+
+    // Mesmo texto, de novo, por Enter: manda.
+    await user.click(campo());
+    await user.type(campo(), "{Enter}");
+    expect(onConfirmar).toHaveBeenCalledWith("Trabalhista");
+  });
 });

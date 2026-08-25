@@ -1,5 +1,5 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
@@ -39,6 +39,30 @@ const pilhaDeModais: symbol[] = [];
 export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, children }: ModalProps) {
   // Esc fecha -- é o que se espera de qualquer diálogo, e sem isso quem
   // navega por teclado fica preso dentro dele. Mas só o de CIMA fecha.
+  /* 🔴 O efeito roda UMA vez, e o `onFechar` atual vem de um ref.
+   *
+   * Com `[onFechar]` nas dependências, um `onFechar` com identidade nova a
+   * cada render fazia o modal ABERTO sair e voltar pro TOPO da pilha --
+   * invertendo a ordem. Um diálogo de confirmação por cima passaria a
+   * perder o Escape pro formulário de baixo, que é exatamente o que a pilha
+   * existe pra impedir.
+   *
+   * Hoje nenhum chamador dispara isso, porque o React Compiler memoiza os
+   * callbacks -- mas isso é mascaramento: basta um `onFechar` inline sem
+   * memoização pra reintroduzir. Com deps vazias, a posição na pilha passa
+   * a depender só de montagem e desmontagem, que é o que ela representa. */
+  const onFecharRef = useRef(onFechar);
+  /* ⚠️ A escrita no ref vai num EFEITO, não no corpo do componente.
+   *
+   * `onFecharRef.current = onFechar` durante a renderização é o antipadrão
+   * que o React Compiler proíbe ("Cannot access refs during render") -- ele
+   * pode descartar e refazer uma renderização, e efeito colateral ali não é
+   * garantido. Este efeito não tem deps de propósito: roda depois de toda
+   * renderização, que é exatamente quando o callback pode ter mudado. */
+  useEffect(() => {
+    onFecharRef.current = onFechar;
+  });
+
   useEffect(() => {
     const meuLugar = Symbol("modal");
     pilhaDeModais.push(meuLugar);
@@ -46,7 +70,7 @@ export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, chil
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key !== "Escape") return;
       if (pilhaDeModais[pilhaDeModais.length - 1] !== meuLugar) return;
-      onFechar();
+      onFecharRef.current();
     }
     document.addEventListener("keydown", aoTeclar);
     return () => {
@@ -54,7 +78,7 @@ export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, chil
       const onde = pilhaDeModais.indexOf(meuLugar);
       if (onde >= 0) pilhaDeModais.splice(onde, 1);
     };
-  }, [onFechar]);
+  }, []);
 
   return (
     <Flex

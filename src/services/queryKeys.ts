@@ -79,6 +79,9 @@ export const qk = {
   prefixoSubgrupos: () => ["subgrupos"] as const,
   prefixoOpcoesProcesso: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo] as const,
 
+  prefixoAtendimentos: () => ["atendimentos"] as const,
+  todosOsAtendimentos: () => ["atendimentos", "todos"] as const,
+
   todosOsClientes: () => ["clientes", "todos"] as const,
   todosOsSubgrupos: () => ["subgrupos", "todos"] as const,
   todasAsOpcoes: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo, "todos"] as const,

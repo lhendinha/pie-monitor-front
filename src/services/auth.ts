@@ -159,7 +159,23 @@ export async function renovarToken(): Promise<boolean> {
       body: JSON.stringify({ refresh_token }),
     });
     if (!resp.ok) {
-      limparTokens();
+      /* 🔴 Só limpa quando o servidor RECUSA o token, não em qualquer
+       * resposta ruim.
+       *
+       * `limparTokens()` incondicional apagava a sessão num 502/503 -- que
+       * é o que a API Gateway devolve durante um deploy. O refresh token
+       * seguia válido, e a pessoa era deslogada por causa de dez segundos
+       * de indisponibilidade.
+       *
+       * Pior: `queryClient.ehSessaoExpirada` passou a usar "ainda tenho
+       * tokens?" pra distinguir falha transitória de sessão morta,
+       * apoiado num comentário que dizia que esta função só limpava em
+       * recusa do servidor. A afirmação estava errada, então a guarda de lá
+       * não protegia o caso que ela descreve.
+       *
+       * 401/403 é o servidor dizendo "este token não vale". O resto é
+       * problema de infraestrutura, e a sessão sobrevive. */
+      if (resp.status === 401 || resp.status === 403) limparTokens();
       return false;
     }
     const dados = await resp.json();

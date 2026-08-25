@@ -96,12 +96,29 @@ export default function NomeEditavel({
     if (falhou) recusadoRef.current = enviadoRef.current;
   }, [falhou]);
 
-  function confirmar() {
+  /** `"enter"` é gesto EXPLÍCITO; `"blur"` é ambíguo -- e a diferença
+   * decide se o texto já recusado é reenviado.
+   *
+   * 🔴 A versão anterior aplicava a guarda aos dois. `falhou` vem de
+   * `mutation.isError`, que é true pra QUALQUER falha -- não só o 409 de
+   * nome duplicado pro qual a guarda foi escrita. Depois de um blip de
+   * rede, apertar Enter com o mesmo texto caía no ramo de cancelar: nenhum
+   * pedido, nenhuma mensagem, e o nome ficava inalcançável pra sempre a
+   * menos que a pessoa mudasse o texto.
+   *
+   * Separando por origem, não é preciso classificar o erro: sair do campo
+   * não reenvia (era daí que vinha o laço), e Enter sempre reenvia, porque
+   * quem aperta Enter está pedindo de novo de propósito. */
+  function confirmar(origem: "enter" | "blur") {
     // ⚠️ Sem esta saída, o `onBlur` do campo em leitura reenviava o mesmo
     // rename enquanto o primeiro ainda estava em voo.
     if (salvando) return;
     const limpo = rascunho.trim();
-    if (!limpo || limpo === nome || limpo === recusadoRef.current) {
+    if (!limpo || limpo === nome) {
+      onCancelar();
+      return;
+    }
+    if (origem === "blur" && limpo === recusadoRef.current) {
       onCancelar();
       return;
     }
@@ -112,7 +129,7 @@ export default function NomeEditavel({
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      confirmar();
+      confirmar("enter");
     }
     if (e.key === "Escape") onCancelar();
   }
@@ -124,7 +141,7 @@ export default function NomeEditavel({
         value={rascunho}
         onChange={(e) => setRascunho(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={confirmar}
+        onBlur={() => confirmar("blur")}
         readOnly={salvando}
         opacity={salvando ? 0.6 : 1}
         autoFocus
