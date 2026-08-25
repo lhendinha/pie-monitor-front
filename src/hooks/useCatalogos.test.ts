@@ -58,3 +58,38 @@ describe("catálogos compartilham chave E forma", () => {
     }
   });
 });
+
+describe("catálogos não têm staleTime", () => {
+  /**
+   * 🔴 Isto é um teste sobre uma DECISÃO, não sobre comportamento -- e ele
+   * existe porque eu tomei a decisão errada por não medir.
+   *
+   * Uma auditoria apontou que `todasAsPaginas` sobre coleção que cresce sem
+   * limite refaria a caminhada a cada montagem e a cada foco de janela. Pus
+   * cinco minutos de validade. Depois medi, em produção: clientes 2,
+   * subgrupos 8, atendimentos 1, membros 15, opções 88 -- tudo em UMA
+   * página. A economia era de uma requisição.
+   *
+   * O custo não era. O canal WebSocket só invalida notificação, então a
+   * única coisa que trazia dado de outra pessoa era o
+   * `refetchOnWindowFocus` -- e é exatamente ele que o `staleTime`
+   * desliga. A sócia cadastra um cliente, você volta pra aba, e o select
+   * não o mostra por cinco minutos.
+   *
+   * Se um dia o volume justificar, o ajuste certo não é este: é parar de
+   * caminhar todas as páginas pra rotular tarefa.
+   */
+  it("nenhum catálogo declara staleTime", async () => {
+    const fonte = (
+      import.meta.glob("./useCatalogos.ts", {
+        query: "?raw",
+        import: "default",
+        eager: true,
+      }) as Record<string, string>
+    )["./useCatalogos.ts"];
+
+    // Ignora o bloco de comentário que explica a ausência.
+    const semComentarios = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    expect(semComentarios).not.toContain("staleTime");
+  });
+});

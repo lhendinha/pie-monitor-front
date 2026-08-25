@@ -408,6 +408,41 @@ Duas regras que saíram disso:
    `qk.todosOsMembros()` guarda o conjunto. Compartilhar chave entre dois
    formatos foi o que quebrou o arraste do Kanban -- ver abaixo.
 
+### Catálogo completo NÃO leva `staleTime` — e a razão é medida, não estética
+
+Uma auditoria apontou que `todasAsPaginas` sobre uma coleção que cresce sem
+limite refaria a caminhada de páginas a cada montagem e a cada foco de
+janela, e eu adicionei cinco minutos de validade **sem medir**. Depois medi,
+em produção:
+
+| catálogo | itens | páginas |
+|---|---|---|
+| clientes | 2 | 1 |
+| subgrupos | 8 | 1 |
+| atendimentos | 1 | 1 |
+| membros | 15 | 1 |
+| opções (fases/situações) | 88 | 1 |
+
+Tudo cabe em **uma** página. A "caminhada" que eu dizia estar economizando é
+uma requisição — e o React Query já deduplica chamadas simultâneas da mesma
+chave, então nem o caso de vários componentes montando juntos o `staleTime`
+resolvia.
+
+O custo, por outro lado, era real. O canal WebSocket só invalida
+notificação; nada mais. A **única** coisa que trazia dado de outra pessoa
+era o `refetchOnWindowFocus`, e o `staleTime` é exatamente o que o desliga.
+O cenário concreto: a sócia cadastra um cliente, você volta para a aba, e o
+select de "Novo processo" não o mostra por até cinco minutos — num sistema
+de escritório compartilhado, isso faz a pessoa cadastrar de novo.
+
+**Se um dia o volume justificar**, o ajuste certo não é `staleTime`: é parar
+de caminhar todas as páginas só para rotular tarefa na Agenda, e buscar os
+assuntos apenas dos ids que estão na tela. `staleTime` troca correção por
+desempenho; a mudança de estratégia não troca nada.
+
+`useCatalogos.test.ts` fixa a ausência, para que reintroduzir exija passar
+pelo teste — e por esta seção.
+
 ### Prefixo de `queryKey` é contrato: dois formatos não dividem a mesma chave
 
 O carimbo otimista do arraste fazia

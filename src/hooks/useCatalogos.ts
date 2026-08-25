@@ -26,25 +26,33 @@ import type { Cliente, Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from
  * A regra que sai disso: **uma chave, uma função de busca.** Toda tela que
  * precisa de um catálogo usa o hook daqui.
  */
-/** Quanto tempo um catálogo completo vale sem reconsultar.
+/* ⚠️ SEM `staleTime` aqui, e a ausência é deliberada.
  *
- * 🔴 O `staleTime: 0` global do QueryClient faz TODA montagem e TODO foco de
- * janela refazerem a busca -- e catálogo completo é uma caminhada de N
- * páginas, sequencial. Na Agenda, com atendimentos passando de mil, isso
- * vira dezenas de requisições em fila só pra rotular tarefas vinculadas,
- * toda vez que a pessoa volta pra aba.
+ * 🔴 Uma auditoria apontou que `todasAsPaginas` sobre uma coleção que cresce
+ * sem limite refaria a caminhada a cada montagem e a cada foco de janela, e
+ * eu pus cinco minutos de validade sem medir. Depois medi, em produção:
  *
- * Cinco minutos é seguro porque estes dados não mudam sozinhos: quem os
- * altera invalida a chave explicitamente (`qk.prefixo*`), e invalidação
- * ignora `staleTime`. O `staleTime` só evita a repetição por montagem e por
- * foco, que é exatamente o desperdício.
+ *     clientes 2 | subgrupos 8 | atendimentos 1 | membros 15 | opções 88
+ *
+ * Tudo cabe em UMA página. A "caminhada de páginas" que eu disse estar
+ * economizando é uma requisição, e o React Query já deduplica chamadas
+ * simultâneas da mesma chave -- então nem o caso de vários componentes
+ * montando juntos o `staleTime` resolvia.
+ *
+ * E o que ele custava era real: o canal WebSocket só invalida notificação,
+ * nada mais. A ÚNICA coisa que trazia dado de outra pessoa era o
+ * `refetchOnWindowFocus`, e cinco minutos de validade é exatamente o que o
+ * desliga. Cenário concreto: a sócia cadastra um cliente, você volta pra
+ * aba, e o select de "Novo processo" não o mostra por até cinco minutos --
+ * num sistema de escritório, isso faz a pessoa cadastrar de novo.
+ *
+ * Se um dia atendimentos passar de algumas centenas, o ajuste certo não é
+ * `staleTime`: é parar de caminhar todas as páginas só pra rotular tarefa,
+ * e buscar os assuntos dos ids que estão na tela.
  */
-const VALIDADE_DO_CATALOGO_MS = 5 * 60 * 1000;
-
 export function useTodosOsClientes() {
   return useQuery({
     queryKey: qk.todosOsClientes(),
-    staleTime: VALIDADE_DO_CATALOGO_MS,
     queryFn: () => todasAsPaginas<Cliente>(listarClientes, "clientes"),
   });
 }
@@ -52,7 +60,6 @@ export function useTodosOsClientes() {
 export function useTodosOsSubgrupos() {
   return useQuery({
     queryKey: qk.todosOsSubgrupos(),
-    staleTime: VALIDADE_DO_CATALOGO_MS,
     queryFn: () => todasAsPaginas<Subgrupo>(listarSubgrupos, "subgrupos"),
   });
 }
@@ -60,7 +67,6 @@ export function useTodosOsSubgrupos() {
 export function useOpcoesDeProcesso(tipo: TipoOpcaoProcesso) {
   return useQuery({
     queryKey: qk.todasAsOpcoes(tipo),
-    staleTime: VALIDADE_DO_CATALOGO_MS,
     queryFn: () => todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso(tipo, o), "opcoes"),
   });
 }
@@ -68,7 +74,6 @@ export function useOpcoesDeProcesso(tipo: TipoOpcaoProcesso) {
 export function useTodosOsMembros(habilitado = true) {
   return useQuery({
     queryKey: qk.todosOsMembros(),
-    staleTime: VALIDADE_DO_CATALOGO_MS,
     /* 🔴 `queryFn` guarda a resposta INTEIRA; `select` é que expõe o array.
      *
      * A versão anterior desembrulhava dentro do `queryFn`, então o cache
