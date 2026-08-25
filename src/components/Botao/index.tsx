@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { BOTAO } from "../../theme/painelFiltro";
 import { CORES_DO_BOTAO } from "../../theme/botao";
-import type { VarianteBotao } from "../../theme/botao";
+import type { VarianteBotao } from "../../types";
 
 interface BotaoProps extends Omit<ButtonProps, "variant"> {
   variante?: VarianteBotao;

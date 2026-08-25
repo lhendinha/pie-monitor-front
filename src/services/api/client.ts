@@ -1,7 +1,6 @@
+import { API_URL } from "../../constants/ambiente";
 import { getAccessToken, renovarToken } from "../auth";
 import type { OpcoesRequisicao } from "../../types";
-
-const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 if (!API_URL) {
    

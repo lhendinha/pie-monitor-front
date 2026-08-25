@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { ItemDeMovimentacao, Pagination } from "../../../../components";
 import { formatarData } from "../../../../utils";
-import { MOVIMENTACOES_POR_PAGINA, TAMANHOS_MOVIMENTACOES } from "../../constants/detalhe";
+import { MOVIMENTACOES_POR_PAGINA, TAMANHOS_MOVIMENTACOES } from "../../constants";
 import type { Comunicacao } from "../../../../types";
 
 interface MovimentacoesProps {

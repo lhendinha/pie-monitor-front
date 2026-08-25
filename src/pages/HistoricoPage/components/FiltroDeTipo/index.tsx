@@ -2,7 +2,7 @@ import { Menu, Portal } from "@chakra-ui/react";
 
 import { PilulaDeFiltro } from "../../../../components";
 import { OPCAO_DE_MENU, OPCAO_DE_MENU_ATIVA, PAINEL_DE_MENU } from "../../../../theme/menu";
-import { TIPOS_DE_ENVIO } from "../../constants/historico";
+import { TIPOS_DE_ENVIO } from "../../constants";
 
 interface FiltroDeTipoProps {
   valor: string;

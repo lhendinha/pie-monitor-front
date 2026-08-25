@@ -65,65 +65,116 @@ automático a cada push).
 
 ```
 src/
-  types/index.ts        -- inclui AbaId/TelaAuth/AbaConfig (abas de topo), SubAbaId/SubAbaConfig
-                            (sub-abas de GrupoPage) e FiltrosEstruturadosProcessos (painel de
-                            filtros de ProcessosPage), movidos/extraídos de dentro das páginas pra cá
-  constants/roles.ts, paginacao.ts (TAMANHO_PAGINA_PADRAO, TAMANHO_PAGINA_PICKER), processos.ts
-                            (INTERVALO_POLLING_PROCESSOS_MS, FILTROS_PROCESSOS_VAZIOS,
-                            LABEL_FILTRO_PROCESSOS), select.ts (Z_INDEX_MENU_PORTAL etc.), index.ts
-  services/
-    auth.ts (+ auth.test.ts)
-    api/ (client.ts [+ client.test.ts] + subgrupos.ts + membros.ts + processos.ts + convites.ts + historico.ts + grupos.ts + clientes.ts + opcoesProcesso.ts + index.ts)
-    index.ts
-  utils/mask.ts, date.ts, deepLink.ts, index.ts (+ *.test.ts pra cada um)
-  components/
-    Modal/index.tsx, Skeleton/index.tsx [+ index.test.tsx]
-    Toast/index.tsx [+ index.test.tsx]     -- ToastProvider/useToast, substitui <div className="banner">
-    Pagination/index.tsx                    -- números endereçáveis, não cursor
-    Select/                                 -- wrapper (react-select) por trás de <Select> (valor
-                                                único, Select.tsx) e <MultiSelect> (múltiplo,
-                                                MultiSelect.tsx, dropdown fechado com checkboxes,
-                                                OpcaoComCheckbox.tsx/ResumoSelecionados.tsx privados);
-                                                index.tsx só reexporta. Substitui os <select> nativos
-                                                e o <select multiple>
-    InfoTip/index.tsx                       -- ícone "i" com tooltip -- explicação sob demanda ao
-                                                lado de um label (busca de Processos/Clientes)
-    Icons/                                  -- ícones SVG custom, 1 arquivo por ícone
-                                                (IconeHistorico.tsx, IconeArrastar.tsx -- handle de
-                                                drag and drop, estilo fa-bars), index.tsx só reexporta
-    index.ts
-  pages/
-    LoginPage/index.tsx
-    EsqueciSenhaPage/index.tsx, RedefinirSenhaPage/index.tsx
-    AceitarConvitePage/index.tsx
-    ProcessosPage/index.tsx (+ NovoProcessoForm.tsx, DetalheEditarProcesso.tsx, CamposProcesso.tsx,
-                              DetalheProcesso.tsx -- privados, não exportados; EditarApelidoForm.tsx
-                              descontinuado, apelido virou só mais um campo em DetalheEditarProcesso.
-                              Busca ampla (texto livre) + painel de "Filtros" colapsável + chips
-                              removíveis + tags de fase/situação/data no card -- ver "Decisões de UX")
-    ClientesPage/index.tsx (+ NovoClienteForm.tsx, EditarClienteForm.tsx -- privados; criação por
-                              modal "+ Novo Cliente", lista paginada igual Processos/Histórico, busca
-                              por nome/CPF-CNPJ/telefone/e-mail que substitui a paginação enquanto ativa)
-    GrupoPage/index.tsx (+ OpcoesLista.tsx, EditarOpcaoForm.tsx, OpcaoRow.tsx -- privados;
-                          sub-navegação que agrupa Subgrupos/Membros/Convidar/Fases/Situações -- ver
-                          "Decisões de UX". OpcoesProcessoPage/ antigo foi descontinuado,
-                          OpcoesLista/EditarOpcaoForm mudaram de pasta pra cá. Ordem de Fase/Situação
-                          agora é por drag and drop, OpcaoRow.tsx é a linha arrastável)
-    SubgruposPage/index.tsx (+ EditarSubgrupoForm.tsx -- privado; renderizado como sub-aba dentro de
-                              GrupoPage, não mais no topo)
-    MembrosPage/index.tsx (+ SubgrupoMembros.tsx, EditarMembroForm.tsx -- privados; idem, sub-aba)
-    ConvidarPage/index.tsx       -- idem, sub-aba
-    HistoricoPage/index.tsx (+ DetalheHistorico.tsx -- privado)
-    index.ts
-  test/setup.ts        -- jest-dom matchers + TZ=America/Sao_Paulo fixo pros testes de data
-  App.tsx, main.tsx
-vercel.json          -- SPA fallback (OBRIGATÓRIO -- sem isso, /convite/{token} e /redefinir-senha/{token} dão 404) + security headers (CSP/HSTS/etc.)
+  main.tsx              -- ponto de entrada
+  App.tsx               -- SÓ os provedores (Toast, Sessão, Router)
+  routes/index.tsx      -- o mapa de rotas
+  routes/Rota*.tsx      -- rotas que precisam de casca própria (Login, Tarefa, Raiz…)
+
+  types/                -- TODO tipo de alcance global (index.ts + respostas.ts)
+  constants/            -- arquivos soltos + index.ts que reexporta (ambiente.ts,
+                           roles.ts, paginacao.ts, periodos.ts, select.ts…)
+  utils/                -- arquivos soltos + index.ts (mask, date, deepLink, calendario…)
+  services/             -- auth.ts + api/ (client.ts e um arquivo por área) + index.ts
+  theme/                -- tokens e paletas de design
+  hooks/                -- hooks compartilhados por mais de uma página
+  contexts/             -- SessaoContext
+  components/           -- 53 componentes gerais, cada um em pasta com index.tsx
+  pages/                -- 19 páginas, cada uma em pasta com index.tsx
+  test/setup.ts
 ```
 
-Regra geral: **componentes/páginas** viram pasta com `index.tsx` dentro;
-**utils/services/constants** são arquivos soltos + um `index.ts` no topo
-reexportando tudo. Subcomponentes usados só por 1 página ficam como
-arquivo-irmão dentro da pasta da página, sem entrar no `index.ts` público.
+**As quatro regras que decidem onde um arquivo mora:**
+
+1. **Componente e página viram PASTA com `index.tsx`.** Tudo o mais --
+   constante, tipo, helper, hook -- é arquivo solto, nunca pasta com índice.
+2. **Alcance decide o destino.** Serviu a mais de uma página? Sobe pra
+   `types/`, `constants/`, `utils/` ou `hooks/`. É de uma página só? Fica na
+   pasta dela, como `constants.ts`, `types.ts` e helpers soltos ao lado do
+   `index.tsx`.
+3. **Componente usado por uma página só** mora em `pages/AquelaPagina/
+   components/NomeDele/index.tsx`, e não entra no índice público.
+4. **O nome tem que fazer sentido onde o arquivo mora.** Tipo que sobe pra
+   `types/` costuma precisar de nome novo -- ver a seção abaixo.
+
+Uma página completa fica assim (`AgendaPage`):
+
+```
+AgendaPage/
+  index.tsx  index.test.tsx
+  constants.ts              -- VISOES, DIAS_DA_LISTA, PONTOS_POR_CELULA
+  types.ts                  -- VisaoDaAgenda, FiltrosDaAgenda (privados daqui)
+  periodoDaAgenda.ts  periodoDaAgenda.test.ts     -- helpers, soltos
+  tarefasPorDia.ts    tarefasPorDia.test.ts
+  hooks/useTarefasDaAgenda.ts  …
+  components/VisaoPorMes/index.tsx  …
+```
+
+### Arrumação de 25/08/2026: env, tipos e rotas
+
+Três coisas fora do lugar, corrigidas juntas.
+
+**1. `import.meta.env` espalhado.** `VITE_API_URL` era lida em DOIS arquivos
+(`services/auth.ts` e `services/api/client.ts`), cada um com o próprio
+`as string | undefined`. Agora só `constants/ambiente.ts` toca
+`import.meta.env` -- um `grep` que ache outro é regressão.
+
+- ⚠️ `EM_DESENVOLVIMENTO` passa por constante e **não** estraga a eliminação
+  de código morto: medido, o bundle saiu byte a byte igual e o
+  `react-query-devtools` continuou fora de todo chunk.
+- ⚠️ A URL do canal é **função**, não constante: ela é lida na hora de
+  conectar, dentro do efeito. Virar constante mudaria esse momento.
+
+**2. Tipos declarados onde deu.** Doze tipos de alcance global viviam dentro
+do módulo que os usou primeiro (`utils/`, `constants/`, `theme/`,
+`components/`, `services/`). Enquanto o consumidor era um só isso não
+incomodava; quando passou a ser vários, o import cruzava a casa inteira e a
+resposta pra "onde declaro este tipo?" passou a depender de quem chegou
+primeiro. Dois arquivos existiam SÓ pra segurar um tipo
+(`components/Toast/tipos.ts`, `components/Select/types.ts`) e sumiram.
+
+Nome global exige nome global -- cinco foram renomeados ao subir:
+
+| antes | depois | por quê |
+|---|---|---|
+| `Intervalo` | `IntervaloDeDatas` | intervalo de quê? tempo, número, página? |
+| `DiaDaGrade` | `DiaDoCalendario` | "grade" não diz de que grade |
+| `Opcao` | `OpcaoDeSelect` | havia **três** `Opcao` diferentes no projeto |
+| `FormaDaOpcao` | `FormaDaOpcaoDeSelect` | acompanha a de cima |
+| `Prioridade` | `PrioridadeDaTarefa` | ao lado de `Tarefa`, dizer de quem é |
+| `OpcaoDePeriodo` | `OpcaoDeMenu` | a forma `{id, rotulo}` não é de período |
+
+O último revelou uma duplicata: `PilulaDeMenu` tinha uma `interface Opcao`
+local idêntica, **com o mesmo comentário sobre o zag copiado junto**. O nome
+descrevia o primeiro uso, não a forma -- então quem precisou da mesma forma
+pra outra coisa escreveu de novo. A cópia foi removida.
+
+⚠️ `PrioridadeDaTarefa` e `StatusDeAtendimento` são DERIVADOS
+(`typeof PRIORIDADES[number]`), o que obriga `types/` a importar de
+`constants/`. O import é `import type`: some na compilação, então não há
+ciclo em tempo de execução. A alternativa -- escrever o tipo à mão -- é
+justamente o que deixaria a lista de palavras e o tipo divergirem.
+
+⚠️ Tipo PRIVADO de uma página continua no `types.ts` dela. O critério é
+alcance, não arquivo.
+
+**3. Rotas dentro do `App.tsx`.** O mapa saiu pra `routes/index.tsx`, onde os
+componentes de rota já eram vizinhos. O `App` ficou com o que é dele: montar
+os provedores.
+
+**Junto foram as pastas de um arquivo só:** oito `pages/*/constants/nome.ts`
+viraram `pages/*/constants.ts`, e quatro `pages/*/helpers/` viraram arquivos
+soltos na pasta da página. `TAMANHOS_PAGINA` estava em `types/` (constante na
+pasta de tipos) e foi pra `constants/paginacao.ts`; `DIAS_DA_LISTA` estava
+declarada dentro de um helper e foi pro `constants.ts` da Agenda.
+
+⚠️ **Um defeito que eu mesmo introduzi e a varredura pegou:** copiei
+`FiltrosBuscaProcessos` e `CamposOpcionaisProcesso` pra `types/` e esqueci de
+apagar os originais em `services/api/processos.ts`. Ficaram DUAS definições
+de cada, com os consumidores ainda na antiga -- exatamente o tipo de divergência
+silenciosa que esta arrumação existe pra impedir. Achado rodando a varredura
+de export sem consumidor depois do refactor, não à mão.
+
+Verificado em Chrome com janela: as nove telas abrem, sem um erro de runtime.
 
 ### Yarn, não npm
 

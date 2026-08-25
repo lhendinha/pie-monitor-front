@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TETO_POR_PAGINA } from "../../../constants";
 import { listarTarefas } from "../../../services";
 import { qk } from "../../../services/queryKeys";
-import type { Tarefa } from "../../../types";
-import type { Intervalo } from "../../../utils/periodo";
+import type { IntervaloDeDatas, Tarefa } from "../../../types";
 
 /** As tarefas que a Agenda mostra: as dos subgrupos escolhidos, dentro do
  * período visível.
@@ -24,7 +23,7 @@ import type { Intervalo } from "../../../utils/periodo";
  * `subgrupoIds` vazio significa "todos os visíveis" -- é o que o servidor
  * entende quando o parâmetro não vai.
  */
-export function useTarefasDaAgenda(subgrupoIds: string[], intervalo: Intervalo) {
+export function useTarefasDaAgenda(subgrupoIds: string[], intervalo: IntervaloDeDatas) {
   return useQuery<Tarefa[]>({
     queryKey: qk.tarefas({ agenda: true, subgrupoIds: [...subgrupoIds].sort(), ...intervalo }),
     queryFn: async () => {

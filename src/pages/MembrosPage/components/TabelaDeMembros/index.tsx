@@ -1,5 +1,5 @@
 import { EstadoVazio, Tabela } from "../../../../components";
-import { COLUNAS_MEMBROS, COLUNA_DE_ACOES } from "../../constants/membros";
+import { COLUNAS_MEMBROS, COLUNA_DE_ACOES } from "../../constants";
 import LinhaDeMembro from "../LinhaDeMembro";
 import type { Membro } from "../../../../types";
 

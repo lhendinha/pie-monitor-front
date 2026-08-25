@@ -15,7 +15,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../../../ProcessosPage/components/CamposProcesso";
 import type { Processo } from "../../../../types";
-import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
+import type { CamposOpcionaisProcesso } from "../../../../types";
 
 interface FormularioProcessoProps {
   processo: Processo;

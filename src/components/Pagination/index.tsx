@@ -4,7 +4,7 @@ import { Select } from "../Select";
 import NumeroPagina from "./NumeroPagina";
 import SetaPagina from "./SetaPagina";
 import { numerosVisiveis } from "./numerosVisiveis";
-import { TAMANHOS_PAGINA } from "../../types";
+import { TAMANHOS_PAGINA } from "../../constants";
 
 interface PaginationProps {
   pagina: number;

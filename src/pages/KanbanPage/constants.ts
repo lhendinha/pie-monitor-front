@@ -2,4 +2,4 @@
 // quando a Agenda passou a mostrar as mesmas tarefas -- mesmo caminho que os
 // períodos já tinham feito pra `src/constants/periodos.ts`. Reexportadas
 // porque o Kanban continua sendo consumidor legítimo delas.
-export { CORES_DA_PRIORIDADE, PRIORIDADES } from "../../../constants/prioridade";
+export { CORES_DA_PRIORIDADE, PRIORIDADES } from "../../constants/prioridade";

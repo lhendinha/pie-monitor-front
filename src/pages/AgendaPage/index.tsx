@@ -27,15 +27,15 @@ import VisaoPorMes from "./components/VisaoPorMes";
 import VisaoPorSemana from "./components/VisaoPorSemana";
 import { useQuadrosDosSubgrupos } from "./hooks/useQuadrosDosSubgrupos";
 import { useTarefasDaAgenda } from "./hooks/useTarefasDaAgenda";
-import { agruparPorDia } from "./helpers/tarefasPorDia";
+import { DIAS_DA_LISTA } from "./constants";
+import { agruparPorDia } from "./tarefasPorDia";
 import {
-  DIAS_DA_LISTA,
   dataPadraoDaNovaTarefa,
   intervaloDaVisao,
   navegar,
   rotuloDoPeriodo,
   somarDias,
-} from "./helpers/periodoDaAgenda";
+} from "./periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros } from "./types";
 import type { RespostaDeMembros } from "../../types/respostas";
 import type { Tarefa } from "../../types";

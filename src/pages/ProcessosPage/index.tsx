@@ -13,7 +13,7 @@ import {
   Esqueleto,
 } from "../../components";
 import { TAMANHO_PAGINA_PADRAO } from "../../constants";
-import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants/processos";
+import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants";
 import CabecalhoProcessos from "./components/CabecalhoProcessos";
 import TabelaProcessos from "./components/TabelaProcessos";
 import NovoProcessoForm from "./components/NovoProcessoForm";

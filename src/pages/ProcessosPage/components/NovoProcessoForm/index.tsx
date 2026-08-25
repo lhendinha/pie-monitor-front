@@ -16,7 +16,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../CamposProcesso";
 import type { Subgrupo } from "../../../../types";
-import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
+import type { CamposOpcionaisProcesso } from "../../../../types";
 
 
 interface NovoProcessoFormProps {

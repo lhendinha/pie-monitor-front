@@ -23,7 +23,7 @@ import { qk } from "../../services/queryKeys";
 import FormularioNovoSubgrupo from "./components/FormularioNovoSubgrupo";
 import ListaDeSubgrupos from "./components/ListaDeSubgrupos";
 import MembrosDoSubgrupo from "./components/MembrosDoSubgrupo";
-import { podeExcluirSubgrupo } from "./helpers/podeExcluirSubgrupo";
+import { podeExcluirSubgrupo } from "./podeExcluirSubgrupo";
 import {
   impedimentosDoSubgrupo,
   useConteudoDoSubgrupo,

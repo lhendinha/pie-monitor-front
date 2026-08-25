@@ -4,7 +4,7 @@ import { BotaoNu } from "../../../../components";
 
 import { DIAS_DA_SEMANA_CURTOS } from "../../constants";
 import { CORES_DA_PRIORIDADE } from "../../../../constants";
-import { inicioDaSemana, somarDias } from "../../helpers/periodoDaAgenda";
+import { inicioDaSemana, somarDias } from "../../periodoDaAgenda";
 import { paraIso } from "../../../../utils/calendario";
 import type { Tarefa } from "../../../../types";
 

@@ -1,11 +1,7 @@
 import { PERIODO_PERSONALIZADO, PERIODO_TODOS } from "../constants/periodos";
 import { emDias, hojeISO } from "./prazo";
 
-export interface Intervalo {
-  /** `aaaa-mm-dd`, inclusive nas duas pontas. */
-  de: string;
-  ate: string;
-}
+import type { IntervaloDeDatas } from "../types";
 
 /** Data local em `aaaa-mm-dd`. Nada de `toISOString()`, que passa por UTC e
  * às 21h em Brasília já devolve o dia seguinte -- mesmo motivo do
@@ -53,8 +49,8 @@ function somandoDias(data: Date, n: number): Date {
  */
 export function intervaloDoPeriodo(
   id: string,
-  personalizado?: Intervalo,
-): Intervalo | null {
+  personalizado?: IntervaloDeDatas,
+): IntervaloDeDatas | null {
   if (id === PERIODO_PERSONALIZADO) return personalizado ?? null;
   const hoje = hojeComoData();
 

@@ -1,5 +1,5 @@
-import { getEmail, papelAtende } from "../../../services";
-import type { Subgrupo } from "../../../types";
+import { getEmail, papelAtende } from "../../services";
+import type { Subgrupo } from "../../types";
 
 /** Se esta pessoa pode excluir ESTE subgrupo.
  *

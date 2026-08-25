@@ -1,12 +1,10 @@
 import type { JwtPayload, Papel, TokensResponse } from "../types";
-import { HIERARQUIA_PAPEIS } from "../constants";
+import { API_URL, HIERARQUIA_PAPEIS } from "../constants";
 import { ApiError } from "./api/client";
 import { dispararAutenticacaoInvalida } from "./authBridge";
 import type {
   RespostaDeMensagem,
 } from "../types/respostas";
-
-const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
 const KEYS = {
   access: "pje-monitor-access-token",

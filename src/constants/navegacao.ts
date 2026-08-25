@@ -1,20 +1,4 @@
-import type { Papel } from "../types";
-
-/** Um item do menu lateral. `minimo` é o papel a partir do qual ele APARECE
- * -- não é permissão: a rota continua acessível por link direto, e quem
- * decide o que a pessoa pode fazer é sempre o backend. */
-export interface ItemNavegacao {
-  caminho: string;
-  rotulo: string;
-  /** Nome do ícone em `components/Icons` (sem o prefixo `Icone`). */
-  icone: string;
-  minimo?: Papel;
-  /** Tela ainda não construída. O item fica FORA do menu enquanto for true --
-   * item que leva a tela vazia é pior que item ausente. Some junto com a
-   * etapa que entrega a tela; a lista já está na ordem final de propósito,
-   * pra que a navegação não mude de forma a cada entrega. */
-  pendente?: boolean;
-}
+import type { ItemNavegacao } from "../types";
 
 /** Ordem e rótulos vêm do artifact de referência.
  *

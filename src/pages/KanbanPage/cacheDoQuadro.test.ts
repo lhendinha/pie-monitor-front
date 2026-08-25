@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { moverTarefaNaLista } from "./cacheDoQuadro";
-import type { Tarefa } from "../../../types";
+import type { Tarefa } from "../../types";
 
 const tarefa = (id: string, coluna: string): Tarefa => ({
   subgrupo_id: "sg",

@@ -5,13 +5,13 @@ import { COLUNA_DATAS } from "../../../theme/painelFiltro";
 import { Rotulo } from "../../Rotulo";
 import SeletorData from "../../SeletorData";
 import RodapeDeFiltro from "../../RodapeDeFiltro";
-import type { Intervalo } from "../../../utils/periodo";
+import type { IntervaloDeDatas } from "../../../types";
 
 interface IntervaloPersonalizadoProps {
   /** Rascunho inicial -- o intervalo já aplicado, se houver. */
   de: string;
   ate: string;
-  onAplicar: (intervalo: Intervalo) => void;
+  onAplicar: (intervalo: IntervaloDeDatas) => void;
   onVoltar: () => void;
 }
 

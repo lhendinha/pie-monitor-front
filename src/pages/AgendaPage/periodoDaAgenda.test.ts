@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { DIAS_DA_LISTA } from "./constants";
 import {
-  DIAS_DA_LISTA,
   dataPadraoDaNovaTarefa,
   inicioDaSemana,
   intervaloDaVisao,

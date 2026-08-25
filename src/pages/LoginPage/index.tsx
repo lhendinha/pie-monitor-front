@@ -10,7 +10,7 @@ import {
   Faixa,
 } from "../../components";
 import { login } from "../../services";
-import { avisoDeTentativas } from "./helpers/avisoDeTentativas";
+import { avisoDeTentativas } from "./avisoDeTentativas";
 import type { AlertaDoLogin } from "./types";
 
 interface LoginPageProps {

@@ -22,9 +22,8 @@ import { contar } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
 import FiltroDeTipo from "./components/FiltroDeTipo";
 import ItemDeHistorico from "./components/ItemDeHistorico";
-import { TIPO_DE_ENVIO_PADRAO } from "./constants/historico";
-import type { DeepLinkHistorico } from "../../utils";
-import type { HistoricoItem } from "../../types";
+import { TIPO_DE_ENVIO_PADRAO } from "./constants";
+import type { DeepLinkHistorico, HistoricoItem } from "../../types";
 import type { AlvoDoDeepLink } from "./types";
 import type {
   RespostaDeHistorico,

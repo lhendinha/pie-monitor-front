@@ -6,7 +6,7 @@ import { MARCA_CAMADA_FLUTUANTE } from "../../constants/camadaFlutuante";
 import { DIVISORIA, PAINEL } from "../../theme/painelFiltro";
 import RodapeDeFiltro from "../RodapeDeFiltro";
 import { OpcaoDeLinha } from "../OpcaoDeLinha";
-import type { Opcao } from "./types";
+import type { OpcaoDeSelect } from "../../types";
 
 /** Props que o `Select`/`MultiSelect` na variante "chip" injeta via
  * `selectProps` pra este menu -- é o caminho que o react-select oferece pra
@@ -29,7 +29,7 @@ export interface ExtrasDoMenu {
  * dispararia uma busca por caixa marcada, e quem quer três situações faria
  * três requisições pra chegar onde queria.
  */
-export function MenuDeFiltro(props: MenuProps<Opcao, boolean, GroupBase<Opcao>>) {
+export function MenuDeFiltro(props: MenuProps<OpcaoDeSelect, boolean, GroupBase<OpcaoDeSelect>>) {
   const extras = props.selectProps as unknown as ExtrasDoMenu;
   const { onCancelar, onAplicar } = extras;
 

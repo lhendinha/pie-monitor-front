@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Tarefa } from "../../../types";
+import type { Tarefa } from "../../types";
 import { agruparPorDia } from "./tarefasPorDia";
 
 function tarefa(parcial: Partial<Tarefa>): Tarefa {

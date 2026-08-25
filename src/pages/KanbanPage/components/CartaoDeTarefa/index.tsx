@@ -4,7 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { Avatar, EtiquetaDePrazo } from "../../../../components";
 import { mascararNumeroProcesso } from "../../../../utils";
-import { CORES_DA_PRIORIDADE } from "../../constants/kanban";
+import { CORES_DA_PRIORIDADE } from "../../constants";
 import type { Tarefa } from "../../../../types";
 
 interface CartaoDeTarefaProps {

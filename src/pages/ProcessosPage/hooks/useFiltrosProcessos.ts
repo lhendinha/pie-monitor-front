@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useValorComEspera } from "../../../hooks/useValorComEspera";
-import { FILTROS_PROCESSOS_VAZIOS } from "../constants/processos";
+import { FILTROS_PROCESSOS_VAZIOS } from "../constants";
 import { temFiltroAtivo } from "../../../services/api/processos";
 import type { FiltrosProcessos } from "../../../types";
 

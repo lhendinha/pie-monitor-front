@@ -20,3 +20,8 @@ export const DIAS_DA_SEMANA_CURTOS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", 
  * Passar disso viraria uma fileira ilegível e empurraria a altura da
  * célula; o número exato se vê entrando no dia. */
 export const PONTOS_POR_CELULA = 4;
+
+/** Quantos dias a visão em lista cobre. Estava declarada dentro de
+ * `periodoDaAgenda.ts` -- constante mora em `constants`, mesmo quando quem
+ * a usa primeiro é um helper. */
+export const DIAS_DA_LISTA = 14;

@@ -1,6 +1,4 @@
-import type { Tarefa } from "../../types";
-
-import type { Intervalo } from "../../utils/periodo";
+import type { IntervaloDeDatas, Tarefa } from "../../types";
 
 /** Estado dos filtros do quadro.
  *
@@ -16,7 +14,7 @@ export interface FiltrosDoQuadro {
   /** As pontas escolhidas a dedo. Só é lido quando `periodoId` é o
    * personalizado -- guardado separado pra que voltar pro personalizado
    * depois de passar por "Este mês" não perca o que a pessoa escolheu. */
-  intervaloPersonalizado?: Intervalo;
+  intervaloPersonalizado?: IntervaloDeDatas;
   /** Mostra a coluna de Arquivado no quadro.
    *
    * Desligado por padrão: o Arquivado é o depósito do que já saiu do fluxo,

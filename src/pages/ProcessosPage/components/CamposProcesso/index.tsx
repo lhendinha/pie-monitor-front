@@ -9,7 +9,7 @@ import {
 } from "../../../../components";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import type { OpcaoProcesso } from "../../../../types";
-import type { CamposOpcionaisProcesso } from "../../../../services/api/processos";
+import type { CamposOpcionaisProcesso } from "../../../../types";
 import { useOpcoesDeProcesso, useTodosOsClientes } from "../../../../hooks/useCatalogos";
 
 interface CamposProcessoProps {

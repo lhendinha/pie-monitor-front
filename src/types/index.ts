@@ -182,8 +182,6 @@ export interface OpcoesRequisicao {
   query?: Record<string, string | string[] | undefined>;
 }
 
-export const TAMANHOS_PAGINA = [10, 20, 30, 50, 100] as const;
-
 /** Abas de topo do App.tsx. "grupo" agrupa Subgrupos/Membros/Convidar/
  * Fases/Situações como sub-navegação (ver GrupoPage + SubAbaId). */
 
@@ -383,3 +381,134 @@ export interface MensagemDoCanal {
   tipo: string;
   notificacao?: Notificacao;
 }
+
+// ---------------------------------------------------------------------------
+// Tipos que estavam espalhados
+//
+// Todos vinham declarados dentro do módulo que os usava primeiro --
+// `utils/`, `constants/`, `theme/`, `components/`, `services/`. Enquanto o
+// consumidor era um só isso não incomodava; quando passou a ser vários, o
+// import cruzava a casa inteira (o `ToastItem` vivia num arquivo dentro de
+// `components/Toast/` e era importado de dentro de `pages/`) e a resposta
+// pra "onde declaro este tipo?" passou a depender de quem chegou primeiro,
+// não do alcance dele.
+//
+// ⚠️ Tipo PRIVADO de uma página continua no `types.ts` dela -- o critério é
+// alcance, não arquivo. O que mora aqui é o que atravessa fronteira.
+// ---------------------------------------------------------------------------
+
+/** Um item do menu lateral. `minimo` é o papel a partir do qual ele APARECE
+ * -- não é permissão: a rota continua acessível por link direto, e quem
+ * decide o que a pessoa pode fazer é sempre o backend. */
+export interface ItemNavegacao {
+  caminho: string;
+  rotulo: string;
+  /** Nome do ícone em `components/Icons` (sem o prefixo `Icone`). */
+  icone: string;
+  minimo?: Papel;
+  /** Tela ainda não construída. O item fica FORA do menu enquanto for true --
+   * item que leva a tela vazia é pior que item ausente. Some junto com a
+   * etapa que entrega a tela; a lista já está na ordem final de propósito,
+   * pra que a navegação não mude de forma a cada entrega. */
+  pendente?: boolean;
+}
+
+/** Uma opção de menu de escolha única -- o filtro de período e a
+ * `PilulaDeMenu` usam a mesma forma.
+ *
+ * Chamava-se `OpcaoDePeriodo` e vivia em `constants/periodos.ts`. O nome
+ * descrevia o primeiro uso, não a forma, e por isso a `PilulaDeMenu` tinha
+ * uma cópia local idêntica -- com o mesmo comentário sobre o zag, copiado
+ * junto. Não confundir com `OpcaoDeSelect` (`{value, label}`), que é o que
+ * o react-select consome. */
+export interface OpcaoDeMenu {
+  /** Não pode ser vazio: item de menu com `value=""` o zag não registra, e
+   * a opção simplesmente não seleciona. */
+  id: string;
+  rotulo: string;
+}
+
+/** Um intervalo de datas, `aaaa-mm-dd` e inclusive nas duas pontas. */
+export interface IntervaloDeDatas {
+  de: string;
+  ate: string;
+}
+
+/** Uma célula da grade de um mês. Os dias de fora do mês vêm MARCADOS
+ * (`doMes: false`) em vez de omitidos -- a grade precisa começar no domingo
+ * certo, e buraco no início desalinharia as colunas. */
+export interface DiaDoCalendario {
+  iso: string;
+  dia: number;
+  doMes: boolean;
+}
+
+/** Os dois parâmetros do deep link de Histórico. Só conta como deep link se
+ * vierem os DOIS -- o e-mail de movimentação manda juntos. */
+export interface DeepLinkHistorico {
+  processo: string;
+  comunicacaoId: string;
+}
+
+/** Um aviso na fila do `ToastProvider`. */
+export interface ToastItem {
+  id: number;
+  tipo: "erro" | "sucesso";
+  mensagem: string;
+}
+
+/** Uma opção de `Select`/`MultiSelect`. */
+export interface OpcaoDeSelect {
+  value: string;
+  label: string;
+}
+
+/** Como cada opção do painel se desenha: caixa de seleção quando dá pra
+ * escolher várias (situação, fase) e linha inteira clicável quando é uma só
+ * (cliente). */
+export type FormaDaOpcaoDeSelect = "caixa" | "linha";
+
+/** As variantes de `.btn` do artifact que o sistema usa de fato. */
+export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
+
+/** Parâmetros de busca do `GET /processos`.
+ *
+ * Nome diferente de `FiltrosProcessos` de propósito: aquele é o ESTADO da
+ * tela, este é o que vai na query string. Chamar os dois igual fazia o
+ * import errado passar despercebido. */
+export interface FiltrosBuscaProcessos {
+  busca?: string;
+  clienteId?: string;
+  faseIds?: string[];
+  situacaoIds?: string[];
+  dataVerificarAte?: string;
+  prazoFinalAte?: string;
+}
+
+/** Campos novos do processo, todos opcionais -- mesmo conjunto usado no
+ * cadastro (`criarProcesso`) e na edição (`atualizarProcesso`). Nome
+ * `Opcionais` de propósito: evita colidir com o componente `CamposProcesso`. */
+export interface CamposOpcionaisProcesso {
+  clienteIds?: string[];
+  objetoAssunto?: string;
+  proximaProvidencia?: string;
+  dataVerificar?: string;
+  prazoFinal?: string;
+  observacoes?: string;
+  faseId?: string;
+  situacaoId?: string;
+}
+
+/* ⚠️ `PrioridadeDaTarefa` e `StatusDeAtendimento` são DERIVADOS da constante que os
+   gera (`typeof PRIORIDADES[number]`) -- é o que impede a lista de palavras
+   e o tipo de divergirem. Derivá-los aqui obriga `types` a importar de
+   `constants`, e o import é `import type`: some na compilação, então não há
+   ciclo em tempo de execução.
+
+   Import do ARQUIVO, não do índice de `constants` -- o índice reexporta o
+   pacote inteiro, e puxá-lo daqui ligaria `types` a tudo que mora lá. */
+import type { PRIORIDADES } from "../constants/prioridade";
+import type { STATUS_DE_ATENDIMENTO } from "../constants/atendimento";
+
+export type PrioridadeDaTarefa = (typeof PRIORIDADES)[number];
+export type StatusDeAtendimento = (typeof STATUS_DE_ATENDIMENTO)[number];

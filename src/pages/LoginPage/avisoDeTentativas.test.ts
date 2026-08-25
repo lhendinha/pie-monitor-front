@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ApiError } from "../../../services";
+import { ApiError } from "../../services";
 import { avisoDeTentativas } from "./avisoDeTentativas";
 
 describe("avisoDeTentativas", () => {

@@ -1,7 +1,4 @@
-export interface DeepLinkHistorico {
-  processo: string;
-  comunicacaoId: string;
-}
+import type { DeepLinkHistorico } from "../types";
 
 /** Só conta como deep link de Histórico se os DOIS parâmetros vierem. O
  * e-mail de movimentação manda os dois juntos (check_service.py). */

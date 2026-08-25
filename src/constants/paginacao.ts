@@ -1,3 +1,6 @@
+/** As opções do seletor "por página". */
+export const TAMANHOS_PAGINA = [10, 20, 30, 50, 100] as const;
+
 /** Tamanho de página padrão pras listas paginadas (Processos, Histórico). */
 export const TAMANHO_PAGINA_PADRAO = 10;
 

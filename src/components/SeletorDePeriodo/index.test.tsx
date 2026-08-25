@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderComProviders } from "../../test/queryTestUtils";
 import SeletorDePeriodo from ".";
-import type { Intervalo } from "../../utils/periodo";
+import type { IntervaloDeDatas } from "../../types";
 
-function montar(periodoId = "todos", intervaloPersonalizado?: Intervalo) {
+function montar(periodoId = "todos", intervaloPersonalizado?: IntervaloDeDatas) {
   const onMudar = vi.fn();
   renderComProviders(
     <SeletorDePeriodo

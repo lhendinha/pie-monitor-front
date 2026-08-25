@@ -16,7 +16,7 @@ import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { contar } from "../../../../utils";
 import LinhaDeTarefa from "../LinhaDeTarefa";
-import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants/workspace";
+import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants";
 import type { Tarefa } from "../../../../types";
 import type { FiltroDoCard } from "../../types";
 import type {

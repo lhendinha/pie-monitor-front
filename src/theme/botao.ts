@@ -1,7 +1,6 @@
 import type { ButtonProps } from "@chakra-ui/react";
 
-/** As variantes de `.btn` do artifact que o sistema usa de fato. */
-export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
+import type { VarianteBotao } from "../types";
 
 /** Cores de cada variante do botão.
  *

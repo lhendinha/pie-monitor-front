@@ -7,11 +7,11 @@ import { useFecharAoClicarFora } from "../../hooks/useFecharAoClicarFora";
 import { estilosChip, estilosSelect, semOpcoesDisponiveis } from "../../utils/select";
 import { MenuDeFiltro } from "./MenuDeFiltro";
 import { SetaDoSelect } from "./SetaDoSelect";
-import type { Opcao } from "./types";
+import type { OpcaoDeSelect } from "../../types";
 
 interface SelectProps {
   id?: string;
-  opcoes: Opcao[];
+  opcoes: OpcaoDeSelect[];
   valor: string;
   onMudar: (valor: string) => void;
   placeholder?: string;
@@ -94,7 +94,7 @@ export function Select({
   }
 
   return (
-    <ReactSelect<Opcao, false>
+    <ReactSelect<OpcaoDeSelect, false>
       unstyled
       inputId={id}
       options={opcoes}

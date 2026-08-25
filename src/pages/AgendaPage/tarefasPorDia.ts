@@ -1,9 +1,8 @@
-import { ORDEM_DAS_PRIORIDADES } from "../../../constants/prioridade";
-import type { Prioridade } from "../../../constants/prioridade";
-import type { Tarefa } from "../../../types";
+import { ORDEM_DAS_PRIORIDADES } from "../../constants/prioridade";
+import type { PrioridadeDaTarefa, Tarefa } from "../../types";
 
 function pesoDaPrioridade(prioridade: string): number {
-  const indice = ORDEM_DAS_PRIORIDADES.indexOf(prioridade as Prioridade);
+  const indice = ORDEM_DAS_PRIORIDADES.indexOf(prioridade as PrioridadeDaTarefa);
   // Prioridade desconhecida vai pro fim, nunca pro topo: um valor novo no
   // servidor não pode empurrar tudo pra baixo por acidente.
   return indice === -1 ? ORDEM_DAS_PRIORIDADES.length : indice;

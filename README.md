@@ -110,92 +110,60 @@ Pra conferir que está rodando de verdade, o bundle final (`yarn build`) contém
 
 ```
 src/
-  types/
-    index.ts                 -- tipos compartilhados (Papel, Processo, Cliente, OpcaoProcesso, Subgrupo, Membro, Comunicacao, AbaId, TelaAuth, AbaConfig, SubAbaId, SubAbaConfig, etc.)
-  constants/
-    roles.ts                  -- NOME_PAPEL, HIERARQUIA_PAPEIS (usado por services/ e pages/)
-    index.ts                  -- reexporta tudo (importe de "../constants")
-  vite-env.d.ts               -- tipos globais do Vite (import.meta.env)
-  App.tsx                     -- shell raiz: roteamento simples, autenticação, abas, deep link do e-mail
-  main.tsx                    -- ponto de entrada React
+  main.tsx                  -- ponto de entrada
+  App.tsx                   -- só os provedores (Toast, Sessão, Router)
+  routes/
+    index.tsx               -- o mapa de rotas
+    Rota*.tsx               -- rotas com casca própria (Login, Raiz, Tarefa, Histórico…)
 
+  types/                    -- todo tipo de alcance global
+    index.ts                -- domínio + os tipos compartilhados de UI
+    respostas.ts            -- os envelopes que cada rota da API devolve
+  constants/                -- arquivos soltos + index.ts que reexporta
+    ambiente.ts             -- ÚNICO lugar que lê `import.meta.env`
+    roles.ts, paginacao.ts, periodos.ts, select.ts, senha.ts, toast.ts…
+  utils/                    -- arquivos soltos + index.ts
+    mask.ts (CNJ), date.ts, calendario.ts, deepLink.ts, periodo.ts, plural.ts…
   services/
-    index.ts                  -- reexporta tudo (importe de "../services")
-    auth.ts                   -- login, refresh automático, decodifica papel/grupo do JWT
-    auth.test.ts
-    api/
-      client.ts               -- núcleo HTTP compartilhado (chamar, ApiError, comGrupoAlvo)
-      client.test.ts
-      subgrupos.ts             -- listar (paginado) /criar/remover subgrupos
-      membros.ts               -- listar/adicionar/remover membros
-      processos.ts             -- listar/criar/remover processos + editar (todos os campos) + detalhes
-      clientes.ts               -- listar (paginado) /criar/editar/remover clientes
-      opcoesProcesso.ts         -- listar (paginado) /criar/editar/desativar/reativar fase e situação
-      convites.ts              -- criar convite
-      historico.ts             -- listar histórico de notificações (paginado ou por número)
-      grupos.ts                -- listar todos os grupos da plataforma (super_admin)
-      index.ts                 -- reexporta tudo (importe de "../services/api")
+    auth.ts                 -- login, refresh automático, papel/grupo do JWT
+    api/client.ts           -- núcleo HTTP (chamar, ApiError)
+    api/<area>.ts           -- um arquivo por área (processos, tarefas, membros…)
+    queryClient.ts, queryKeys.ts
+  theme/                    -- tokens e paletas de design
+  hooks/                    -- hooks usados por mais de uma página
+  contexts/SessaoContext.tsx
+  components/               -- 53 componentes gerais, cada um em pasta com index.tsx
+  pages/                    -- 19 páginas, cada uma em pasta com index.tsx
+  test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
-  utils/
-    index.ts                  -- reexporta tudo (importe de "../utils")
-    mask.ts, mask.test.ts       -- máscara CNJ do número de processo
-    date.ts, date.test.ts       -- formatação de data/hora (formatarDataHora, formatarDataHoraAmPm, dataHojeExtenso)
-    deepLink.ts, deepLink.test.ts -- parse de ?processo=&comunicacao= do link do e-mail
+vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)
+                               + security headers (CSP etc.)
+vite.config.ts              -- Vite + React Compiler + vitest (jsdom)
+eslint.config.js            -- config enxuta, focada no que pega bug
+```
 
-  components/
-    index.ts                  -- reexporta tudo (importe de "../components")
-    Modal/index.tsx             -- modal genérico reutilizável
-    Skeleton/index.tsx, index.test.tsx -- placeholder de loading
-    Toast/index.tsx, index.test.tsx    -- toasts de erro/sucesso (ToastProvider, useToast)
-    Pagination/index.tsx         -- paginação com números endereçáveis (não cursor)
-    Select/                       -- wrapper (react-select) pra valor único (Select.tsx) e múltiplo
-                                     (MultiSelect.tsx, checkboxes); index.tsx só reexporta
-    InfoTip/index.tsx             -- ícone "i" com tooltip -- explicação sob demanda ao lado de um
-                                     label, em vez de texto sempre visível (usado nos campos de busca
-                                     de Processos/Clientes)
-    Icons/                         -- ícones SVG custom, 1 arquivo por ícone (IconeHistorico.tsx,
-                                     IconeArrastar.tsx), index.tsx só reexporta
+**Onde um arquivo novo mora**, em quatro regras:
 
-  pages/
-    index.ts                    -- reexporta as páginas (importe de "./pages")
-    LoginPage/index.tsx          -- tela de login (link "Esqueci minha senha")
-    EsqueciSenhaPage/index.tsx   -- solicita link de recuperação por e-mail
-    RedefinirSenhaPage/index.tsx -- define nova senha (/redefinir-senha/{token})
-    AceitarConvitePage/index.tsx -- tela pública de aceite de convite (/convite/{token})
-    ProcessosPage/
-      index.tsx                  -- lista + busca + aciona modal de detalhe/edição, ao clicar na linha
-      NovoProcessoForm.tsx        -- formulário de cadastro, no modal (privado da página)
-      DetalheEditarProcesso.tsx   -- modal único de detalhe + edição de todos os campos (privado da página)
-      CamposProcesso.tsx          -- campos compartilhados entre cadastro e edição (privado da página)
-      DetalheProcesso.tsx         -- painel de histórico de comunicações (privado da página)
-    ClientesPage/
-      index.tsx                  -- lista paginada + botão "+ Novo Cliente" (modal)
-      NovoClienteForm.tsx         -- formulário de criação, no modal (privado da página)
-      EditarClienteForm.tsx       -- formulário de edição, no modal (privado da página)
-    GrupoPage/
-      index.tsx                  -- sub-navegação (Subgrupos/Membros/Convidar/Fases/Situações), cada sub-aba com seu próprio piso de papel
-      OpcoesLista.tsx             -- lista de fase OU situação (busca tudo de uma vez, sem paginação), com criar/editar/desativar/reativar/reordenar (privado da página)
-      EditarOpcaoForm.tsx         -- formulário de edição do rótulo de uma opção, no modal (privado da página) -- ordem não é mais editada aqui, é por drag and drop
-      OpcaoRow.tsx                -- linha arrastável da lista (@dnd-kit), com handle IconeArrastar (privado da página)
-    SubgruposPage/
-      index.tsx                  -- lista paginada + criação + edição + exclusão de subgrupos (renderizado dentro de GrupoPage)
-      EditarSubgrupoForm.tsx      -- formulário de edição do nome, no modal (admin/super_admin; privado da página)
-    MembrosPage/
-      index.tsx                  -- pessoas do grupo (renderizado dentro de GrupoPage)
-      SubgrupoMembros.tsx         -- card de membros por subgrupo (privado da página)
-      EditarMembroForm.tsx        -- edição de apelido/papel/grupo+subgrupos, no modal (super_admin; privado da página)
-    ConvidarPage/index.tsx       -- formulário de convite (MultiSelect de subgrupos; renderizado dentro de GrupoPage)
-    HistoricoPage/
-      index.tsx                  -- lista paginada + resolve deep link do e-mail
-      DetalheHistorico.tsx        -- modal com a comunicação exata que gerou o envio (privado da página)
+1. Componente e página viram **pasta com `index.tsx`**. Constante, tipo,
+   helper e hook são **arquivo solto**.
+2. **Alcance decide.** Serve a mais de uma página? Sobe pra `types/`,
+   `constants/`, `utils/` ou `hooks/`. É de uma página só? Fica na pasta
+   dela (`constants.ts`, `types.ts`, helpers ao lado do `index.tsx`).
+3. Componente de uma página só vive em
+   `pages/AquelaPagina/components/NomeDele/index.tsx`.
+4. O nome precisa fazer sentido **onde o arquivo mora** -- tipo que sobe pra
+   `types/` em geral precisa de nome novo (`Intervalo` virou
+   `IntervaloDeDatas` justamente por isso).
 
-  test/
-    setup.ts                  -- setup global do vitest (jest-dom matchers, TZ fixo)
+Exemplo de página completa:
 
-  index.css                  -- design tokens e estilos
-
-vercel.json                  -- SPA fallback (necessário pro link de convite/redefinição funcionar) + security headers (CSP etc.)
-vite.config.ts                -- config do Vite + React Compiler + vitest (environment: jsdom)
-tsconfig.json                 -- config do TypeScript pro código do app
-tsconfig.node.json          -- config do TypeScript pro vite.config.ts (roda em Node)
+```
+AgendaPage/
+  index.tsx  index.test.tsx
+  constants.ts                 -- VISOES, DIAS_DA_LISTA, PONTOS_POR_CELULA
+  types.ts                     -- VisaoDaAgenda, FiltrosDaAgenda (privados daqui)
+  periodoDaAgenda.ts  periodoDaAgenda.test.ts
+  tarefasPorDia.ts    tarefasPorDia.test.ts
+  hooks/useTarefasDaAgenda.ts  hooks/useAssuntosDasTarefas.ts …
+  components/VisaoPorMes/index.tsx  components/BarraDeDatas/index.tsx …
 ```

@@ -7,11 +7,11 @@ import { estilosChip, estilosSelect, semOpcoesDisponiveis } from "../../utils/se
 import { MenuDeFiltro } from "./MenuDeFiltro";
 import { OpcaoComCheckbox } from "./OpcaoComCheckbox";
 import { ResumoSelecionados } from "./ResumoSelecionados";
-import type { Opcao } from "./types";
+import type { OpcaoDeSelect } from "../../types";
 
 interface MultiSelectProps {
   id?: string;
-  opcoes: Opcao[];
+  opcoes: OpcaoDeSelect[];
   selecionados: string[];
   onMudar: (valores: string[]) => void;
   placeholder?: string;
@@ -100,7 +100,7 @@ export function MultiSelect({
     fechar();
   }
   return (
-    <ReactSelect<Opcao, true>
+    <ReactSelect<OpcaoDeSelect, true>
       isMulti
       unstyled
       inputId={id}

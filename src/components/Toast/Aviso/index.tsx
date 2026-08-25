@@ -2,7 +2,7 @@ import { Flex } from "@chakra-ui/react";
 
 import { BotaoNu } from "../../BotaoNu";
 import { IconeAlerta, IconeCheck } from "../../Icons";
-import type { ToastItem } from "../tipos";
+import type { ToastItem } from "../../../types";
 
 interface AvisoProps {
   item: ToastItem;

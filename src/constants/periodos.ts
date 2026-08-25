@@ -8,13 +8,9 @@
  * mesma lista em dois lugares (`scope` de `kanban` e de `agenda`) -- a
  * Agenda vai consumir daqui quando existir.
  */
-export interface OpcaoDePeriodo {
-  /** Não pode ser vazio: item de menu com `value=""` o zag não registra. */
-  id: string;
-  rotulo: string;
-}
+import type { OpcaoDeMenu } from "../types";
 
-export const PERIODOS_FUTUROS: readonly OpcaoDePeriodo[] = [
+export const PERIODOS_FUTUROS: readonly OpcaoDeMenu[] = [
   { id: "hoje", rotulo: "Hoje" },
   { id: "amanha", rotulo: "Amanhã" },
   { id: "semana", rotulo: "Esta semana" },
@@ -24,7 +20,7 @@ export const PERIODOS_FUTUROS: readonly OpcaoDePeriodo[] = [
   { id: "proxmes", rotulo: "Próximo mês" },
 ];
 
-export const PERIODOS_PASSADOS: readonly OpcaoDePeriodo[] = [
+export const PERIODOS_PASSADOS: readonly OpcaoDeMenu[] = [
   { id: "ontem", rotulo: "Ontem" },
   { id: "ult7", rotulo: "Últimos 7 dias" },
   { id: "ult30", rotulo: "Últimos 30 dias" },

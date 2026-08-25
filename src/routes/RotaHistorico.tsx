@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { HistoricoPage } from "../pages";
-import type { DeepLinkHistorico } from "../utils";
+import type { DeepLinkHistorico } from "../types";
 
 /** Recebe o deep link que a `RotaRaiz` repassou pelo state da navegação.
  *

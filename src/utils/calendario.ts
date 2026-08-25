@@ -8,11 +8,7 @@
  * a grade precisa começar no domingo certo, e buraco no início desalinharia
  * as colunas.
  */
-export interface DiaDaGrade {
-  iso: string;
-  dia: number;
-  doMes: boolean;
-}
+import type { DiaDoCalendario } from "../types";
 
 /** `aaaa-mm-dd` no fuso LOCAL. `toISOString()` converteria pra UTC e, à
  * noite no Brasil, devolveria o dia seguinte. */
@@ -22,7 +18,7 @@ export function paraIso(data: Date): string {
   return `${data.getFullYear()}-${mes}-${dia}`;
 }
 
-export function gradeDoMes(ano: number, mes: number): DiaDaGrade[] {
+export function gradeDoMes(ano: number, mes: number): DiaDoCalendario[] {
   const primeiro = new Date(ano, mes, 1);
   const inicio = new Date(ano, mes, 1 - primeiro.getDay());
 

@@ -35,7 +35,7 @@ import { toastErroMutation, useToastOnQueryError } from "../../services/queryCli
 import { qk } from "../../services/queryKeys";
 import { intervaloDoPeriodo } from "../../utils";
 import ColunaDoQuadro from "./components/ColunaDoQuadro";
-import { moverTarefaNaLista } from "./helpers/cacheDoQuadro";
+import { moverTarefaNaLista } from "./cacheDoQuadro";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
 
 import ModalDoQuadro from "./components/ModalDoQuadro";

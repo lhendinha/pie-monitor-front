@@ -5,6 +5,7 @@ import {
   INTERVALO_DO_PING_MS,
   MARGEM_DO_TOKEN_SEGUNDOS,
   RECONEXAO_DO_CANAL,
+  urlDoCanal,
 } from "../constants";
 import { renovarTokenCompartilhado } from "../services/api/client";
 import { getAccessToken, tokenVenceEm } from "../services/auth";
@@ -24,7 +25,7 @@ import type { MensagemDoCanal } from "../types";
  */
 export function useCanalDeNotificacoes(aoChegar: () => void) {
   useEffect(() => {
-    const base = import.meta.env.VITE_WS_URL as string | undefined;
+    const base = urlDoCanal();
     // Sem URL configurada (ambiente de teste, preview antigo) ou sem sessão,
     // simplesmente não abre. O sino segue funcionando pela consulta.
     if (!base || !getAccessToken()) return;

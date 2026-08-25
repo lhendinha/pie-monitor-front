@@ -4,9 +4,10 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { queryClient } from "./services/queryClient";
+import { EM_DESENVOLVIMENTO } from "./constants/ambiente";
 import { system } from "./theme";
 
-const ReactQueryDevtools = import.meta.env.DEV
+const ReactQueryDevtools = EM_DESENVOLVIMENTO
   ? lazy(() =>
       import("@tanstack/react-query-devtools").then((m) => ({ default: m.ReactQueryDevtools }))
     )

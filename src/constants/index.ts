@@ -1,3 +1,4 @@
+export * from "./ambiente";
 export * from "./roles";
 export * from "./paginacao";
 export * from "./select";

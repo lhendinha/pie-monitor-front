@@ -1,18 +1,5 @@
 import { chamar } from "./client";
-
-/** Parâmetros de busca do `GET /processos`.
- *
- * Nome diferente do `FiltrosProcessos` de `types/` de propósito: aquele é o
- * ESTADO da tela, este é o que vai na query string. Chamar os dois igual
- * fazia o import errado passar despercebido. */
-export interface FiltrosBuscaProcessos {
-  busca?: string;
-  clienteId?: string;
-  faseIds?: string[];
-  situacaoIds?: string[];
-  dataVerificarAte?: string;
-  prazoFinalAte?: string;
-}
+import type { CamposOpcionaisProcesso, FiltrosBuscaProcessos } from "../../types";
 
 interface OpcoesListarProcessos extends FiltrosBuscaProcessos {
   pagina?: number;
@@ -31,21 +18,6 @@ export function temFiltroAtivo(f: FiltrosBuscaProcessos): boolean {
       f.dataVerificarAte ||
       f.prazoFinalAte,
   );
-}
-
-/** Campos novos do processo, todos opcionais -- mesmo conjunto usado no
- * cadastro (`criarProcesso`) e na edição (`atualizarProcesso`). Nome
- * `Opcionais` de propósito -- evita colidir com o componente React
- * `CamposProcesso.tsx` (campos compartilhados entre cadastro e edição). */
-export interface CamposOpcionaisProcesso {
-  clienteIds?: string[];
-  objetoAssunto?: string;
-  proximaProvidencia?: string;
-  dataVerificar?: string;
-  prazoFinal?: string;
-  observacoes?: string;
-  faseId?: string;
-  situacaoId?: string;
 }
 
 function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {

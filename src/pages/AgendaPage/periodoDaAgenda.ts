@@ -1,6 +1,7 @@
-import { gradeDoMes, paraIso } from "../../../utils/calendario";
-import type { Intervalo } from "../../../utils/periodo";
-import type { VisaoDaAgenda } from "../types";
+import { gradeDoMes, paraIso } from "../../utils/calendario";
+import { DIAS_DA_LISTA } from "./constants";
+import type { IntervaloDeDatas } from "../../types";
+import type { VisaoDaAgenda } from "./types";
 
 /** Datas e rótulos das quatro visões da Agenda.
  *
@@ -20,9 +21,6 @@ export function somarDias(data: Date, dias: number): Date {
   return new Date(data.getFullYear(), data.getMonth(), data.getDate() + dias);
 }
 
-/** Quantos dias a visão em lista cobre. */
-export const DIAS_DA_LISTA = 14;
-
 /** O intervalo que a visão precisa TER EM MÃOS -- é o que vai pro servidor
  * como `data_de`/`data_ate`.
  *
@@ -30,7 +28,7 @@ export const DIAS_DA_LISTA = 14;
  * mostram os pontinhos das tarefas delas, e pedir só de 01 a 31 deixaria
  * essas células silenciosamente vazias.
  */
-export function intervaloDaVisao(visao: VisaoDaAgenda, data: Date): Intervalo {
+export function intervaloDaVisao(visao: VisaoDaAgenda, data: Date): IntervaloDeDatas {
   if (visao === "dia") {
     const iso = paraIso(data);
     return { de: iso, ate: iso };

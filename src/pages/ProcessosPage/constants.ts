@@ -1,4 +1,4 @@
-import type { FiltrosProcessos } from "../../../types";
+import type { FiltrosProcessos } from "../../types";
 
 // ultima_verificacao muda por um job no backend, sem ação de usuário -- e
 // um apelido editado por outra pessoa também só apareceria aqui ao trocar

@@ -3,14 +3,10 @@ import { Z_INDEX_MENU_PORTAL } from "../constants/select";
 import { ALTURA_LISTA, MENSAGEM_VAZIA, OPCAO_CAIXA, OPCAO_LINHA, PAINEL } from "../theme/painelFiltro";
 import { PILULA, coresPilula } from "../theme/pilula";
 import { cores, raios, sombras } from "../theme/tokens";
-import type { Opcao } from "../components/Select/types";
+import type { FormaDaOpcaoDeSelect, OpcaoDeSelect } from "../types";
 
-/** Como cada opção do painel se desenha. O artifact usa duas formas
- * diferentes: caixa de seleção quando dá pra escolher várias (situação,
- * fase) e linha inteira clicável quando é uma só (cliente). */
-export type FormaDaOpcao = "caixa" | "linha";
 
-function estiloDaOpcao(forma: FormaDaOpcao, selecionada: boolean, focada: boolean) {
+function estiloDaOpcao(forma: FormaDaOpcaoDeSelect, selecionada: boolean, focada: boolean) {
   if (forma === "linha") {
     return {
       gap: 0,
@@ -53,7 +49,7 @@ export function estilosSelect(
    * vez do `ink` em 600 de um valor de verdade. Sem isso "Nenhuma" parecia
    * uma escolha feita. */
   semValor = false,
-): StylesConfig<Opcao, boolean, GroupBase<Opcao>> {
+): StylesConfig<OpcaoDeSelect, boolean, GroupBase<OpcaoDeSelect>> {
   return {
     control: (base, estado) => ({
       ...base,
@@ -113,7 +109,7 @@ export function semOpcoesDisponiveis() {
   return "Nenhuma opção disponível.";
 }
 
-export function rotuloResumo(selecionados: readonly Opcao[], placeholder: string) {
+export function rotuloResumo(selecionados: readonly OpcaoDeSelect[], placeholder: string) {
   if (selecionados.length === 0) return placeholder;
   if (selecionados.length <= 2) return selecionados.map((o) => o.label).join(", ");
   return `${selecionados.length} selecionados`;
@@ -132,8 +128,8 @@ export function rotuloResumo(selecionados: readonly Opcao[], placeholder: string
  */
 export function estilosChip(
   temSelecao: boolean,
-  formaDaOpcao: FormaDaOpcao = "caixa",
-): StylesConfig<Opcao, boolean, GroupBase<Opcao>> {
+  formaDaOpcao: FormaDaOpcaoDeSelect = "caixa",
+): StylesConfig<OpcaoDeSelect, boolean, GroupBase<OpcaoDeSelect>> {
   return {
     control: (base) => ({
       ...base,

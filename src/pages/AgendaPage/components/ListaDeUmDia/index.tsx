@@ -2,7 +2,7 @@ import { Box } from "@chakra-ui/react";
 
 import { Cartao } from "../../../../components";
 import LinhaDeTarefa from "../LinhaDeTarefa";
-import { rotuloDoDia } from "../../helpers/periodoDaAgenda";
+import { rotuloDoDia } from "../../periodoDaAgenda";
 import type { Tarefa } from "../../../../types";
 
 interface ListaDeUmDiaProps {

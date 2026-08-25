@@ -1,7 +1,7 @@
 import { components } from "react-select";
 import type { GroupBase, ValueContainerProps } from "react-select";
 import { rotuloResumo } from "../../utils/select";
-import type { Opcao } from "./types";
+import type { OpcaoDeSelect } from "../../types";
 
 /** Extras que `MultiSelect`/`Select` passam por `selectProps` -- o caminho
  * que o react-select oferece pra levar dado até um componente substituído.
@@ -15,7 +15,7 @@ interface ExtrasDoResumo {
  * substitui. Preserva o segundo filho (`children[1]`, o `Input` interno
  * da lib) -- removê-lo quebra foco/navegação por teclado mesmo com
  * `isSearchable={false}`. */
-export function ResumoSelecionados(props: ValueContainerProps<Opcao, true, GroupBase<Opcao>>) {
+export function ResumoSelecionados(props: ValueContainerProps<OpcaoDeSelect, true, GroupBase<OpcaoDeSelect>>) {
   const selecionados = props.getValue();
   const placeholder = String(props.selectProps.placeholder ?? "");
   const { ehPilula } = props.selectProps as unknown as ExtrasDoResumo;

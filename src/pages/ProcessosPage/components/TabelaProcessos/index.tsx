@@ -1,5 +1,5 @@
 import { Botao, EstadoVazio, Tabela } from "../../../../components";
-import { COLUNAS_PROCESSOS } from "../../constants/processos";
+import { COLUNAS_PROCESSOS } from "../../constants";
 import LinhaProcesso from "../LinhaProcesso";
 import type { Processo } from "../../../../types";
 

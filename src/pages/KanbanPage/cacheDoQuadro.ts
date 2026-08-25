@@ -1,4 +1,4 @@
-import type { Tarefa } from "../../../types";
+import type { Tarefa } from "../../types";
 
 /** Devolve a lista com a tarefa movida pra outra coluna.
  *

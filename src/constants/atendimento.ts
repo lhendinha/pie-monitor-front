@@ -8,5 +8,3 @@
  * existem é regra de domínio, com que cor aparecem é decisão visual.
  */
 export const STATUS_DE_ATENDIMENTO = ["Em andamento", "Fechado"] as const;
-
-export type StatusDeAtendimento = (typeof STATUS_DE_ATENDIMENTO)[number];

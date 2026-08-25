@@ -1,5 +1,5 @@
 import { Botao, EstadoVazio, Tabela } from "../../../../components";
-import { COLUNAS_CLIENTES } from "../../constants/clientes";
+import { COLUNAS_CLIENTES } from "../../constants";
 import LinhaCliente from "../LinhaCliente";
 import type { Cliente } from "../../../../types";
 

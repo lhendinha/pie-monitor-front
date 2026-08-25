@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Abas, BotaoDeTexto, CabecalhoDePagina, Cartao, IconeSeta } from "../../components";
 import FormularioIdentificacao from "./components/FormularioIdentificacao";
 import ModalDeSenha from "./components/ModalDeSenha";
-import { ABAS_DO_PERFIL } from "./constants/perfil";
+import { ABAS_DO_PERFIL } from "./constants";
 
 /** Meu perfil.
  *

@@ -35,7 +35,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { calcularOrdemAposMover, contar } from "../../../../utils";
 import { useTarefasDoQuadro } from "../../hooks/useTarefasDoQuadro";
-import { posicaoValidaNoQuadro } from "../../helpers/posicaoDeColuna";
+import { posicaoValidaNoQuadro } from "../../posicaoDeColuna";
 import LinhaDeColuna from "../LinhaDeColuna";
 import type { ColunaDoQuadro } from "../../../../types";
 import type { RenomearColuna } from "../../types";

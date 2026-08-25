@@ -4,8 +4,8 @@ import {
   PERIODOS_FUTUROS,
   PERIODOS_PASSADOS,
   PERIODO_TODOS,
-  type OpcaoDePeriodo,
 } from "../../../constants/periodos";
+import type { OpcaoDeMenu } from "../../../types";
 import { DIVISORIA, OPCAO_LINHA } from "../../../theme/painelFiltro";
 
 /** `.period-opt` do artifact. `chakra.button` e não `<button>` solto: com
@@ -60,7 +60,7 @@ interface ListaDeOpcoesProps {
  * fica vazio.
  */
 export default function ListaDeOpcoes({ selecionado, onEscolher, onAbrirPersonalizado }: ListaDeOpcoesProps) {
-  function bloco(opcoes: readonly OpcaoDePeriodo[]) {
+  function bloco(opcoes: readonly OpcaoDeMenu[]) {
     return opcoes.map((o) => (
       <Opcao key={o.id} type="button" ativa={o.id === selecionado} onClick={() => onEscolher(o.id)}>
         {o.rotulo}

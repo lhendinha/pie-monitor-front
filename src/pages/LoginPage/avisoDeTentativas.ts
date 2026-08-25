@@ -1,5 +1,5 @@
-import { ApiError } from "../../../services";
-import { contar } from "../../../utils";
+import { ApiError } from "../../services";
+import { contar } from "../../utils";
 
 interface Aviso {
   /** O que deu errado. Continua sendo a mensagem principal. */

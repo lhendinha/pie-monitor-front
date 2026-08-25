@@ -2,13 +2,13 @@ import { components } from "react-select";
 import type { DropdownIndicatorProps, GroupBase } from "react-select";
 
 import IconeChevron from "../Icons/IconeChevron";
-import type { Opcao } from "./types";
+import type { OpcaoDeSelect } from "../../types";
 
 /** A seta do select padrão, que gira ao abrir -- como no artifact.
  *
  * Os filtros em pílula não a usam (lá o glifo `▾` faz parte do rótulo), por
  * isso ela é ligada só na variante padrão. */
-export function SetaDoSelect(props: DropdownIndicatorProps<Opcao, boolean, GroupBase<Opcao>>) {
+export function SetaDoSelect(props: DropdownIndicatorProps<OpcaoDeSelect, boolean, GroupBase<OpcaoDeSelect>>) {
   return (
     <components.DropdownIndicator
       {...props}

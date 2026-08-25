@@ -1,15 +1,16 @@
 /** Prioridade de tarefa -- compartilhada entre Kanban e Agenda.
  *
- * Saiu de `KanbanPage/constants/kanban.ts` quando a Agenda passou a mostrar
+ * Saiu das constantes do Kanban quando a Agenda passou a mostrar
  * as mesmas tarefas: duas cópias da escala divergiriam no primeiro ajuste,
  * e a tarefa "Alta" ficaria vermelha num lugar e âmbar no outro. Mesmo
  * caminho que os períodos já tinham feito.
  */
 
 /** Ordem do SELETOR, como no artifact: a lista cresce em urgência. */
+import type { PrioridadeDaTarefa } from "../types";
+
 export const PRIORIDADES = ["Baixa", "Média", "Alta"] as const;
 
-export type Prioridade = (typeof PRIORIDADES)[number];
 
 /** Ordem de EXIBIÇÃO numa lista: o que urge primeiro.
  *
@@ -17,7 +18,7 @@ export type Prioridade = (typeof PRIORIDADES)[number];
  * duas listas soltas ficariam fora de acordo assim que uma quarta
  * prioridade aparecesse.
  */
-export const ORDEM_DAS_PRIORIDADES = [...PRIORIDADES].reverse() as Prioridade[];
+export const ORDEM_DAS_PRIORIDADES = [...PRIORIDADES].reverse() as PrioridadeDaTarefa[];
 
 /** Cor da prioridade: a tarja à esquerda do cartão, o ponto no rodapé e a
  * etiqueta da Agenda.

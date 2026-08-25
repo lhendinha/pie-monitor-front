@@ -5,10 +5,10 @@ const mocks = vi.hoisted(() => ({
   getEmail: vi.fn(),
 }));
 
-vi.mock("../../../services", () => mocks);
+vi.mock("../../services", () => mocks);
 
 import { podeExcluirSubgrupo } from "./podeExcluirSubgrupo";
-import type { Subgrupo } from "../../../types";
+import type { Subgrupo } from "../../types";
 
 /** `papelAtende` é hierárquico no serviço real -- quem é admin também
  * "atende" manager. Um `mockReturnValue(true)` cru esconderia justamente a
