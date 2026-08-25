@@ -17,7 +17,14 @@ em produção (Lambda + DynamoDB + SES).
 
 Front reescrito em TypeScript, estrutura em camadas (`pages/`, `services/`,
 `utils/`, `components/`, `constants/`), usando **Yarn** (não npm), deployado
-no **Vercel** em `pie-monitor-front.vercel.app`. React Compiler configurado
+no **Vercel** em `argos-monitor.vercel.app`.
+
+⚠️ O domínio MUDOU. Os dois `CONTEXT.md` diziam `pie-monitor-front.vercel.app`,
+que hoje devolve `DEPLOYMENT_NOT_FOUND` -- descoberto ao tentar conferir uma
+publicação. O repositório no GitHub continua sendo `pie-monitor-front`; o
+alias do Vercel é que passou a ser `argos-monitor`, junto com a renomeação do
+produto pra Argos. Conferir publicação por um endereço morto dá "não subiu"
+pra um deploy que subiu. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
 de testes com `vitest` + `@testing-library/react` (`yarn test`): 58 arquivos,
 555 testes, cobrindo `pages/` (27 arquivos), `components/` (11), `utils/`
