@@ -14,14 +14,13 @@ import {
   ModalDeTarefa,
 } from "../../components";
 import {
-  listarAtendimentos,
   listarTodosOsMembrosDoGrupo,
   listarQuadro,
   papelAtende,
 } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
-import { todasAsPaginas } from "../../services/api/paginacao";
 import { qk } from "../../services/queryKeys";
+import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
 import { hojeISO } from "../../utils";
 import { paraIso } from "../../utils/calendario";
 import BarraDeDatas from "./components/BarraDeDatas";
@@ -46,7 +45,7 @@ import type {
   RespostaDeMembros,
   RespostaDoQuadro,
 } from "../../types/respostas";
-import type { AtendimentoResumido, Tarefa } from "../../types";
+import type { Tarefa } from "../../types";
 import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 
 /** Agenda: as tarefas do escritório projetadas por data.
@@ -116,31 +115,10 @@ export default function AgendaPage() {
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */
-  /* 🔴 TODAS as páginas, não a primeira.
-   *
-   * Era `tamanhoPagina: TETO_POR_PAGINA` (100), que bate com o `le=100` da
-   * API e por isso não dava erro -- só truncava. Passando de 100
-   * atendimentos, a tarefa vinculada a um do fim da lista perdia o assunto
-   * e a linha deixava de dizer a que ela se liga.
-   *
-   * Chave PRÓPRIA (`todosOsAtendimentos`), separada da chave paginada, pelo
-   * mesmo motivo dos outros catálogos: duas funções de busca dividindo uma
-   * chave fazem o React Query rodar a de quem monta primeiro, e o conteúdo
-   * do cache passa a depender da ordem de montagem. */
-  const atendimentosQuery = useQuery({
-    queryKey: qk.todosOsAtendimentos(),
-    queryFn: () =>
-      todasAsPaginas<AtendimentoResumido>(listarAtendimentos, "atendimentos"),
-  });
-  const assuntoPorId = useMemo(
-    () =>
-      new Map(
-        (atendimentosQuery.data || []).map((a) => [a.atendimento_id, a.assunto]),
-      ),
-    [atendimentosQuery.data],
-  );
-
+  /* ⚠️ O hook vem DEPOIS de `tarefas` -- ele pede só os atendimentos que as
+   * tarefas da tela referenciam. Ver `useAssuntosDasTarefas`. */
   const tarefas = tarefasQuery.data || [];
+  const { assuntoDoAtendimento } = useAssuntosDasTarefas(tarefas);
   const visiveis = useMemo(() => {
     if (filtros.pessoa === "todas") return tarefas;
     if (filtros.pessoa === "sem") return tarefas.filter((t) => !t.responsavel_id);
@@ -240,7 +218,7 @@ export default function AgendaPage() {
               porDia={porDia}
               estaConcluida={estaConcluida}
               nomeDaColuna={nomeDaColuna}
-              assuntoDoAtendimento={(id) => assuntoPorId.get(id)}
+              assuntoDoAtendimento={assuntoDoAtendimento}
               onAbrirTarefa={setTarefaAberta}
               onEscolherDia={abrirDia}
             />
@@ -265,7 +243,7 @@ export default function AgendaPage() {
                   concluida={estaConcluida(tarefa)}
                   nomeDaColuna={nomeDaColuna(tarefa)}
                   assuntoDoAtendimento={
-                    tarefa.atendimento_id ? assuntoPorId.get(tarefa.atendimento_id) : undefined
+                    tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
                   }
                   onAbrir={setTarefaAberta}
                   ultima={indice === doDiaDeHoje.length - 1}

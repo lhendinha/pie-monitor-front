@@ -306,6 +306,17 @@ export interface Atendimento {
 /** O que o campo de vínculo da tarefa precisa. Continua separado de
  * `Atendimento` porque aquele campo só usa quatro chaves, e exigir a lista
  * de registros ali obrigaria a inventá-la em todo teste que monta um. */
+/** O mínimo pra rotular uma tarefa vinculada: quem é o atendimento e qual o
+ * assunto. Deliberadamente menor que `AtendimentoResumido` -- devolver o
+ * atendimento inteiro criaria uma segunda forma competindo com a da tela de
+ * detalhe, e "duas formas na mesma chave" é o defeito que este projeto
+ * passou uma auditoria inteira fechando. */
+export interface ResumoDeAtendimento {
+  subgrupo_id: string;
+  atendimento_id: string;
+  assunto: string;
+}
+
 export interface AtendimentoResumido {
   subgrupo_id: string;
   atendimento_id: string;

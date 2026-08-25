@@ -19,8 +19,14 @@ Front reescrito em TypeScript, estrutura em camadas (`pages/`, `services/`,
 `utils/`, `components/`, `constants/`), usando **Yarn** (não npm), deployado
 no **Vercel** em `pie-monitor-front.vercel.app`. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
-de testes com `vitest` + `@testing-library/react` cobre `services/` e
-`utils/` (`yarn test`). `vercel.json` também define security headers (CSP,
+de testes com `vitest` + `@testing-library/react` (`yarn test`): 56 arquivos,
+534 testes, cobrindo `pages/` (26 arquivos), `components/` (11), `utils/`
+(8), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
+`react-hooks` e passa sem erros.
+
+⚠️ Este parágrafo dizia que a suíte cobria "`services/` e `utils/`" -- ficou
+para trás de duas auditorias que encheram `pages/` e `components/` de
+testes. `vercel.json` também define security headers (CSP,
 HSTS, etc.) pra todo o app. Fluxo de recuperação de senha
 (`EsqueciSenhaPage`/`RedefinirSenhaPage`), edição de apelido de processo, e
 o link do e-mail de notificação abrindo direto na aba Histórico (deep link
@@ -408,6 +414,51 @@ Duas regras que saíram disso:
    `qk.todosOsMembros()` guarda o conjunto. Compartilhar chave entre dois
    formatos foi o que quebrou o arraste do Kanban -- ver abaixo.
 
+### Rótulo de atendimento na Agenda: lote por id, não catálogo inteiro
+
+A Agenda mostra o assunto do atendimento vinculado a uma tarefa. Antes ela
+buscava **todos** os atendimentos para montar um mapa `id → assunto`. Isso
+custava caro por um motivo que só aparece olhando o backend:
+`atendimentos_repository.listar_pagina` relê **todos** os atendimentos de
+**todos** os subgrupos visíveis a cada página pedida, e fatia em memória.
+Percorrer o catálogo com `todasAsPaginas` lia a coleção uma vez por página.
+
+Medido, com 8 subgrupos:
+
+| atendimentos | requisições HTTP | Queries | itens lidos |
+|---|---|---|---|
+| 100 | 1 | 8 | 100 |
+| 1.000 | 10 | 80 | **10.000** |
+| 5.000 | 50 | 400 | **250.000** |
+
+…para exibir cerca de dez assuntos.
+
+Agora `useAssuntosDasTarefas` pede só os pares `(subgrupo, atendimento)` que
+as tarefas **da tela** referenciam, via `GET /atendimentos/resumos`. O custo
+passa a depender de quantos aparecem na tela, não de quantos o escritório
+tem — a variável errada trocada pela certa.
+
+**Por que lote e não `useQueries` com uma query por id.** As duas
+alternativas desacoplam do tamanho do catálogo, mas com `useQueries` o
+número de requisições cresce com o **período** que a pessoa escolhe na
+Agenda: um trimestre viraria dezenas de chamadas paralelas, e o navegador
+serializa em ~6 por host. Com lote, um dia e um trimestre custam uma
+requisição.
+
+O argumento a favor do `useQueries` — reaproveitar o cache da tela de
+detalhe — não se sustenta: o detalhe devolve os registros do atendimento, o
+resumo devolve só o assunto. São formas diferentes, e compartilhar chave
+entre duas formas é o defeito recorrente deste projeto.
+
+**Escopo.** O backend filtra por subgrupo visível **antes** de ir ao banco, e
+par fora do escopo ou inexistente simplesmente não volta — responder erro
+permitiria descobrir quais atendimentos existem comparando as respostas.
+
+**Dois tetos, naturezas diferentes.** `MAXIMO_DE_RESUMOS = 500` é guarda de
+entrada: acima disso é bug no front ou abuso. `CHAVES_POR_BATCH_GET = 100` é
+limite físico do DynamoDB, e o repositório fatia internamente. Um é
+contrato, o outro é plataforma.
+
 ### Catálogo completo NÃO leva `staleTime` — e a razão é medida, não estética
 
 Uma auditoria apontou que `todasAsPaginas` sobre uma coleção que cresce sem
@@ -465,6 +516,32 @@ topbar a sessão inteira depois de editar o perfil.
 Estado que muda em runtime vive no `SessaoContext` (`apelido`,
 `trocarApelido`). `localStorage` continua sendo a persistência; o contexto é
 quem faz a tela reagir.
+
+### Auditorias de 24/08/2026 — seis rodadas depois da primeira
+
+Seis rodadas adicionais sobre o mesmo diff, com correção e verificação por
+mutação a cada uma. A suíte foi de 501 para 534 testes.
+
+**O padrão dominante:** em quatro das seis, o achado mais grave foi
+regressão da correção da rodada anterior. Não é sinal de que auditar não
+funciona — é de que cada correção é código novo, e código novo tem defeito.
+O que muda entre as rodadas é a gravidade: começou em "renomear uma fase não
+atualiza a tela" e "o cartão do cliente trunca em dez", terminou em mensagem
+inconsistente entre leitura e escrita.
+
+**A forma recorrente do defeito:** corrigir um lado e deixar o gêmeo aberto.
+`TarefasVinculadas` tratava `isError` e `ProcessosDoCliente`, um arquivo ao
+lado, não; `toastErroMutation` ganhou o ramo do 401 transitório e
+`useToastOnQueryError` não.
+
+**O erro mais caro não foi de código, foi de afirmação.** Escrevi num
+comentário que `renovarToken` só limpava tokens em recusa do servidor. Não
+verifiquei — ele limpava em qualquer resposta não-ok, inclusive o 502 de um
+deploy. Outra guarda foi construída em cima dessa afirmação e não protegia o
+caso que descrevia. Daí a varredura de comentários citando símbolo
+inexistente no repo da API (`test_comentarios_citam_codigo_real.py`), que
+cobre a metade mecânica do problema; a metade semântica continua dependendo
+de ir conferir.
 
 ### Auditoria de 23-24/08/2026
 

@@ -1,4 +1,5 @@
 import { chamar } from "./client";
+import type { ResumoDeAtendimento } from "../../types";
 
 interface OpcoesListarAtendimentos {
   busca?: string;
@@ -22,6 +23,30 @@ export function listarAtendimentos(opcoes: OpcoesListarAtendimentos = {}) {
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
     },
+  });
+}
+
+/** Assunto de vários atendimentos de uma vez.
+ *
+ * 🔴 Serve a Agenda, que rotula tarefa vinculada. Antes ela pedia o catálogo
+ * INTEIRO -- e como `listar_pagina` no backend relê todos os atendimentos de
+ * todos os subgrupos visíveis a cada página, percorrer o catálogo lia a
+ * coleção N vezes. Medido: com 1.000 atendimentos, abrir a Agenda custava 10
+ * requisições, 80 Queries e 10.000 itens lidos pra exibir uns 10 assuntos.
+ *
+ * Aqui o custo passa a depender de quantos atendimentos aparecem na TELA.
+ *
+ * ⚠️ `ids` vai como parâmetro REPETIDO (`?ids=a:b&ids=c:d`) -- `montarQuery`
+ * já serializa array assim, e o FastAPI lê como `list[str]`. O par usa `:`
+ * porque os ids são hexadecimais, então o separador nunca aparece dentro
+ * deles.
+ *
+ * Par inexistente ou fora do escopo simplesmente não volta -- quem chama
+ * trata ausência omitindo o rótulo.
+ */
+export function resumosDeAtendimentos(pares: { subgrupoId: string; atendimentoId: string }[]) {
+  return chamar<{ resumos: ResumoDeAtendimento[] }>("/atendimentos/resumos", {
+    query: { ids: pares.map((p) => `${p.subgrupoId}:${p.atendimentoId}`) },
   });
 }
 

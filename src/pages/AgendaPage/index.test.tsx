@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   listarTodosOsMembrosDoGrupo: vi.fn(),
   listarQuadro: vi.fn(),
   listarAtendimentos: vi.fn(),
+  resumosDeAtendimentos: vi.fn(),
   listarProcessos: vi.fn(),
   papelAtende: vi.fn(),
   criarTarefa: vi.fn(),
@@ -70,6 +71,7 @@ beforeEach(() => {
   });
   mocks.listarQuadro.mockResolvedValue({ colunas: COLUNAS });
   mocks.listarAtendimentos.mockResolvedValue({ atendimentos: [] });
+  mocks.resumosDeAtendimentos.mockResolvedValue({ resumos: [] });
   comTarefas();
 });
 
@@ -371,5 +373,69 @@ describe("nova tarefa", () => {
     const modal = await screen.findByRole("dialog");
     // 30/08 é o primeiro dia da grade de setembro/2026 (que começa numa terça).
     expect(within(modal).getByText("30/08/2026")).toBeInTheDocument();
+  });
+
+  describe("assunto do atendimento vinculado", () => {
+    /* 🔴 A Agenda pedia o catálogo INTEIRO de atendimentos pra montar o mapa
+     * `id -> assunto`. Como `listar_pagina` no backend relê todos os
+     * atendimentos de todos os subgrupos visíveis a cada página, percorrer o
+     * catálogo lia a coleção N vezes -- medido em 1.000 atendimentos: 10
+     * requisições, 80 Queries, 10.000 itens lidos pra exibir uns 10 assuntos.
+     *
+     * O custo passa a depender de quantos aparecem na TELA. */
+
+    it("pede só os atendimentos que as tarefas da tela referenciam", async () => {
+      comTarefas(
+        tarefa({ tarefa_id: "t1", atendimento_id: "at1" }),
+        tarefa({ tarefa_id: "t2", atendimento_id: "at2", subgrupo_id: "s2" }),
+        tarefa({ tarefa_id: "t3" }), // sem vínculo: não entra no pedido
+      );
+      mocks.resumosDeAtendimentos.mockResolvedValue({
+        resumos: [{ subgrupo_id: "s1", atendimento_id: "at1", assunto: "Rescisão" }],
+      });
+      await montar();
+
+      await waitFor(() => expect(mocks.resumosDeAtendimentos).toHaveBeenCalled());
+      const pedidos = mocks.resumosDeAtendimentos.mock.calls[0][0] as {
+        subgrupoId: string;
+        atendimentoId: string;
+      }[];
+      expect(pedidos).toEqual([
+        { subgrupoId: "s1", atendimentoId: "at1" },
+        { subgrupoId: "s2", atendimentoId: "at2" },
+      ]);
+
+      /* 🔴 E NÃO pede o catálogo inteiro -- é o ponto da mudança. */
+      expect(mocks.listarAtendimentos).not.toHaveBeenCalled();
+    });
+
+    it("o mesmo atendimento em várias tarefas é pedido UMA vez", async () => {
+      comTarefas(
+        tarefa({ tarefa_id: "t1", atendimento_id: "at1" }),
+        tarefa({ tarefa_id: "t2", atendimento_id: "at1" }),
+        tarefa({ tarefa_id: "t3", atendimento_id: "at1" }),
+      );
+      await montar();
+
+      await waitFor(() => expect(mocks.resumosDeAtendimentos).toHaveBeenCalled());
+      expect(mocks.resumosDeAtendimentos.mock.calls[0][0]).toHaveLength(1);
+    });
+
+    it("sem tarefa vinculada, não pergunta nada", async () => {
+      comTarefas(tarefa({ tarefa_id: "t1" }));
+      await montar();
+
+      await waitFor(() => expect(mocks.listarTarefas).toHaveBeenCalled());
+      expect(mocks.resumosDeAtendimentos).not.toHaveBeenCalled();
+    });
+
+    it("atendimento que não voltou some do rótulo em vez de virar id cru", async () => {
+      comTarefas(tarefa({ tarefa_id: "t1", atendimento_id: "at-sumido" }));
+      mocks.resumosDeAtendimentos.mockResolvedValue({ resumos: [] });
+      await montar();
+
+      await waitFor(() => expect(mocks.resumosDeAtendimentos).toHaveBeenCalled());
+      expect(screen.queryByText(/at-sumido/)).not.toBeInTheDocument();
+    });
   });
 });

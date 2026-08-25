@@ -85,7 +85,13 @@ export const qk = {
    * fazem o cache depender da ordem de montagem. */
   todosOsProcessosDoCliente: (clienteId: string) =>
     ["processos", "doCliente", clienteId] as const,
-  todosOsAtendimentos: () => ["atendimentos", "todos"] as const,
+  /** Resumos dos atendimentos que UMA TELA referencia.
+   *
+   * A chave carrega os pares porque telas diferentes (períodos diferentes da
+   * Agenda) pedem conjuntos diferentes -- e compartilhar chave entre
+   * conjuntos faria uma sobrescrever a outra. Quem monta a lista ordena
+   * antes, senão a mesma tela em outra ordem vira outra entrada no cache. */
+  resumosDeAtendimentos: (pares: string[]) => ["atendimentos", "resumos", pares] as const,
 
   todosOsClientes: () => ["clientes", "todos"] as const,
   todosOsSubgrupos: () => ["subgrupos", "todos"] as const,
