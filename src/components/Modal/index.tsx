@@ -47,10 +47,18 @@ export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, chil
    * perder o Escape pro formulário de baixo, que é exatamente o que a pilha
    * existe pra impedir.
    *
-   * Hoje nenhum chamador dispara isso, porque o React Compiler memoiza os
-   * callbacks -- mas isso é mascaramento: basta um `onFechar` inline sem
-   * memoização pra reintroduzir. Com deps vazias, a posição na pilha passa
-   * a depender só de montagem e desmontagem, que é o que ela representa. */
+   * ⚠️ Os chamadores passam `onFechar` de arrow INLINE -- por exemplo
+   * `SubgruposPage` faz `onFechar={() => setVendoMembrosDe(null)}` num
+   * wrapper que repassa pro Modal. Se essa identidade muda a cada render
+   * depende do React Compiler memoizar a arrow, e eu NÃO verifiquei essa
+   * garantia: a versão anterior deste comentário afirmava que "nenhum
+   * chamador dispara isso porque o Compiler memoiza", o que era suposição
+   * apresentada como fato.
+   *
+   * Depender de uma otimização de compilador pra manter uma invariante de
+   * ordenação é frágil de qualquer forma. Com deps vazias, a posição na
+   * pilha passa a depender só de montagem e desmontagem -- que é o que ela
+   * representa -- e a pergunta sobre o Compiler deixa de importar. */
   const onFecharRef = useRef(onFechar);
   /* ⚠️ A escrita no ref vai num EFEITO, não no corpo do componente.
    *
