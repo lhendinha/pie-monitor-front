@@ -79,11 +79,30 @@ export function useToastOnQueryError(erro: unknown, mensagem: string) {
  * existindo no RQ v5, então não precisa de useEffect) -- mesma regra: nunca
  * mostra toast genérico em cima de um 401, pra não duplicar com o banner de
  * sessão expirada. */
+/** 401 que veio de uma renovação que falhou por motivo TRANSITÓRIO.
+ *
+ * 🔴 Terceiro caso, que a versão anterior não tinha. Depois que
+ * `ehSessaoExpirada` passou a exigir "tokens sumiram", o 401 de um
+ * `/refresh` que devolveu 502 durante um deploy deixou de ser suprimido --
+ * e caía no `toast.erro(erro.message)`, mostrando "Autenticação inválida"
+ * pra quem só pegou dez segundos de instabilidade. A sessão continua de pé,
+ * então a mensagem estava errada nas duas pontas: assustava e não dizia o
+ * que fazer.
+ */
+function ehFalhaTransitoriaDeRenovacao(erro: unknown): boolean {
+  return erro instanceof ApiError && erro.status === 401 && estaAutenticado();
+}
+
 export function toastErroMutation(
   toast: { erro: (mensagem: string) => void },
   erro: unknown,
   mensagemPadrao: string
 ) {
+  // Sessão morta: o banner de sessão expirada já cobre, toast duplicaria.
   if (ehSessaoExpirada(erro)) return;
+  if (ehFalhaTransitoriaDeRenovacao(erro)) {
+    toast.erro("Não foi possível confirmar sua sessão agora. Tente de novo em instantes.");
+    return;
+  }
   toast.erro(erro instanceof ApiError ? erro.message : mensagemPadrao);
 }

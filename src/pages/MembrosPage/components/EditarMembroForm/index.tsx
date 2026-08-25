@@ -55,9 +55,15 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
     membro.subgrupos || []
   );
   const [subgruposCarregados, setSubgruposCarregados] = useState(false);
-  /** A leitura fresca falhou (ou não achou a pessoa). Sem ela, o conjunto de
-   * subgrupos na tela pode estar velho -- e salvar por cima remove
-   * participação que alguém acabou de criar. Melhor travar e dizer. */
+  /** A leitura fresca FALHOU. Sem ela, o conjunto de subgrupos na tela pode
+   * estar velho -- e salvar por cima remove participação que alguém acabou
+   * de criar. Melhor travar e dizer.
+   *
+   * ⚠️ Não cobre "não achou a pessoa", apesar de a versão anterior deste
+   * texto dizer que sim. Aquele caso é SUCESSO da rede e está tratado no
+   * `.then`, com o motivo escrito lá: se ela realmente saiu do grupo,
+   * reabrir o modal dá o mesmo resultado, então travar não recupera nada.
+   * Duas descrições contraditórias do mesmo sinalizador, no mesmo arquivo. */
   const [falhouAoRecarregar, setFalhouAoRecarregar] = useState(false);
   const grupoAlteradoRef = useRef(false);
   const toast = useToast();

@@ -176,11 +176,69 @@ describe("ClienteDetalhePage", () => {
   it("lista os processos vinculados", async () => {
     mocks.listarProcessos.mockResolvedValue({
       processos: [{ subgrupo_id: "sg1", numero_processo: "00002668720218130559", apelido: "" }],
+      total: 1,
+      total_paginas: 1,
     });
     montar();
 
     expect(await screen.findByText("0000266-87.2021.8.13.0559")).toBeInTheDocument();
-    expect(mocks.listarProcessos).toHaveBeenCalledWith({ clienteId: "c1" });
+    expect(mocks.listarProcessos).toHaveBeenCalledWith(
+      expect.objectContaining({ clienteId: "c1" }),
+    );
+  });
+
+  it("🔴 busca TODAS as páginas -- o ramo filtrado da API tem default 10", async () => {
+    /* Era `listarProcessos({ clienteId })` sem `tamanhoPagina`, e o ramo
+     * FILTRADO do `processos_router` tem default 10 (`Query(10, ge=1,
+     * le=100)`) -- não 100 como os outros catálogos. Um cliente com 25
+     * processos mostrava 10 no cartão, sem paginação, e o diálogo de
+     * exclusão dizia "está vinculado a 10 processos".
+     *
+     * O diálogo é o pior lado: existe pra dizer o que impede a exclusão, e
+     * dizia um número menor que o real -- quem desvinculasse os 10
+     * informados tomaria 409 de novo, sem entender. */
+    const pagina = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({
+        subgrupo_id: "sg1",
+        numero_processo: String(i).padStart(20, "0"),
+        apelido: `Caso ${i}`,
+      }));
+    /* ⚠️ `mockImplementation` por PÁGINA, não `mockResolvedValueOnce`.
+     *
+     * A query executa mais de uma vez (montagem do cartão e do diálogo
+     * compartilham a chave, mas não necessariamente o mesmo ciclo), e os
+     * valores `Once` acabavam -- a execução seguinte caía no mock base
+     * `{ processos: [] }` e o resultado final era zero. */
+    mocks.listarProcessos.mockImplementation(
+      ({ pagina: p }: { pagina?: number } = {}) =>
+        Promise.resolve({
+          processos: p === 2 ? pagina(25) : pagina(100),
+          total: 125,
+          total_paginas: 2,
+        }),
+    );
+
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
+
+    /* ⚠️ Reconsulta o diálogo DENTRO do `waitFor`.
+     *
+     * A frase é quebrada por `<strong>`, então precisa de `toHaveTextContent`
+     * -- mas guardar o elemento antes fazia a asserção olhar um nó já
+     * desmontado: enquanto os dados não chegam, `processosLigados` é 0 e o
+     * diálogo mostrado é o de CONFIRMAÇÃO; quando chegam, ele é trocado
+     * pelo de bloqueio. A referência velha nunca muda de conteúdo. */
+    await waitFor(() =>
+      expect(screen.getByRole("dialog")).toHaveTextContent(/125 processos/),
+    );
+    // Pediu a 2ª página -- é isso que a versão truncada não fazia.
+    expect(
+      mocks.listarProcessos.mock.calls.some(
+        (c) => (c[0] as { pagina?: number })?.pagina === 2,
+      ),
+    ).toBe(true);
   });
 
   it("sem processo vinculado, diz isso", async () => {

@@ -23,7 +23,7 @@ export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProp
 
   if (query.isPending) return <Esqueleto linhas={2} />;
 
-  const processos = query.data?.processos || [];
+  const processos = query.data || [];
   if (processos.length === 0) {
     return (
       <Text fontSize="13px" color="fg.subtle">

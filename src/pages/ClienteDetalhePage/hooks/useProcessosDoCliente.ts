@@ -1,20 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { listarProcessos } from "../../../services";
+import { todasAsPaginas } from "../../../services/api/paginacao";
 import { qk } from "../../../services/queryKeys";
-import type {
-  RespostaDeProcessos,
-} from "../../../types/respostas";
+import type { Processo } from "../../../types";
 
-/** Os processos deste cliente (`GET /processos?cliente_id=X`).
+/** TODOS os processos deste cliente (`GET /processos?cliente_id=X`).
  *
- * Mesmo motivo do `useTarefasDoProcesso`: o cartão que lista e o diálogo de
- * exclusão -- que avisa quantos processos perdem o cliente -- pedem a mesma
- * coisa, e com a chave igual isso é uma requisição só.
+ * 🔴 Era `listarProcessos({ clienteId })` sem `tamanhoPagina`, e o ramo
+ * FILTRADO do `processos_router` tem default 10 (`Query(10, ge=1, le=100)`)
+ * -- não 100 como os outros catálogos. Um cliente com 25 processos mostrava
+ * 10 no cartão "Processos vinculados", sem paginação, e o diálogo de
+ * exclusão dizia "está vinculado a 10 processos".
+ *
+ * O diálogo é o pior lado: ele existe pra dizer o que impede a exclusão, e
+ * dizia um número menor que o real. Quem desvinculasse os 10 informados
+ * tomaria 409 de novo, sem entender.
+ *
+ * O cartão e o diálogo compartilham a chave de propósito -- uma requisição
+ * só serve os dois.
  */
 export function useProcessosDoCliente(clienteId: string) {
-  return useQuery<RespostaDeProcessos>({
-    queryKey: qk.processos({ clienteId }),
-    queryFn: () => listarProcessos({ clienteId }),
+  return useQuery({
+    queryKey: qk.todosOsProcessosDoCliente(clienteId),
+    queryFn: () =>
+      todasAsPaginas<Processo>(
+        (opcoes) => listarProcessos({ ...opcoes, clienteId }),
+        "processos",
+      ),
   });
 }

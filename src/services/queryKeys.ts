@@ -80,6 +80,11 @@ export const qk = {
   prefixoOpcoesProcesso: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo] as const,
 
   prefixoAtendimentos: () => ["atendimentos"] as const,
+  /** TODOS os processos de um cliente -- chave separada da paginada, pelo
+   * mesmo motivo dos outros catálogos: duas funções de busca numa chave só
+   * fazem o cache depender da ordem de montagem. */
+  todosOsProcessosDoCliente: (clienteId: string) =>
+    ["processos", "doCliente", clienteId] as const,
   todosOsAtendimentos: () => ["atendimentos", "todos"] as const,
 
   todosOsClientes: () => ["clientes", "todos"] as const,

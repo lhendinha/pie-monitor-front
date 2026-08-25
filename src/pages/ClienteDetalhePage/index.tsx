@@ -39,7 +39,7 @@ export default function ClienteDetalhePage() {
   /** Mesma consulta do cartão de processos -- serve pra dizer, na hora de
    * excluir, quantos processos perdem este cliente. */
   const processosQuery = useProcessosDoCliente(clienteId);
-  const processosLigados = processosQuery.data?.processos.length ?? 0;
+  const processosLigados = processosQuery.data?.length ?? 0;
 
   const query = useQuery<Cliente>({
     queryKey: qk.detalheCliente(clienteId),

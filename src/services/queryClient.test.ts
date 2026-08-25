@@ -50,3 +50,46 @@ describe("401 só desloga quando a sessão morreu de verdade", () => {
     expect(mocks.dispararAutenticacaoInvalida).not.toHaveBeenCalled();
   });
 });
+
+describe("mensagem de erro de mutation", () => {
+  /** 🔴 Depois que `ehSessaoExpirada` passou a exigir "tokens sumiram", o
+   * 401 de um `/refresh` que devolveu 502 durante um deploy deixou de ser
+   * suprimido -- e virava um toast "Autenticação inválida" pra quem só
+   * pegou instabilidade. A sessão continuava de pé. */
+  const toastFalso = () => {
+    const mensagens: string[] = [];
+    return { toast: { erro: (m: string) => mensagens.push(m) }, mensagens };
+  };
+
+  it("401 com sessão viva vira mensagem de instabilidade, não 'Autenticação inválida'", async () => {
+    const { toastErroMutation } = await import("./queryClient");
+    mocks.estaAutenticado.mockReturnValue(true);
+    const { toast, mensagens } = toastFalso();
+
+    toastErroMutation(toast, new ApiError("Autenticação inválida", 401), "padrão");
+
+    expect(mensagens).toHaveLength(1);
+    expect(mensagens[0]).not.toContain("Autenticação inválida");
+    expect(mensagens[0]).toMatch(/sessão|instantes/i);
+  });
+
+  it("401 com sessão morta não mostra toast -- o banner cobre", async () => {
+    const { toastErroMutation } = await import("./queryClient");
+    mocks.estaAutenticado.mockReturnValue(false);
+    const { toast, mensagens } = toastFalso();
+
+    toastErroMutation(toast, new ApiError("Autenticação inválida", 401), "padrão");
+
+    expect(mensagens).toEqual([]);
+  });
+
+  it("outros erros mostram a mensagem da API", async () => {
+    const { toastErroMutation } = await import("./queryClient");
+    mocks.estaAutenticado.mockReturnValue(true);
+    const { toast, mensagens } = toastFalso();
+
+    toastErroMutation(toast, new ApiError("Nome já existe", 409), "padrão");
+
+    expect(mensagens).toEqual(["Nome já existe"]);
+  });
+});
