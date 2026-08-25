@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,8 +10,10 @@ const mocks = vi.hoisted(() => ({
   listarQuadro: vi.fn(),
   listarTarefas: vi.fn(),
   listarTodosOsMembrosDoGrupo: vi.fn(),
+  listarMembrosDoSubgrupo: vi.fn(),
   detalhesTarefa: vi.fn(),
   atualizarTarefa: vi.fn(),
+  criarTarefa: vi.fn(),
   papelAtende: vi.fn(),
 }));
 
@@ -35,6 +37,19 @@ const TAREFA_DO_LINK = {
   prioridade: "Alta",
 };
 
+const COLUNAS_TRAB = [
+  { subgrupo_id: "sg-trab", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false, e_arquivado: false },
+  { subgrupo_id: "sg-trab", coluna_id: "c2", nome: "Concluído", ordem: 2, e_conclusao: true, e_arquivado: false },
+  { subgrupo_id: "sg-trab", coluna_id: "c3", nome: "Arquivado", ordem: 3, e_conclusao: false, e_arquivado: true },
+];
+
+/* Nomes que NÃO se repetem no outro quadro: se os dois tivessem "A Fazer",
+   o teste não saberia dizer de qual quadro veio a coluna oferecida. */
+const COLUNAS_CIVEL = [
+  { subgrupo_id: "sg-civel", coluna_id: "cv1", nome: "Triagem", ordem: 1, e_conclusao: false, e_arquivado: false },
+  { subgrupo_id: "sg-civel", coluna_id: "cv2", nome: "Sentenciado", ordem: 2, e_conclusao: true, e_arquivado: false },
+];
+
 function montar(tarefaDoLink?: { subgrupoId: string; tarefaId: string }) {
   return renderComProviders(
     <MemoryRouter>
@@ -54,16 +69,16 @@ beforeEach(() => {
     total: 2,
     total_paginas: 1,
   });
-  mocks.listarQuadro.mockResolvedValue({
-    colunas: [
-      { subgrupo_id: "sg-trab", coluna_id: "c1", nome: "A Fazer", ordem: 1, e_conclusao: false, e_arquivado: false },
-      { subgrupo_id: "sg-trab", coluna_id: "c2", nome: "Concluído", ordem: 2, e_conclusao: true, e_arquivado: false },
-      { subgrupo_id: "sg-trab", coluna_id: "c3", nome: "Arquivado", ordem: 3, e_conclusao: false, e_arquivado: true },
-    ],
-  });
+  /* Cada subgrupo tem o PRÓPRIO quadro, com ids próprios. Um mock único pra
+     todo subgrupo esconderia justamente o defeito que a suíte precisa ver. */
+  mocks.listarQuadro.mockImplementation((subgrupoId: string) =>
+    Promise.resolve({ colunas: subgrupoId === "sg-civel" ? COLUNAS_CIVEL : COLUNAS_TRAB }),
+  );
   // A listagem do quadro NÃO contém a tarefa do link -- é o ponto.
   mocks.listarTarefas.mockResolvedValue({ tarefas: [], total: 0, total_paginas: 0 });
   mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
+  mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
+  mocks.criarTarefa.mockResolvedValue({ tarefa_id: "nova" });
   mocks.detalhesTarefa.mockResolvedValue(TAREFA_DO_LINK);
 });
 
@@ -191,5 +206,150 @@ describe("busca por texto", () => {
       expect(screen.queryByText("Audiência de conciliação")).not.toBeInTheDocument(),
     );
     expect(screen.getByText("Protocolar recurso")).toBeInTheDocument();
+  });
+});
+
+describe("criar tarefa em OUTRO subgrupo", () => {
+  /* 🔴 O quadro e os membros chegavam ao modal por prop, vindos da página --
+   * que só conhece o subgrupo que está exibindo. Trocar o subgrupo no
+   * formulário não recarregava nenhum dos dois, então o seletor continuava
+   * oferecendo as colunas do quadro ANTERIOR e o `POST` batia na validação
+   * do servidor: "A coluna não pertence ao quadro deste subgrupo".
+   *
+   * Na prática: quem participa de mais de um subgrupo só conseguia criar
+   * tarefa no que estivesse aberto na tela. O seletor de subgrupo existia e
+   * não servia pra nada -- pior que não existir, porque prometia. */
+
+  async function abrirNovaTarefaETrocarPara(nome: string) {
+    const user = userEvent.setup();
+    montar();
+
+    await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
+    const modal = await screen.findByRole("dialog");
+
+    // O quadro abre no último subgrupo da lista (Trabalhista).
+    await within(modal).findByText("A Fazer");
+    await user.click(within(modal).getByText("Trabalhista"));
+    /* ⚠️ `screen`, não `within(modal)`: o `Select` manda o menu pra um
+       portal em `document.body` (`menuPortalTarget`), então as opções
+       ficam FORA do diálogo. Por `role="option"` também não colide com o
+       nome do subgrupo no chip de filtro da página. */
+    await user.click(await screen.findByRole("option", { name: nome }));
+    return { user, modal };
+  }
+
+  it("oferece as colunas do subgrupo ESCOLHIDO, não as do quadro aberto", async () => {
+    const { modal } = await abrirNovaTarefaETrocarPara("Cível");
+
+    expect(await within(modal).findByText("Triagem")).toBeInTheDocument();
+    // A coluna do quadro anterior não pode sobreviver à troca: era ela que
+    // o servidor recusava.
+    expect(within(modal).queryByText("A Fazer")).not.toBeInTheDocument();
+  });
+
+  it("salva com a coluna do quadro do subgrupo escolhido", async () => {
+    const { user, modal } = await abrirNovaTarefaETrocarPara("Cível");
+    await within(modal).findByText("Triagem");
+
+    await user.type(within(modal).getByLabelText(/Descrição da tarefa/), "Petição inicial");
+    await user.click(within(modal).getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.criarTarefa).toHaveBeenCalled());
+    expect(mocks.criarTarefa).toHaveBeenCalledWith(
+      expect.objectContaining({ subgrupo_id: "sg-civel", coluna_id: "cv1" }),
+    );
+  });
+
+  it("pede os membros DO SUBGRUPO escolhido, não os do grupo inteiro", async () => {
+    /* `_validar_responsavel`, no servidor, exige que o responsável seja
+     * membro do subgrupo. A lista vinha do grupo inteiro, então escolher
+     * alguém de fora dava "Responsável não é membro do subgrupo" -- o mesmo
+     * defeito da coluna, num campo diferente. */
+    await abrirNovaTarefaETrocarPara("Cível");
+
+    await waitFor(() =>
+      expect(mocks.listarMembrosDoSubgrupo).toHaveBeenCalledWith("sg-civel"),
+    );
+  });
+});
+
+describe("responsável que saiu do subgrupo", () => {
+  it("continua aparecendo ao editar, em vez de ser apagado em silêncio", async () => {
+    /* ⚠️ Risco criado pela própria correção acima. A lista de responsáveis
+     * passou a ser a do subgrupo -- que é o recorte certo -- mas quem foi
+     * removido do subgrupo depois de receber a tarefa some dela. Sem este
+     * guard, abrir a tarefa mostraria "Sem responsável" e qualquer salvamento
+     * gravaria `null`: a atribuição sumiria sem ninguém mandar. */
+    mocks.detalhesTarefa.mockResolvedValue({
+      ...TAREFA_DO_LINK,
+      responsavel_id: "quem.saiu@x.com",
+    });
+    mocks.listarMembrosDoSubgrupo.mockResolvedValue({
+      membros: [{ email: "ana@x.com", apelido: "Ana" }],
+    });
+
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+
+    const modal = await screen.findByRole("dialog");
+    expect(await within(modal).findByText("quem.saiu@x.com")).toBeInTheDocument();
+  });
+});
+
+describe("nome de quem pode ser responsável", () => {
+  it("mostra o apelido que a rota do subgrupo devolve", async () => {
+    /* A rota `/subgrupos/{id}/membros` passou a devolver o apelido junto do
+     * e-mail. Antes vinha só o e-mail, e DOIS lugares (este modal e a aba
+     * de Membros do Subgrupo) pediam a lista do grupo inteiro só pra
+     * traduzir e-mail em nome -- a mesma volta, feita duas vezes. */
+    const user = userEvent.setup();
+    mocks.listarMembrosDoSubgrupo.mockResolvedValue({
+      membros: [{ email: "joao@x.com", apelido: "João Meireles" }],
+    });
+
+    montar();
+    await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
+    const modal = await screen.findByRole("dialog");
+    await within(modal).findByText("A Fazer");
+    await user.click(within(modal).getByText("Sem responsável"));
+
+    expect(await screen.findByRole("option", { name: "João Meireles" })).toBeInTheDocument();
+  });
+
+  it("cai no e-mail quando a pessoa não tem apelido", async () => {
+    // Quem nunca definiu apelido não pode sumir do seletor: o e-mail ainda
+    // identifica, e some-lo deixaria a tarefa sem como ser atribuída a ela.
+    const user = userEvent.setup();
+    mocks.listarMembrosDoSubgrupo.mockResolvedValue({
+      membros: [{ email: "sem.apelido@x.com", apelido: null }],
+    });
+
+    montar();
+    await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
+    const modal = await screen.findByRole("dialog");
+    await within(modal).findByText("A Fazer");
+    await user.click(within(modal).getByText("Sem responsável"));
+
+    expect(await screen.findByRole("option", { name: "sem.apelido@x.com" })).toBeInTheDocument();
+  });
+
+  it("oferece responsáveis mesmo pra quem é `user`", async () => {
+    /* 🔴 A rota exigia `manager`, então pra um `user` o seletor vinha vazio
+     * e ele não conseguia atribuir tarefa A NINGUÉM -- nem a si mesmo. Ficava
+     * fora de "minhas tarefas", dos cartões da Área de trabalho e do lembrete
+     * de prazo, que sai pro responsável. O servidor sempre aceitou a
+     * atribuição; faltava a tela ter como listar os nomes. */
+    const user = userEvent.setup();
+    mocks.papelAtende.mockReturnValue(false); // papel `user`
+    mocks.listarMembrosDoSubgrupo.mockResolvedValue({
+      membros: [{ email: "eu@x.com", apelido: "Eu Mesmo" }],
+    });
+
+    montar();
+    await user.click(await screen.findByRole("button", { name: /Nova tarefa/ }));
+    const modal = await screen.findByRole("dialog");
+    await within(modal).findByText("A Fazer");
+    await user.click(within(modal).getByText("Sem responsável"));
+
+    expect(await screen.findByRole("option", { name: "Eu Mesmo" })).toBeInTheDocument();
   });
 });

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   listarSubgrupos: vi.fn(),
   listarTodosOsMembrosDoGrupo: vi.fn(),
   listarQuadro: vi.fn(),
+  listarMembrosDoSubgrupo: vi.fn(),
   listarAtendimentos: vi.fn(),
   resumosDeAtendimentos: vi.fn(),
   listarProcessos: vi.fn(),
@@ -70,6 +71,7 @@ beforeEach(() => {
     membros: [{ email: "ana@x.com", apelido: "Ana" }],
   });
   mocks.listarQuadro.mockResolvedValue({ colunas: COLUNAS });
+  mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [{ email: "ana@x.com", apelido: "Ana" }] });
   mocks.listarAtendimentos.mockResolvedValue({ atendimentos: [] });
   mocks.resumosDeAtendimentos.mockResolvedValue({ resumos: [] });
   comTarefas();

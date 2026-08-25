@@ -13,11 +13,7 @@ import {
   IconePlus,
   ModalDeTarefa,
 } from "../../components";
-import {
-  listarTodosOsMembrosDoGrupo,
-  listarQuadro,
-  papelAtende,
-} from "../../services";
+import { listarTodosOsMembrosDoGrupo, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
@@ -41,10 +37,7 @@ import {
   somarDias,
 } from "./helpers/periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros } from "./types";
-import type {
-  RespostaDeMembros,
-  RespostaDoQuadro,
-} from "../../types/respostas";
+import type { RespostaDeMembros } from "../../types/respostas";
 import type { Tarefa } from "../../types";
 import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 
@@ -128,16 +121,12 @@ export default function AgendaPage() {
   const porDia = useMemo(() => agruparPorDia(visiveis), [visiveis]);
   const doDiaDeHoje = porDia.get(isoDeHoje) || [];
 
-  /* O quadro do subgrupo da tarefa aberta: o modal precisa das colunas dela,
-     e cada subgrupo tem o próprio quadro. Na criação, o primeiro exibido --
-     o modal deixa trocar. */
+  /* Em que subgrupo o modal ABRE: o da tarefa aberta, ou -- criando -- o
+     primeiro exibido. Daí em diante quem manda é o seletor do próprio modal,
+     que carrega o quadro e os membros do subgrupo escolhido. Buscar o quadro
+     aqui era o que prendia a criação ao subgrupo da tela. */
   const subgrupoDoModal =
     tarefaAberta?.subgrupo_id || subgruposExibidos[subgruposExibidos.length - 1] || "";
-  const quadroDoModalQuery = useQuery<RespostaDoQuadro>({
-    queryKey: qk.quadro(subgrupoDoModal),
-    queryFn: () => listarQuadro(subgrupoDoModal),
-    enabled: Boolean(subgrupoDoModal) && (Boolean(tarefaAberta) || criando),
-  });
 
   function abrirDia(iso: string) {
     // `T00:00:00` força leitura LOCAL: `new Date("2026-08-19")` é meia-noite
@@ -259,9 +248,6 @@ export default function AgendaPage() {
           tarefa={tarefaAberta}
           subgrupoAtual={subgrupoDoModal}
           subgrupos={subgrupos}
-          colunas={quadroDoModalQuery.data?.colunas || []}
-          carregandoColunas={quadroDoModalQuery.isPending}
-          membros={membros}
           dataInicial={
             criando ? dataPadraoDaNovaTarefa(filtros.visao, dataVisivel, hoje) : undefined
           }

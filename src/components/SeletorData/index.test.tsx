@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderComProviders } from "../../test/queryTestUtils";
 import SeletorData from ".";
+import Modal from "../Modal";
 
 function montar(valor = "") {
   const onMudar = vi.fn();
@@ -54,5 +55,28 @@ describe("SeletorData", () => {
     montar("2026-08-10");
     await user.click(screen.getByText("10/08/2026"));
     expect(await screen.findByRole("grid")).toBeInTheDocument();
+  });
+});
+
+describe("Escape com o calendário aberto não fecha o que está atrás", () => {
+  it("o Escape que fecha o calendário não chega ao modal", async () => {
+    /* 🔴 Mesmo defeito dos `Select`, aqui pelo `DatePicker` do Chakra: o
+     * `Modal` fecha por um listener de `keydown` no `document`, e o Escape
+     * que dispensava o calendário levava o formulário junto -- com o texto
+     * já digitado. */
+    const user = userEvent.setup();
+    const aoFechar = vi.fn();
+    renderComProviders(
+      <Modal titulo="Formulário" onFechar={aoFechar}>
+        <SeletorData id="d" valor="2026-08-21" onMudar={vi.fn()} />
+      </Modal>,
+    );
+
+    await user.click(screen.getByText("21/08/2026"));
+    await screen.findByRole("grid");
+
+    await user.keyboard("{Escape}");
+
+    expect(aoFechar).not.toHaveBeenCalled();
   });
 });

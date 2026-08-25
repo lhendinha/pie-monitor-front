@@ -1,6 +1,6 @@
 import { Box, DatePicker, Portal, parseDate } from "@chakra-ui/react";
 
-import { Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
+import { SELETOR_CALENDARIO, Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
 
 import { formatarData } from "../../utils";
 import { BotaoQuadrado } from "../BotaoQuadrado";
@@ -64,8 +64,28 @@ export default function SeletorData({
   // `parseDate` faz a ponte: a lib trabalha com `DateValue`, e pra fora
   // este componente segue falando `aaaa-mm-dd`, que é o formato da API --
   // objeto de data não atravessa essa fronteira.
+  /** Escape com o calendário ABERTO fecha só o calendário.
+   *
+   * 🔴 Mesmo defeito dos dois `Select`, aqui pelo `DatePicker` do Chakra:
+   * `Modal` escuta `keydown` no `document`, então um Escape com o
+   * calendário aberto fechava o formulário inteiro junto -- levando o texto
+   * já digitado. Apareceu em Chrome, e jsdom reproduz: há teste em
+   * `SeletorData/index.test.tsx`.
+   *
+   * ⚠️ A pergunta "está aberto?" é respondida pelo DOM, e não por estado.
+   * Tentei primeiro com estado alimentado por `onOpenChange`, e no Escape
+   * ele ainda vinha `false` -- sondado em Chrome. `SELETOR_CALENDARIO` é a
+   * marca que a própria lib escreve no conteúdo, já usada no projeto pra
+   * esta mesma pergunta, e com `unmountOnExit` ela só existe enquanto o
+   * calendário está aberto de fato. */
+  function aoTeclar(evento: React.KeyboardEvent) {
+    if (evento.key !== "Escape") return;
+    if (!document.querySelector(SELETOR_CALENDARIO)) return;
+    evento.stopPropagation();
+  }
+
   return (
-    <Box id={id}>
+    <Box id={id} onKeyDown={aoTeclar}>
       <DatePicker.Root
         /* ⚠️ Fechado, o calendário tem que sair do DOM. Sem isto o
          posicionador dele continua montado por cima da tela e ENGOLE

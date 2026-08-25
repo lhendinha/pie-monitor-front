@@ -391,9 +391,6 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
           tarefa={tarefaAberta}
           subgrupoAtual={subgrupoId}
           subgrupos={subgrupos}
-          colunas={colunas}
-          carregandoColunas={quadroQuery.isPending}
-          membros={membros}
           colunaInicial={criandoNaColuna ?? undefined}
           onSalvo={invalidar}
           onFechar={() => {

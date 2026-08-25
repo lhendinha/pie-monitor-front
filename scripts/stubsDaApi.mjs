@@ -259,8 +259,17 @@ const RESPOSTAS = [
     }),
   ],
   [
+    // ⚠️ Com `apelido`: a rota passou a devolvê-lo (25/08/2026), pra tela não
+    // precisar de `GET /grupos/membros` só pra traduzir e-mail em nome. Stub
+    // sem apelido faria a verificação visual mostrar e-mail cru e passar.
     /\/subgrupos\/sg-civel\/membros/,
-    () => ({ membros: [{ email: "ana@argos.local" }, { email: "joao@argos.local" }, { email: "marina@argos.local" }] }),
+    () => ({
+      membros: [
+        { email: "ana@argos.local", apelido: "Ana Paula" },
+        { email: "joao@argos.local", apelido: "João Meireles" },
+        { email: "marina@argos.local", apelido: "Marina Duarte" },
+      ],
+    }),
   ],
   [
     /\/subgrupos\/[^/]+\/membros/,

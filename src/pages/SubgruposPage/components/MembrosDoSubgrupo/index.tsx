@@ -61,9 +61,12 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
   });
   useToastOnQueryError(query.error, `Não foi possível carregar os membros de ${subgrupo.nome}.`);
 
-  /** A lista por subgrupo devolve só e-mail. Apelido e papel vêm da lista do
-   * grupo, que já tem os três -- em vez de pedir um join novo no backend.
-   * Mesmo piso (`manager`) das outras duas rotas desta tela. */
+  /** O PAPEL de cada pessoa só existe na lista do grupo -- a lista por
+   * subgrupo traz e-mail e apelido, não papel. Mesmo piso (`manager`) das
+   * outras duas rotas desta tela.
+   *
+   * ⚠️ O apelido saía daqui também, e não sai mais: `/subgrupos/{id}/membros`
+   * passou a devolvê-lo. Este join sobrevive só pelo papel. */
   const grupoQuery = useQuery<RespostaDeMembros>({
     queryKey: qk.todosOsMembros(),
     queryFn: listarTodosOsMembrosDoGrupo,
@@ -164,9 +167,8 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
         </form>
       }
     >
-      {/* Espera as DUAS: a lista por subgrupo só traz e-mail, e o apelido e
-          o papel vêm da lista do grupo. Com só a primeira, as linhas
-          apareciam com o e-mail cru e a etiqueta de papel vazia, e depois
+      {/* Espera as DUAS: a etiqueta de papel vem da lista do grupo. Com só
+          a primeira, as linhas apareciam com a etiqueta vazia e depois
           trocavam sozinhas na frente da pessoa. */}
       {query.isError || grupoQuery.isError ? (
         <EstadoDeErro
@@ -185,7 +187,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
         <Stack gap="0">
           {membros.map((m) => {
             const dados = dadosPorEmail.get(m.email);
-            const nome = dados?.apelido || m.email;
+            const nome = m.apelido || dados?.apelido || m.email;
             return (
               <Flex
                 key={m.email}
@@ -201,7 +203,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
                   <Text fontSize="13.5px" fontWeight="700">
                     {nome}
                   </Text>
-                  {dados?.apelido && (
+                  {(m.apelido || dados?.apelido) && (
                     <Text fontSize="12px" color="fg.subtle">
                       {m.email}
                     </Text>

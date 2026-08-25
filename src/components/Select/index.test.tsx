@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderComProviders } from "../../test/queryTestUtils";
 import { MultiSelect, Select } from ".";
+import Modal from "../Modal";
 
 const OPCOES = [
   { value: "a", label: "Cível" },
@@ -147,5 +148,50 @@ describe("MultiSelect — cor do texto da pílula", () => {
       />,
     );
     expect(corDoRotulo("Selecione os subgrupos")).toBe("var(--chakra-colors-fg-subtle)");
+  });
+});
+
+describe("Escape com o menu aberto não fecha o que está atrás", () => {
+  /* 🔴 `Modal` escuta `keydown` no `document` pra fechar no Escape, e o
+   * menu do `react-select` responde à mesma tecla. Sem coordenação, um
+   * Escape com o menu aberto dentro de um modal fechava OS DOIS: quem só
+   * queria dispensar a lista perdia o formulário e o texto digitado.
+   *
+   * O calendário do `SeletorData` tem o mesmo defeito, pelo `DatePicker` do
+   * Chakra, e teste próprio. Lá a interceptação consulta o DOM em vez de
+   * estado: com estado alimentado por `onOpenChange`, ele ainda vinha
+   * `false` no Escape -- sondado em Chrome. */
+
+  it("o Escape que fecha o menu não chega ao modal", async () => {
+    const user = userEvent.setup();
+    const aoFechar = vi.fn();
+    renderComProviders(
+      <Modal titulo="Formulário" onFechar={aoFechar}>
+        <Select opcoes={OPCOES} valor="" onMudar={vi.fn()} placeholder="Selecione" />
+      </Modal>,
+    );
+
+    await user.click(screen.getByText("Selecione"));
+    await screen.findByText("Cível"); // menu aberto
+
+    await user.keyboard("{Escape}");
+
+    expect(aoFechar).not.toHaveBeenCalled();
+  });
+
+  it("com o menu FECHADO, o Escape continua fechando o modal", async () => {
+    // O contrário do teste acima é o que não pode quebrar: sem esta prova,
+    // "não fecha nunca" também passaria no primeiro.
+    const user = userEvent.setup();
+    const aoFechar = vi.fn();
+    renderComProviders(
+      <Modal titulo="Formulário" onFechar={aoFechar}>
+        <Select opcoes={OPCOES} valor="" onMudar={vi.fn()} placeholder="Selecione" />
+      </Modal>,
+    );
+
+    await user.keyboard("{Escape}");
+
+    expect(aoFechar).toHaveBeenCalledTimes(1);
   });
 });

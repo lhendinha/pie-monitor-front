@@ -66,6 +66,28 @@ export function Select({
   const fechar = useCallback(() => setAberto(false), []);
   useFecharAoClicarFora(chip && aberto, fechar, SELETOR_CAMADA_FLUTUANTE);
 
+  /** Escape com o menu ABERTO fecha só o menu -- nunca o que está atrás.
+   *
+   * 🔴 `Modal` e `useFecharAoClicarFora` escutam `keydown` no `document`,
+   * sem coordenação nenhuma. Com o menu aberto DENTRO de um modal, um
+   * Escape fechava os dois de uma vez: quem só queria dispensar a lista
+   * perdia o formulário inteiro e o texto já digitado. Apareceu numa
+   * verificação em Chrome -- mas jsdom reproduz, e há teste
+   * (`Select/index.test.tsx`): não existia porque ninguém tinha escrito.
+   *
+   * ⚠️ `stopPropagation`, e NÃO `preventDefault`: o `onKeyDown` daqui roda
+   * ANTES do handler do react-select, e ele desiste do próprio tratamento
+   * se o evento vier com `defaultPrevented`. Prevenir fecharia o modal e
+   * deixaria o menu aberto -- o inverso exato do que se quer.
+   */
+  function aoTeclar(evento: React.KeyboardEvent) {
+    if (evento.key !== "Escape" || !aberto) return;
+    evento.stopPropagation();
+    // No `chip` o menu é controlado por nós, e quem o fechava no Escape era
+    // o listener de `document` que acabamos de barrar.
+    if (chip) fechar();
+  }
+
   function escolher(novo: string) {
     onMudar(novo);
     fechar();
@@ -88,7 +110,12 @@ export function Select({
       maxMenuHeight={ALTURA_MAXIMA_MENU}
       menuPortalTarget={document.body}
       menuIsOpen={chip ? aberto : undefined}
-      onMenuOpen={chip ? () => setAberto(true) : undefined}
+      onMenuOpen={() => setAberto(true)}
+      /* Só no `padrao`: no `chip` o menu é controlado, e deixar a lib
+         fechá-lo no blur é justamente o defeito que o controle evita. Aqui
+         `onMenuClose` serve só pra saber se o menu está aberto. */
+      onMenuClose={chip ? undefined : () => setAberto(false)}
+      onKeyDown={aoTeclar}
       styles={
         chip
           ? estilosChip(Boolean(valor), "linha")

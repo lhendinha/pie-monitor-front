@@ -20,7 +20,7 @@ Front reescrito em TypeScript, estrutura em camadas (`pages/`, `services/`,
 no **Vercel** em `pie-monitor-front.vercel.app`. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
 de testes com `vitest` + `@testing-library/react` (`yarn test`): 56 arquivos,
-534 testes, cobrindo `pages/` (26 arquivos), `components/` (11), `utils/`
+544 testes, cobrindo `pages/` (26 arquivos), `components/` (11), `utils/`
 (8), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
 `react-hooks` e passa sem erros.
 
@@ -516,6 +516,91 @@ topbar a sessão inteira depois de editar o perfil.
 Estado que muda em runtime vive no `SessaoContext` (`apelido`,
 `trocarApelido`). `localStorage` continua sendo a persistência; o contexto é
 quem faz a tela reagir.
+
+### O modal de tarefa busca os próprios dados (25/08/2026)
+
+`ModalDeTarefa` recebia `colunas` e `membros` **por prop**, vindos da página
+-- que só conhece o subgrupo que está exibindo. Trocar o subgrupo dentro do
+formulário não recarregava nenhum dos dois.
+
+Resultado: o seletor continuava oferecendo as colunas do quadro anterior, e
+salvar batia em `_validar_coluna` no servidor -- *"A coluna não pertence ao
+quadro deste subgrupo"*. **Quem participa de mais de um subgrupo só conseguia
+criar tarefa no que estivesse aberto na tela.** O seletor de subgrupo existia
+e não servia pra nada; pior que não existir, porque prometia.
+
+O modal passou a buscar quadro e membros **do subgrupo escolhido nele**,
+pelas mesmas `queryKey` que as páginas já usam (`qk.quadro`,
+`qk.membrosDoSubgrupo`) -- então o caso comum, criar no subgrupo aberto, sai
+do cache sem requisição nova. `KanbanPage` e `AgendaPage` deixaram de passar
+as props; a Agenda perdeu junto o `quadroDoModalQuery`, que existia só pra
+isso.
+
+**A coluna virou valor DERIVADO, não estado.** Guardada, ela ficava errada em
+dois momentos: enquanto o quadro ainda vinha (o estado nascia vazio e nada o
+preenchia depois, então o Salvar ficava travado sem dizer por quê) e depois
+de trocar de subgrupo. Uma linha resolve os dois: se a coluna não está NESTE
+quadro, vale a primeira dele.
+
+**O mesmo defeito existia no Responsável**, por `_validar_responsavel`: a
+lista vinha do GRUPO inteiro, e escolher alguém de fora do subgrupo dava
+*"Responsável não é membro do subgrupo"* -- e esse aparecia mesmo sem trocar
+de subgrupo. Agora vem de `GET /subgrupos/{id}/membros`, o mesmo recorte que
+o servidor aplica.
+
+⚠️ **Risco criado pela própria correção, fechado com teste:** recortar por
+subgrupo faz sumir quem SAIU dele depois de já ter tarefas. Sem guarda,
+abrir a tarefa mostraria "Sem responsável" e salvar gravaria `null` -- a
+atribuição some sem ninguém mandar. O modal mantém a pessoa na lista mesmo
+não sendo mais membro.
+
+⚠️ **Regressão pega antes de subir:** a rota do subgrupo devolvia só
+`{email, adicionado_em}`, então o seletor passou a mostrar `joao@x.com` no
+lugar de "João Meireles". Resolvido **na API**, que passou a devolver
+`apelido` -- em vez de o front pedir `GET /grupos/membros` só pra traduzir
+e-mail em nome, volta que a aba de Membros do Subgrupo já fazia pelo mesmo
+motivo.
+
+**E `GET /subgrupos/{id}/membros` caiu de `manager` pra `user`** (recortado
+por participação). Sem isso, quem tem papel `user` não conseguia atribuir
+tarefa a ninguém, **nem a si mesmo** -- ficava fora de "minhas tarefas", dos
+cartões da Área de trabalho e do lembrete de prazo. Detalhes no `CONTEXT.md`
+da API.
+
+**Verificado em Chrome com janela**, não só em jsdom: abrindo o quadro no
+Trabalhista e trocando pro Cível, a coluna passa de "Triagem" pra "A Fazer"
+e o `POST` sai com o par certo.
+
+### Escape fecha a camada de cima, não o que está atrás (25/08/2026)
+
+`Modal` fecha por um listener de `keydown` no `document`. O menu do
+`react-select` e o calendário do `DatePicker` respondem à mesma tecla. Sem
+coordenação, **um Escape com qualquer um deles aberto fechava os dois**: quem
+só queria dispensar a lista perdia o formulário e o texto já digitado.
+
+A interceptação fica em quem abre a camada, e não no `Modal`: cada um sabe se
+está aberto, e o `Modal` não teria como reconhecer toda camada flutuante
+(o menu do `Select` no modo `padrao` não carrega marca nenhuma).
+
+- **`Select`/`MultiSelect`:** pelo `onKeyDown` do react-select, que roda
+  ANTES do handler dele. `stopPropagation`, nunca `preventDefault` -- a lib
+  desiste do próprio tratamento se o evento vier com `defaultPrevented`, e
+  aí o modal fecharia e o menu ficaria aberto, o inverso exato do desejado.
+  No modo `chip` o menu é controlado por nós, então além de barrar o evento
+  é preciso fechá-lo à mão: quem o fechava era justamente o listener de
+  `document` que acabou de ser barrado.
+- **`SeletorData`:** a pergunta "está aberto?" vem do DOM
+  (`SELETOR_CALENDARIO`, a marca que a própria lib escreve), não de estado.
+  Tentei primeiro com estado alimentado por `onOpenChange` e no Escape ele
+  ainda vinha `false` -- sondado em Chrome.
+
+Verificado em Chrome nos três casos: a camada fecha, o modal fica, o texto
+digitado permanece, e um **segundo** Escape fecha o modal -- o comportamento
+normal continua de pé.
+
+⚠️ **Eu tinha escrito nos comentários que "jsdom não pega".** Errado: pega os
+dois casos, e a mutação prova. O defeito passou despercebido porque ninguém
+tinha escrito o teste, não porque o ambiente não alcançava.
 
 ### Auditorias de 24/08/2026 — seis rodadas depois da primeira
 

@@ -1,6 +1,6 @@
 import { Stack, Textarea } from "@chakra-ui/react";
 import { useId, useState, type FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 /* Irmãos importados um a um, e não pelo índice de `components`: este
    componente É exportado por aquele índice, e importar dele criaria um ciclo
@@ -14,32 +14,29 @@ import RodapeDeAcoes from "../RodapeDeAcoes";
 import { Select } from "../Select";
 import SeletorData from "../SeletorData";
 import { useToast } from "../Toast";
-import { criarTarefa, atualizarTarefa, removerTarefa } from "../../services";
+import {
+  criarTarefa,
+  atualizarTarefa,
+  removerTarefa,
+  listarQuadro,
+  listarMembrosDoSubgrupo,
+} from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
+import { qk } from "../../services/queryKeys";
 import { hojeISO, mascararNumeroProcesso } from "../../utils";
 import { PRIORIDADES } from "../../constants";
 import VinculoDaTarefa from "./VinculoDaTarefa";
 
-import type {
-  ColunaDoQuadro,
-  Membro,
-  Subgrupo,
-  Tarefa,
-  VinculosDaTarefa,
-} from "../../types";
+import type { Subgrupo, Tarefa, VinculosDaTarefa } from "../../types";
+import type { RespostaDeMembros, RespostaDoQuadro } from "../../types/respostas";
 
 interface ModalDeTarefaProps {
   /** Ausente = criando. */
   tarefa?: Tarefa | null;
+  /** Subgrupo em que o modal ABRE. Depois disso quem manda é o seletor:
+   * ao criar, a pessoa pode escolher outro. */
   subgrupoAtual: string;
   subgrupos: Subgrupo[];
-  colunas: ColunaDoQuadro[];
-  /** O quadro do subgrupo ainda está vindo. O botão "Nova tarefa" aparece
-   * assim que os SUBGRUPOS resolvem, então dá pra abrir este modal com as
-   * colunas a caminho -- e aí o seletor vinha vazio e o Salvar travado, sem
-   * dizer por quê. */
-  carregandoColunas?: boolean;
-  membros: Membro[];
   /** Coluna pré-escolhida, quando veio do "+ Nova atividade" de uma coluna. */
   colunaInicial?: string;
   /** Data pré-escolhida ao CRIAR -- é o dia que a Agenda tem à vista.
@@ -75,9 +72,6 @@ export default function ModalDeTarefa({
   tarefa,
   subgrupoAtual,
   subgrupos,
-  colunas,
-  carregandoColunas,
-  membros,
   colunaInicial,
   dataInicial,
   onSalvo,
@@ -89,9 +83,47 @@ export default function ModalDeTarefa({
   const [titulo, setTitulo] = useState(tarefa?.titulo ?? "");
   const [data, setData] = useState(tarefa?.data ?? dataInicial ?? hojeISO());
   const [subgrupoId, setSubgrupoId] = useState(tarefa?.subgrupo_id ?? subgrupoAtual);
-  const [colunaId, setColunaId] = useState(
-    tarefa?.coluna_id ?? colunaInicial ?? colunas[0]?.coluna_id ?? "",
-  );
+
+  /* 🔴 Quadro e membros seguem o subgrupo ESCOLHIDO AQUI, não o da tela.
+   *
+   * Os dois chegavam prontos por prop, vindos da página -- que só conhece o
+   * subgrupo que está exibindo. Trocar o subgrupo no formulário não mexia em
+   * nenhum deles, então o seletor continuava oferecendo as colunas do quadro
+   * anterior e o `POST` batia em `_validar_coluna`: "A coluna não pertence ao
+   * quadro deste subgrupo". Criar tarefa em qualquer subgrupo que não fosse o
+   * da tela era impossível.
+   *
+   * O mesmo valia pro responsável, por `_validar_responsavel`: a lista era a
+   * do GRUPO inteiro, e escolher alguém de fora do subgrupo dava
+   * "Responsável não é membro do subgrupo" -- defeito que existia mesmo sem
+   * trocar de subgrupo.
+   *
+   * As chaves são as mesmas que as páginas já usam (`qk.quadro`,
+   * `qk.membrosDoSubgrupo`), então o caso comum -- criar no subgrupo que já
+   * está aberto -- sai do cache, sem requisição nova. */
+  const quadroQuery = useQuery<RespostaDoQuadro>({
+    queryKey: qk.quadro(subgrupoId),
+    queryFn: () => listarQuadro(subgrupoId) as Promise<RespostaDoQuadro>,
+    enabled: Boolean(subgrupoId),
+  });
+  /** Ordenadas: a API não promete ordem, e a primeira coluna é o padrão. */
+  const colunas = [...(quadroQuery.data?.colunas ?? [])].sort((a, b) => a.ordem - b.ordem);
+
+  /* Quem pode ser responsável: os membros DO SUBGRUPO escolhido -- o mesmo
+     recorte que `_validar_responsavel` aplica no servidor.
+     Sem trava de papel: a rota tem piso `user`, e o recorte dela é
+     participar do subgrupo. Antes exigia `manager`, e o efeito era um `user`
+     não conseguir atribuir tarefa a ninguém -- nem a si mesmo, o que o
+     deixava fora de "minhas tarefas", dos cartões da Área de trabalho e do
+     lembrete de prazo. */
+  const membrosQuery = useQuery<RespostaDeMembros>({
+    queryKey: qk.membrosDoSubgrupo(subgrupoId),
+    queryFn: () => listarMembrosDoSubgrupo(subgrupoId) as Promise<RespostaDeMembros>,
+    enabled: Boolean(subgrupoId),
+  });
+  const membros = membrosQuery.data?.membros ?? [];
+
+  const [colunaId, setColunaId] = useState(tarefa?.coluna_id ?? colunaInicial ?? "");
   const [prioridade, setPrioridade] = useState(tarefa?.prioridade ?? "Média");
   const [responsavel, setResponsavel] = useState(tarefa?.responsavel_id ?? "");
   /** O rótulo inicial é o próprio número/id: o nome bonito (apelido do
@@ -113,6 +145,38 @@ export default function ModalDeTarefa({
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
   const toast = useToast();
 
+  /** A coluna que vai ser SALVA, derivada em vez de guardada.
+   *
+   * Guardada, ela ficava errada em dois momentos: enquanto o quadro ainda
+   * vinha (o estado nascia vazio e nada o preenchia depois -- Salvar ficava
+   * travado até a pessoa escolher à mão) e depois de trocar de subgrupo (a
+   * coluna escolhida era de outro quadro). Derivar resolve os dois com a
+   * mesma linha: se a coluna não está NESTE quadro, vale a primeira dele. */
+  const colunaEscolhida = colunas.some((c) => c.coluna_id === colunaId)
+    ? colunaId
+    : colunas[0]?.coluna_id ?? "";
+
+  /** Trocar de subgrupo joga fora o que era do subgrupo anterior.
+   *
+   * A coluna se resolve sozinha por `colunaEscolhida`; o responsável não --
+   * ele precisa ser zerado, senão alguém do subgrupo antigo seguiria
+   * escolhido e o salvamento falharia em `_validar_responsavel`. */
+  function trocarSubgrupo(novo: string) {
+    setSubgrupoId(novo);
+    setResponsavel("");
+  }
+
+  /** Quem está na lista + quem JÁ é o responsável, mesmo que tenha saído do
+   * subgrupo. Sem essa segunda parte, abrir a tarefa de alguém que saiu
+   * mostraria "Sem responsável" e salvar apagaria a atribuição em silêncio. */
+  const opcoesDeResponsavel = [
+    { value: "", label: "Sem responsável" },
+    ...membros.map((m) => ({ value: m.email, label: m.apelido || m.email })),
+    ...(responsavel && !membros.some((m) => m.email === responsavel)
+      ? [{ value: responsavel, label: responsavel }]
+      : []),
+  ];
+
   /** Os dois campos do vínculo, do jeito que a API espera: um preenchido e
    * o outro `null`. `null` explícito, e não omitido, porque é assim que se
    * DESFAZ um vínculo num PATCH parcial. */
@@ -127,7 +191,7 @@ export default function ModalDeTarefa({
         ? atualizarTarefa(tarefa.subgrupo_id, tarefa.tarefa_id, {
             titulo: titulo.trim(),
             data,
-            coluna_id: colunaId,
+            coluna_id: colunaEscolhida,
             prioridade,
             responsavel_id: responsavel || null,
             ...camposDoVinculo,
@@ -136,7 +200,7 @@ export default function ModalDeTarefa({
             subgrupo_id: subgrupoId,
             titulo: titulo.trim(),
             data,
-            coluna_id: colunaId,
+            coluna_id: colunaEscolhida,
             prioridade,
             responsavel_id: responsavel || null,
             ...camposDoVinculo,
@@ -191,7 +255,7 @@ export default function ModalDeTarefa({
           <Botao
             type="submit"
             form={idFormulario}
-            disabled={salvarMutation.isPending || !titulo.trim() || !colunaId}
+            disabled={salvarMutation.isPending || !titulo.trim() || !colunaEscolhida}
           >
             {salvarMutation.isPending ? "Salvando…" : "Salvar"}
           </Botao>
@@ -250,10 +314,7 @@ export default function ModalDeTarefa({
             <Campo rotulo="Responsável" para="tf-responsavel">
               <Select
                 id="tf-responsavel"
-                opcoes={[
-                  { value: "", label: "Sem responsável" },
-                  ...membros.map((m) => ({ value: m.email, label: m.apelido || m.email })),
-                ]}
+                opcoes={opcoesDeResponsavel}
                 valor={responsavel}
                 onMudar={setResponsavel}
               />
@@ -268,7 +329,7 @@ export default function ModalDeTarefa({
                 id="tf-subgrupo"
                 opcoes={subgrupos.map((s) => ({ value: s.subgrupo_id, label: s.nome }))}
                 valor={subgrupoId}
-                onMudar={setSubgrupoId}
+                onMudar={trocarSubgrupo}
                 desabilitado={editando}
               />
             </Campo>
@@ -282,9 +343,9 @@ export default function ModalDeTarefa({
             <Select
               id="tf-coluna"
               opcoes={colunas.map((c) => ({ value: c.coluna_id, label: c.nome }))}
-              valor={colunaId}
+              valor={colunaEscolhida}
               onMudar={setColunaId}
-              carregando={carregandoColunas}
+              carregando={quadroQuery.isPending}
             />
           </Campo>
         </Stack>
