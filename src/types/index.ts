@@ -182,16 +182,7 @@ export interface OpcoesRequisicao {
   query?: Record<string, string | string[] | undefined>;
 }
 
-/** Campos comuns do envelope de paginação real (backend: shared/paginacao.py). */
-export interface EnvelopePaginacao {
-  pagina: number;
-  tamanho_pagina: number;
-  total: number;
-  total_paginas: number;
-}
-
 export const TAMANHOS_PAGINA = [10, 20, 30, 50, 100] as const;
-export type TamanhoPagina = (typeof TAMANHOS_PAGINA)[number];
 
 /** Abas de topo do App.tsx. "grupo" agrupa Subgrupos/Membros/Convidar/
  * Fases/Situações como sub-navegação (ver GrupoPage + SubAbaId). */

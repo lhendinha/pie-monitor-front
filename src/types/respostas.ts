@@ -28,7 +28,7 @@ import type {
 
 /** Só a contagem, que é o que as telas leem do envelope.
  *
- * ⚠️ NÃO é o `EnvelopePaginacao` inteiro de propósito: o servidor manda
+ * ⚠️ NÃO é o envelope inteiro do servidor, de propósito: ele manda
  * `pagina` e `tamanho_pagina` junto, mas quem pagina no front já sabe em
  * que página está -- é ele quem pediu. Exigir os quatro campos obrigaria
  * todo teste a inventar dois números que ninguém lê. */
