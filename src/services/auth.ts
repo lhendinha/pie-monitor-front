@@ -1,7 +1,7 @@
 import type { JwtPayload, Papel, TokensResponse } from "../types";
 import { API_URL, HIERARQUIA_PAPEIS } from "../constants";
 import { ApiError } from "./api/client";
-import { dispararAutenticacaoInvalida } from "./authBridge";
+import { dispararAutenticacaoInvalida, dispararGrupoTrocado } from "./authBridge";
 import type {
   RespostaDeMensagem,
 } from "../types/respostas";
@@ -66,6 +66,14 @@ export function papelAtende(papelMinimo: Papel): boolean {
 
 function salvarTokens({ access_token, refresh_token, expira_em, email, apelido }: TokensResponse): void {
   const payload = decodificarPayload(access_token);
+  /* ⚠️ Lido ANTES de sobrescrever: é a única chance de saber que o grupo
+     mudou. O cache do React Query guarda dados do grupo ANTIGO, e uma tela já
+     montada seguiria mostrando o outro escritório até algo forçar refetch --
+     o mesmo vazamento que a verificação de sessão fecha no servidor.
+
+     Aqui e não no canal: assim vale também pro caminho 401 -> refresh, que
+     acontece mesmo com o WebSocket fechado. */
+  const grupoAnterior = localStorage.getItem(KEYS.grupoId);
   localStorage.setItem(KEYS.access, access_token);
   localStorage.setItem(KEYS.refresh, refresh_token);
   localStorage.setItem(KEYS.expira, String(expira_em));
@@ -74,6 +82,11 @@ function salvarTokens({ access_token, refresh_token, expira_em, email, apelido }
   else localStorage.removeItem(KEYS.apelido);
   localStorage.setItem(KEYS.papel, payload.papel || "");
   localStorage.setItem(KEYS.grupoId, payload.grupo_id || "");
+  /* Só quando MUDOU, e só quando havia grupo antes: no login o anterior é
+     `null` e limpar o cache seria trabalho à toa (ele está vazio). */
+  if (grupoAnterior && grupoAnterior !== (payload.grupo_id || "")) {
+    dispararGrupoTrocado();
+  }
 }
 
 /** Guarda o apelido novo depois de um `PATCH /me`.

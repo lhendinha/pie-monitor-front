@@ -3,7 +3,7 @@ import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { ApiError } from "./api";
 import { estaAutenticado } from "./auth";
 import { useToast } from "../components";
-import { dispararAutenticacaoInvalida } from "./authBridge";
+import { dispararAutenticacaoInvalida, setGrupoTrocadoListener } from "./authBridge";
 
 function ehSessaoExpirada(erro: unknown): boolean {
   if (!(erro instanceof ApiError) || erro.status !== 401) return false;
@@ -47,6 +47,38 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/** 🔴 Trocou de grupo -> o cache inteiro é de outro escritório.
+ *
+ * `auth.salvarTokens` dispara isto quando o token novo traz um `grupo_id`
+ * diferente do guardado -- vale tanto pro aviso que chega pelo canal quanto
+ * pro caminho 401 -> refresh. Sem limpar, uma tela já montada seguiria
+ * mostrando processos, clientes e tarefas do grupo ANTIGO até algo forçar
+ * refetch: o mesmo vazamento que o servidor passou a fechar, só que do lado
+ * de cá.
+ *
+ * 🔴 `resetQueries()`, e a escolha entre as três foi MEDIDA em Chrome, não
+ * deduzida. Cenário: dado do grupo antigo em cache, a pessoa é movida, a
+ * requisição seguinte toma 401 e renova. Amostrando a tela a cada 200ms
+ * (A = dado do grupo antigo, N = do novo):
+ *
+ *     clear()               AAAAAAAAAAAAAAAAAAAAAAAAA
+ *     invalidateQueries()   AAAAAAAAAAAANNNNNNNNNNNNN
+ *     resetQueries()        .............NNNNNNNNNNNN
+ *
+ * `clear()` era a escolha "óbvia" e é a pior: ela REMOVE a consulta que está
+ * em voo, a resposta que chega é descartada, e a tela fica com o dado antigo
+ * (ou vazia) sem nunca se corrigir. `invalidateQueries()` refetcha mas deixa
+ * o dado do outro inquilino na tela até a resposta nova chegar -- o mesmo que
+ * não fazer nada. `resetQueries()` descarta E refaz: a tela mostra o estado
+ * de carregamento e depois o dado certo.
+ *
+ * ⚠️ Registrado aqui, e não em `auth.ts`: aquele módulo não pode importar
+ * este (`queryClient` já importa `auth` pra `estaAutenticado`, e o ciclo
+ * quebraria). É a mesma razão pela qual `dispararAutenticacaoInvalida`
+ * existe.
+ */
+setGrupoTrocadoListener(() => queryClient.resetQueries());
 
 /** Substitui o `onError` que não existe mais em `useQuery` no RQ v5 -- chama
  * pra cada query de leitura, com a mensagem de erro genérica daquela tela.

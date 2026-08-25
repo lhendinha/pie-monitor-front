@@ -4,6 +4,8 @@ import { renderComProviders } from "../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   dispararAutenticacaoInvalida: vi.fn(),
+  // `queryClient.ts` registra o listener de troca de grupo no import.
+  setGrupoTrocadoListener: vi.fn(),
 }));
 
 vi.mock("./authBridge", () => mocks);

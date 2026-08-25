@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { JwtPayload, TokensResponse } from "../types";
-import { setAutenticacaoInvalidaListener } from "./authBridge";
+import { setAutenticacaoInvalidaListener, setGrupoTrocadoListener } from "./authBridge";
 import {
   ehSuperAdmin,
   estaAutenticado,
@@ -311,5 +311,67 @@ describe("tokenVenceEm", () => {
      * avaliar. */
     localStorage.removeItem("pje-monitor-expira-em");
     expect(tokenVenceEm(600)).toBe(true);
+  });
+});
+
+
+describe("troca de grupo derruba o cache", () => {
+  /** 🔴 O servidor passou a recusar token que discorda do banco, e o front
+   * renova sozinho -- mas o React Query continua com os dados do grupo
+   * ANTIGO em cache. Uma tela já montada seguiria mostrando processos,
+   * clientes e tarefas de OUTRO escritório até algo forçar refetch. É o mesmo
+   * vazamento que a verificação fecha no servidor, do lado de cá.
+   *
+   * O detector mora em `salvarTokens` de propósito: assim vale pros dois
+   * caminhos -- o aviso que chega pelo canal e o 401 -> refresh.
+   */
+  afterEach(() => setGrupoTrocadoListener(null));
+
+  it("avisa quando o token novo traz outro grupo", async () => {
+    const avisou = vi.fn();
+    setGrupoTrocadoListener(avisou);
+    localStorage.setItem("pje-monitor-refresh-token", "r");
+    localStorage.setItem("pje-monitor-grupo-id", "grupo-antigo");
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => tokensResponse({}, { grupo_id: "grupo-novo" }),
+    } as Response);
+
+    await renovarToken();
+
+    expect(avisou).toHaveBeenCalledTimes(1);
+    expect(getGrupoId()).toBe("grupo-novo");
+  });
+
+  it("NÃO avisa quando o grupo é o mesmo", async () => {
+    /* Renovação de rotina acontece o tempo todo (o token dura 24h). Limpar o
+       cache em toda uma faria a tela recarregar tudo sem motivo. */
+    const avisou = vi.fn();
+    setGrupoTrocadoListener(avisou);
+    localStorage.setItem("pje-monitor-refresh-token", "r");
+    localStorage.setItem("pje-monitor-grupo-id", "grupo-igual");
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => tokensResponse({}, { grupo_id: "grupo-igual" }),
+    } as Response);
+
+    await renovarToken();
+
+    expect(avisou).not.toHaveBeenCalled();
+  });
+
+  it("NÃO avisa no login, quando não havia grupo antes", async () => {
+    /* No primeiro login o cache está vazio -- limpar seria trabalho à toa, e
+       o "anterior" é `null`, não um grupo de verdade. */
+    const avisou = vi.fn();
+    setGrupoTrocadoListener(avisou);
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => tokensResponse({}, { grupo_id: "grupo-primeiro" }),
+    } as Response);
+
+    await login("a@x.com", "senha");
+
+    expect(avisou).not.toHaveBeenCalled();
   });
 });

@@ -1,11 +1,24 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => ({ estaAutenticado: vi.fn(), dispararAutenticacaoInvalida: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  estaAutenticado: vi.fn(),
+  dispararAutenticacaoInvalida: vi.fn(),
+  // `queryClient.ts` registra o listener de troca de grupo no import.
+  setGrupoTrocadoListener: vi.fn(),
+}));
 vi.mock("./auth", () => ({ estaAutenticado: mocks.estaAutenticado }));
-vi.mock("./authBridge", () => ({ dispararAutenticacaoInvalida: mocks.dispararAutenticacaoInvalida }));
+vi.mock("./authBridge", () => ({
+  dispararAutenticacaoInvalida: mocks.dispararAutenticacaoInvalida,
+  setGrupoTrocadoListener: mocks.setGrupoTrocadoListener,
+}));
 
 import { ApiError } from "./api";
 import { queryClient } from "./queryClient";
+
+/** ⚠️ Capturado no NÍVEL DE MÓDULO: `queryClient.ts` registra o listener uma
+ * vez, no import, e o `beforeEach` com `clearAllMocks` apaga esse registro
+ * antes do primeiro teste rodar. */
+const listenerDeGrupo = mocks.setGrupoTrocadoListener.mock.calls[0]?.[0];
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -117,5 +130,42 @@ describe("leitura e escrita explicam o 401 transitório do mesmo jeito", () => {
     )["./queryClient.ts"];
     const noHook = fonte.slice(fonte.indexOf("useToastOnQueryError"));
     expect(noHook).toContain("ehFalhaTransitoriaDeRenovacao");
+  });
+});
+
+
+describe("troca de grupo reseta o cache", () => {
+  /** 🔴 `resetQueries()`, não `clear()` nem `invalidateQueries()` -- e a
+   * diferença foi MEDIDA em Chrome, amostrando a tela a cada 200ms depois de
+   * uma troca de grupo (A = dado do grupo antigo, N = do novo):
+   *
+   *     clear()               AAAAAAAAAAAAAAAAAAAAAAAAA
+   *     invalidateQueries()   AAAAAAAAAAAANNNNNNNNNNNNN
+   *     resetQueries()        .............NNNNNNNNNNNN
+   *
+   * `clear()` remove a consulta EM VOO, a resposta que chega é descartada e a
+   * tela nunca se corrige. `invalidateQueries()` deixa o dado do outro
+   * inquilino na tela até a resposta nova chegar -- o mesmo que não fazer
+   * nada. Só `resetQueries()` descarta e refaz.
+   *
+   * Este teste existe porque trocar uma pela outra não quebra nada visível
+   * em jsdom: as três "funcionam", e duas fazem a coisa errada.
+   */
+  it("o listener registrado chama resetQueries", () => {
+    expect(listenerDeGrupo, "queryClient.ts precisa registrar o listener no import")
+      .toBeTypeOf("function");
+
+    const reset = vi.spyOn(queryClient, "resetQueries").mockReturnValue(Promise.resolve());
+    const clear = vi.spyOn(queryClient, "clear");
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+    listenerDeGrupo!();
+
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(clear).not.toHaveBeenCalled();
+    expect(invalidate).not.toHaveBeenCalled();
+    reset.mockRestore();
+    clear.mockRestore();
+    invalidate.mockRestore();
   });
 });

@@ -5,6 +5,7 @@ import {
   TIPO_ATENDIMENTO_STATUS,
   TIPO_LEMBRETE,
   TIPO_TAREFA_ATRIBUIDA,
+  TIPO_SESSAO_ALTERADA,
   TIPO_TAREFA_MOVIDA,
 } from "../constants";
 import type { Notificacao } from "../types";
@@ -41,6 +42,11 @@ export function frasePrincipal(n: Notificacao, nomeDoAutor: (email: string) => s
 /** O que aparece embaixo da frase: o objeto e, quando ajuda, o
  * complemento. */
 export function detalheSecundario(n: Notificacao): string {
+  /* ⚠️ Vazio de propósito: o título de `sessao_alterada` já É a frase
+     inteira ("Você foi movido para o grupo X"), e o `default` desta função
+     devolve o título -- sem esta linha, a MESMA frase apareceria duas vezes
+     na linha do sino, como principal e como secundária. */
+  if (n.tipo === TIPO_SESSAO_ALTERADA) return "";
   if (n.tipo === TIPO_LEMBRETE) return n.titulo;
   if (n.tipo === TIPO_TAREFA_MOVIDA && n.detalhe) return `${n.titulo} → ${n.detalhe}`;
   if (n.tipo === TIPO_ATENDIMENTO_STATUS && n.detalhe) return `${n.titulo} · ${n.detalhe}`;

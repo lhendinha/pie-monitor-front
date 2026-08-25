@@ -26,8 +26,8 @@ alias do Vercel é que passou a ser `argos-monitor`, junto com a renomeação do
 produto pra Argos. Conferir publicação por um endereço morto dá "não subiu"
 pra um deploy que subiu. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
-de testes com `vitest` + `@testing-library/react` (`yarn test`): 58 arquivos,
-555 testes, cobrindo `pages/` (27 arquivos), `components/` (11), `utils/`
+de testes com `vitest` + `@testing-library/react` (`yarn test`): 59 arquivos,
+562 testes, cobrindo `pages/` (27 arquivos), `components/` (11), `utils/`
 (9), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
 `react-hooks` e passa sem erros.
 
@@ -265,6 +265,54 @@ estado (`FiltrosProcessos.clienteNome`, `FiltrosDaAgenda.subgrupoNomes`).
 ⚠️ E o nome fica **fora** do objeto que vira `queryKey` e query string: é
 rótulo de tela, não critério de busca. Dentro, a mesma consulta viraria duas
 entradas de cache e `temFiltroAtivo` contaria um filtro que não filtra nada.
+
+### Trocar de grupo derruba o cache -- e `clear()` era a escolha errada (25/08/2026)
+
+O servidor passou a recusar token que discorda do banco (ver o `CONTEXT.md` da
+API). O front já sabia lidar com 401: renova sozinho e repete. Faltava uma
+coisa: **o React Query continua com os dados do grupo ANTIGO em cache**, e uma
+tela já montada seguiria mostrando o outro escritório até algo forçar refetch.
+
+O detector mora em `salvarTokens`, que compara o `grupo_id` do token novo com o
+guardado -- assim vale pros DOIS caminhos: o aviso que chega pelo canal e o
+401 -> refresh, que acontece mesmo com o WebSocket fechado.
+
+🔴 **A reação certa foi MEDIDA, e a "óbvia" era a pior.** Amostrando a tela a
+cada 200ms depois de uma troca de grupo, em Chrome (A = dado do escritório
+antigo, N = do novo):
+
+```
+clear()               AAAAAAAAAAAAAAAAAAAAAAAAA
+invalidateQueries()   AAAAAAAAAAAANNNNNNNNNNNNN
+resetQueries()        .............NNNNNNNNNNNN
+```
+
+`clear()` REMOVE a consulta que está em voo: a resposta que chega é
+descartada e a tela nunca se corrige -- fica com o dado do outro inquilino, ou
+vazia. Eu tinha escolhido essa, com uma justificativa que soava boa ("invalidar
+deixa o dado antigo na tela, e ele não pode ficar nem um instante").
+`invalidateQueries()` refetcha mas mostra o dado alheio até a resposta chegar,
+ou seja, o mesmo que não fazer nada. Só `resetQueries()` descarta E refaz.
+
+⚠️ **Dois testes meus não provavam nada antes de eu rodar o controle:** o
+primeiro navegava com `page.goto`, que recarrega a página e destrói o cache de
+qualquer jeito; o segundo devolvia o MESMO cliente para os dois grupos, então
+"o dado reapareceu" não distinguia cache mantido de cache refeito. Sem o
+controle, eu teria subido o `clear()` achando que estava verificado.
+
+⚠️ O `authBridge` ganhou uma vaga SEPARADA (`setGrupoTrocadoListener`). Ele tem
+um slot só, e reusá-lo atropelaria a transição de sessão expirada. Quem
+registra é `queryClient.ts`, dono do cache: `auth.ts` não pode importar o
+queryClient, que já importa `auth` pra `estaAutenticado`.
+
+**Verificação de ponta a ponta, local:** `scripts/verificar-sessao.mjs` contra
+a API real (`api/scripts/api_local.py`). Login real, a pessoa é movida por
+fora da tela, e ela só NAVEGA:
+
+| | grupo no navegador | escritório antigo | escritório novo |
+|---|---|---|---|
+| sem a verificação | `g-alfa` | **aparece** | não |
+| com a verificação | `g-beta` | não | aparece |
 
 ### Auditoria da rodada de 25/08/2026 — cinco defeitos, todos em Chrome
 

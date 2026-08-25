@@ -5,6 +5,7 @@ import {
   INTERVALO_DO_PING_MS,
   MARGEM_DO_TOKEN_SEGUNDOS,
   RECONEXAO_DO_CANAL,
+  TIPO_SESSAO_ALTERADA,
   urlDoCanal,
 } from "../constants";
 import { renovarTokenCompartilhado } from "../services/api/client";
@@ -68,7 +69,23 @@ export function useCanalDeNotificacoes(aoChegar: () => void) {
     socket.addEventListener("message", (evento) => {
       try {
         const corpo = JSON.parse(evento.data) as MensagemDoCanal;
-        if (corpo.tipo === "notificacao") aoChegar();
+        if (corpo.tipo !== "notificacao") return;
+        aoChegar();
+        /* 🔴 Uma notificação que não é só aviso: ela CORRIGE a sessão.
+         *
+         * O servidor passou a recusar token que discorda do banco, e o front
+         * já renova sozinho no 401 -- mas numa aba parada não sai requisição
+         * nenhuma, e ela seguiria mostrando o grupo antigo até alguém clicar
+         * em algo. Renovar aqui antecipa isso.
+         *
+         * ⚠️ Renovar, não deslogar. `emitir_tokens` relê o banco, então o
+         * token novo já vem com o grupo e o papel certos: a pessoa não digita
+         * senha, a tela dela só passa a mostrar o grupo novo. Se a renovação
+         * falhar (conta apagada, por exemplo), o fluxo de 401 que já existe
+         * cuida do logout. */
+        if (corpo.notificacao?.tipo === TIPO_SESSAO_ALTERADA) {
+          void renovarTokenCompartilhado().catch(() => false);
+        }
       } catch {
         /* Mensagem que não é JSON não deveria acontecer, mas derrubar o
            canal por causa dela seria pior que ignorá-la. */

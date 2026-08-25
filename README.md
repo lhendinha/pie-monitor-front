@@ -94,7 +94,7 @@ yarn test         # roda uma vez (CI)
 yarn test:watch   # modo watch
 ```
 
-`vitest` + `@testing-library/react` + `jsdom`. 555 testes em 58 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+`vitest` + `@testing-library/react` + `jsdom`. 562 testes em 59 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
 
 ## Filtros em pílula: primeira página + busca
 
@@ -119,6 +119,23 @@ trabalho proporcional ao tamanho da lista rodando a cada tecla — o
 react-select desenha uma linha de DOM por opção, sem virtualização, e por
 isso o filtro local tem teto de 50 (com o painel dizendo quantos ficaram de
 fora).
+
+## Verificar contra a API de verdade, sem stub
+
+Os outros scripts stubam a rede. Este não: ele dirige o front contra o
+`src.api.app` rodando local, o que é o único jeito de exercitar a costura
+entre os dois lados.
+
+```bash
+cd ../api && python scripts/api_local.py          # numa aba
+VITE_API_URL=http://localhost:8099 yarn dev --port 5174   # noutra
+node scripts/verificar-sessao.mjs
+```
+
+O caso que ele cobre: alguém é movida de escritório por um `super_admin`, e a
+tela dela tem que se corrigir sozinha — sem digitar senha, sem F5. Sem a
+verificação de sessão no servidor, ela continua vendo — e gravando — no
+escritório antigo.
 
 ## Segurança (headers)
 
@@ -165,6 +182,7 @@ vercel.json                 -- SPA fallback (o link de convite/redefinição dep
 scripts/                    -- verificação visual em Chrome DE VERDADE, com janela
   verificar-tela.mjs        -- abre uma tela com a API stubada
   medir-digitacao.mjs       -- custo POR TECLA nas pílulas com busca (ver abaixo)
+  verificar-sessao.mjs      -- fluxo completo contra a API REAL (ver abaixo)
   medir-painel.mjs, comparar-painel.mjs, screenshot.mjs
 vite.config.ts              -- Vite + React Compiler + vitest (jsdom)
 eslint.config.js            -- config enxuta, focada no que pega bug
