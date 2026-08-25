@@ -78,9 +78,6 @@ export const COLUNA_DATAS = {
   espacoEntreCampos: "12px",
 } as const;
 
-/** Rolagem da lista de opções, para o painel não crescer sem fim. */
-export const ALTURA_LISTA = 240;
-
 /** "Nenhuma opção disponível." -- respira mais que uma opção comum, senão o
  * painel vazio fica com a frase espremida contra a divisória. */
 export const MENSAGEM_VAZIA = {

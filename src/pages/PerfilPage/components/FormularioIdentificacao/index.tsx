@@ -14,6 +14,7 @@ import {
 import { useSessaoContexto } from "../../../../contexts/SessaoContext";
 import { atualizarMeuPerfil, getEmail } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
+import { TAMANHO_MAXIMO_DO_APELIDO } from "../../../../constants";
 
 interface FormularioIdentificacaoProps {
   onAlterarSenha: () => void;
@@ -61,7 +62,7 @@ export default function FormularioIdentificacao({ onAlterarSenha }: FormularioId
           id="apelido-perfil"
           value={apelido}
           onChange={(e) => setApelido(e.target.value)}
-          maxLength={512}
+          maxLength={TAMANHO_MAXIMO_DO_APELIDO}
           placeholder="Como quer ser chamado"
         />
       </Campo>

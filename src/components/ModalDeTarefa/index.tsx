@@ -24,7 +24,7 @@ import {
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { hojeISO, mascararNumeroProcesso } from "../../utils";
-import { PRIORIDADES } from "../../constants";
+import { PRIORIDADES, TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA } from "../../constants";
 import VinculoDaTarefa from "./VinculoDaTarefa";
 
 import type { Subgrupo, Tarefa, VinculosDaTarefa } from "../../types";
@@ -269,7 +269,7 @@ export default function ModalDeTarefa({
               id="tf-titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              maxLength={512}
+              maxLength={TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA}
               autoFocus
             />
           </Campo>

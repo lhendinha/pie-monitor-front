@@ -39,6 +39,7 @@ import { posicaoValidaNoQuadro } from "../../posicaoDeColuna";
 import LinhaDeColuna from "../LinhaDeColuna";
 import type { ColunaDoQuadro } from "../../../../types";
 import type { RenomearColuna } from "../../types";
+import { TAMANHO_MAXIMO_DE_NOME } from "../../../../constants";
 
 interface ModalDoQuadroProps {
   subgrupoId: string;
@@ -230,7 +231,7 @@ export default function ModalDoQuadro({
                   value={nova}
                   onChange={(e) => setNova(e.target.value)}
                   placeholder="Nome da coluna"
-                  maxLength={120}
+                  maxLength={TAMANHO_MAXIMO_DE_NOME}
                 />
                 <Botao type="submit" disabled={criarMutation.isPending || !nova.trim()}>
                   <IconePlus />

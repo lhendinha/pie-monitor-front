@@ -1,6 +1,7 @@
 import type { GroupBase, StylesConfig } from "react-select";
 import { Z_INDEX_MENU_PORTAL } from "../constants/select";
-import { ALTURA_LISTA, MENSAGEM_VAZIA, OPCAO_CAIXA, OPCAO_LINHA, PAINEL } from "../theme/painelFiltro";
+import { ALTURA_MAXIMA_MENU } from "../constants/select";
+import { MENSAGEM_VAZIA, OPCAO_CAIXA, OPCAO_LINHA, PAINEL } from "../theme/painelFiltro";
 import { PILULA, coresPilula } from "../theme/pilula";
 import { cores, raios, sombras } from "../theme/tokens";
 import type { FormaDaOpcaoDeSelect, OpcaoDeSelect } from "../types";
@@ -164,7 +165,7 @@ export function estilosChip(
       boxShadow: sombras.md,
       overflow: "hidden",
     }),
-    menuList: (base) => ({ ...base, maxHeight: ALTURA_LISTA, padding: "0 2px" }),
+    menuList: (base) => ({ ...base, maxHeight: ALTURA_MAXIMA_MENU, padding: "0 2px" }),
     option: (base, estado) => ({
       ...base,
       ...estiloDaOpcao(formaDaOpcao, estado.isSelected, estado.isFocused),

@@ -13,12 +13,7 @@ import {
   Select,
   useToast,
 } from "../../../../components";
-import {
-  ESCOLHA_UM_SUBGRUPO,
-  FALHOU_AO_CONFERIR_SUBGRUPOS,
-  HIERARQUIA_PAPEIS,
-  NOME_PAPEL,
-} from "../../../../constants";
+import { ESCOLHA_UM_SUBGRUPO, FALHOU_AO_CONFERIR_SUBGRUPOS, HIERARQUIA_PAPEIS, NOME_PAPEL, TAMANHO_MAXIMO_DO_APELIDO } from "../../../../constants";
 import {
   atualizarMembro,
   getGrupoId,
@@ -204,7 +199,7 @@ export default function EditarMembroForm({ membro, grupos, onAtualizado, onFecha
               id="apelido-membro"
               value={apelido}
               onChange={(e) => setApelido(e.target.value)}
-              maxLength={512}
+              maxLength={TAMANHO_MAXIMO_DO_APELIDO}
               autoFocus
             />
           </Campo>

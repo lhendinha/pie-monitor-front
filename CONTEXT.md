@@ -20,7 +20,7 @@ Front reescrito em TypeScript, estrutura em camadas (`pages/`, `services/`,
 no **Vercel** em `pie-monitor-front.vercel.app`. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
 de testes com `vitest` + `@testing-library/react` (`yarn test`): 56 arquivos,
-544 testes, cobrindo `pages/` (26 arquivos), `components/` (11), `utils/`
+546 testes, cobrindo `pages/` (26 arquivos), `components/` (11), `utils/`
 (8), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
 `react-hooks` e passa sem erros.
 
@@ -108,6 +108,45 @@ AgendaPage/
   hooks/useTarefasDaAgenda.ts  …
   components/VisaoPorMes/index.tsx  …
 ```
+
+### Teto de campo: o front discordava de si mesmo (25/08/2026)
+
+Cada formulário escrevia o próprio `maxLength`, e por isso eles não batiam.
+O nome do cliente é o caso que fecha o argumento:
+
+| onde | teto |
+|---|---|
+| criar cliente | **nenhum** |
+| editar cliente | **256** |
+| o que o servidor aceita | **512** |
+
+Três respostas para a mesma pergunta, no mesmo campo. Quem cadastrasse uma
+razão social longa passava pela criação e **não conseguia corrigi-la
+depois**; quem tentasse editar batia numa parede invisível na metade do que
+o sistema permite -- sem mensagem, porque `maxLength` não avisa, só para de
+aceitar tecla.
+
+Os tetos agora vêm de `constants/limites.ts`, no mesmo espírito de
+`constants/senha.ts`: **quem decide continua sendo o servidor**, isto é
+conveniência pra a pessoa não descobrir o limite depois de enviar.
+
+⚠️ A tela de Configurações do grupo NÃO usa a constante, e faz certo: ela lê
+`nome_tamanho_maximo` de `GET /configuracoes`. Onde dá pra perguntar,
+perguntar é melhor que espelhar.
+
+⚠️ Vários tetos valem 512 e continuam SEPARADOS, igual do lado da API: valor
+igual não é decisão igual.
+
+**E `ALTURA_MAXIMA_MENU` existia duas vezes**, com nomes diferentes -- aqui e
+como `ALTURA_LISTA` em `theme/painelFiltro.ts`, ambos 240. Os dois limitam a
+MESMA lista do MESMO componente por caminhos diferentes (`maxMenuHeight` na
+variante `padrao`, `menuList.maxHeight` na `chip`): mudar um só faria as duas
+variantes do mesmo `Select` discordarem de altura.
+
+`constants/limites.test.ts` varre por LITERAL, não por campo -- um número
+solto num `maxLength` já é a duplicata, tenha nome do outro lado ou não. Tem
+um teste de controle junto: sem ele, apagar todos os `maxLength` do projeto
+também deixaria a lista vazia e o teste verde.
 
 ### Arrumação de 25/08/2026: env, tipos e rotas
 

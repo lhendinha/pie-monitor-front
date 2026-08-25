@@ -17,6 +17,7 @@ import { apenasDigitos, mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../CamposProcesso";
 import type { Subgrupo } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../types";
+import { TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO } from "../../../../constants";
 
 
 interface NovoProcessoFormProps {
@@ -144,7 +145,7 @@ export default function NovoProcessoForm({
             id="apelido"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            maxLength={512}
+            maxLength={TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO}
           />
         </Campo>
 

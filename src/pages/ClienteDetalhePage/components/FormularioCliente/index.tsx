@@ -7,6 +7,7 @@ import { atualizarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
 import type { Cliente } from "../../../../types";
+import { TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
 
 interface FormularioClienteProps {
   cliente: Cliente;
@@ -76,7 +77,7 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
             id="nome-cliente-edicao"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            maxLength={256}
+            maxLength={TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE}
           />
         </Campo>
 

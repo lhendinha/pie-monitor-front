@@ -6,6 +6,7 @@ import { Botao, Campo, Modal, RodapeDeAcoes, useToast } from "../../../../compon
 import { criarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
+import { TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
 
 interface NovoClienteFormProps {
   onCadastrado: () => void;
@@ -83,6 +84,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Nome do cliente"
+            maxLength={TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE}
             autoFocus
           />
         </Campo>

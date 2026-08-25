@@ -16,6 +16,7 @@ import { mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../../../ProcessosPage/components/CamposProcesso";
 import type { Processo } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../types";
+import { TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO } from "../../../../constants";
 
 interface FormularioProcessoProps {
   processo: Processo;
@@ -98,7 +99,7 @@ export default function FormularioProcesso({
             id="apelido-edicao"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            maxLength={512}
+            maxLength={TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO}
             placeholder="Um nome curto pra identificar o processo"
           />
         </Campo>
