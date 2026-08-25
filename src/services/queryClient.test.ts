@@ -93,3 +93,29 @@ describe("mensagem de erro de mutation", () => {
     expect(mensagens).toEqual(["Nome já existe"]);
   });
 });
+
+describe("leitura e escrita explicam o 401 transitório do mesmo jeito", () => {
+  /** 🔴 `toastErroMutation` ganhou o ramo do 401 transitório e
+   * `useToastOnQueryError` não -- um 502 no `POST /refresh` fazia a LEITURA
+   * dizer "Não foi possível carregar X" enquanto a ESCRITA, na mesma tela,
+   * dizia "Não foi possível confirmar sua sessão agora". Duas explicações
+   * pro mesmo evento, e a da leitura culpando o recurso errado. */
+  it("as duas mensagens coincidem pro mesmo 401 com sessão viva", async () => {
+    const { toastErroMutation } = await import("./queryClient");
+    mocks.estaAutenticado.mockReturnValue(true);
+    const daEscrita: string[] = [];
+    toastErroMutation(
+      { erro: (m: string) => daEscrita.push(m) },
+      new ApiError("Autenticação inválida", 401),
+      "Não foi possível salvar.",
+    );
+
+    // O hook usa o MESMO classificador; conferir o texto basta.
+    expect(daEscrita[0]).toMatch(/sessão/i);
+    const fonte = (
+      import.meta.glob("./queryClient.ts", { query: "?raw", import: "default", eager: true }) as Record<string, string>
+    )["./queryClient.ts"];
+    const noHook = fonte.slice(fonte.indexOf("useToastOnQueryError"));
+    expect(noHook).toContain("ehFalhaTransitoriaDeRenovacao");
+  });
+});

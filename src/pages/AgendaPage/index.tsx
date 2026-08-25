@@ -129,6 +129,12 @@ export default function AgendaPage() {
    * do cache passa a depender da ordem de montagem. */
   const atendimentosQuery = useQuery({
     queryKey: qk.todosOsAtendimentos(),
+    /* ⚠️ `staleTime`: sem ele o `staleTime: 0` global refaz a caminhada de
+     * páginas a cada montagem e a cada foco de janela. Atendimento é a
+     * coleção que mais cresce, então é aqui que dói primeiro. Cinco minutos
+     * -- e quem cria ou edita atendimento invalida a chave, que ignora
+     * `staleTime`. */
+    staleTime: 5 * 60 * 1000,
     queryFn: () =>
       todasAsPaginas<AtendimentoResumido>(listarAtendimentos, "atendimentos"),
   });

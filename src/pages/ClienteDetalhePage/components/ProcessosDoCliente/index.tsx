@@ -23,6 +23,23 @@ export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProp
 
   if (query.isPending) return <Esqueleto linhas={2} />;
 
+  // 🔴 Erro NÃO é lista vazia.
+  //
+  // Sem isto, `query.data || []` fazia o cartão AFIRMAR "Nenhum processo
+  // vinculado a este cliente" pra um cliente que tem 25. O toast some em
+  // 4,5s; a afirmação falsa fica na tela.
+  //
+  // O irmão desta mesma leva -- `TarefasVinculadas` -- já tratava assim, e
+  // com o mesmo raciocínio escrito. Porta irmã que ficou aberta um arquivo
+  // ao lado.
+  if (query.isError) {
+    return (
+      <Text fontSize="13px" color="status.bad.text">
+        Não foi possível carregar os processos deste cliente.
+      </Text>
+    );
+  }
+
   const processos = query.data || [];
   if (processos.length === 0) {
     return (

@@ -26,9 +26,25 @@ import type { Cliente, Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from
  * A regra que sai disso: **uma chave, uma função de busca.** Toda tela que
  * precisa de um catálogo usa o hook daqui.
  */
+/** Quanto tempo um catálogo completo vale sem reconsultar.
+ *
+ * 🔴 O `staleTime: 0` global do QueryClient faz TODA montagem e TODO foco de
+ * janela refazerem a busca -- e catálogo completo é uma caminhada de N
+ * páginas, sequencial. Na Agenda, com atendimentos passando de mil, isso
+ * vira dezenas de requisições em fila só pra rotular tarefas vinculadas,
+ * toda vez que a pessoa volta pra aba.
+ *
+ * Cinco minutos é seguro porque estes dados não mudam sozinhos: quem os
+ * altera invalida a chave explicitamente (`qk.prefixo*`), e invalidação
+ * ignora `staleTime`. O `staleTime` só evita a repetição por montagem e por
+ * foco, que é exatamente o desperdício.
+ */
+const VALIDADE_DO_CATALOGO_MS = 5 * 60 * 1000;
+
 export function useTodosOsClientes() {
   return useQuery({
     queryKey: qk.todosOsClientes(),
+    staleTime: VALIDADE_DO_CATALOGO_MS,
     queryFn: () => todasAsPaginas<Cliente>(listarClientes, "clientes"),
   });
 }
@@ -36,6 +52,7 @@ export function useTodosOsClientes() {
 export function useTodosOsSubgrupos() {
   return useQuery({
     queryKey: qk.todosOsSubgrupos(),
+    staleTime: VALIDADE_DO_CATALOGO_MS,
     queryFn: () => todasAsPaginas<Subgrupo>(listarSubgrupos, "subgrupos"),
   });
 }
@@ -43,6 +60,7 @@ export function useTodosOsSubgrupos() {
 export function useOpcoesDeProcesso(tipo: TipoOpcaoProcesso) {
   return useQuery({
     queryKey: qk.todasAsOpcoes(tipo),
+    staleTime: VALIDADE_DO_CATALOGO_MS,
     queryFn: () => todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso(tipo, o), "opcoes"),
   });
 }
@@ -50,6 +68,7 @@ export function useOpcoesDeProcesso(tipo: TipoOpcaoProcesso) {
 export function useTodosOsMembros(habilitado = true) {
   return useQuery({
     queryKey: qk.todosOsMembros(),
+    staleTime: VALIDADE_DO_CATALOGO_MS,
     /* 🔴 `queryFn` guarda a resposta INTEIRA; `select` é que expõe o array.
      *
      * A versão anterior desembrulhava dentro do `queryFn`, então o cache

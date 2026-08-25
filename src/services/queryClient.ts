@@ -51,6 +51,21 @@ export const queryClient = new QueryClient({
 /** Substitui o `onError` que não existe mais em `useQuery` no RQ v5 -- chama
  * pra cada query de leitura, com a mensagem de erro genérica daquela tela.
  * Ignora 401 (a transição de sessão expirada já é global, ver authBridge). */
+/** 401 que veio de uma renovação que falhou por motivo TRANSITÓRIO.
+ *
+ * 🔴 Terceiro caso, que a versão anterior não tinha. Depois que
+ * `ehSessaoExpirada` passou a exigir "tokens sumiram", o 401 de um
+ * `/refresh` que devolveu 502 durante um deploy deixou de ser suprimido --
+ * e caía no `toast.erro(erro.message)`, mostrando "Autenticação inválida"
+ * pra quem só pegou dez segundos de instabilidade. A sessão continua de pé,
+ * então a mensagem estava errada nas duas pontas: assustava e não dizia o
+ * que fazer.
+ */
+function ehFalhaTransitoriaDeRenovacao(erro: unknown): boolean {
+  return erro instanceof ApiError && erro.status === 401 && estaAutenticado();
+}
+
+
 export function useToastOnQueryError(erro: unknown, mensagem: string) {
   const toast = useToast();
   /** ⚠️ Guarda a última mensagem já avisada, e não só o erro.
@@ -69,9 +84,19 @@ export function useToastOnQueryError(erro: unknown, mensagem: string) {
       jaAvisado.current = null;
       return;
     }
-    if (jaAvisado.current === mensagem) return;
-    jaAvisado.current = mensagem;
-    toast.erro(mensagem);
+    /* 🔴 Mesmo tratamento do lado das mutations.
+     *
+     * `toastErroMutation` ganhou o ramo do 401 transitório e este hook não
+     * -- então um 502 no `POST /refresh` fazia a LEITURA dizer "Não foi
+     * possível carregar os processos" enquanto a ESCRITA, na mesma tela,
+     * dizia "Não foi possível confirmar sua sessão agora". Duas explicações
+     * pro mesmo evento, e a da leitura culpando o recurso errado. */
+    const texto = ehFalhaTransitoriaDeRenovacao(erro)
+      ? "Não foi possível confirmar sua sessão agora. Tente de novo em instantes."
+      : mensagem;
+    if (jaAvisado.current === texto) return;
+    jaAvisado.current = texto;
+    toast.erro(texto);
   }, [erro, mensagem, toast]);
 }
 
@@ -79,20 +104,6 @@ export function useToastOnQueryError(erro: unknown, mensagem: string) {
  * existindo no RQ v5, então não precisa de useEffect) -- mesma regra: nunca
  * mostra toast genérico em cima de um 401, pra não duplicar com o banner de
  * sessão expirada. */
-/** 401 que veio de uma renovação que falhou por motivo TRANSITÓRIO.
- *
- * 🔴 Terceiro caso, que a versão anterior não tinha. Depois que
- * `ehSessaoExpirada` passou a exigir "tokens sumiram", o 401 de um
- * `/refresh` que devolveu 502 durante um deploy deixou de ser suprimido --
- * e caía no `toast.erro(erro.message)`, mostrando "Autenticação inválida"
- * pra quem só pegou dez segundos de instabilidade. A sessão continua de pé,
- * então a mensagem estava errada nas duas pontas: assustava e não dizia o
- * que fazer.
- */
-function ehFalhaTransitoriaDeRenovacao(erro: unknown): boolean {
-  return erro instanceof ApiError && erro.status === 401 && estaAutenticado();
-}
-
 export function toastErroMutation(
   toast: { erro: (mensagem: string) => void },
   erro: unknown,

@@ -18,6 +18,9 @@ interface NomeEditavelProps {
    * O campo continua aberto pra correção -- mas sair dele sem mudar o texto
    * passa a ser "desisti" em vez de reenviar o mesmo pedido que já falhou. */
   falhou?: boolean;
+  /** Chamado quando sair do campo descarta um texto que já foi recusado --
+   * a tela usa pra explicar por que nada foi enviado. */
+  aoDesistirDoRecusado?: () => void;
   /** O rename já foi enviado e a resposta não voltou.
    *
    * Sem isto, confirmar não mudava NADA na tela: o campo seguia editável,
@@ -44,6 +47,7 @@ export default function NomeEditavel({
   onConfirmar,
   onCancelar,
   falhou = false,
+  aoDesistirDoRecusado,
   salvando,
 }: NomeEditavelProps) {
   const [rascunho, setRascunho] = useState(nome);
@@ -119,6 +123,17 @@ export default function NomeEditavel({
       return;
     }
     if (origem === "blur" && limpo === recusadoRef.current) {
+      /* ⚠️ Diz o que aconteceu em vez de sumir com o texto.
+       *
+       * 🔴 Antes cancelava calado: a pessoa via o campo fechar e o nome
+       * voltar ao antigo, sem nenhuma pista de que o pedido não tinha sido
+       * refeito. Parecia que o rename funcionou e depois desfez.
+       *
+       * `recusadoRef` também não era limpo, então esse nome ficava
+       * inalcançável-por-blur pela vida da linha -- mesmo depois de o
+       * conflito sumir. Limpar aqui devolve a próxima tentativa. */
+      recusadoRef.current = null;
+      aoDesistirDoRecusado?.();
       onCancelar();
       return;
     }

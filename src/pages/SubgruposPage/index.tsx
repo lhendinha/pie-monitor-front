@@ -159,6 +159,9 @@ export default function SubgruposPage() {
           renomeandoId={renomeandoId}
           renomeando={renomearMutation.isPending}
           renomeFalhou={renomearMutation.isError}
+          aoDesistirDoRecusado={() =>
+            toast.erro("Esse nome já tinha sido recusado. Edite o texto e tente de novo.")
+          }
           onIniciarRenome={(s) => setRenomeandoId(s.subgrupo_id)}
           onRenomear={(s, nome) => renomearMutation.mutate({ id: s.subgrupo_id, nome })}
           onCancelarRenome={() => setRenomeandoId(null)}

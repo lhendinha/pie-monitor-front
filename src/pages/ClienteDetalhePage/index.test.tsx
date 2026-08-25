@@ -257,4 +257,38 @@ describe("ClienteDetalhePage", () => {
 
     expect(await screen.findByText("lista de clientes")).toBeInTheDocument();
   });
+
+  it("🔴 erro ao carregar NÃO vira 'nenhum processo vinculado'", async () => {
+    /* `query.data || []` fazia o cartão AFIRMAR que o cliente não tem
+     * processo nenhum quando a busca falhou. O toast some em 4,5s; a
+     * afirmação falsa fica. O irmão desta mesma leva -- `TarefasVinculadas`
+     * -- já tratava assim, com o mesmo raciocínio escrito. */
+    mocks.listarProcessos.mockRejectedValue(new Error("rede"));
+    montar();
+
+    expect(
+      await screen.findByText(/Não foi possível carregar os processos deste cliente/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Nenhum processo vinculado a este cliente."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("🔴 abrir o diálogo REBUSCA a contagem em vez de usar a do cache", async () => {
+    /* A query fica montada (o cartão a usa), então abrir o diálogo não
+     * disparava busca nenhuma: ele decidia com o que estivesse no cache.
+     * Contagem velha e não-zero bloqueia uma exclusão legítima -- e o
+     * diálogo de aviso nem tem botão pra insistir. */
+    mocks.listarProcessos.mockResolvedValue({ processos: [], total: 0, total_paginas: 1 });
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Nenhum processo vinculado a este cliente.");
+
+    const antes = mocks.listarProcessos.mock.calls.length;
+    await user.click(await screen.findByRole("button", { name: "Excluir" }));
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos.mock.calls.length).toBeGreaterThan(antes),
+    );
+  });
 });

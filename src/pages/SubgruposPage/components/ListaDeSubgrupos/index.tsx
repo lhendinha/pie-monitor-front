@@ -27,6 +27,8 @@ interface ListaDeSubgruposProps {
   renomeando?: boolean;
   /** O último rename foi recusado -- ver `NomeEditavel.falhou`. */
   renomeFalhou?: boolean;
+  /** Sair do campo descartou um nome que já tinha sido recusado. */
+  aoDesistirDoRecusado?: () => void;
   onIniciarRenome: (s: Subgrupo) => void;
   onRenomear: (s: Subgrupo, nome: string) => void;
   onCancelarRenome: () => void;
@@ -41,6 +43,7 @@ export default function ListaDeSubgrupos({
   renomeandoId,
   renomeando,
   renomeFalhou,
+  aoDesistirDoRecusado,
   onIniciarRenome,
   onRenomear,
   onCancelarRenome,
@@ -83,6 +86,7 @@ export default function ListaDeSubgrupos({
         >
           <NomeEditavel
               falhou={renomeFalhou}
+              aoDesistirDoRecusado={aoDesistirDoRecusado}
             salvando={renomeando}
             /* A chave inclui o nome pra o rascunho nascer do valor atual:
                renomeado e reaberto, o campo tem que vir com o nome novo. */

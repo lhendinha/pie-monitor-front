@@ -94,7 +94,23 @@ export default function ClienteDetalhePage() {
           queryClient.invalidateQueries({ queryKey: ["clientes"] });
           toast.sucesso("Cliente atualizado.");
         }}
-        onRemover={() => setConfirmandoRemocao(true)}
+        onRemover={() => {
+          /* 🔴 Rebusca ANTES de decidir o que mostrar.
+           *
+           * A contagem vem de uma query que fica montada (o cartão de
+           * processos a usa), então abrir o diálogo não disparava busca
+           * nenhuma -- ele decidia com o que estivesse no cache. Contagem
+           * velha e não-zero BLOQUEIA uma exclusão legítima, e o diálogo de
+           * aviso nem tem botão pra insistir; contagem velha e zero manda um
+           * DELETE que volta 409, o erro que toda esta pré-verificação
+           * existe pra evitar.
+           *
+           * `useConteudoDoSubgrupo` resolve o mesmo com `gcTime: 0`, mas lá
+           * a query só existe enquanto o diálogo está aberto. Aqui ela
+           * sobrevive, então o gatilho tem que ser explícito. */
+          processosQuery.refetch();
+          setConfirmandoRemocao(true);
+        }}
       />
 
       <Box mt="16px">
@@ -112,7 +128,10 @@ export default function ClienteDetalhePage() {
 
           É o mesmo arranjo de `SubgruposPage`, que já separava
           "impedimento" de "confirmação" -- porta irmã que ficou aberta. */}
-      {confirmandoRemocao && processosLigados > 0 && (
+      {/* ⚠️ Enquanto a rebusca não termina, nenhum dos dois diálogos decide:
+          o de confirmação abaixo cobre a espera com `verificando`, e o de
+          bloqueio só aparece quando a contagem é fresca. */}
+      {confirmandoRemocao && !processosQuery.isFetching && processosLigados > 0 && (
         <ModalDeAviso
           titulo="Não dá pra excluir ainda"
           mensagem={
@@ -126,7 +145,7 @@ export default function ClienteDetalhePage() {
         />
       )}
 
-      {confirmandoRemocao && processosLigados === 0 && (
+      {confirmandoRemocao && (processosQuery.isFetching || processosLigados === 0) && (
         <ModalDeConfirmacao
           titulo="Excluir cliente"
           mensagem={
@@ -138,7 +157,10 @@ export default function ClienteDetalhePage() {
              chegar é decidir às cegas. Em falha a contagem cai pra 0 -- e
              aí o modal de impedimento acima nem apareceria --, então a
              espera precisa cobrir os dois casos. */
-          verificando={processosQuery.isPending || processosQuery.isError}
+          /* `isFetching`, não só `isPending`: com a query montada, a rebusca
+             ao abrir não passa por `isPending`, e sem isto o botão
+             "Excluir" ficaria clicável em cima da contagem velha. */
+          verificando={processosQuery.isFetching || processosQuery.isError}
           falhouAVerificacao={processosQuery.isError}
           mensagemDeEspera={
             processosQuery.isError
