@@ -130,9 +130,11 @@ conferir(await modal.getByText(/Fica a parte/).isVisible(), "o modal mostra o te
 for (const campo of ["Tipo de comunicação", "Disponibilizada em", "Órgão", "Teor da publicação"]) {
   conferir(await modal.getByText(campo, { exact: true }).isVisible(), `campo "${campo}"`);
 }
+/* Removido a pedido em 26/08/2026 -- a checagem virou de AUSÊNCIA, pra que
+   voltar a exibir o link seja decisão e não descuido. */
 conferir(
-  await modal.getByRole("link", { name: "Abrir o documento no tribunal" }).isVisible(),
-  "e o link pro documento no tribunal",
+  !(await modal.getByRole("link", { name: /tribunal/i }).count()),
+  "NÃO oferece caminho pro site do tribunal",
 );
 conferir(pagina.url().includes("comunicacao=900001"), "a movimentação ganha endereço na URL");
 
@@ -172,6 +174,12 @@ conferir(
   !(await pagina.getByRole("button", { name: "Ver o e-mail enviado" }).count()),
   "SEM envio, o botão do e-mail não existe",
 );
+/* ⚠️ Conta BOTÕES, não procura classe: `RodapeDeAcoes` é emotion, com nome
+   de classe embaralhado -- um seletor por classe nunca casaria, e a checagem
+   passaria sempre sem verificar nada. Sem envio e sem link do tribunal, o
+   único botão do diálogo é o X de fechar. */
+const botoesDoModal = await pagina.getByRole("dialog").getByRole("button").count();
+conferir(botoesDoModal === 1, "sem ação nenhuma, o modal fica só com o X", `${botoesDoModal} botão(ões)`);
 await pagina.getByRole("button", { name: "Fechar" }).click();
 /* 🔴 Duas asserções, e a segunda é a que importa. Conferindo só a URL, este
    roteiro deu "ok" enquanto fechar o teor expulsava a pessoa pra aba de

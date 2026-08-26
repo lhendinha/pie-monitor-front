@@ -1329,10 +1329,21 @@ cliente abre um resumo com "Abrir processo".
    cursor só passeia dentro do painel ativo.
 
 3. **A movimentação ganhou endereço** (`?comunicacao=900001`), a pedido do
-   usuário -- "abrir a movimentação dentro do sistema e não fora dele". O
-   link "Abrir o documento no tribunal" (campo `link`, que a API já mandava
-   e nenhuma tela mostrava) continua, agora como a saída pra fora, não como
-   a única forma de abrir.
+   usuário -- "abrir a movimentação dentro do sistema e não fora dele".
+
+   ⚠️ Houve, entre uma coisa e outra, um "Abrir o documento no tribunal"
+   lendo o campo `link`. **Eu o adicionei sem que ninguém pedisse** -- notei
+   que a API mandava o campo e nenhuma tela usava -- e o defendi como "único
+   caminho pro documento oficial". Removido a pedido no mesmo dia: é porta
+   pra FORA do sistema, e a justificativa tinha furo. Dos 71 links medidos,
+   64 abriam, **6 devolviam 403** (pje.tst.jus.br) e **1 apontava pra
+   `sessao-integracao-backend.prd.rede.tst`** -- host da rede interna do
+   tribunal, vazado no dado do PJe, que nunca abriria de fora. Nesses 7 o
+   botão prometia e falhava depois do clique.
+
+   O campo `link` continua chegando da API e guardado no tipo. Os testes que
+   asseguram sua AUSÊNCIA (em jsdom e em Chrome) existem pra que voltar a
+   exibi-lo seja uma decisão, não um descuido.
 
    O resumo do processo no detalhe do cliente **não** ganhou URL, e é
    deliberado: a coisa que ele resume já tem uma, que é a tela do processo.
@@ -1368,10 +1379,17 @@ fazem o leitor de tela anunciar a escolha duas vezes -- e quebram qualquer
 busca por nome (foi exatamente assim que um teste começou a falhar:
 "Found multiple elements with the role button and name Fechar").
 
-⚠️ **`BotaoDeLink` não serve pra `href`.** Ele é `<button>` de propósito --
-a própria docstring diz --, e botão não abre em outra aba nem oferece
-"copiar endereço". O link do tribunal é `<a>` de verdade, com
-`rel="noopener noreferrer"`.
+⚠️ **`BotaoDeLink` não serve pra `href`** -- ele é `<button>` de propósito,
+a própria docstring diz. Ficou registrado porque a lição sobrevive ao link
+que a motivou: quando precisar de um endereço de verdade nesta base, é `<a>`,
+com `rel="noopener noreferrer"` se abrir em outra aba.
+
+⚠️ **O rodapé do modal só existe quando há ação.** Sem envio (e sem o link do
+tribunal), `RodapeDeAcoes` vazio desenhava uma faixa cinza no pé do diálogo
+sem nada dentro -- que lê como controle que sumiu, não como "não há ação
+aqui". A checagem em Chrome CONTA botões em vez de procurar a classe:
+`RodapeDeAcoes` é emotion, com nome embaralhado, e um seletor por classe
+passaria sempre sem verificar nada.
 
 **A lista de movimentações parou de despejar o teor.** Cada item trazia a
 publicação inteira num bloco rolável de 200px -- cinco itens viravam cinco
@@ -1415,7 +1433,7 @@ lista de abas (`(typeof ABAS_DO_PROCESSO)[number]["id"]`), e não uniões
 escritas à mão: acrescentar uma aba passa a ser erro de compilação em todo
 lugar que não a trata.
 
-**Verificação:** `scripts/verificar-abas.mjs` (Chrome com janela, 34
+**Verificação:** `scripts/verificar-abas.mjs` (Chrome com janela, 35
 checagens) contra `yarn offline` + `scripts/offline/semear_abas.py` na API.
 O cenário semeia PARES de propósito -- movimentação com teor e sem, uma com
 e-mail enviado e outra sem, tarefa em coluna que conclui e em coluna que

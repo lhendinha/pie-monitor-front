@@ -146,6 +146,13 @@ export interface Comunicacao {
   tipo_comunicacao?: string;
   nome_orgao?: string;
   texto?: string;
+  /** Endereço do documento no site do tribunal.
+   *
+   * ⚠️ **Nenhuma tela mostra isto.** Houve um "Abrir o documento no
+   * tribunal" no detalhe da movimentação, removido a pedido em 26/08/2026:
+   * é porta pra fora do sistema, e em 7 dos 71 links medidos ela nem abria
+   * (6 davam 403, e 1 apontava pra host da rede interna do TST, vazado no
+   * dado do PJe). Fica no tipo porque continua chegando da API. */
   link?: string;
   /** Esta movimentação gerou e-mail -- derivado, o servidor resolve
    * (`processos_service.detalhes`).

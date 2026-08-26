@@ -461,15 +461,18 @@ describe("o teor da movimentação", () => {
     expect(screen.queryByRole("button", { name: "Ver o e-mail enviado" })).not.toBeInTheDocument();
   });
 
-  it("o documento no tribunal abre em outra aba, com rel de segurança", async () => {
+  it("não oferece caminho pro site do tribunal", async () => {
+    /* Removido a pedido em 26/08/2026: é porta pra FORA do sistema, e em 7
+       dos 71 links medidos ela nem abria (6 davam 403, 1 apontava pra host
+       da rede interna do TST). O campo `link` continua chegando da API --
+       este teste existe pra que voltar a exibi-lo seja uma decisão, e não
+       um descuido. */
     comMovimentacao();
     montar(`/processos/sg1/${NUMERO}?comunicacao=4242`);
 
-    const link = await screen.findByRole("link", { name: "Abrir o documento no tribunal" });
-    expect(link).toHaveAttribute("href", COMUNICACAO.link);
-    // Sem `noopener`, a página aberta ganha `window.opener` e pode navegar
-    // esta aqui pra onde quiser.
-    expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
+    expect(await screen.findByText("Fica intimada a parte")).toBeVisible();
+    expect(screen.queryByRole("link", { name: /tribunal/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: COMUNICACAO.link })).not.toBeInTheDocument();
   });
 });
 

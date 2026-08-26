@@ -1,4 +1,4 @@
-import { Link, Stack, Text } from "@chakra-ui/react";
+import { Stack, Text } from "@chakra-ui/react";
 
 import {
   Botao,
@@ -26,6 +26,14 @@ interface ModalDeMovimentacaoProps {
  * que interessa é sempre o de UM item. Tem endereço próprio na URL
  * (`?comunicacao=`), então dá pra mandar pra alguém e sobrevive a um F5.
  *
+ * ⚠️ **Não leva pro documento no tribunal.** Houve um "Abrir o documento no
+ * tribunal" aqui, lendo o campo `link` -- removido a pedido, em 26/08/2026.
+ * O teor da publicação é o que se lê pra saber o que aconteceu, e a peça no
+ * site do tribunal é uma porta pra FORA do sistema: em 7 dos 71 links
+ * medidos ela nem abria (6 devolviam 403 e 1 apontava pra um host da rede
+ * interna do TST, vazado no dado do PJe). O campo continua chegando da API e
+ * guardado, caso um dia sirva pra outra coisa.
+ *
  * ⚠️ **Não é o "Detalhes do envio" do Histórico, e a diferença é o assunto.**
  * Lá se olha uma NOTIFICAÇÃO -- quem recebeu, se entregou; aqui, a
  * PUBLICAÇÃO. Uma movimentação existe tenha ou não gerado e-mail, e a
@@ -43,37 +51,20 @@ export default function ModalDeMovimentacao({
       largo
       titulo="Detalhes da movimentação"
       onFechar={onFechar}
+      /* Rodapé SÓ quando há pra onde ir. `RodapeDeAcoes` vazio desenharia
+         uma faixa cinza no pé do modal sem nada dentro -- que lê como
+         controle que sumiu, não como "não há ação aqui".
+
+         ⚠️ Sem "Fechar": o X do cabeçalho já é esse controle, e dois botões
+         com o MESMO nome acessível no mesmo diálogo fazem o leitor de tela
+         anunciar a escolha duas vezes -- e quebram qualquer busca por
+         nome. */
       rodape={
-        <RodapeDeAcoes>
-          {/* O documento no tribunal já vinha na resposta (`link`) e não
-              aparecia em lugar nenhum da interface. É o único caminho pro
-              documento oficial em todo o sistema.
-
-              ⚠️ `<a>` de verdade, e não `BotaoDeLink`: aquele é `<button>`
-              de propósito (a docstring dele diz), e botão não abre em outra
-              aba nem oferece "copiar endereço".
-
-              ⚠️ `noopener` junto do `target`: sem ele a página aberta ganha
-              `window.opener` e pode navegar esta aqui pra onde quiser. */}
-          {comunicacao.link && (
-            <Link
-              href={comunicacao.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              mr="auto"
-              fontSize="12.5px"
-              fontWeight="700"
-              color="fg.brand"
-            >
-              Abrir o documento no tribunal
-            </Link>
-          )}
-          {/* ⚠️ Sem "Fechar" no rodapé: o X do cabeçalho já é esse
-              controle, e dois botões com o MESMO nome acessível no mesmo
-              diálogo fazem o leitor de tela anunciar a escolha duas vezes --
-              e quebram qualquer busca por nome. */}
-          {onVerOEnvio && <Botao onClick={onVerOEnvio}>Ver o e-mail enviado</Botao>}
-        </RodapeDeAcoes>
+        onVerOEnvio ? (
+          <RodapeDeAcoes>
+            <Botao onClick={onVerOEnvio}>Ver o e-mail enviado</Botao>
+          </RodapeDeAcoes>
+        ) : undefined
       }
     >
       <Stack gap="16px">
