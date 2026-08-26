@@ -72,6 +72,47 @@ O Vercel detecta o `yarn.lock` automaticamente e usa Yarn como package manager d
 
 O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra rotas client-side funcionarem (`/convite/{token}` precisa cair no `index.html` mesmo em acesso direto pelo link do e-mail — sem isso, clicar no link do convite daria 404).
 
+## Telas
+
+| tela | rota | o que responde |
+|---|---|---|
+| Área de trabalho | `/` | o que precisa de atenção hoje |
+| Gestão kanban | `/kanban` | o quadro de tarefas do subgrupo |
+| Agenda | `/agenda` | as tarefas por data |
+| Atendimentos | `/atendimentos` | conversas registradas por cliente |
+| Detalhe do atendimento | `/atendimentos/:subgrupoId/:atendimentoId` | **abas** Registros \| Documentos |
+| Processos | `/processos` | o acervo monitorado |
+| Detalhe do processo | `/processos/:subgrupoId/:numero` | **abas** Detalhes \| Tarefas \| Movimentações \| Documentos |
+| Clientes | `/clientes` | o cadastro |
+| Detalhe do cliente | `/clientes/:clienteId` | **abas** Detalhes \| Processos vinculados \| Documentos |
+| **Documentos** | `/documentos` | arquivos e links do escritório |
+| **Detalhe do documento** | `/documentos/:subgrupoId/:documentoId` | onde se edita, baixa, substitui e exclui |
+| Histórico | `/historico` | o que o robô enviou |
+| Grupo | `/grupo` | subgrupos, pessoas, convites, fases e situações |
+| Perfil | `/perfil` | a própria conta |
+
+⚠️ Toda tela de DETALHE guarda a aba na URL (`?aba=`), porque essas telas são
+alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
+a pessoa pra primeira aba incomoda de verdade. As telas de gestão
+(`/grupo`, `/perfil`) usam estado local de propósito.
+
+### Documentos
+
+Cada documento é um **arquivo enviado** ou um **link**, vinculado a processo,
+atendimento e/ou cliente. Quem enxerga é quem participa do **subgrupo** --
+mesma régua de Tarefa e Atendimento.
+
+🔴 **O arquivo vai direto do navegador pro armazenamento**, sem passar pela
+API: o payload de um Lambda para em 6 MB e o teto de um documento é 20. São
+três passos, e o registro é o último -- nada é gravado até o arquivo chegar.
+
+🔴 **A listagem não tem lixeira nem lápis.** Clicar na linha abre a tela do
+documento, e é lá que se edita e se exclui -- mesmo arranjo de Processos e
+Clientes. O modal só CRIA.
+
+⚠️ **Excluir um documento destrói o arquivo**, e o bucket não tem
+versionamento. O diálogo avisa.
+
 ## Papéis e o que cada um vê
 
 4 abas no topo: Processos, Clientes, Histórico e **Grupo** -- essa última agrupa, como sub-navegação própria, Subgrupos/Membros/Convidar/Fases/Situações (cada sub-aba mantém o piso de papel de antes, só a organização visual mudou).
@@ -112,7 +153,7 @@ yarn test         # roda uma vez (CI)
 yarn test:watch   # modo watch
 ```
 
-`vitest` + `@testing-library/react` + `jsdom`. 605 testes em 59 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+`vitest` + `@testing-library/react` + `jsdom`. 653 testes em 64 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
 
 ## Filtros em pílula: primeira página + busca
 

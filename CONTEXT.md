@@ -1444,3 +1444,188 @@ igual.
 ⚠️ O `.env` do front aponta pra PRODUÇÃO. Subir `yarn dev` sem
 `VITE_API_URL=http://localhost:8099` deixa a verificação "local" batendo na
 API de verdade.
+
+## Documentos: o arquivo não passa pela API (26/08/2026)
+
+Telas novas: `/documentos` (listagem) e
+`/documentos/:subgrupoId/:documentoId` (a tela do documento), mais a aba
+**Documentos** nas três telas de detalhe.
+
+### 🔴 O envio é de três passos, e o registro é o último
+
+```
+1. POST /subgrupos/{sg}/documentos/upload  → chave + formulário assinado
+2. o NAVEGADOR posta o arquivo direto no armazenamento
+3. POST /subgrupos/{sg}/documentos         → agora existe documento
+```
+
+O payload síncrono de um Lambda é 6 MB; o teto de um documento é 20. Pela
+API, todo arquivo acima de 6 MB falharia com um erro de gateway que não
+menciona tamanho.
+
+⚠️ **`enviarArquivo` usa `fetch` cru, sem `Content-Type` nosso e sem
+`Authorization`.** O `FormData` precisa que o NAVEGADOR escreva o
+`multipart/form-data` com o `boundary` que ele mesmo gerou -- escrever o
+cabeçalho à mão apaga o boundary e o armazenamento não separa os campos. E o
+token do Argos não tem o que fazer num pedido que não é pra nós: quem
+autoriza é a assinatura que já vai dentro de `campos`.
+
+⚠️ **`campos` vai ANTES do arquivo no formulário.** Numa política de POST o
+arquivo tem que ser o último campo: o armazenamento para de ler quando o
+encontra, e qualquer campo depois dele é ignorado -- inclusive a assinatura.
+
+⚠️ **O modal NÃO fecha em falha, e não limpa nada.** Um envio de 20 MB que
+falha no fim custaria tudo de novo, inclusive a descrição digitada. É por
+isso que o envio acontece com o modal aberto: a pessoa está ali, e tentar de
+novo é um clique. Testado.
+
+### 🔴 O CSP mudou, e o download NÃO precisou
+
+`connect-src` de `front/vercel.json` ganhou
+`https://argos-monitor-documentos-prod.s3.sa-east-1.amazonaws.com` -- o host
+foi **medido**, não suposto (ver `api/CONTEXT.md`: o padrão do boto3 emite o
+host global, e o `virtual` que a API fixa emite o regional).
+
+- **O envio** é `fetch` pro armazenamento → bloqueado sem o host. O erro
+  aparece como falha de CORS, que engana.
+- **O download** é `window.location.assign` numa URL que já vem com
+  `Content-Disposition: attachment` → **navegação de topo**, que não passa
+  por `connect-src`. Buscar o blob por XHR pra forçar o nome exigiria o host
+  aqui também, e não traria nada.
+
+🔴 **`vercel.json` só vale em produção.** Isto passa 100% no `yarn offline` e
+quebraria no deploy -- mesma categoria do IAM.
+
+### O modal só CRIA
+
+Editar e excluir vivem na tela do documento, como em Processos e Clientes: a
+linha da tabela é clicável (com `tabIndex` + Enter/Espaço, porque não há
+outro caminho sem mouse) e leva pro detalhe. A listagem não tem lixeira nem
+lápis.
+
+⚠️ **`FormularioDocumento` recebe o documento JÁ CARREGADO**, e por isso é um
+componente separado da página. Os campos nascem do `useState` inicializado
+com o que veio -- técnica que exige o dado presente no primeiro render. Na
+página, esse render acontece com a consulta pendente: o estado nasceria
+vazio, nada o preencheria depois, e **salvar apagaria o documento inteiro**.
+
+A alternativa era um `useEffect` copiando a resposta pro estado. Funciona, e
+é exatamente o que o `react-hooks/set-state-in-effect` aponta -- render em
+cascata a cada resposta. Montar só depois do dado chegar resolve os dois de
+uma vez, e é o que `FormularioCliente` já fazia.
+
+### 🔴 O 404 depois de excluir, que só o Chrome pegou
+
+`qk.documento` é `["documentos", "detalhe", sg, id]` -- **começa com
+`["documentos"]`**. Invalidar o prefixo cru ao excluir derrubava também a
+consulta da própria tela, que ainda está montada naquele instante: ela
+rebuscava o documento recém-apagado e tomava 404.
+
+⚠️ **`removeQueries` não resolve, e piora** -- medido: tirar do cache uma
+consulta com observador ativo faz o observador buscar de novo NA HORA, então
+em vez de uma revalidação vinham duas. O que resolve é o `predicate`
+deixando a entrada do detalhe intacta.
+
+Invisível na suíte, porque lá nada revalida sozinho. Foi
+`scripts/verificar-documentos.mjs` que acusou, pelo ouvinte de `response` que
+coleta tudo acima de 400.
+
+### `VinculoDaTarefa` virou `components/VinculoDeRegistro`
+
+Subiu junto com `EtiquetaDeVinculo`, que estava pendurada dentro de
+`ModalDeTarefa/` sendo um componente de alcance geral. As constantes saíram
+de `constants/vinculoDaTarefa.ts` pra `vinculoDeRegistro.ts`, e o tipo
+`VinculosDaTarefa` virou `VinculosDeRegistro`.
+
+🔴 **E ele NÃO ganhou o slot de cliente que o plano previa.** Dois fatos
+derrubaram a ideia na implementação:
+
+1. **`CampoDeClientes` já resolve isso**, com busca própria, escolha múltipla
+   e etiquetas -- e já serve Atendimentos e Processos. Um terceiro caminho
+   pro mesmo dado seria a terceira resposta pra mesma pergunta, que é o
+   estrago que `constants/limites.ts` documenta.
+2. **A cardinalidade não bate.** Processo e atendimento são UM cada (escolher
+   troca); cliente é LISTA (escolher empilha). Numa caixa só, a mesma ação
+   teria dois comportamentos dependendo do tipo da linha clicada -- e nada na
+   tela diria qual.
+
+O padrão do sistema já era dois campos lado a lado: `NovoAtendimentoForm` põe
+`CampoDeProcesso` e `CampoDeClientes` separados. Um teste em
+`ModalDeTarefa/index.test.tsx` trava que a tela de tarefa não mudou.
+
+### O formulário tem seletor de Subgrupo, que a referência não tem
+
+Naquele sistema não existe subgrupo. Aqui ele é o **escopo de acesso**:
+obrigatório, escolhido só na criação (faz parte da chave primária, e o
+DynamoDB não altera chave), exatamente como em `ModalDeTarefa`. A dica diz o
+que o campo DECIDE -- sem ela, ele parece classificação.
+
+### `AtendimentoDetalhePage` ganhou abas
+
+Era a linha do tempo direto, sem `Abas`, enquanto processo e cliente já se
+dividiam assim. Documentos entrou como aba nas três, e uma tela sem abas ao
+lado de duas com abas faria o mesmo conteúdo ser procurado em dois lugares
+diferentes conforme a tela.
+
+🔴 **Os painéis vão MONTADOS.** `NovoRegistro` tem estado local, e desmontá-lo
+ao trocar de aba jogaria fora a anotação que a pessoa acabou de escrever --
+num campo cujo conteúdo, depois de salvo, **não se edita nem se apaga**. Sem
+teste isso seria invisível em revisão: a aba volta, o campo está vazio, e
+parece que a pessoa não digitou. Coberto em jsdom e em Chrome.
+
+### `CampoDeArquivo`: a recusa daqui é conveniência
+
+Quem recusa de verdade é o armazenamento, pela política assinada -- é lá que
+o teto não depende de nada que roda na máquina de quem envia. Esta serve pra
+não fazer a pessoa esperar minutos de upload por uma negativa que já dava pra
+dar na hora. Por isso ela **não chama `onMudar`**: se chamasse, o modal
+montaria o envio de um arquivo que ele mesmo acabou de recusar.
+
+⚠️ **Zero byte também é recusado.** A política do envio começa em 1 byte
+justamente porque, com 0, nasceria um documento que baixa em branco -- sem
+erro em lugar nenhum.
+
+🔴 **O `<input type="file">` fica VISUALMENTE escondido, não `display: none`.**
+É ele que carrega o rótulo, o foco de teclado e o diálogo nativo. Escondê-lo
+de verdade tiraria o campo do Tab, e não há outro caminho pra escolher
+arquivo sem mouse. Vale nos dois estados: com arquivo escolhido, clicar no
+rótulo "Arquivo" troca o arquivo direto.
+
+⚠️ **A remoção zera o `input.value`.** O navegador compara com o valor
+anterior e não dispara `change` quando são iguais -- sem isso, o campo ficava
+mudo justamente na correção mais provável (remover por engano e recolocar), e
+parecia defeito do arquivo.
+
+### `titulo` e `nome_arquivo` são coisas diferentes
+
+`titulo` é como o documento aparece na lista; `nome_arquivo` é o nome com que
+ele **baixa**, e não entra no `PATCH`. A dica do campo diz isso ANTES de a
+diferença surpreender -- quem renomeia o título esperando renomear o arquivo
+baixado só descobriria meses depois. O cartão do arquivo mostra o nome de
+download por essa mesma razão.
+
+### Verificação
+
+`scripts/verificar-documentos.mjs` (Chrome com janela, 19 checagens) contra
+`yarn offline` + `semear_abas.py` + `semear_documentos.py`.
+
+O que só Chrome responde: o arquivo sai mesmo da máquina (em jsdom o `fetch`
+é um dublê), o input escondido continua alcançável, o painel de aba escondido
+sai do **foco**, e o download dispara sem trocar a página de baixo.
+
+🔴 **As fixtures são GERADAS, não versionadas** -- inclusive a de 20 MB + 1
+byte. `setInputFiles` aponta pra um caminho em disco, então sem arquivo o
+roteiro não roda em máquina limpa; versionar poria binário no histórico pra
+sempre.
+
+🔴 **O caso negativo da permissão usa `colega@local.test`, não `chefe`.**
+`escopo_subgrupo.subgrupos_visiveis` dá o grupo inteiro a `admin` pra cima, e
+`chefe` é `super_admin` -- com ela, o documento do subgrupo alheio aparece de
+propósito. O roteiro afirmava o contrário e ficava **verde**, porque
+perguntava antes de a lista carregar. Corrigido o timing, ele acusou -- e o
+defeito era do teste.
+
+⚠️ **A lição**: um teste negativo que não espera o estado chegar não é um
+teste fraco, é um teste que mente. Ele passa quando o sistema está quebrado e
+quando está certo, indistinguivelmente. Todas as afirmações de ausência do
+roteiro agora esperam uma linha conhecida aparecer primeiro.
