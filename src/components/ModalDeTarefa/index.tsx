@@ -26,9 +26,9 @@ import { qk } from "../../services/queryKeys";
 import { comOpcaoEscolhida, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import { hojeISO, mascararNumeroProcesso } from "../../utils";
 import { PRIORIDADES, TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA } from "../../constants";
-import VinculoDaTarefa from "./VinculoDaTarefa";
+import VinculoDeRegistro from "../VinculoDeRegistro";
 
-import type { Tarefa, VinculosDaTarefa } from "../../types";
+import type { Tarefa, VinculosDeRegistro } from "../../types";
 import type { RespostaDeMembros, RespostaDoQuadro } from "../../types/respostas";
 
 interface ModalDeTarefaProps {
@@ -147,7 +147,7 @@ export default function ModalDeTarefa({
    * processo, assunto do atendimento) exigiria buscar o item só pra abrir o
    * modal, e mostrar campo vazio numa tarefa QUE TEM vínculo seria pior --
    * salvar por cima apagaria o vínculo sem a pessoa perceber. */
-  const [vinculos, setVinculos] = useState<VinculosDaTarefa>({
+  const [vinculos, setVinculos] = useState<VinculosDeRegistro>({
     processo: tarefa?.processo_numero
       ? {
           tipo: "processo",
@@ -329,7 +329,7 @@ export default function ModalDeTarefa({
             para="tf-vinculo"
             dica="Opcional. Dá pra vincular um processo, um atendimento, ou os dois."
           >
-            <VinculoDaTarefa valor={vinculos} onMudar={setVinculos} />
+            <VinculoDeRegistro id="tf-vinculo" valor={vinculos} onMudar={setVinculos} />
           </Campo>
 
           <LinhaDeCampos>

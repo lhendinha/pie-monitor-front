@@ -54,3 +54,8 @@ export { default as CartaoDeAutenticacao } from "./CartaoDeAutenticacao";
 export { default as CampoDeSenha } from "./CampoDeSenha";
 export { default as RotuloDeSecao } from "./RotuloDeSecao";
 export { default as EtiquetaDePrazo } from "./EtiquetaDePrazo";
+export { default as VinculoDeRegistro } from "./VinculoDeRegistro";
+export { default as EtiquetaDeVinculo } from "./EtiquetaDeVinculo";
+export { default as CampoDeArquivo } from "./CampoDeArquivo";
+export { default as ModalDeDocumento } from "./ModalDeDocumento";
+export { default as DocumentosVinculados } from "./DocumentosVinculados";

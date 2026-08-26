@@ -15,6 +15,7 @@ export { default as IconeAgenda } from "./IconeAgenda";
 export { default as IconeAtendimentos } from "./IconeAtendimentos";
 export { default as IconeProcessos } from "./IconeProcessos";
 export { default as IconeClientes } from "./IconeClientes";
+export { default as IconeDocumentos } from "./IconeDocumentos";
 export { default as IconeGrupo } from "./IconeGrupo";
 export { default as IconeBusca } from "./IconeBusca";
 export { default as IconeCalendario } from "./IconeCalendario";

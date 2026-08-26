@@ -4,6 +4,7 @@ import type {
   Cliente,
   ColunaDoQuadro,
   Comunicacao,
+  Documento,
   Grupo,
   HistoricoItem,
   Membro,
@@ -106,6 +107,13 @@ export interface RespostaDeTarefasPaginada extends RespostaDeTarefas, ContagemDa
 export interface RespostaDeAtendimentosPaginada
   extends RespostaDeAtendimentos,
     ContagemDaPagina {}
+
+/** `GET /documentos` -- a tela geral e as abas dentro de processo, cliente e
+ * atendimento usam a mesma rota, mudando só o filtro de vínculo. */
+export interface RespostaDeDocumentos {
+  documentos: Documento[];
+}
+export interface RespostaDeDocumentosPaginada extends RespostaDeDocumentos, ContagemDaPagina {}
 
 export interface RespostaDeMembrosPaginada extends RespostaDeMembros, ContagemDaPagina {}
 export interface RespostaDeProcessosPaginada extends RespostaDeProcessos, ContagemDaPagina {}

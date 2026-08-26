@@ -7,13 +7,20 @@ import {
   Abas,
   BotaoDeTexto,
   Cartao,
+  DocumentosVinculados,
   IconeSeta,
   Esqueleto,
   ModalDeConfirmacao,
   PainelDaAba,
   useToast,
 } from "../../components";
-import { abaValida, contar, formatarDataHoraAmPm, PARAM_DA_ABA } from "../../utils";
+import {
+  abaValida,
+  contar,
+  formatarDataHoraAmPm,
+  mascararNumeroProcesso,
+  PARAM_DA_ABA,
+} from "../../utils";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { detalhesProcesso, removerProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
@@ -200,6 +207,27 @@ export default function ProcessoDetalhePage() {
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="movimentacoes" ativa={aba}>
         <Cartao titulo="Movimentações">
           <Movimentacoes comunicacoes={query.data.comunicacoes} />
+        </Cartao>
+      </PainelDaAba>
+
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="documentos" ativa={aba}>
+        <Cartao titulo="Documentos">
+          <DocumentosVinculados
+            filtro={{ processoNumero: numero }}
+            /* O modal de criação abre no subgrupo DO PROCESSO: é onde o
+               documento vai ser procurado depois, e escolher outro
+               esconderia o documento de quem estava olhando este processo. */
+            subgrupoInicial={processo.subgrupo_id}
+            /* Com o número MASCARADO como rótulo -- a etiqueta do vínculo é
+               onde a pessoa confere que vinculou ao processo certo, e vinte
+               dígitos colados não se conferem. */
+            vinculoInicial={{
+              tipo: "processo",
+              id: numero,
+              rotulo: mascararNumeroProcesso(numero),
+            }}
+            vazio="Nenhum documento vinculado a este processo."
+          />
         </Cartao>
       </PainelDaAba>
 

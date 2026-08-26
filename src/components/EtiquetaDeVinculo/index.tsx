@@ -1,6 +1,6 @@
 import { Flex, Text, chakra } from "@chakra-ui/react";
 
-import type { Vinculo } from "../../../types";
+import type { Vinculo } from "../../types";
 
 const BotaoRemover = chakra("button", {
   base: {
@@ -30,6 +30,12 @@ interface EtiquetaDeVinculoProps {
  * Carrega o TIPO junto do nome ("Processo · 0000123-45…"): com um processo
  * e um atendimento lado a lado, o número e o assunto não dizem sozinhos
  * qual é qual.
+ *
+ * ⚠️ Mora em `components/`, e não dentro de `ModalDeTarefa/`, desde que o
+ * documento passou a usar o mesmo campo de vínculo. Enquanto estava lá
+ * dentro, um componente de alcance geral vivia na pasta de UM modal --
+ * e o segundo consumidor teria que importar por `../ModalDeTarefa/…`,
+ * que é o formato de import que anuncia uma pasta no lugar errado.
  */
 export default function EtiquetaDeVinculo({ vinculo, onRemover }: EtiquetaDeVinculoProps) {
   const tipo = vinculo.tipo === "processo" ? "Processo" : "Atendimento";

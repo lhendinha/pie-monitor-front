@@ -103,6 +103,23 @@ export const qk = {
    * antes, senão a mesma tela em outra ordem vira outra entrada no cache. */
   resumosDeAtendimentos: (pares: string[]) => ["atendimentos", "resumos", pares] as const,
 
+  /** Uma PÁGINA de documentos -- a tela geral e as abas dentro de processo,
+   * cliente e atendimento. Todo filtro entra na chave: filtro fora dela faz
+   * a consulta reusar o resultado do filtro anterior, o que na aba de um
+   * processo mostraria os documentos de outro. */
+  documentos: (
+    params: {
+      busca?: string;
+      processoNumero?: string;
+      atendimentoId?: string;
+      clienteId?: string;
+      pagina?: number;
+      tamanhoPagina?: number;
+    } = {},
+  ) => ["documentos", params] as const,
+  documento: (subgrupoId: string, documentoId: string) =>
+    ["documentos", "detalhe", subgrupoId, documentoId] as const,
+
   todosOsSubgrupos: () => ["subgrupos", "todos"] as const,
   todasAsOpcoes: (tipo: "fase" | "situacao") => ["opcoesProcesso", tipo, "todos"] as const,
 };

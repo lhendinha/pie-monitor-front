@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { BotaoNu } from "../../../../components";
 import { ESPERA_DA_BUSCA_MS } from "../../../../constants/busca";
-import { MINIMO_PRA_BUSCAR, RESULTADOS_POR_TIPO } from "../../../../constants/vinculoDaTarefa";
+import { MINIMO_PRA_BUSCAR, RESULTADOS_POR_TIPO } from "../../../../constants/vinculoDeRegistro";
 import { Z_INDEX_CALENDARIO } from "../../../../constants/camadaFlutuante";
 import { useValorComEspera } from "../../../../hooks/useValorComEspera";
 import { listarProcessos } from "../../../../services";

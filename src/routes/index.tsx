@@ -5,6 +5,8 @@ import { useSessaoContexto } from "../contexts/SessaoContext";
 import {
   ClienteDetalhePage,
   ClientesPage,
+  DocumentoDetalhePage,
+  DocumentosPage,
   GrupoPage,
   AgendaPage,
   AtendimentoDetalhePage,
@@ -72,6 +74,15 @@ export default function Rotas() {
           />
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/clientes/:clienteId" element={<ClienteDetalhePage />} />
+          <Route path="/documentos" element={<DocumentosPage />} />
+          {/* O par (subgrupo, id) porque é a chave primária -- o documento
+              não é endereçável só pelo id. A tela se hidrata sozinha por
+              `GET /subgrupos/{sg}/documentos/{id}`: é rota, então tem que
+              aguentar um F5 e um link colado. */}
+          <Route
+            path="/documentos/:subgrupoId/:documentoId"
+            element={<DocumentoDetalhePage />}
+          />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/historico" element={<RotaHistorico />} />
           {/* `manager`, igual ao piso do item no menu lateral. Esconder do

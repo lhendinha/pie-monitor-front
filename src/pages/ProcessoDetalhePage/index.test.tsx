@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => ({
   criarTarefa: vi.fn(),
   atualizarTarefa: vi.fn(),
   removerTarefa: vi.fn(),
+  listarDocumentos: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -87,6 +88,15 @@ function painel(nome: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.listarDocumentos.mockResolvedValue({
+    documentos: [
+      { subgrupo_id: "sg1", documento_id: "d1", grupo_id: "g1", tipo: "arquivo",
+        titulo: "Procuração ad judicia", tamanho_bytes: 2048,
+        criado_em: "2026-08-20T10:00:00+00:00" },
+    ],
+    total: 1,
+    total_paginas: 1,
+  });
   mocks.detalhesProcesso.mockResolvedValue({
     numero_processo: NUMERO,
     processos: [PROCESSO],
@@ -498,5 +508,55 @@ describe("as tarefas vinculadas", () => {
     await userEvent.click(await screen.findByRole("button", { name: /Protocolar réplica/ }));
 
     expect(await screen.findByLabelText(/Descrição da tarefa/)).toHaveValue("Protocolar réplica");
+  });
+});
+
+describe("aba de documentos", () => {
+  /** O painel que a aba comanda -- painel escondido tem nome acessível
+   * vazio, então `getByRole("tabpanel", { name })` não acha os inativos. */
+  function painel(nome: string) {
+    const aba = screen.getByRole("tab", { name: nome });
+    const alvo = document.getElementById(aba.getAttribute("aria-controls") ?? "");
+    if (!alvo) throw new Error(`A aba "${nome}" aponta pra um painel que não existe.`);
+    return alvo;
+  }
+
+  it("🔴 filtra POR ESTE processo", async () => {
+    /* Sem o filtro a aba mostraria os documentos do escritório inteiro
+       dentro de um processo -- e passaria a mentir sobre o que reúne. */
+    montar(`/processos/sg1/${NUMERO}?aba=documentos`);
+    await waitFor(() =>
+      expect(mocks.listarDocumentos).toHaveBeenCalledWith(
+        expect.objectContaining({ processoNumero: NUMERO }),
+      ),
+    );
+    expect(
+      await within(painel("Documentos")).findByText("Procuração ad judicia"),
+    ).toBeInTheDocument();
+  });
+
+  it("a aba vem da URL, pra a tela sobreviver a um F5", async () => {
+    montar(`/processos/sg1/${NUMERO}?aba=documentos`);
+    expect(await screen.findByRole("tab", { name: "Documentos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("erro NÃO vira 'nenhum documento'", async () => {
+    /* Afirmar que o processo não tem documento por causa de uma falha de
+       rede é uma mentira que fica na tela depois que o toast some. */
+    mocks.listarDocumentos.mockRejectedValue(new Error("rede"));
+    montar(`/processos/sg1/${NUMERO}?aba=documentos`);
+    /* Espera a tela existir antes de procurar o painel: `painel()` lê o
+       `aria-controls` da aba, e a aba só nasce depois do processo chegar. */
+    await screen.findByRole("tab", { name: "Documentos" });
+
+    expect(
+      await within(painel("Documentos")).findByText(/Não foi possível carregar os documentos/),
+    ).toBeInTheDocument();
+    expect(
+      within(painel("Documentos")).queryByText(/Nenhum documento vinculado/),
+    ).not.toBeInTheDocument();
   });
 });

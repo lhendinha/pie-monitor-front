@@ -27,7 +27,7 @@ export interface FiltrosDoQuadro {
   busca: string;
 }
 
-// `Vinculo`/`VinculosDaTarefa` subiram pra `src/types` junto com o
+// `Vinculo`/`VinculosDeRegistro` subiram pra `src/types` junto com o
 // `ModalDeTarefa`, que virou componente geral quando a Agenda passou a
 // abrir a mesma tarefa.
 

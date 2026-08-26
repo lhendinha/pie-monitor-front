@@ -9,15 +9,21 @@ export const MOVIMENTACOES_POR_PAGINA = 5;
  * porque cada item traz o texto da publicação. */
 export const TAMANHOS_MOVIMENTACOES = [5, 10, 20, 50] as const;
 
-/** As três abas da tela.
+/** As quatro abas da tela.
  *
  * A primeira é o padrão: é onde a pessoa cai chegando por link, e é o que
  * responde "que processo é este".
+ *
+ * ⚠️ "Documentos" entra por ÚLTIMO, depois de Movimentações. A ordem não é
+ * alfabética nem cronológica: é a de quem abre um processo -- primeiro o que
+ * ele é, depois o que há pra fazer, depois o que o tribunal disse, e por fim
+ * o que o escritório guardou.
  */
 export const ABAS_DO_PROCESSO = [
   { id: "detalhes", rotulo: "Detalhes" },
   { id: "tarefas", rotulo: "Tarefas" },
   { id: "movimentacoes", rotulo: "Movimentações" },
+  { id: "documentos", rotulo: "Documentos" },
 ] as const;
 
 /** O prefixo dos ids de acessibilidade que ligam cada aba ao seu painel.

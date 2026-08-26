@@ -425,7 +425,14 @@ export interface Vinculo {
  * `processo_numero` e `atendimento_id` são campos independentes, um valor
  * cada. Escolher um processo novo TROCA o anterior; não empilha.
  */
-export interface VinculosDaTarefa {
+/** Os dois slots do campo de vínculo. Um por tipo, nunca uma lista -- é
+ * assim que o banco guarda (`processo_numero` e `atendimento_id`, um valor
+ * cada).
+ *
+ * ⚠️ Chamava-se `VinculosDaTarefa` enquanto só a tarefa tinha o campo. O
+ * documento usa o mesmo, e um nome que fala de um consumidor só é o convite
+ * pra segunda cópia do tipo. */
+export interface VinculosDeRegistro {
   processo: Vinculo | null;
   atendimento: Vinculo | null;
 }
@@ -608,6 +615,67 @@ export interface CamposOpcionaisProcesso {
   observacoes?: string;
   faseId?: string;
   situacaoId?: string;
+}
+
+/** Um documento: um arquivo guardado no armazenamento, ou um link.
+ *
+ * ⚠️ **`titulo` e `nome_arquivo` são coisas diferentes**, e a distinção é o
+ * que impede uma surpresa silenciosa:
+ *
+ * - `titulo` é como o documento se chama NA LISTA. Nasce com o nome do
+ *   arquivo, é digitado quando é link, e se edita nos dois casos.
+ * - `nome_arquivo` é o nome com que o arquivo BAIXA (`Content-Disposition`),
+ *   e **não** se edita. Fossem o mesmo campo, renomear o título mudaria o
+ *   nome do arquivo baixado meses depois, sem ninguém ter pedido.
+ *
+ * ⚠️ `tipo` é STRING, não união fechada: o backend guarda assim de propósito,
+ * pra o "documento padrão" entrar depois sem migração. Quem exibe usa
+ * `rotuloDoTipo`, que devolve o valor cru pro que não conhece -- some com o
+ * registro seria pior que rotular feio.
+ */
+export interface Documento {
+  subgrupo_id: string;
+  documento_id: string;
+  grupo_id: string;
+  tipo: string;
+  titulo: string;
+  descricao?: string | null;
+  /** Só em `arquivo`. */
+  nome_arquivo?: string | null;
+  chave_s3?: string | null;
+  /** MEDIDO pelo armazenamento, não declarado pelo navegador. */
+  tamanho_bytes?: number | null;
+  /** DECLARADO pelo navegador -- ninguém abriu o arquivo pra conferir.
+   * Nenhuma decisão da tela se apoia nele. */
+  content_type?: string | null;
+  /** Só em `link`. */
+  url?: string | null;
+  processo_numero?: string | null;
+  atendimento_id?: string | null;
+  cliente_ids?: string[] | null;
+  /** Derivado, NA MESMA ORDEM de `cliente_ids` -- o servidor resolve pra
+   * página pedida. Cai pro próprio id quando o cliente não é encontrado. */
+  cliente_nomes?: string[] | null;
+  responsavel_id?: string | null;
+  /** Derivado: o apelido de quem responde. Mesma razão de
+   * `Tarefa.responsavel_nome` -- a lista de pessoas do grupo só chega pra
+   * `manager` pra cima, e sem isto quem é `user` veria e-mail cru. */
+  responsavel_nome?: string | null;
+  criado_por?: string | null;
+  criado_em?: string;
+  atualizado_em?: string | null;
+  sequencia?: number;
+}
+
+/** O que `POST /subgrupos/{sg}/documentos/upload` devolve: a permissão de
+ * gravar UM objeto, e onde.
+ *
+ * `campos` vai inteiro no formulário, sem ser lido nem reordenado -- ele é a
+ * política assinada, e mexer em qualquer par derruba a assinatura. */
+export interface EnvioPreparado {
+  chave: string;
+  url: string;
+  campos: Record<string, string>;
 }
 
 /* ⚠️ `PrioridadeDaTarefa` e `StatusDeAtendimento` são DERIVADOS da constante que os

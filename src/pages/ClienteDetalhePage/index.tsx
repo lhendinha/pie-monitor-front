@@ -7,6 +7,7 @@ import {
   Abas,
   BotaoDeTexto,
   Cartao,
+  DocumentosVinculados,
   IconeSeta,
   Esqueleto,
   ModalDeAviso,
@@ -149,6 +150,19 @@ export default function ClienteDetalhePage() {
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="processos" ativa={aba}>
         <Cartao titulo="Processos vinculados">
           <ProcessosDoCliente clienteId={clienteId} />
+        </Cartao>
+      </PainelDaAba>
+
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="documentos" ativa={aba}>
+        <Cartao titulo="Documentos">
+          <DocumentosVinculados
+            filtro={{ clienteId }}
+            /* ⚠️ Sem `subgrupoInicial`: cliente é do GRUPO e não pertence a
+               subgrupo nenhum, então não há qual oferecer. O modal cai no
+               primeiro da lista, e a pessoa escolhe. */
+            clienteInicial={{ id: clienteId, nome: query.data.nome }}
+            vazio="Nenhum documento vinculado a este cliente."
+          />
         </Cartao>
       </PainelDaAba>
 

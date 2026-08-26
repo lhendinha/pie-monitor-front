@@ -6,6 +6,8 @@ export { default as ProcessosPage } from "./ProcessosPage";
 export { default as ProcessoDetalhePage } from "./ProcessoDetalhePage";
 export { default as ClientesPage } from "./ClientesPage";
 export { default as ClienteDetalhePage } from "./ClienteDetalhePage";
+export { default as DocumentosPage } from "./DocumentosPage";
+export { default as DocumentoDetalhePage } from "./DocumentoDetalhePage";
 export { default as HistoricoPage } from "./HistoricoPage";
 export { default as AgendaPage } from "./AgendaPage";
 export { default as AtendimentosPage } from "./AtendimentosPage";

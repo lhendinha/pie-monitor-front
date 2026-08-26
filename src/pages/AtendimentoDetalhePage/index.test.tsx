@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -9,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   atualizarAtendimento: vi.fn(),
   adicionarRegistro: vi.fn(),
   removerAtendimento: vi.fn(),
+  listarDocumentos: vi.fn(),
   listarClientes: vi.fn(),
   listarTodosOsMembrosDoGrupo: vi.fn(),
   papelAtende: vi.fn(),
@@ -65,10 +67,31 @@ beforeEach(() => {
   mocks.adicionarRegistro.mockResolvedValue({});
   mocks.atualizarAtendimento.mockResolvedValue({});
   mocks.removerAtendimento.mockResolvedValue({});
+  mocks.listarDocumentos.mockResolvedValue({
+    documentos: [
+      { subgrupo_id: "s1", documento_id: "d1", grupo_id: "g1", tipo: "arquivo",
+        titulo: "Procuração", tamanho_bytes: 2048, criado_em: "2026-08-20T10:00:00+00:00" },
+    ],
+    total: 1,
+    total_paginas: 1,
+  });
 });
 
-async function montar() {
-  renderComProviders(<AtendimentoDetalhePage />);
+/** 🔴 Dentro de um `MemoryRouter`, e não solto.
+ *
+ * A tela passou a ter abas, e a aba vive na URL (`?aba=`) como nas duas
+ * telas de detalhe irmãs. `useSearchParams` exige um roteador em volta --
+ * sem ele o componente estoura antes de renderizar qualquer coisa.
+ *
+ * O mock de `react-router-dom` abaixo continua trocando só `useNavigate` e
+ * `useParams`: `useSearchParams` fica o REAL, porque é justamente a leitura
+ * da URL que os testes de aba precisam exercitar. */
+function envolver(ui: React.ReactElement, rota = "/atendimentos/s1/a1") {
+  return <MemoryRouter initialEntries={[rota]}>{ui}</MemoryRouter>;
+}
+
+async function montar(rota?: string) {
+  renderComProviders(envolver(<AtendimentoDetalhePage />, rota));
   return await screen.findByRole("heading", { name: "Revisão de contrato" });
 }
 
@@ -227,7 +250,7 @@ describe("exclusão", () => {
 describe("erro", () => {
   it("link velho pra atendimento excluído explica o que houve", async () => {
     mocks.detalhesAtendimento.mockRejectedValue(new Error("404"));
-    renderComProviders(<AtendimentoDetalhePage />);
+    renderComProviders(envolver(<AtendimentoDetalhePage />));
     expect(await screen.findByText(/pode ter sido excluído/)).toBeInTheDocument();
   });
 });
@@ -250,5 +273,79 @@ describe("fidelidade ao artifact", () => {
     await montar();
     const chip = screen.getByText("0000266-87.2021.8.13.0559").closest("div");
     expect(chip?.querySelector("svg")).toBeTruthy();
+  });
+});
+
+describe("abas", () => {
+  /* 🔴 Esta tela NÃO tinha abas -- era a linha do tempo direto, enquanto
+   * processo e cliente já se dividiam assim. Documentos entrou como aba nas
+   * três, e uma tela sem abas ao lado de duas com abas faria o mesmo
+   * conteúdo ser procurado em dois lugares diferentes. */
+
+  /** O painel que a aba comanda. Painel escondido tem nome acessível vazio,
+   * então `getByRole("tabpanel", { name })` não acha os inativos -- mesmo
+   * gêmeo de `ProcessoDetalhePage` e `ClienteDetalhePage`. */
+  function painel(nome: string) {
+    const aba = screen.getByRole("tab", { name: nome });
+    const alvo = document.getElementById(aba.getAttribute("aria-controls") ?? "");
+    if (!alvo) throw new Error(`A aba "${nome}" aponta pra um painel que não existe.`);
+    return alvo;
+  }
+
+  it("abre em Registros -- é o que a tela sempre foi", async () => {
+    await montar();
+    expect(screen.getByRole("tab", { name: "Registros" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("a aba vem da URL, pra a tela sobreviver a um F5", async () => {
+    await montar("/atendimentos/s1/a1?aba=documentos");
+    expect(screen.getByRole("tab", { name: "Documentos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("aba desconhecida na URL cai na primeira, não em tela branca", async () => {
+    await montar("/atendimentos/s1/a1?aba=inventada");
+    expect(screen.getByRole("tab", { name: "Registros" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("🔴 o que foi digitado em 'Novo registro' SOBREVIVE à troca de aba", async () => {
+    /* É o que obriga os painéis a ficarem MONTADOS. `NovoRegistro` tem
+     * estado local; desmontá-lo ao trocar de aba jogaria fora a anotação que
+     * a pessoa acabou de escrever -- num campo cujo conteúdo, depois de
+     * salvo, não se edita nem se apaga.
+     *
+     * Sem isso o defeito seria invisível em revisão: a aba volta, o campo
+     * está vazio, e parece que a pessoa não digitou. */
+    await montar();
+
+    const campo = screen.getByLabelText("Novo registro do atendimento");
+    await userEvent.type(campo, "Cliente ligou às 15h pedindo cópia");
+
+    await userEvent.click(screen.getByRole("tab", { name: "Documentos" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Registros" }));
+
+    expect(
+      screen.getByLabelText<HTMLTextAreaElement>("Novo registro do atendimento").value,
+    ).toBe("Cliente ligou às 15h pedindo cópia");
+  });
+
+  it("a aba de documentos filtra POR ESTE atendimento", async () => {
+    /* Sem o filtro ela mostraria os documentos do escritório inteiro dentro
+     * de um atendimento -- e a aba passaria a mentir sobre o que reúne. */
+    await montar("/atendimentos/s1/a1?aba=documentos");
+    await waitFor(() =>
+      expect(mocks.listarDocumentos).toHaveBeenCalledWith(
+        expect.objectContaining({ atendimentoId: "a1" }),
+      ),
+    );
+    expect(within(painel("Documentos")).getByText("Procuração")).toBeInTheDocument();
   });
 });

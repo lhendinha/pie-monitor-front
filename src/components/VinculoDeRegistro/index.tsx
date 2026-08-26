@@ -2,31 +2,35 @@ import { Box, Input, Stack, Text, chakra } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { Z_INDEX_CALENDARIO } from "../../../constants/camadaFlutuante";
-import { listarAtendimentos, listarProcessos } from "../../../services";
-import { OPCAO_LINHA } from "../../../theme/painelFiltro";
-import { mascararNumeroProcesso } from "../../../utils";
-import { ESPERA_DA_BUSCA_MS } from "../../../constants/busca";
-import { useValorComEspera } from "../../../hooks/useValorComEspera";
+import { Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
+import { listarAtendimentos, listarProcessos } from "../../services";
+import { OPCAO_LINHA } from "../../theme/painelFiltro";
+import { mascararNumeroProcesso } from "../../utils";
+import { ESPERA_DA_BUSCA_MS } from "../../constants/busca";
+import { useValorComEspera } from "../../hooks/useValorComEspera";
 import {
   MINIMO_PRA_BUSCAR,
   RESULTADOS_POR_TIPO,
-} from "../../../constants/vinculoDaTarefa";
+} from "../../constants/vinculoDeRegistro";
 import EtiquetaDeVinculo from "../EtiquetaDeVinculo";
-import type { Vinculo, VinculosDaTarefa } from "../../../types";
+import type { Vinculo, VinculosDeRegistro } from "../../types";
 import type {
   RespostaDeAtendimentosResumidos,
   RespostaDeProcessos,
-} from "../../../types/respostas";
+} from "../../types/respostas";
 
-interface VinculoDaTarefaProps {
-  valor: VinculosDaTarefa;
-  onMudar: (vinculos: VinculosDaTarefa) => void;
+interface VinculoDeRegistroProps {
+  valor: VinculosDeRegistro;
+  onMudar: (vinculos: VinculosDeRegistro) => void;
+  /** `id` do input, pro `Campo` que o rotula. Cada tela dá o seu -- duas
+   * instâncias na mesma página com o mesmo `id` fariam o rótulo de uma
+   * focar o campo da outra. */
+  id?: string;
 }
 
 /** "Processo ou atendimento vinculado": uma busca que enxerga os DOIS.
  *
- * Dá pra vincular um processo E um atendimento na mesma tarefa -- são
+ * Dá pra vincular um processo E um atendimento no mesmo registro -- são
  * campos independentes no backend (`processo_numero` e `atendimento_id`),
  * cada um com um valor. Por isso os escolhidos ficam como etiquetas embaixo
  * da busca, em vez de o campo guardar um item só: com um campo de valor
@@ -38,8 +42,29 @@ interface VinculoDaTarefaProps {
  * Busca a partir de 3 caracteres, com espera entre teclas: o número de
  * processo tem 20 dígitos, e disparar a cada tecla seriam 20 requisições
  * pra uma resposta que só interessa no fim.
+ *
+ * 🔴 **Não vincula CLIENTE, e isso é decisão -- o plano dizia o contrário.**
+ * O plano previa um "slot opcional de cliente" aqui dentro. Ao promover,
+ * dois fatos derrubaram a ideia:
+ *
+ * 1. **`CampoDeClientes` já existe e já resolve exatamente isto**, com busca
+ *    própria, escolha múltipla e etiquetas -- e já serve Atendimentos e
+ *    Processos. Um terceiro caminho pro mesmo dado seria a terceira resposta
+ *    pra mesma pergunta, que é o estrago que `constants/limites.ts`
+ *    documenta.
+ * 2. **A cardinalidade não bate.** Processo e atendimento são UM cada
+ *    (escolher troca); cliente é LISTA (escolher empilha). Numa caixa só,
+ *    a mesma ação teria dois comportamentos dependendo do tipo da linha
+ *    clicada -- e nada na tela diria qual.
+ *
+ * O padrão do sistema já é dois campos lado a lado: `NovoAtendimentoForm`
+ * põe `CampoDeProcesso` e `CampoDeClientes` separados. O documento faz igual.
  */
-export default function VinculoDaTarefa({ valor, onMudar }: VinculoDaTarefaProps) {
+export default function VinculoDeRegistro({
+  valor,
+  onMudar,
+  id = "vinculo",
+}: VinculoDeRegistroProps) {
   const [texto, setTexto] = useState("");
   /** Mesmo debounce das outras buscas do sistema, agora num hook só. */
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
@@ -59,7 +84,7 @@ export default function VinculoDaTarefa({ valor, onMudar }: VinculoDaTarefaProps
   const busca = termo.length >= MINIMO_PRA_BUSCAR ? termo : "";
 
   const query = useQuery<Vinculo[]>({
-    queryKey: ["vinculo-tarefa", busca],
+    queryKey: ["vinculo-registro", busca],
     enabled: Boolean(busca),
     queryFn: async () => {
       // Em paralelo: são dois recursos independentes, e em série o campo
@@ -102,7 +127,7 @@ export default function VinculoDaTarefa({ valor, onMudar }: VinculoDaTarefaProps
     <Box ref={caixa}>
       <Box position="relative">
         <Input
-          id="tf-vinculo"
+          id={id}
           role="combobox"
           aria-expanded={mostrarPainel}
           aria-autocomplete="list"

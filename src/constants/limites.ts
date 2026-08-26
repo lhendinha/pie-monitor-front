@@ -38,3 +38,15 @@ export const TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO = 512;
 
 /** Título de uma tarefa (o "Descrição da tarefa" do modal). */
 export const TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA = 512;
+
+/** Título de um DOCUMENTO -- como ele se chama na lista.
+ *
+ * ⚠️ Não confundir com o NOME DO ARQUIVO, que é outro campo e não se edita:
+ * ele é o nome com que o arquivo baixa. Ver `types/index.ts`. */
+export const TAMANHO_MAXIMO_DO_TITULO_DE_DOCUMENTO = 512;
+
+/** Descrição de um documento -- as duas linhas embaixo do título na lista. */
+export const TAMANHO_MAXIMO_DA_DESCRICAO_DE_DOCUMENTO = 512;
+
+/** URL de um documento do tipo `link`. Teto prático de URL em navegador. */
+export const TAMANHO_MAXIMO_DA_URL_DE_DOCUMENTO = 2048;

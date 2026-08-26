@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   listarClientes: vi.fn(),
   listarOpcoesProcesso: vi.fn(),
   papelAtende: vi.fn(),
+  listarDocumentos: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -75,6 +76,15 @@ async function irParaProcessos() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.listarDocumentos.mockResolvedValue({
+    documentos: [
+      { subgrupo_id: "s1", documento_id: "d1", grupo_id: "g1", tipo: "arquivo",
+        titulo: "Contrato de honorários", tamanho_bytes: 4096,
+        criado_em: "2026-08-20T10:00:00+00:00" },
+    ],
+    total: 1,
+    total_paginas: 1,
+  });
   mocks.papelAtende.mockReturnValue(true);
   mocks.detalheCliente.mockResolvedValue(CLIENTE);
   mocks.listarProcessos.mockResolvedValue({ processos: [] });
@@ -452,3 +462,27 @@ describe("o resumo do processo vinculado", () => {
   });
 });
 
+
+describe("aba de documentos", () => {
+  it("🔴 filtra POR ESTE cliente", async () => {
+    /* Sem o filtro a aba mostraria os documentos do escritório inteiro
+       dentro de um cliente -- e passaria a mentir sobre o que reúne. */
+    montar("/clientes/c1?aba=documentos");
+    await waitFor(() =>
+      expect(mocks.listarDocumentos).toHaveBeenCalledWith(
+        expect.objectContaining({ clienteId: "c1" }),
+      ),
+    );
+    expect(
+      await within(painel("Documentos")).findByText("Contrato de honorários"),
+    ).toBeInTheDocument();
+  });
+
+  it("a aba vem da URL, pra a tela sobreviver a um F5", async () => {
+    montar("/clientes/c1?aba=documentos");
+    expect(await screen.findByRole("tab", { name: "Documentos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+});

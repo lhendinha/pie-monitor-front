@@ -2,6 +2,7 @@ import {
   IconeAgenda,
   IconeAtendimentos,
   IconeClientes,
+  IconeDocumentos,
   IconeGrupo,
   IconeHistorico,
   IconeKanban,
@@ -26,6 +27,7 @@ export const ICONES_MENU: Record<string, ComponentType> = {
   Atendimentos: IconeAtendimentos,
   Processos: IconeProcessos,
   Clientes: IconeClientes,
+  Documentos: IconeDocumentos,
   Historico: IconeHistorico,
   Grupo: IconeGrupo,
 };

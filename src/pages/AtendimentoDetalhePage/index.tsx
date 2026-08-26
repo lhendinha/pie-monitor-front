@@ -1,12 +1,14 @@
 import { Box, Flex, Heading } from "@chakra-ui/react";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  Abas,
   BotaoDeTexto,
   BotaoQuadrado,
   Cartao,
+  DocumentosVinculados,
   EstadoDeErro,
   Esqueleto,
   Etiqueta,
@@ -16,6 +18,7 @@ import {
   IconeLixeira,
   IconeSeta,
   ModalDeConfirmacao,
+  PainelDaAba,
   Select,
   useToast,
 } from "../../components";
@@ -29,18 +32,23 @@ import {
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { coresDoStatus } from "../../theme/atendimento";
-import { contar, mascararNumeroProcesso } from "../../utils";
+import { abaValida, contar, mascararNumeroProcesso, PARAM_DA_ABA } from "../../utils";
 import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
+import { ABAS_DO_ATENDIMENTO, GRUPO_DE_ABAS } from "./constants";
+import type { AbaDoAtendimento } from "./types";
 import type { Atendimento } from "../../types";
-import type {
-} from "../../types/respostas";
 
 /** Detalhe de um atendimento: cabeçalho, linha do tempo e o campo de
  * escrever.
  *
  * O par (subgrupo, id) vem da URL porque é a chave primária -- o
  * atendimento não é endereçável só pelo id.
+ *
+ * 🔴 **Ganhou abas em 26/08/2026.** Era a linha do tempo direto, sem `Abas`,
+ * enquanto processo e cliente já se dividiam assim -- e Documentos entrou
+ * como aba nas três. Manter esta tela sem abas faria o mesmo conteúdo ser
+ * procurado em dois lugares diferentes conforme a tela.
  */
 export default function AtendimentoDetalhePage() {
   const { subgrupoId = "", atendimentoId = "" } = useParams();
@@ -48,6 +56,21 @@ export default function AtendimentoDetalhePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+
+  /* A aba vive na URL, como nas outras duas telas de detalhe -- ver
+     `PARAM_DA_ABA`. Estas telas são alcançadas por LINK (do e-mail, da
+     Agenda, do Kanban), e um F5 que devolve a pessoa pra primeira aba
+     incomoda de verdade.
+
+     `replace` porque trocar de aba não é um passo do histórico: sem isso,
+     quem visse as duas precisaria de dois "voltar" pra sair da tela. */
+  const [params, setParams] = useSearchParams();
+  const aba = abaValida(ABAS_DO_ATENDIMENTO, params.get(PARAM_DA_ABA));
+  const irParaAba = (nova: AbaDoAtendimento) => {
+    const proximos = new URLSearchParams(params);
+    proximos.set(PARAM_DA_ABA, nova);
+    setParams(proximos, { replace: true });
+  };
 
   const query = useQuery<Atendimento>({
     queryKey: qk.atendimento(subgrupoId, atendimentoId),
@@ -194,17 +217,54 @@ export default function AtendimentoDetalhePage() {
         </Flex>
       </Flex>
 
-      <Cartao>
-        <Box p="16px 18px">
-          <LinhaDoTempo
-            registros={atendimento.registros || []}
+      <Abas
+        grupo={GRUPO_DE_ABAS}
+        abas={ABAS_DO_ATENDIMENTO.map((a) => ({ id: a.id, rotulo: a.rotulo }))}
+        ativa={aba}
+        onMudar={irParaAba}
+      />
+
+      {/* ⚠️ Os dois painéis vão MONTADOS -- ver `PainelDaAba`. O que obriga é
+          o de Registros: `NovoRegistro` tem estado local, e desmontá-lo ao
+          trocar de aba jogaria fora a anotação que a pessoa acabou de
+          escrever -- num campo cujo conteúdo, depois de salvo, não se edita
+          nem se apaga.
+
+          O de Documentos vai junto porque não custa nada: a consulta dele é
+          uma só, e escondê-la ou desmontá-la daria no mesmo em requisições. */}
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="registros" ativa={aba}>
+        <Cartao>
+          <Box p="16px 18px">
+            <LinhaDoTempo
+              registros={atendimento.registros || []}
+            />
+            <NovoRegistro
+              enviando={registrar.isPending}
+              onEnviar={(texto) => registrar.mutateAsync(texto)}
+            />
+          </Box>
+        </Cartao>
+      </PainelDaAba>
+
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="documentos" ativa={aba}>
+        <Cartao titulo="Documentos">
+          <DocumentosVinculados
+            filtro={{ atendimentoId }}
+            /* O modal abre no subgrupo DO ATENDIMENTO: é onde o documento
+               vai ser procurado depois. */
+            subgrupoInicial={subgrupoId}
+            /* Com o ASSUNTO como rótulo, não o id -- a etiqueta do vínculo é
+               onde a pessoa confere que vinculou ao atendimento certo, e um
+               id hexadecimal não se confere. */
+            vinculoInicial={{
+              tipo: "atendimento",
+              id: atendimentoId,
+              rotulo: atendimento.assunto,
+            }}
+            vazio="Nenhum documento vinculado a este atendimento."
           />
-          <NovoRegistro
-            enviando={registrar.isPending}
-            onEnviar={(texto) => registrar.mutateAsync(texto)}
-          />
-        </Box>
-      </Cartao>
+        </Cartao>
+      </PainelDaAba>
 
       {confirmandoExclusao && (
         <ModalDeConfirmacao

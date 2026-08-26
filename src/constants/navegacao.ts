@@ -15,6 +15,7 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
   { caminho: "/atendimentos", rotulo: "Atendimentos", icone: "Atendimentos" },
   { caminho: "/processos", rotulo: "Processos", icone: "Processos" },
   { caminho: "/clientes", rotulo: "Clientes", icone: "Clientes" },
+  { caminho: "/documentos", rotulo: "Documentos", icone: "Documentos" },
   { caminho: "/historico", rotulo: "Histórico", icone: "Historico" },
   { caminho: "/grupo", rotulo: "Grupo", icone: "Grupo", minimo: "manager" },
 ];
