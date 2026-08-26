@@ -114,17 +114,21 @@ const ATENDIMENTOS = {
       cliente_ids: ["cli-1"],
       // ⚠️ Acompanha `cliente_ids` na ordem. A API passou a resolver o nome
       // na leitura (25/08/2026); stub sem isto mostraria o id cru e a
-      // verificação visual passaria assim mesmo.
+      // verificação visual passaria assim mesmo. Mesma razão do `autor_nome`
+      // nos registros abaixo e nas notificações: a tela deixou de traduzir
+      // e-mail em apelido por conta própria.
       cliente_nomes: ["Construtora Alfa"],
       processo_numero: "00002668720218130559",
       registros: [
         {
           autor_id: "ana@argos.local",
+          autor_nome: "Ana Paula",
           registrado_em: "2026-08-10T09:00:00+00:00",
           texto: "Cliente procurou o escritório para revisar a cláusula de reajuste.",
         },
         {
           autor_id: "joao@argos.local",
+          autor_nome: "João Ribeiro",
           registrado_em: "2026-08-12T14:30:00+00:00",
           texto: "Enviei a minuta revisada por e-mail. Aguardando retorno.",
         },
@@ -142,6 +146,7 @@ const ATENDIMENTOS = {
       registros: [
         {
           autor_id: "ana@argos.local",
+          autor_nome: "Ana Paula",
           registrado_em: "2026-07-28T11:00:00+00:00",
           texto: "Explicado o prazo de cumprimento voluntário.",
         },
@@ -163,17 +168,18 @@ const RESPOSTAS = [
         {
           usuario_id: "ana@argos.local", notificacao_id: "1787000000000003_a",
           tipo: "tarefa_atribuida", criado_em: hMenos(0.2), lida: false,
-          autor: "joao@argos.local", titulo: "Protocolar contestação", detalhe: "",
+          autor: "joao@argos.local", autor_nome: "João Ribeiro", titulo: "Protocolar contestação", detalhe: "",
           subgrupo_id: "sg-civel", alvo_tipo: "tarefa", alvo_id: "t1",
         },
         {
           usuario_id: "ana@argos.local", notificacao_id: "1787000000000002_b",
           tipo: "tarefa_movida", criado_em: hMenos(3), lida: false,
-          autor: "joao@argos.local", titulo: "Preparar audiência", detalhe: "Fazendo",
+          autor: "joao@argos.local", autor_nome: "João Ribeiro", titulo: "Preparar audiência", detalhe: "Fazendo",
           subgrupo_id: "sg-civel", alvo_tipo: "tarefa", alvo_id: "t4",
         },
         {
           usuario_id: "ana@argos.local", notificacao_id: "1787000000000001_c",
+          // Lembrete vem do robô: sem autor, e portanto sem `autor_nome`.
           tipo: "lembrete", criado_em: hMenos(20), lida: true, autor: "",
           titulo: "Processo 0000266-87.2021.8.13.0559", detalhe: "Prazo final é amanhã",
           subgrupo_id: "sg-civel", alvo_tipo: "processo", alvo_id: "00002668720218130559",
@@ -238,11 +244,11 @@ const RESPOSTAS = [
       // "Amanhã" e "Ontem", e com data fixa a verificação visual só
       // mostraria data crua depois que a data passasse.
       tarefas: [
-        { tarefa_id: "t1", subgrupo_id: "sg-civel", titulo: "Protocolar réplica", data: emDias(-2), coluna_id: "c1", prioridade: "Alta", processo_numero: "00002668720218130559" },
-        { tarefa_id: "t2", subgrupo_id: "sg-civel", titulo: "Conferir prazo de contestação", data: emDias(0), coluna_id: "c1", prioridade: "Média" },
-        { tarefa_id: "t3", subgrupo_id: "sg-civel", titulo: "Juntar procuração", data: emDias(1), coluna_id: "c1", prioridade: "Baixa" },
-        { tarefa_id: "t4", subgrupo_id: "sg-civel", titulo: "Preparar audiência", data: emDias(6), coluna_id: "c2", prioridade: "Alta", responsavel_id: "ana@argos.local" },
-        { tarefa_id: "t5", subgrupo_id: "sg-civel", titulo: "Arquivar cópia assinada", data: emDias(3), coluna_id: "c3", prioridade: "Baixa", responsavel_id: "joao@argos.local" },
+        { tarefa_id: "t1", subgrupo_id: "sg-civel", titulo: "Protocolar réplica", data: emDias(-2), coluna_id: "c1", coluna_nome: "A Fazer", esta_concluida: false, prioridade: "Alta", processo_numero: "00002668720218130559" },
+        { tarefa_id: "t2", subgrupo_id: "sg-civel", titulo: "Conferir prazo de contestação", data: emDias(0), coluna_id: "c1", coluna_nome: "A Fazer", esta_concluida: false, prioridade: "Média" },
+        { tarefa_id: "t3", subgrupo_id: "sg-civel", titulo: "Juntar procuração", data: emDias(1), coluna_id: "c1", coluna_nome: "A Fazer", esta_concluida: false, prioridade: "Baixa" },
+        { tarefa_id: "t4", subgrupo_id: "sg-civel", titulo: "Preparar audiência", data: emDias(6), coluna_id: "c2", coluna_nome: "Concluído", esta_concluida: true, prioridade: "Alta", responsavel_id: "ana@argos.local" },
+        { tarefa_id: "t5", subgrupo_id: "sg-civel", titulo: "Arquivar cópia assinada", data: emDias(3), coluna_id: "c3", coluna_nome: "A Fazer", esta_concluida: false, prioridade: "Baixa", responsavel_id: "joao@argos.local" },
       ],
       total: 5,
       total_paginas: 1,

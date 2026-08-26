@@ -15,7 +15,6 @@ interface VisaoPorSemanaProps {
   data: Date;
   isoDeHoje: string;
   porDia: Map<string, Tarefa[]>;
-  estaConcluida: (tarefa: Tarefa) => boolean;
   onEscolherDia: (iso: string) => void;
 }
 
@@ -33,7 +32,6 @@ export default function VisaoPorSemana({
   data,
   isoDeHoje,
   porDia,
-  estaConcluida,
   onEscolherDia,
 }: VisaoPorSemanaProps) {
   const inicio = inicioDaSemana(data);
@@ -97,7 +95,7 @@ export default function VisaoPorSemana({
             </Text>
 
             {tarefas.slice(0, TAREFAS_VISIVEIS).map((tarefa) => {
-              const concluida = estaConcluida(tarefa);
+              const concluida = tarefa.esta_concluida ?? false;
               const alta = tarefa.prioridade === "Alta";
               return (
                 <Text

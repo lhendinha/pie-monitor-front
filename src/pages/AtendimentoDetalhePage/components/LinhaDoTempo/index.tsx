@@ -8,7 +8,6 @@ interface LinhaDoTempoProps {
   registros: RegistroDeAtendimento[];
   /** Apelido de quem escreveu. O registro guarda só o e-mail, e quem
    * resolve o nome é a página. */
-  nomeDoAutor: (email: string) => string;
 }
 
 /** A linha do tempo do atendimento (`.timeline` do artifact).
@@ -20,7 +19,7 @@ interface LinhaDoTempoProps {
  * Append-only: não há editar nem excluir registro, nem aqui nem no
  * servidor. É registro de atendimento a cliente.
  */
-export default function LinhaDoTempo({ registros, nomeDoAutor }: LinhaDoTempoProps) {
+export default function LinhaDoTempo({ registros }: LinhaDoTempoProps) {
   return (
     <Flex direction="column">
       {registros.map((registro, indice) => (
@@ -32,7 +31,10 @@ export default function LinhaDoTempo({ registros, nomeDoAutor }: LinhaDoTempoPro
           borderBottomStyle="solid"
           borderBottomColor="border.subtle"
         >
-          <Avatar nome={nomeDoAutor(registro.autor_id)} tamanho="pequeno" />
+          {/* 🔴 O nome vem NO registro, resolvido pelo servidor -- antes vinha de
+              um tradutor montado com TODAS as pessoas do grupo, e a lista só
+              chegava pra `manager` pra cima. */}
+          <Avatar nome={registro.autor_nome ?? registro.autor_id} tamanho="pequeno" />
           <Box
             flex="1"
             minW="0"
@@ -45,7 +47,7 @@ export default function LinhaDoTempo({ registros, nomeDoAutor }: LinhaDoTempoPro
           >
             <Flex align="center" gap="8px" mb="4px" wrap="wrap">
               <Text as="span" fontWeight="800" fontSize="12.5px">
-                {nomeDoAutor(registro.autor_id)}
+                {registro.autor_nome ?? registro.autor_id}
               </Text>
               <Text as="span" fontSize="11.5px" color="fg.subtle" fontFamily="mono">
                 {formatarDataHora(registro.registrado_em)}

@@ -9,7 +9,6 @@ interface LinhaDeNotificacaoProps {
   notificacao: Notificacao;
   /** Apelido de quem agiu. O aviso guarda só o e-mail, e quem resolve o
    * nome é quem monta a lista. */
-  nomeDoAutor: (email: string) => string;
   /** `undefined` quando a notificação não leva a lugar nenhum -- e aí a
    * linha não é clicável, em vez de fingir que é. */
   onAbrir?: () => void;
@@ -24,7 +23,6 @@ interface LinhaDeNotificacaoProps {
  */
 export default function LinhaDeNotificacao({
   notificacao,
-  nomeDoAutor,
   onAbrir,
   ultima,
 }: LinhaDeNotificacaoProps) {
@@ -60,7 +58,7 @@ export default function LinhaDeNotificacao({
 
       <Box flex="1" minW="0">
         <Text fontSize="13px" fontWeight={notificacao.lida ? "600" : "700"}>
-          {frasePrincipal(notificacao, nomeDoAutor)}
+          {frasePrincipal(notificacao)}
         </Text>
         <Text fontSize="12px" color="fg.muted" mt="1px" truncate>
           {detalheSecundario(notificacao)}

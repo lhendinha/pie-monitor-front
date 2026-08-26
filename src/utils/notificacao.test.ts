@@ -23,7 +23,7 @@ describe("notificação de sessão alterada", () => {
     /* 🔴 O `default` de `frasePrincipal` devolve o título cru justamente pra
        um front mais antigo que o servidor não esconder o aviso. É por isso que
        a API manda a frase PRONTA em vez de um rótulo. */
-    expect(frasePrincipal(BASE, (e) => e)).toBe(
+    expect(frasePrincipal(BASE)).toBe(
       "Você foi movido para o grupo Escritório Novo",
     );
   });

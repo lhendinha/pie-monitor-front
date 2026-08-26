@@ -47,6 +47,12 @@ function tarefa(parcial: Record<string, unknown>) {
     titulo: "Tarefa",
     data: ISO_HOJE,
     coluna_id: "c1",
+    /* 🔴 `coluna_nome` e `esta_concluida` vêm NA tarefa desde 25/08/2026,
+       resolvidos pelo servidor. Antes a Agenda pedia um quadro POR SUBGRUPO
+       exibido pra descobrir isto -- e só pros 50 primeiros, enquanto a lista
+       de tarefas trazia todos os visíveis. */
+    coluna_nome: "A Fazer",
+    esta_concluida: false,
     prioridade: "Média",
     ...parcial,
   };
@@ -206,7 +212,7 @@ describe("as quatro visões", () => {
 
 describe("concluída", () => {
   it("tacha a que está na coluna de CONCLUSÃO", async () => {
-    comTarefas(tarefa({ titulo: "Já fiz", coluna_id: "c2" }));
+    comTarefas(tarefa({ titulo: "Já fiz", coluna_nome: "Concluído", esta_concluida: true }));
     await montar();
     await trocarVisao("Por dia");
 
@@ -215,7 +221,7 @@ describe("concluída", () => {
   });
 
   it("tacha a ARQUIVADA também -- arquivada é concluída guardada", async () => {
-    comTarefas(tarefa({ titulo: "Guardada", coluna_id: "c3" }));
+    comTarefas(tarefa({ titulo: "Guardada", coluna_nome: "Arquivado", esta_concluida: true }));
     await montar();
     await trocarVisao("Por dia");
 
@@ -223,41 +229,32 @@ describe("concluída", () => {
     await waitFor(() => expect(titulo).toHaveStyle({ textDecoration: "line-through" }));
   });
 
-  it("o MESMO id de coluna em quadros diferentes não se confunde", async () => {
-    /* 🔴 Cada subgrupo tem o próprio quadro, e nada impede que "c1" seja
-     * comum num e de conclusão no outro. Se a chave fosse só a coluna, a
-     * tarefa aberta de um subgrupo apareceria tachada por causa do outro. */
-    mocks.listarQuadro.mockImplementation((id: string) =>
-      Promise.resolve({
-        colunas: [
-          {
-            subgrupo_id: id,
-            coluna_id: "c1",
-            nome: "Primeira",
-            ordem: 1,
-            // Em s2, "c1" CONCLUI; em s1, não.
-            e_conclusao: id === "s2",
-            e_arquivado: false,
-          },
-        ],
-      }),
-    );
-    comTarefas(
-      tarefa({ tarefa_id: "ta", subgrupo_id: "s1", titulo: "Aberta aqui", coluna_id: "c1" }),
-      tarefa({ tarefa_id: "tb", subgrupo_id: "s2", titulo: "Concluída lá", coluna_id: "c1" }),
-    );
+  it("🔴 NÃO pede quadro nenhum -- e ainda assim tacha certo", async () => {
+    /* Esta é a asserção que substituiu duas.
+
+       Saiu daqui "o MESMO id de coluna em quadros diferentes não se
+       confunde": cada subgrupo tem o próprio quadro, e nada impede que "c1"
+       seja comum num e de conclusão no outro. A garantia não deixou de
+       importar -- MUDOU DE LADO. Agora é do servidor, e vive em
+       `api/tests/test_campos_derivados.py`.
+
+       Saiu também "NÃO mostra a lista antes dos quadros": não há mais
+       quadros a esperar. Os campos chegam na mesma resposta das tarefas, e
+       o estado em que a lista está na tela sem eles -- aquele em que a
+       Agenda afirmava o contrário do que é -- deixou de existir.
+
+       O que sobra pra guardar aqui é que a tela não voltou a perguntar. */
+    comTarefas(tarefa({ titulo: "Já fiz", coluna_nome: "Concluído", esta_concluida: true }));
     await montar();
     await trocarVisao("Por dia");
 
-    const concluida = (await screen.findAllByText("Concluída lá"))[0];
-    await waitFor(() => expect(concluida).toHaveStyle({ textDecoration: "line-through" }));
-
-    const aberta = screen.getAllByText("Aberta aqui")[0];
-    expect(aberta).not.toHaveStyle({ textDecoration: "line-through" });
+    const titulo = (await screen.findAllByText("Já fiz"))[0];
+    expect(titulo).toHaveStyle({ textDecoration: "line-through" });
+    expect(mocks.listarQuadro).not.toHaveBeenCalled();
   });
 
   it("NÃO tacha a que está numa coluna comum", async () => {
-    comTarefas(tarefa({ titulo: "Em aberto", coluna_id: "c1" }));
+    comTarefas(tarefa({ titulo: "Em aberto" }));
     await montar();
     await trocarVisao("Por dia");
 
@@ -270,7 +267,7 @@ describe("coluna na linha", () => {
   it("mostra em que coluna a tarefa está", async () => {
     /* A Agenda não tem colunas -- é a única forma de saber em que pé a
      * tarefa está sem abri-la. É a primeira metade do `meta` do artifact. */
-    comTarefas(tarefa({ titulo: "Protocolar", coluna_id: "c1" }));
+    comTarefas(tarefa({ titulo: "Protocolar" }));
     await montar();
     await trocarVisao("Por dia");
 
@@ -290,7 +287,7 @@ describe("coluna na linha", () => {
   });
 
   it("coluna que o quadro não conhece some da linha, sem id cru", async () => {
-    comTarefas(tarefa({ titulo: "Órfã", coluna_id: "c-que-nao-existe" }));
+    comTarefas(tarefa({ titulo: "Órfã", coluna_nome: null }));
     await montar();
     await trocarVisao("Por dia");
 
@@ -299,26 +296,37 @@ describe("coluna na linha", () => {
   });
 });
 
-describe("espera pelos quadros", () => {
-  it("NÃO mostra a lista antes dos quadros -- senão risca depois", async () => {
-    /* 🔴 O quadro chega depois das tarefas. Renderizar antes escreve a
-     * concluída SEM risco e a risca meio segundo depois: no intervalo, a
-     * tela afirma o contrário do que é. */
-    let liberar: (v: unknown) => void = () => {};
-    mocks.listarQuadro.mockReturnValue(new Promise((r) => { liberar = r; }));
-    comTarefas(tarefa({ titulo: "Já fiz", coluna_id: "c2" }));
 
-    renderComProviders(<AgendaPage />);
-    await screen.findByRole("heading", { name: "Agenda" });
+describe("coluna na linha", () => {
+  it("mostra em que coluna a tarefa está", async () => {
+    /* A Agenda não tem colunas -- é a única forma de saber em que pé a
+     * tarefa está sem abri-la. É a primeira metade do `meta` do artifact. */
+    comTarefas(tarefa({ titulo: "Protocolar" }));
+    await montar();
+    await trocarVisao("Por dia");
 
-    // Com os quadros pendentes, a tarefa não pode estar na tela.
-    await waitFor(() => expect(mocks.listarTarefas).toHaveBeenCalled());
-    expect(screen.queryByText("Já fiz")).not.toBeInTheDocument();
+    expect((await screen.findAllByText("A Fazer")).length).toBeGreaterThan(0);
+  });
 
-    liberar({ colunas: COLUNAS });
-    const titulo = (await screen.findAllByText("Já fiz"))[0];
-    // E quando aparece, já aparece riscada.
-    expect(titulo).toHaveStyle({ textDecoration: "line-through" });
+  it("junta coluna e processo com '·', como o artifact", async () => {
+    comTarefas(
+      tarefa({ titulo: "Com processo", processo_numero: "00002668720218130559" }),
+    );
+    await montar();
+    await trocarVisao("Por dia");
+
+    expect(
+      (await screen.findAllByText(/^A Fazer · 0000266-87\.2021\.8\.13\.0559$/))[0],
+    ).toBeInTheDocument();
+  });
+
+  it("coluna que o quadro não conhece some da linha, sem id cru", async () => {
+    comTarefas(tarefa({ titulo: "Órfã", coluna_nome: null }));
+    await montar();
+    await trocarVisao("Por dia");
+
+    await screen.findAllByText("Órfã");
+    expect(screen.queryByText(/c-que-nao-existe/)).not.toBeInTheDocument();
   });
 });
 

@@ -14,7 +14,6 @@ interface LinhaDeAtendimentoProps {
    * e-mail, e o avatar tira as iniciais do que receber -- sem resolver, a
    * lista mostrava as iniciais do E-MAIL ("jo") enquanto o detalhe mostrava
    * as do nome ("JM"), pra mesma pessoa. */
-  nomeDoAutor: (email: string) => string;
   onAbrir: (atendimento: Atendimento) => void;
   ultima?: boolean;
 }
@@ -35,7 +34,6 @@ interface LinhaDeAtendimentoProps {
  */
 export default function LinhaDeAtendimento({
   atendimento,
-  nomeDoAutor,
   onAbrir,
   ultima,
 }: LinhaDeAtendimentoProps) {
@@ -106,7 +104,13 @@ export default function LinhaDeAtendimento({
 
       {ultimo && (
         <Flex align="center" gap="12px" flex="0 0 auto">
-          <Avatar nome={nomeDoAutor(ultimo.autor_id)} tamanho="pequeno" />
+          {/* 🔴 O nome vem NO registro (`autor_nome`), resolvido pelo servidor.
+              Esta linha recebia um tradutor, e quem o montava baixava TODAS as
+              pessoas do grupo -- numa consulta que só rodava pra `manager` pra
+              cima, então o avatar de quem é `user` mostrava iniciais de e-mail.
+
+              `?? autor_id` cobre quem não tem apelido e quem é de outro grupo. */}
+          <Avatar nome={ultimo.autor_nome ?? ultimo.autor_id} tamanho="pequeno" />
           <Text fontSize="11px" color="fg.subtle" textAlign="right" whiteSpace="nowrap">
             {formatarDataDeInstante(ultimo.registrado_em)}
           </Text>

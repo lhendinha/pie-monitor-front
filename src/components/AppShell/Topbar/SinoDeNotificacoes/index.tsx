@@ -1,7 +1,6 @@
 import { Box, Flex, Popover, Portal, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 
 import BotaoDeIcone from "../../../BotaoDeIcone";
 import BotaoDeTexto from "../../../BotaoDeTexto";
@@ -14,10 +13,7 @@ import {
   MAXIMO_NO_BADGE,
 } from "../../../../constants";
 import { useNotificacoes } from "../../../../hooks/useNotificacoes";
-import { listarTodosOsMembrosDoGrupo, papelAtende } from "../../../../services";
-import { qk } from "../../../../services/queryKeys";
 import { destinoDaNotificacao } from "../../../../utils/notificacao";
-import type { RespostaDeMembros } from "../../../../types/respostas";
 import type { Notificacao } from "../../../../types";
 import LinhaDeNotificacao from "./LinhaDeNotificacao";
 
@@ -41,16 +37,6 @@ export default function SinoDeNotificacoes() {
     marcarTodasLidas,
     marcandoTodas,
   } = useNotificacoes();
-
-  /** Apelidos de quem agiu. `manager` pra cima -- pra `user` a lista não
-   * vem, e a frase mostra o e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.todosOsMembros(),
-    queryFn: listarTodosOsMembrosDoGrupo,
-    enabled: papelAtende("manager"),
-  });
-  const nomeDoAutor = (email: string) =>
-    membrosQuery.data?.membros.find((m) => m.email === email)?.apelido || email;
 
   function abrir(notificacao: Notificacao) {
     const destino = destinoDaNotificacao(notificacao);
@@ -122,7 +108,6 @@ export default function SinoDeNotificacoes() {
                   <LinhaDeNotificacao
                     key={n.notificacao_id}
                     notificacao={n}
-                    nomeDoAutor={nomeDoAutor}
                     onAbrir={destinoDaNotificacao(n) ? () => abrir(n) : undefined}
                     ultima={indice === notificacoes.length - 1}
                   />

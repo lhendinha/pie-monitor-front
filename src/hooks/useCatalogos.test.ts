@@ -38,9 +38,15 @@ describe("catálogos compartilham chave E forma", () => {
   });
 
   it("os consumidores da chave de membros continuam guardando a resposta inteira", () => {
+    /* ⚠️ A lista ENCOLHEU em 25/08/2026, e é bom sinal: o sino,
+       `AtendimentosPage` e `AtendimentoDetalhePage` saíram porque pararam de
+       baixar o catálogo de pessoas -- o nome de quem agiu passou a vir na
+       própria resposta (`autor_nome`), resolvido pelo servidor. Sobraram os
+       que têm a lista como ASSUNTO da tela.
+
+       Não acrescente aqui uma tela que só quer traduzir e-mail em apelido:
+       esse caminho é o campo derivado, não a chave compartilhada. */
     const consumidores = [
-      "src/components/AppShell/Topbar/SinoDeNotificacoes/index.tsx",
-      "src/pages/AtendimentosPage/index.tsx",
       "src/pages/SubgruposPage/components/MembrosDoSubgrupo/index.tsx",
     ];
     const fontes = import.meta.glob("../**/*.tsx", {

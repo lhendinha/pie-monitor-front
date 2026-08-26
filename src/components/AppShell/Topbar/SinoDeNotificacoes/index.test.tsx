@@ -31,6 +31,11 @@ function notificacao(parcial: Record<string, unknown> = {}) {
     criado_em: "2026-08-23T14:30:00+00:00",
     lida: false,
     autor: "ana@x.com",
+    /* 🔴 O nome vem NA notificação desde 25/08/2026, resolvido pelo servidor.
+       Antes, este teste montava a frase mockando `listarTodosOsMembrosDoGrupo`
+       -- e era exatamente esse caminho que deixava quem é `user` sem nome,
+       porque a consulta real tinha `enabled: papelAtende("manager")`. */
+    autor_nome: "Ana Paula",
     titulo: "Protocolar contestação",
     detalhe: "",
     subgrupo_id: "s1",
@@ -54,9 +59,6 @@ beforeEach(() => {
   // Sem token, o hook do canal nem tenta abrir WebSocket -- é o que deixa
   // estes testes rodarem em jsdom sem stub de rede.
   mocks.getAccessToken.mockReturnValue(null);
-  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
-    membros: [{ email: "ana@x.com", apelido: "Ana Paula" }],
-  });
   mocks.marcarNotificacaoLida.mockResolvedValue({});
   mocks.marcarTodasLidas.mockResolvedValue({});
   comSino([]);
@@ -98,9 +100,11 @@ describe("painel", () => {
   });
 
   it("cai no e-mail quando o apelido não existe", async () => {
-    // Pra `user` a lista de membros não vem -- o e-mail ainda identifica.
-    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
-    comSino([notificacao()]);
+    /* `autor_nome` ausente cobre dois casos reais: quem nunca definiu
+       apelido, e autor de OUTRO grupo (um `super_admin` agindo fora do dele,
+       que o filtro por `grupo_id` do servidor não resolve). Nos dois, o
+       e-mail ainda identifica. */
+    comSino([notificacao({ autor_nome: null })]);
     await abrirPainel();
     expect(await screen.findByText("ana@x.com atribuiu uma tarefa a você")).toBeInTheDocument();
   });

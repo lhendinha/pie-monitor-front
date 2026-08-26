@@ -1099,16 +1099,111 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
 3. Considerar travar `Access-Control-Allow-Origin` no backend pro domínio
    específico do Vercel, em vez de `"*"` (pendência do lado do backend, mas
    afeta o front se for feito).
-4. **O sino ainda baixa todos os membros do grupo, em toda tela.**
-   `SinoDeNotificacoes` chama `listarTodosOsMembrosDoGrupo` só pra traduzir
-   e-mail em apelido na frase da notificação -- exatamente o padrão que a
-   varredura de 25/08/2026 tirou de todo o resto. A saída é a mesma das
-   outras: a notificação trazer `autor_nome` junto, resolvido no servidor.
-   Precisa de mudança na API, e por isso ficou fora dos nove itens daquela
-   rodada.
-5. **A Agenda pede um quadro POR SUBGRUPO exibido.** Sem filtro, são N
-   requisições -- e com a lista limitada à primeira página, um grupo com mais
-   de 50 subgrupos veria só os 50 primeiros. Não é regressão (a versão
-   anterior já faria N requisições e travaria antes), mas o desenho certo é
-   o servidor dizer qual coluna é de conclusão, não a tela perguntar quadro
-   por quadro.
+4. ~~**Três telas baixam o escritório inteiro pra escrever um nome**~~ --
+   **feito** em 25/08/2026. `autor_nome` vem na notificação e no registro de
+   atendimento, resolvido pelo servidor; saíram as consultas de
+   `SinoDeNotificacoes`, `AtendimentosPage` e `AtendimentoDetalhePage`.
+   `/grupos/membros` ficou só onde a lista é o ASSUNTO da tela.
+
+   **Conferido em Chrome** por `scripts/verificar-nome-do-autor.mjs`, cuja
+   asserção principal é uma AUSÊNCIA: ele falha se `/grupos/membros` for
+   pedido. Controle com o front anterior: 2 pedidos. Agora: zero.
+
+   ⚠️ No controle a frase mostrava o apelido do mesmo jeito, porque o front
+   antigo ignorava o campo novo e resolvia pela lista. **Um teste que olhasse
+   só o nome na tela teria passado nos dois casos.** Texto original abaixo.
+
+   ⚠️ Este item dizia "o sino baixa todos os membros **em toda tela**".
+   Verificado, e é impreciso: `qk.todosOsMembros()` é chave COMPARTILHADA
+   por seis consumidores, e `listarTodosOsMembrosDoGrupo` percorre as
+   páginas com `TETO_POR_PAGINA = 100` -- num escritório de até 100 pessoas
+   é UMA requisição, deduplicada entre as telas.
+
+   O que é verdade, e justifica o item:
+
+   - nenhuma dessas consultas define `staleTime`, então refaz a cada
+     montagem de `AtendimentosPage`, `AtendimentoDetalhePage`,
+     `SubgruposPage` e `MembrosPage`, e a cada foco de janela;
+   - baixa o escritório INTEIRO pra nomear no máximo 50 autores, e cresce
+     com o escritório;
+   - 🔴 **todas têm `enabled: papelAtende("manager")`** -- quem é `user` vê
+     e-mail cru, sempre. É o mesmo defeito que `responsavel_nome` tirou do
+     cartão do Kanban.
+
+   E não é só o sino: `nomeDoAutor` alimenta também `LinhaDeAtendimento` e
+   `LinhaDoTempo`, sobre o `autor_id` dos registros de atendimento.
+
+   **A saída:** `autor_nome` vindo do servidor, nas três. Some `membrosQuery`
+   de `SinoDeNotificacoes`, `AtendimentosPage` e `AtendimentoDetalhePage`;
+   `/grupos/membros` fica só onde é o assunto da tela (Membros e Subgrupos).
+
+   ⚠️ **`autor_nome` é OPCIONAL no tipo.** `MensagemDoCanal.notificacao` é
+   tipada como `Notificacao`, e o objeto que chega pelo canal WebSocket
+   **não** tem o campo -- ele nasce do stream do DynamoDB, não da rota.
+   Obrigatório faria o TypeScript afirmar o que é falso. Na prática não
+   aparece: `aoChegar` é `invalidateQueries`, então o push é gatilho e a
+   lista sempre vem da API.
+5. ~~**A Agenda pede um quadro POR SUBGRUPO exibido, e trunca em 50**~~ —
+   **feito** em 25/08/2026. `coluna_nome` e `esta_concluida` vêm na tarefa.
+   `useQuadrosDosSubgrupos` (96 linhas) foi apagado, com a fiação das props
+   por quatro níveis, o teto de 50 e o aviso "não foi possível carregar os
+   quadros".
+
+   **Reproduzido em Chrome, com 55 subgrupos semeados no ambiente local**
+   (`scripts/verificar-agenda-sem-quadros.mjs`) — produção tem 7, então isto
+   nunca apareceria lá:
+
+   | | tarefas riscadas | pedidos de `/quadro` |
+   |---|---|---|
+   | front anterior | **50 de 55** — as de além do 50º apareciam pendentes | **50** |
+   | front atual | 55 de 55 | **0** |
+
+   ⚠️ **Dois testes saíram, e não em silêncio.** "O mesmo `coluna_id` em
+   quadros diferentes não se confunde" MUDOU DE LADO — virou teste de API. E
+   "NÃO mostra a lista antes dos quadros" perdeu o objeto: não há mais
+   quadros a esperar, os campos chegam na mesma resposta. Os dois viraram um
+   só, cuja asserção é uma AUSÊNCIA: a tela não voltou a pedir `/quadro`.
+
+   ⚠️ `esta_concluida`, e **não** `concluida`: a tarefa também carrega
+   `concluido_em`, um carimbo gravado que é ausente em toda tarefa concluída
+   antes do arquivamento existir. O nome longo evita que alguém pegue o
+   errado — e o errado falharia exatamente como a Agenda falhava.
+
+   Texto original abaixo.
+
+   ⚠️ Este item dizia que um grupo com mais de 50 subgrupos "veria só os 50
+   primeiros". Verificado, e o efeito é pior: `useTarefasDaAgenda` traz as
+   tarefas de **todos** os subgrupos visíveis, mas `useQuadrosDosSubgrupos`
+   recebe `subgrupos.primeiraPagina` -- os 50 primeiros. A tarefa do 51º
+   subgrupo aparece **sem nome de coluna e sem tachado: concluída exibida
+   como pendente**. Não é "ver menos", é afirmar errado.
+
+   Latente hoje (7 subgrupos em produção, conferidos em 25/08/2026), e o
+   tipo de defeito que só aparece quando já incomoda.
+
+   **A saída:** `GET /tarefas` traz `coluna_nome` e `concluida`. Somem as 96
+   linhas do hook, a fiação das props por quatro níveis de componente, o teto
+   de 50 e o aviso persistente de "não consegui carregar os quadros" -- e
+   esse último é ganho estrutural, não corte: hoje existe um estado em que a
+   lista chegou e os quadros não, e a tela **afirma o contrário do que é**.
+
+   Some também uma decisão duplicada: `colunas_que_concluem`, na API, diz de
+   si mesma ser o "ponto único" de "o que é concluída" -- mas
+   `useQuadrosDosSubgrupos` decide de novo, por conta (`e_conclusao ||
+   e_arquivado`). São dois hoje.
+
+   **O que NÃO some:** `useConcluirTarefa` (do Workspace, não da Agenda)
+   continua buscando o quadro pra achar a coluna de DESTINO, e o Kanban
+   continua carregando o quadro pra desenhar coluna vazia. `qk.quadro()`
+   mantém quatro consumidores.
+
+   🔴 **ORDEM DE DEPLOY: API primeiro, sempre.** Com o front na frente, a
+   Agenda leria `concluida` de uma API que ainda não manda -- `undefined`,
+   falso, e toda tarefa concluída voltaria a aparecer como pendente. É o
+   defeito alvo, recriado durante a janela e sem nada na tela indicando.
+   Vale igual pro rollback.
+
+   ⚠️ **Os stubs entram junto.** `scripts/stubsDaApi.mjs` devolve `autor`,
+   `autor_id` e `coluna_id`; sem acrescentar os campos novos ali, a
+   verificação visual em Chrome mostra nome vazio e parece defeito do
+   código, não do stub.

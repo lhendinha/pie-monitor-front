@@ -36,7 +36,7 @@ function atendimento(parcial: Record<string, unknown> = {}) {
        duas (criação à esquerda, último registro à direita), e com a mesma
        data não dá pra distinguir qual está sendo verificada. */
     registros: [
-      { autor_id: "ana@x.com", registrado_em: "2026-08-12T09:00:00+00:00", texto: "Primeiro contato" },
+      { autor_id: "ana@x.com", autor_nome: "Ana Paula", registrado_em: "2026-08-12T09:00:00+00:00", texto: "Primeiro contato" },
     ],
     ...parcial,
   };
@@ -89,8 +89,8 @@ describe("lista", () => {
     comLista([
       atendimento({
         registros: [
-          { autor_id: "ana@x.com", registrado_em: "2026-08-10T09:00:00Z", texto: "Primeiro contato" },
-          { autor_id: "ana@x.com", registrado_em: "2026-08-12T09:00:00Z", texto: "Cliente retornou" },
+          { autor_id: "ana@x.com", autor_nome: "Ana Paula", registrado_em: "2026-08-10T09:00:00Z", texto: "Primeiro contato" },
+          { autor_id: "ana@x.com", autor_nome: "Ana Paula", registrado_em: "2026-08-12T09:00:00Z", texto: "Cliente retornou" },
         ],
       }),
     ]);
@@ -123,9 +123,13 @@ describe("autor do último registro", () => {
   });
 
   it("cai no e-mail quando o apelido não existe", async () => {
-    // Pra `user` a lista de membros não vem -- as iniciais do e-mail ainda
-    // identificam, e sumir com o avatar seria pior.
-    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
+    /* `autor_nome` ausente: quem nunca definiu apelido, ou autor de outro
+       grupo. As iniciais do e-mail ainda identificam, e sumir com o avatar
+       seria pior. */
+    comLista([atendimento({
+      registros: [{ autor_id: "ana@x.com", autor_nome: null,
+                    registrado_em: "2026-08-12T09:00:00Z", texto: "Primeiro contato" }],
+    })]);
     await montar();
     expect(await screen.findByText("AN")).toBeInTheDocument();
   });

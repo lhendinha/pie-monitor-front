@@ -35,9 +35,15 @@ const ATENDIMENTO = {
   cliente_ids: ["c1"],
   cliente_nomes: ["Maria Souza"],
   processo_numero: "00002668720218130559",
+  /* 🔴 `autor_nome` vem NO registro desde 25/08/2026, resolvido pelo servidor.
+     Antes a linha do tempo traduzia e-mail em apelido com o catálogo inteiro
+     de pessoas do grupo -- e aquela consulta só rodava pra `manager` pra
+     cima, então quem é `user` via e-mail cru. */
   registros: [
-    { autor_id: "ana@x.com", registrado_em: "2026-08-10T09:00:00+00:00", texto: "Primeiro contato" },
-    { autor_id: "joao@x.com", registrado_em: "2026-08-12T14:30:00+00:00", texto: "Cliente retornou" },
+    { autor_id: "ana@x.com", autor_nome: "Ana Paula",
+      registrado_em: "2026-08-10T09:00:00+00:00", texto: "Primeiro contato" },
+    { autor_id: "joao@x.com", autor_nome: "João",
+      registrado_em: "2026-08-12T14:30:00+00:00", texto: "Cliente retornou" },
   ],
 };
 
@@ -92,9 +98,14 @@ describe("linha do tempo", () => {
   });
 
   it("cai no e-mail quando o apelido não existe", async () => {
-    // Pra `user` a lista de membros não vem -- o e-mail ainda identifica,
-    // e sumir com o autor seria pior.
-    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
+    /* `autor_nome` ausente: quem nunca definiu apelido, ou autor de outro
+       grupo (o servidor resolve dentro do grupo de quem lê). O e-mail ainda
+       identifica, e sumir com o autor seria pior. */
+    mocks.detalhesAtendimento.mockResolvedValue({
+      ...ATENDIMENTO,
+      registros: [{ autor_id: "ana@x.com", autor_nome: null,
+                    registrado_em: "2026-08-10T09:00:00+00:00", texto: "Primeiro contato" }],
+    });
     await montar();
     expect(await screen.findByText("ana@x.com")).toBeInTheDocument();
   });

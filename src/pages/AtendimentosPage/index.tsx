@@ -1,5 +1,5 @@
 import { Box } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -16,8 +16,6 @@ import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import {
   listarAtendimentos,
-  listarTodosOsMembrosDoGrupo,
-  papelAtende,
 } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
@@ -28,7 +26,6 @@ import { STATUS_TODOS, statusParaApi } from "./constants";
 import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import type {
   RespostaDeAtendimentosPaginada,
-  RespostaDeMembros,
 } from "../../types/respostas";
 
 /** Listagem de atendimentos.
@@ -82,19 +79,6 @@ export default function AtendimentosPage() {
   /* O nome do cliente vem em `cliente_nomes`, DENTRO de cada atendimento --
      campo derivado que o servidor resolve pra página pedida. Aqui havia uma
      consulta ao catálogo inteiro de clientes só pra traduzir id em nome. */
-
-  /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
-   * não vem, e o avatar cai nas iniciais do e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.todosOsMembros(),
-    queryFn: listarTodosOsMembrosDoGrupo,
-    enabled: papelAtende("manager"),
-  });
-  const apelidoPorEmail = useMemo(
-    () =>
-      new Map((membrosQuery.data?.membros || []).map((m) => [m.email, m.apelido || m.email])),
-    [membrosQuery.data],
-  );
 
   const atendimentos = query.data?.atendimentos || [];
   const total = query.data?.total ?? 0;
@@ -164,7 +148,6 @@ export default function AtendimentosPage() {
                   <LinhaDeAtendimento
                     key={`${atendimento.subgrupo_id}:${atendimento.atendimento_id}`}
                     atendimento={atendimento}
-                    nomeDoAutor={(email) => apelidoPorEmail.get(email) ?? email}
                     onAbrir={(a) =>
                       navigate(`/atendimentos/${a.subgrupo_id}/${a.atendimento_id}`)
                     }

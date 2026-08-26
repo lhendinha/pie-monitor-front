@@ -1,5 +1,5 @@
 import { Box, Flex, Heading } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -24,8 +24,6 @@ import {
   adicionarRegistro,
   atualizarAtendimento,
   detalhesAtendimento,
-  listarTodosOsMembrosDoGrupo,
-  papelAtende,
   removerAtendimento,
 } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
@@ -36,7 +34,6 @@ import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
 import type { Atendimento } from "../../types";
 import type {
-  RespostaDeMembros,
 } from "../../types/respostas";
 
 /** Detalhe de um atendimento: cabeçalho, linha do tempo e o campo de
@@ -64,19 +61,6 @@ export default function AtendimentoDetalhePage() {
   /* O nome de cada cliente vem em `cliente_nomes`, DENTRO do atendimento.
      Aqui havia uma consulta ao catálogo inteiro de clientes -- numa tela que
      mostra UM atendimento. */
-
-  /** Apelidos de quem escreveu. `manager` pra cima -- pra `user` a lista
-   * não vem, e a linha do tempo mostra o e-mail, que ainda identifica. */
-  const membrosQuery = useQuery<RespostaDeMembros>({
-    queryKey: qk.todosOsMembros(),
-    queryFn: listarTodosOsMembrosDoGrupo,
-    enabled: papelAtende("manager"),
-  });
-  const apelidoPorEmail = useMemo(
-    () =>
-      new Map((membrosQuery.data?.membros || []).map((m) => [m.email, m.apelido || m.email])),
-    [membrosQuery.data],
-  );
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: qk.atendimento(subgrupoId, atendimentoId) });
@@ -214,7 +198,6 @@ export default function AtendimentoDetalhePage() {
         <Box p="16px 18px">
           <LinhaDoTempo
             registros={atendimento.registros || []}
-            nomeDoAutor={(email) => apelidoPorEmail.get(email) ?? email}
           />
           <NovoRegistro
             enviando={registrar.isPending}

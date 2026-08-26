@@ -66,11 +66,18 @@ export default function MembrosPage() {
     // 🔴 PREFIXO nu, não `qk.membros()`. A chave virou `["membros", {}]`, e o
     // `partialMatchKey` do React Query rejeita `{}` contra a string `"todos"`
     // por tipo -- então invalidar com `qk.membros()` não alcançava
-    // `qk.todosOsMembros()` nem os membros de subgrupo. O sino fica montado a
-    // sessão inteira: editar o apelido de alguém não derrubava o cache dele,
-    // e o nome antigo seguia na tela até a janela recuperar o foco.
+    // `qk.todosOsMembros()` nem os membros de subgrupo.
     queryClient.invalidateQueries({ queryKey: ["membros"] });
     queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
+    /* 🔴 As notificações também, e o motivo MUDOU em 25/08/2026.
+       Antes, o sino traduzia e-mail em apelido com o cache de membros, então
+       derrubar aquele bastava. Agora o nome vem ASSADO na resposta do sino
+       (`autor_nome`, resolvido no servidor) -- sem invalidar aqui, renomear
+       alguém deixaria o nome antigo na frase até a janela recuperar o foco.
+       O sino fica montado a sessão inteira, então ele não se corrige sozinho
+       ao navegar. É o mesmo defeito que este bloco já existia pra evitar,
+       agora por outro caminho. */
+    queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
     if (podeEditar) queryClient.invalidateQueries({ queryKey: qk.grupos() });
   }
 

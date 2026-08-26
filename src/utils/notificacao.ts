@@ -20,8 +20,16 @@ import type { Notificacao } from "../types";
  * front mais antiga que o servidor vai encontrar tipos que não conhece, e
  * esconder o aviso seria a pior reação: a pessoa não saberia que existe.
  */
-export function frasePrincipal(n: Notificacao, nomeDoAutor: (email: string) => string): string {
-  const autor = n.autor ? nomeDoAutor(n.autor) : "";
+export function frasePrincipal(n: Notificacao): string {
+  /* 🔴 O nome vem NA notificação (`autor_nome`), resolvido pelo servidor.
+     Antes esta função recebia um tradutor, e quem o montava baixava TODAS as
+     pessoas do grupo -- numa consulta com `enabled` de `manager` pra cima,
+     então a frase de quem é `user` mostrava e-mail cru pra sempre.
+
+     `?? n.autor` não é sobra: o campo é ausente quando a pessoa não tem
+     apelido definido, e quando o autor é de outro grupo (um `super_admin`
+     agindo fora do dele). Nos dois casos o e-mail ainda identifica. */
+  const autor = n.autor ? (n.autor_nome ?? n.autor) : "";
 
   switch (n.tipo) {
     case TIPO_TAREFA_ATRIBUIDA:

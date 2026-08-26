@@ -2,7 +2,6 @@ import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 
 import {
-  Faixa,
   Botao,
   CabecalhoDePagina,
   Cartao,
@@ -22,7 +21,6 @@ import LinhaDeTarefa from "./components/LinhaDeTarefa";
 import ListaDeUmDia from "./components/ListaDeUmDia";
 import VisaoPorMes from "./components/VisaoPorMes";
 import VisaoPorSemana from "./components/VisaoPorSemana";
-import { useQuadrosDosSubgrupos } from "./hooks/useQuadrosDosSubgrupos";
 import { useTarefasDaAgenda } from "./hooks/useTarefasDaAgenda";
 import { DIAS_DA_LISTA } from "./constants";
 import { agruparPorDia } from "./tarefasPorDia";
@@ -83,24 +81,24 @@ export default function AgendaPage() {
        "fam" fazia a agenda passar a mostrar só Família -- sem ninguém ter
        aplicado nada. */
     : subgrupos.primeiraPagina.map((o: OpcaoDeSelect) => o.value);
-  const {
-    carregando: carregandoQuadros,
-    algumFalhou: quadrosFalharam,
-    estaConcluida,
-    nomeDaColuna,
-  } = useQuadrosDosSubgrupos(subgruposExibidos);
+  /* 🔴 Aqui existia `useQuadrosDosSubgrupos` -- 96 linhas e UMA REQUISIÇÃO
+     POR SUBGRUPO exibido, só pra saber o nome da coluna e se a tarefa estava
+     concluída. Hoje isso vem NA tarefa (`coluna_nome`, `esta_concluida`),
+     resolvido pelo servidor.
 
-  /* 🔴 Aviso PERSISTENTE, não toast.
-   *
-   * Falha ao carregar os quadros faz a Agenda afirmar o contrário do que é:
-   * toda tarefa concluída aparece em aberto, sem tachado, e a linha perde o
-   * nome da coluna. O toast sumia em ~4,5s e não repetia (`jaAvisado`), e
-   * daí em diante a tela seguia mentindo em silêncio.
-   *
-   * A lista continua útil -- datas, títulos, responsáveis estão certos --,
-   * então esconder tudo atrás de um esqueleto eterno seria pior. O que
-   * precisa ficar visível é QUAL parte não é confiável, e por quanto tempo
-   * ela não for. */
+     Foram embora junto três coisas que só existiam por causa dele:
+
+     - o TETO de 50. A lista de quadros saía de `primeiraPagina`, enquanto a
+       consulta de tarefas trazia todos os subgrupos visíveis -- acima de 50,
+       tarefa concluída aparecia como pendente, sem tachado;
+     - o aviso persistente "não foi possível carregar os quadros", que
+       existia porque a lista podia chegar SEM eles e a tela então afirmava o
+       contrário do que é. Agora os campos vêm na mesma resposta: ou ela
+       chega inteira e verdadeira, ou falha e o erro da lista já cobre;
+     - a espera extra (`carregandoQuadros`) e a onda a mais de requisições.
+
+     ⚠️ `subgruposExibidos` FICA -- o modal usa pra saber em que subgrupo
+     abrir. */
 
   /** Assunto dos atendimentos vinculados, pra linha dizer a que a tarefa se
    * liga em vez de mostrar um id. */
@@ -141,23 +139,10 @@ export default function AgendaPage() {
     setCriando(false);
   }
 
-  /* Os quadros entram na espera: sem eles a lista sai com a tarefa concluída
-     SEM risco e a risca meio segundo depois -- no intervalo, a tela afirma o
-     contrário do que é. Custa uma onda a mais (subgrupos -> quadros), e o
-     cache é o mesmo do Kanban, então em geral já vem quente. */
-  const carregando =
-    subgrupos.carregandoPrimeiraVez || tarefasQuery.isPending || carregandoQuadros;
+  const carregando = subgrupos.carregandoPrimeiraVez || tarefasQuery.isPending;
 
   return (
     <Box>
-      {quadrosFalharam && (
-        <Box mb="12px">
-          <Faixa tom="aviso" aEsquerda>
-            Não foi possível carregar os quadros. O que está concluído pode aparecer como
-            pendente, e o nome da coluna não é exibido.
-          </Faixa>
-        </Box>
-      )}
       <CabecalhoDePagina
         titulo="Agenda"
         subtitulo="As tarefas do escritório organizadas por data."
@@ -205,8 +190,6 @@ export default function AgendaPage() {
               dataVisivel={dataVisivel}
               isoDeHoje={isoDeHoje}
               porDia={porDia}
-              estaConcluida={estaConcluida}
-              nomeDaColuna={nomeDaColuna}
               assuntoDoAtendimento={assuntoDoAtendimento}
               onAbrirTarefa={setTarefaAberta}
               onEscolherDia={abrirDia}
@@ -229,8 +212,8 @@ export default function AgendaPage() {
                 <LinhaDeTarefa
                   key={`${tarefa.subgrupo_id}:${tarefa.tarefa_id}`}
                   tarefa={tarefa}
-                  concluida={estaConcluida(tarefa)}
-                  nomeDaColuna={nomeDaColuna(tarefa)}
+                  concluida={tarefa.esta_concluida ?? false}
+                  nomeDaColuna={tarefa.coluna_nome ?? undefined}
                   assuntoDoAtendimento={
                     tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
                   }
@@ -271,8 +254,6 @@ interface PropsDaArea {
   dataVisivel: Date;
   isoDeHoje: string;
   porDia: Map<string, Tarefa[]>;
-  estaConcluida: (tarefa: Tarefa) => boolean;
-  nomeDaColuna: (tarefa: Tarefa) => string | undefined;
   assuntoDoAtendimento: (id: string) => string | undefined;
   onAbrirTarefa: (tarefa: Tarefa) => void;
   onEscolherDia: (iso: string) => void;
@@ -286,8 +267,6 @@ function AreaDaVisao({
   dataVisivel,
   isoDeHoje,
   porDia,
-  estaConcluida,
-  nomeDaColuna,
   assuntoDoAtendimento,
   onAbrirTarefa,
   onEscolherDia,
@@ -298,7 +277,6 @@ function AreaDaVisao({
         data={dataVisivel}
         isoDeHoje={isoDeHoje}
         porDia={porDia}
-        estaConcluida={estaConcluida}
         onEscolherDia={onEscolherDia}
       />
     );
@@ -328,8 +306,6 @@ function AreaDaVisao({
       <ListaDeUmDia
         data={dataVisivel}
         tarefas={tarefas}
-        estaConcluida={estaConcluida}
-        nomeDaColuna={nomeDaColuna}
         assuntoDoAtendimento={assuntoDoAtendimento}
         onAbrir={onAbrirTarefa}
         /* A barra de datas logo acima já diz que dia é este. */
@@ -359,8 +335,6 @@ function AreaDaVisao({
           key={paraIso(dia)}
           data={dia}
           tarefas={tarefas}
-          estaConcluida={estaConcluida}
-          nomeDaColuna={nomeDaColuna}
           assuntoDoAtendimento={assuntoDoAtendimento}
           onAbrir={onAbrirTarefa}
         />

@@ -8,8 +8,6 @@ import type { Tarefa } from "../../../../types";
 interface ListaDeUmDiaProps {
   data: Date;
   tarefas: Tarefa[];
-  estaConcluida: (tarefa: Tarefa) => boolean;
-  nomeDaColuna: (tarefa: Tarefa) => string | undefined;
   assuntoDoAtendimento: (id: string) => string | undefined;
   onAbrir: (tarefa: Tarefa) => void;
   /** Desenha a data no cabeçalho.
@@ -30,8 +28,6 @@ interface ListaDeUmDiaProps {
 export default function ListaDeUmDia({
   data,
   tarefas,
-  estaConcluida,
-  nomeDaColuna,
   assuntoDoAtendimento,
   onAbrir,
   comData = true,
@@ -43,8 +39,8 @@ export default function ListaDeUmDia({
           <LinhaDeTarefa
             key={`${tarefa.subgrupo_id}:${tarefa.tarefa_id}`}
             tarefa={tarefa}
-            concluida={estaConcluida(tarefa)}
-            nomeDaColuna={nomeDaColuna(tarefa)}
+            concluida={tarefa.esta_concluida ?? false}
+            nomeDaColuna={tarefa.coluna_nome ?? undefined}
             assuntoDoAtendimento={
               tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
             }

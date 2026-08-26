@@ -287,6 +287,27 @@ export interface Tarefa {
    * cru pra sempre. Ausente quando a pessoa não tem apelido; aí o e-mail
    * continua sendo o rótulo, que ainda identifica. */
   responsavel_nome?: string | null;
+  /** Nome da coluna do quadro em que a tarefa está -- derivado, resolvido
+   * pelo servidor (`tarefas_router._serializar_tarefas`).
+   *
+   * 🔴 A Agenda pedia UM QUADRO POR SUBGRUPO exibido só pra saber isto. E
+   * pedia só pros 50 primeiros, enquanto a lista de tarefas trazia todos os
+   * visíveis -- acima disso a tarefa vinha sem nome de coluna e sem tachado.
+   *
+   * `undefined`/`null` quando o quadro não conhece a coluna; quem exibe omite
+   * o pedaço em vez de mostrar um id cru. */
+  coluna_nome?: string | null;
+  /** A tarefa está concluída? Derivado de estar numa coluna marcada como
+   * conclusão OU como arquivado -- arquivada é concluída guardada.
+   *
+   * ⚠️ **`esta_concluida`, e não `concluida`**, e o nome é deliberado: a
+   * tarefa também carrega `concluido_em`, um carimbo GRAVADO que é ausente
+   * em toda tarefa concluída antes do arquivamento existir. Dois campos
+   * parecidos, um confiável e outro não. Este é o confiável.
+   *
+   * A decisão mora num lugar só, no servidor (`ColunaQuadro.conclui`). Antes,
+   * a Agenda decidia de novo por conta (`e_conclusao || e_arquivado`). */
+  esta_concluida?: boolean;
   /** O vínculo da tarefa. Um OU o outro, nunca os dois -- é assim que o
    * backend grava, e o campo da tela reflete isso sendo um só. */
   processo_numero?: string | null;
@@ -300,6 +321,18 @@ export interface Tarefa {
  * permitir -- o servidor não tem rota pra isso. */
 export interface RegistroDeAtendimento {
   autor_id: string;
+  /** Apelido de quem escreveu -- derivado, o servidor resolve pra o que está
+   * devolvendo (`atendimentos_router._serializar`).
+   *
+   * 🔴 Vem junto porque a alternativa era a tela baixar TODAS as pessoas do
+   * grupo só pra traduzir e-mail em apelido -- e essa lista só chegava pra
+   * `manager` pra cima, então quem é `user` via e-mail cru pra sempre. Mesma
+   * história de `responsavel_nome` em `Tarefa`.
+   *
+   * Ausente quando a pessoa não tem apelido, e também quando é de outro
+   * grupo (um `super_admin` agindo fora do dele); aí o `autor_id` continua
+   * sendo o rótulo, que ainda identifica. */
+  autor_nome?: string | null;
   registrado_em: string;
   texto: string;
 }
@@ -406,6 +439,20 @@ export interface Notificacao {
   /** Quem fez a ação. Vazio no lembrete de prazo -- ali não houve pessoa,
    * foi o robô, e a frase é escrita sem "Fulano". */
   autor: string;
+  /** Apelido de `autor`, resolvido no servidor (`sino_service.listar`).
+   *
+   * ⚠️ **Opcional, e não por comodidade.** `MensagemDoCanal.notificacao` é
+   * tipada com ESTE tipo, e o objeto que chega pelo canal WebSocket não tem
+   * o campo -- ele nasce da imagem do Stream do DynamoDB, que guarda só o
+   * que está na linha. Declarar obrigatório faria o TypeScript afirmar algo
+   * falso sobre aquele objeto.
+   *
+   * Na prática não aparece: o push é GATILHO (o hook invalida e relê pela
+   * rota), não payload pra desenhar. Ver `ws_canal_service._simplificar`.
+   *
+   * Ausente também quando não há autor (lembrete, sessão alterada) ou quando
+   * a pessoa não tem apelido. */
+  autor_nome?: string | null;
   titulo: string;
   /** Complemento: a coluna de destino, o status novo, o motivo do
    * lembrete. */
