@@ -1661,3 +1661,100 @@ defeito era do teste.
 teste fraco, é um teste que mente. Ele passa quando o sistema está quebrado e
 quando está certo, indistinguivelmente. Todas as afirmações de ausência do
 roteiro agora esperam uma linha conhecida aparecer primeiro.
+
+## As cores de status, e o defeito que só a cor computada revelou (26/08/2026)
+
+**"Em andamento" passou a ser âmbar e "Fechado", o azul da marca.** O
+raciocínio inverte o que `theme/atendimento.ts` dizia -- *"o que está aberto
+pede atenção, o fechado só precisa ser reconhecível"*: o âmbar vira o "pede
+atenção" (atendimento aberto é trabalho em curso, que ainda vai voltar) e o
+azul marca o resolvido. **O docstring foi reescrito junto** -- trocar o mapa e
+deixar a explicação velha faria o arquivo explicar o oposto do que faz.
+
+### 🔴 O problema não era só do amarelo
+
+O plano dizia para consertar o `warn`. Medido, os **três** tons do semáforo
+reprovam em AA para texto pequeno, em **todos** os fundos do sistema:
+
+| | sobre o tint | sobre o cartão | sobre o canvas |
+|---|---|---|---|
+| `good` | 3,12 | 3,49 | 3,25 |
+| `warn` | 3,00 | 3,35 | 3,12 |
+| `bad` | 3,72 | 4,04 | 3,77 |
+
+Todos passam em **3:1**, que é a régua de *elemento gráfico* — e é por isso
+que a tarja de prioridade, o ponto do cartão e os ícones seguem usando a cor
+cheia, e fazem certo. O que não pode é **texto**.
+
+`badDark` nasceu sozinho quando a etiqueta de falha precisou. `warnDark`
+(#995d00) e `goodDark` (#167953) vieram agora, ao descobrir que `Faixa`
+pintava os **dois** tons em 13,5px/700 e ninguém tinha medido o verde. Os três
+guardam o matiz e a saturação da cor cheia, só baixando a luminosidade — é o
+que faz "âmbar escuro" continuar sendo âmbar.
+
+Cada tom tem três papéis: `DEFAULT` (gráfico), `bg` (o tint) e `text` (a única
+que passa em 4,5:1).
+
+**Quem trocou para `.text`** — os quatro que pintam texto pequeno: `Faixa`
+(os dois tons), `EtiquetaDePrazo` (o "hoje" — a linha do atrasado já usava
+`bad.text`, **porta irmã aberta no mesmo ternário**), `LinhaDeColuna` do
+Kanban, e `LinhaDoResumo` (mesmo caso: as duas metades do ternário discordavam
+sobre a mesma régua).
+
+**Quem NÃO trocou, e faz certo**: `ColunaDoQuadro` e `Toast/Aviso` (ícones),
+`CORES_DA_PRIORIDADE` (tarja e ponto), e `MinhasAtividades` — cujo número é
+**24px/800**, ou seja *texto grande* pelo WCAG, onde 3:1 basta.
+
+### 🔴 Contraste certo com a cor errada — o defeito que passou em tudo
+
+`status.warn.text` apontava para `{colors.warn.dark}`, que **não existia** na
+camada de tokens crus: só o `bad` tinha `dark`. A referência não resolveu, a
+cor caiu para o herdado, e a etiqueta "Em andamento" saiu com texto em `ink`
+sobre o âmbar.
+
+**Passava em contraste** — 14,81:1 — e parecia plausível na tela. O token
+estava certo. O componente estava certo. A ligação entre os dois é que estava
+rompida, e nenhum teste de unidade alcança isso.
+
+Daí os dois guardas, que cobrem coisas diferentes:
+
+- **`theme/contraste.test.ts`** afirma a matemática: cada `*Dark` passa em
+  4,5:1, cada cor cheia fica **entre 3:1 e 4,5:1** (o par negativo, sem o qual
+  alguém "simplificaria" o tema apagando os `*Dark`), e cada `*Dark` guarda o
+  **matiz** da cor cheia — senão qualquer cinza escuro passaria e apagaria o
+  significado da cor.
+- **`scripts/verificar-cores.mjs`** afirma a cor **computada pelo Chrome**, por
+  igualdade. "Escureceu um pouco" não serve: herdar o `ink` também escurece, e
+  foi assim que o defeito passou.
+
+⚠️ **O roteiro FALHA quando não tem o que medir**, em vez de imprimir "nada a
+medir" e seguir verde. `semear_abas.py` ganhou uma tarefa com prazo **hoje** só
+para a `EtiquetaDePrazo` sair do estado neutro — antes as duas nasciam com
+`dia(5)` e a checagem se pulava sozinha, em silêncio.
+
+## Quadro sem coluna nenhuma não pode ser tela em branco (26/08/2026)
+
+`subgrupos_service.criar` semeia o quadro padrão junto, então o caminho normal
+nunca chega lá. Mas é um estado **alcançável**: subgrupo gravado fora do
+serviço, criação que falhou no meio, ou alguém que apagou as colunas uma a uma.
+
+Foi o que aconteceu no ambiente local — `banco.py` gravava o subgrupo com
+`put_item` direto e pulava o `semear_padrao`. Como a listagem é alfabética
+("Civel g-alfa" antes de "Resumo"), era justamente ele que o Kanban abria por
+padrão: **quadro em branco, sem colunas, sem mensagem, sem erro**, no primeiro
+clique de quem subia o ambiente.
+
+⚠️ **A mensagem muda com quem está olhando, porque a saída é outra.** Criar
+coluna é `admin` no servidor:
+
+- **`admin`+**: *"Este subgrupo ainda não tem quadro. Crie as colunas para
+  começar a usar o kanban."* — com o botão **Editar quadro**.
+- **abaixo disso**: *"O quadro deste subgrupo ainda não foi montado. Peça a um
+  admin para criar as colunas."* — sem botão, que a API negaria.
+
+Uma frase só ou mandaria o admin procurar outra pessoa, ou mandaria o `user`
+para um botão que ele não tem.
+
+⚠️ **"Nova tarefa" também some.** Sem coluna não há onde a tarefa cair: o modal
+abriria, `colunaEscolhida` ficaria vazia e "Salvar" nasceria travado — um
+formulário inteiro que não conclui.

@@ -407,3 +407,60 @@ describe("nome de quem pode ser responsável", () => {
     expect(await screen.findByRole("option", { name: "Eu Mesmo" })).toBeInTheDocument();
   });
 });
+
+describe("subgrupo sem quadro montado", () => {
+  /* 🔴 Estado alcançável, não hipotético: subgrupo gravado fora de
+   * `subgrupos_service.criar` nasce sem coluna nenhuma -- foi o que
+   * aconteceu na semeadura do ambiente local, e a tela abria EM BRANCO no
+   * primeiro clique de quem subia o ambiente. Sem colunas, sem mensagem,
+   * sem erro: com cara de sistema quebrado.
+   *
+   * O par admin/não-admin importa porque a SAÍDA é diferente: criar coluna é
+   * `admin` no servidor. Uma mensagem só ou mandaria o admin procurar outra
+   * pessoa, ou mandaria o `user` para um botão que ele não tem. */
+
+  beforeEach(() => {
+    mocks.listarQuadro.mockResolvedValue({ colunas: [] });
+  });
+
+  it("🔴 não fica em branco -- diz o que houve", async () => {
+    montar();
+    expect(await screen.findByText(/ainda não tem quadro/)).toBeInTheDocument();
+  });
+
+  it("pro admin, oferece MONTAR o quadro", async () => {
+    mocks.papelAtende.mockReturnValue(true);
+    montar();
+
+    await screen.findByText(/ainda não tem quadro/);
+    /* Dois "Editar quadro" na tela: o do cabeçalho e o do estado vazio. O
+       que importa é que o caminho exista -- e ele existe nos dois. */
+    expect(screen.getAllByRole("button", { name: "Editar quadro" }).length).toBeGreaterThan(0);
+  });
+
+  it("pra quem NÃO é admin, diz a quem pedir", async () => {
+    mocks.papelAtende.mockReturnValue(false);
+    montar();
+
+    expect(await screen.findByText(/Peça a um admin para criar as colunas/)).toBeInTheDocument();
+    // E não oferece um botão que a API vai negar.
+    expect(screen.queryByRole("button", { name: "Editar quadro" })).not.toBeInTheDocument();
+  });
+
+  it("🔴 não oferece 'Nova tarefa' -- não há onde a tarefa cair", async () => {
+    /* O modal até abriria, mas `colunaEscolhida` fica vazia e "Salvar" nasce
+       travado: um formulário inteiro que não conclui. */
+    montar();
+    await screen.findByText(/ainda não tem quadro/);
+    expect(screen.queryByRole("button", { name: /Nova tarefa/ })).not.toBeInTheDocument();
+  });
+
+  it("o par: COM colunas, o quadro desenha e 'Nova tarefa' volta", async () => {
+    /* Sem este par, um bug que escondesse o quadro sempre passaria igual. */
+    mocks.listarQuadro.mockResolvedValue({ colunas: COLUNAS_CIVEL });
+    montar();
+
+    expect(await screen.findByRole("button", { name: /Nova tarefa/ })).toBeInTheDocument();
+    expect(screen.queryByText(/ainda não tem quadro/)).not.toBeInTheDocument();
+  });
+});
