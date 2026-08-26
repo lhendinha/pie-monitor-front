@@ -25,7 +25,11 @@ export default function EtiquetaDePrazo({ data, concluida }: EtiquetaDePrazoProp
   const cores = atrasada
     ? { bg: "status.bad.bg", color: "status.bad.text" }
     : hoje
-      ? { bg: "status.warn.bg", color: "status.warn" }
+      /* `warn.text` pelo mesmo motivo do `bad.text` na linha acima -- a
+         etiqueta é 11px/800, e a cor cheia sobre o tint dá 3,00:1. Esta
+         linha ficou pra trás quando a de cima foi corrigida: porta irmã
+         aberta no mesmo ternário. */
+      ? { bg: "status.warn.bg", color: "status.warn.text" }
       : { bg: "border.subtle", color: "fg.muted" };
 
   return <Etiqueta cores={cores}>{texto}</Etiqueta>;

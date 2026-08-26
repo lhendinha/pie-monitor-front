@@ -37,10 +37,33 @@ export const cores = {
   warnTint: "#fdf1de",
   bad: "#d64550",
   badTint: "#fbe9ea",
-  /** O vermelho escurecido, pra TEXTO sobre o tint. O `bad` puro dá 3,72:1
-   * sobre `badTint` -- reprova em AA pra texto pequeno; este dá 4,78:1. Já
-   * era usado no hover do botão de perigo. */
+
+  /* 🔴 As três cores do semáforo REPROVAM em AA pra texto pequeno -- em
+     TODOS os fundos do sistema, não só no tint. Medido:
+
+                    tint    branco   canvas
+       good        3,12    3,49     3,25
+       warn        3,00    3,35     3,12
+       bad         3,72    4,04     3,77
+
+     Todas passam em 3:1, que é a régua de ELEMENTO GRÁFICO -- por isso a
+     tarja de prioridade, o ponto do cartão e os ícones seguem usando a cor
+     cheia, e fazem certo. O que não pode é texto.
+
+     `badDark` nasceu primeiro, sozinho, quando a etiqueta de falha precisou.
+     Os gêmeos vieram depois, ao descobrir que o problema nunca foi só do
+     vermelho: `Faixa` pintava os DOIS tons em 13,5px/700, e ninguém tinha
+     medido o verde.
+
+     Os três guardam o MATIZ e a saturação da cor cheia, só baixando a
+     luminosidade -- é o que faz "o âmbar escuro" continuar sendo âmbar. */
+  /** Vermelho escurecido, pra TEXTO. 4,78:1 sobre `badTint`. Já era usado no
+   * hover do botão de perigo. */
   badDark: "#b93a44",
+  /** Âmbar escurecido, pra TEXTO. 4,80:1 sobre `warnTint`, 5,36:1 no branco. */
+  warnDark: "#995d00",
+  /** Verde escurecido, pra TEXTO. 4,82:1 sobre `goodTint`, 5,39:1 no branco. */
+  goodDark: "#167953",
 } as const;
 
 export const raios = {

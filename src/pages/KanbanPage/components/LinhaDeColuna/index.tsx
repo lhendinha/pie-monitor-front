@@ -113,7 +113,9 @@ export default function LinhaDeColuna({
           py="2px"
           borderRadius="full"
           bg={coluna.e_conclusao ? "status.good.bg" : "bg.canvas"}
-          color={coluna.e_conclusao ? "status.good" : "fg.subtle"}
+          /* `good.text`: o selo é 10,5px/800 sobre `good.bg` -- a cor cheia
+             ali dá 3,12:1. */
+          color={coluna.e_conclusao ? "status.good.text" : "fg.subtle"}
           fontSize="10.5px"
           fontWeight="800"
           textTransform="uppercase"

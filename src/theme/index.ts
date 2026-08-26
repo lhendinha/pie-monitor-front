@@ -46,13 +46,23 @@ export const system = createSystem(defaultConfig, {
         },
         canvas: { value: cores.canvas },
         surface: { value: cores.surface },
+        /* ⚠️ Os TRÊS precisam de `dark` aqui, não só o `bad`.
+           Este bloco é a camada de tokens CRUS; o `status.*.text` lá embaixo
+           só aponta pra ela. Quando `good` e `warn` ficaram sem `dark`, a
+           referência `{colors.warn.dark}` não resolveu e a cor caiu pro
+           herdado -- a etiqueta "Em andamento" saiu com o texto em `ink`
+           sobre o âmbar. Passava em contraste (14,81:1) e parecia
+           plausível na tela: o defeito só apareceu ao MEDIR a cor computada
+           no Chrome. */
         good: {
           DEFAULT: { value: cores.good },
           tint: { value: cores.goodTint },
+          dark: { value: cores.goodDark },
         },
         warn: {
           DEFAULT: { value: cores.warn },
           tint: { value: cores.warnTint },
+          dark: { value: cores.warnDark },
         },
         bad: {
           DEFAULT: { value: cores.bad },
@@ -229,13 +239,29 @@ export const system = createSystem(defaultConfig, {
           DEFAULT: { value: "{colors.line}" },
           subtle: { value: "{colors.line.soft}" },
         },
+        /* 🔴 Cada tom do semáforo tem TRÊS papéis, e a distinção é de
+           acessibilidade, não de gosto:
+
+             DEFAULT  a cor cheia -- só pra ELEMENTO GRÁFICO (tarja, ponto,
+                      ícone), que passa em 3:1
+             bg       o tint, pra fundo de selo e faixa
+             text     a versão escurecida, pra TEXTO -- é a única que passa
+                      em 4,5:1, a régua de texto pequeno
+
+           `bad` teve os três primeiro, sozinho. `good` e `warn` ficaram só
+           com dois por um tempo, e o efeito foi `Faixa` pintando texto de
+           13,5px/700 em 3,00:1 e 3,12:1 nos dois tons. Ver `tokens.ts`. */
         status: {
-          good: { DEFAULT: { value: "{colors.good}" }, bg: { value: "{colors.good.tint}" } },
-          warn: { DEFAULT: { value: "{colors.warn}" }, bg: { value: "{colors.warn.tint}" } },
-          /** `bad.dark` no `text`, e não o `bad`: o vermelho puro sobre o
-           * tint dá 3,72:1, que reprova em AA pra texto pequeno. Este dá
-           * 4,78:1 -- o mesmo do cinza que ele substituiu na etiqueta de
-           * falha. */
+          good: {
+            DEFAULT: { value: "{colors.good}" },
+            bg: { value: "{colors.good.tint}" },
+            text: { value: "{colors.good.dark}" },
+          },
+          warn: {
+            DEFAULT: { value: "{colors.warn}" },
+            bg: { value: "{colors.warn.tint}" },
+            text: { value: "{colors.warn.dark}" },
+          },
           bad: {
             DEFAULT: { value: "{colors.bad}" },
             bg: { value: "{colors.bad.tint}" },

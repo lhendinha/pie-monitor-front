@@ -2,14 +2,28 @@ import type { ButtonProps } from "@chakra-ui/react";
 
 /** Cores da etiqueta de status do atendimento (`.status-*` do artifact).
  *
- * "Em andamento" em azul da marca, "Fechado" em cinza: o que está aberto
- * pede atenção, o fechado só precisa ser reconhecível. Vive no tema, ao lado
- * de `papel.ts` e `envio.ts`, porque é a mesma decisão -- que cor tem cada
- * estado -- e as três telas que mostram status leriam daqui.
+ * **"Em andamento" em âmbar, "Fechado" em azul da marca** (26/08/2026).
+ *
+ * 🔴 O texto aqui dizia o contrário -- *"o que está aberto pede atenção, o
+ * fechado só precisa ser reconhecível"* --, e o mapa pintava "Em andamento"
+ * de azul e "Fechado" de cinza. A inversão troca o que cada cor SIGNIFICA:
+ * o âmbar passa a ser o "pede atenção" (atendimento aberto é trabalho em
+ * curso, que ainda vai voltar), e o azul marca o resolvido.
+ *
+ * ⚠️ O docstring foi reescrito junto de propósito. Trocar o mapa e deixar a
+ * explicação velha faria o arquivo explicar exatamente o oposto do que faz
+ * -- e é o comentário que a próxima pessoa lê antes do código.
+ *
+ * ⚠️ **`status.warn.text`, não `status.warn`.** A `Etiqueta` é 11px/800, ou
+ * seja texto pequeno: a cor cheia sobre o tint dá 3,00:1 e reprova em AA.
+ * Ver `theme/tokens.ts`.
+ *
+ * Vive no tema, ao lado de `papel.ts` e `envio.ts`, porque é a mesma decisão
+ * -- que cor tem cada estado -- e as telas que mostram status leem daqui.
  */
 export const CORES_DO_STATUS: Record<string, Pick<ButtonProps, "bg" | "color">> = {
-  "Em andamento": { bg: "bg.brand.subtle", color: "brand.darker" },
-  Fechado: { bg: "border.subtle", color: "fg.muted" },
+  "Em andamento": { bg: "status.warn.bg", color: "status.warn.text" },
+  Fechado: { bg: "bg.brand.subtle", color: "brand.darker" },
 };
 
 /** Status desconhecido não pode sumir da tela nem herdar a cor de outro --

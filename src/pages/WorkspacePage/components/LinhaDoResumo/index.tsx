@@ -36,7 +36,10 @@ export default function LinhaDoResumo({ numero }: LinhaDoResumoProps) {
     numero.valor > 0 && numero.tom
       ? numero.tom === "bad"
         ? "status.bad.text"
-        : "status.warn"
+        /* `warn.text` pelo mesmo motivo do irmão logo acima -- o número é
+           13px, e a cor cheia sobre o cartão branco dá 3,35:1. As duas
+           metades deste ternário discordavam sobre a mesma régua. */
+        : "status.warn.text"
       : "fg.muted";
 
   const conteudo = (
