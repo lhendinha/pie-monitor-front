@@ -17,6 +17,10 @@ const mocks = vi.hoisted(() => ({
   listarClientes: vi.fn(),
   listarProcessos: vi.fn(),
   listarAtendimentos: vi.fn(),
+  /* A régua de quem pode DESTRUIR lê a sessão. Sem estes dois no mock, o
+     `vi.mock` do módulo inteiro faz a importação explodir. */
+  papelAtende: vi.fn(),
+  getEmail: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -94,7 +98,17 @@ beforeEach(() => {
   mocks.listarClientes.mockResolvedValue({ clientes: [] });
   mocks.listarProcessos.mockResolvedValue({ processos: [] });
   mocks.listarAtendimentos.mockResolvedValue({ atendimentos: [] });
+  /* O padrão dos testes é `manager`: eles exercitam o comportamento da tela,
+     não a permissão. Quem testa a permissão a declara explicitamente. */
+  mocks.papelAtende.mockReturnValue(true);
+  mocks.getEmail.mockReturnValue("ana@x.com");
 });
+
+/** A sessão de um `user` -- que é onde a régua de destruir morde. */
+function comoUser(email: string) {
+  mocks.papelAtende.mockReturnValue(false);
+  mocks.getEmail.mockReturnValue(email);
+}
 
 describe("hidratação", () => {
   it("🔴 se carrega SOZINHA pelo par (subgrupo, id) da URL", async () => {
@@ -300,5 +314,74 @@ describe("tipo desconhecido", () => {
 
     expect(await screen.findByRole("heading", { name: "Contrato padrão" })).toBeInTheDocument();
     expect(screen.getByText("modelo")).toBeInTheDocument();
+  });
+});
+
+describe("quem pode destruir", () => {
+  /* 🔴 Mais apertado que tarefa e atendimento de propósito: lá some uma
+   * linha, aqui some o ARQUIVO -- e o bucket não tem versionamento.
+   *
+   * Espelha `documentos_service._garantir_pode_destruir`. Esconder o botão
+   * não é a proteção (quem manda é a rota); é pra não oferecer o que a API
+   * vai negar -- botão que existe e falha em 403 parece defeito. */
+
+  it("🔴 `user` NÃO vê Excluir nem Substituir num documento de outra pessoa", async () => {
+    comoUser("outro@x.com");
+    mocks.detalhesDocumento.mockResolvedValue({ ...DOCUMENTO, criado_por: "ana@x.com" });
+    montar();
+    await carregada();
+
+    expect(screen.queryByRole("button", { name: /Excluir/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Substituir/ })).not.toBeInTheDocument();
+  });
+
+  it("mas CONTINUA vendo Baixar e Salvar", async () => {
+    /* A trava é sobre DESTRUIR, não sobre usar nem sobre mexer. Baixar é
+       leitura -- o documento está ali pra ser lido. Corrigir um título é
+       reversível. Estender a trava a esses dois seria burocracia sem nada
+       protegido em troca. */
+    comoUser("outro@x.com");
+    mocks.detalhesDocumento.mockResolvedValue({ ...DOCUMENTO, criado_por: "ana@x.com" });
+    montar();
+    await carregada();
+
+    expect(screen.getByRole("button", { name: /^Baixar$/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Salvar$/ })).toBeInTheDocument();
+  });
+
+  it("o par: `user` VÊ os dois no documento que ele mesmo adicionou", async () => {
+    /* Sem este par, uma régua que escondesse o botão de todo mundo passaria
+       igual. E é ele que garante o desfazer do próprio engano de dez
+       segundos sem depender de terceiro. */
+    comoUser("ana@x.com");
+    mocks.detalhesDocumento.mockResolvedValue({ ...DOCUMENTO, criado_por: "ana@x.com" });
+    montar();
+    await carregada();
+
+    expect(screen.getByRole("button", { name: /Excluir/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Substituir/ })).toBeInTheDocument();
+  });
+
+  it("`manager`+ vê os dois em documento de qualquer um", async () => {
+    mocks.papelAtende.mockReturnValue(true);
+    mocks.getEmail.mockReturnValue("chefe@x.com");
+    mocks.detalhesDocumento.mockResolvedValue({ ...DOCUMENTO, criado_por: "ana@x.com" });
+    montar();
+    await carregada();
+
+    expect(screen.getByRole("button", { name: /Excluir/ })).toBeInTheDocument();
+  });
+
+  it("🔴 documento SEM dono conhecido cai pro lado restritivo", async () => {
+    /* `criado_por` vazio (documento antigo, ou semeado direto no banco) não
+       pode casar com ninguém. Sem o teste de vazio, um `getEmail()` nulo
+       comparado a `""` passaria -- mesma armadilha já escrita em
+       `podeExcluirSubgrupo`. */
+    comoUser("");
+    mocks.detalhesDocumento.mockResolvedValue({ ...DOCUMENTO, criado_por: "" });
+    montar();
+    await carregada();
+
+    expect(screen.queryByRole("button", { name: /Excluir/ })).not.toBeInTheDocument();
   });
 });

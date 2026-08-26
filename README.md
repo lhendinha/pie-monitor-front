@@ -110,8 +110,19 @@ três passos, e o registro é o último -- nada é gravado até o arquivo chegar
 documento, e é lá que se edita e se exclui -- mesmo arranjo de Processos e
 Clientes. O modal só CRIA.
 
-⚠️ **Excluir um documento destrói o arquivo**, e o bucket não tem
-versionamento. O diálogo avisa.
+🔴 **Excluir um documento destrói o arquivo**, e o bucket não tem
+versionamento -- por isso as duas ações destrutivas pedem mais que as outras:
+
+| ação | quem pode |
+|---|---|
+| ver, **baixar** | qualquer membro do subgrupo |
+| **editar** (título, descrição, vínculo, responsável) | qualquer membro do subgrupo |
+| **excluir** | quem adicionou, ou Gerente para cima |
+| **substituir o arquivo** | quem adicionou, ou Gerente para cima |
+
+Substituir entra na mesma régua porque apaga o arquivo antigo do mesmo jeito
+-- e, ao contrário de excluir, nem passa por diálogo de confirmação. Quem não
+pode não vê os botões.
 
 ## Papéis e o que cada um vê
 
@@ -153,7 +164,7 @@ yarn test         # roda uma vez (CI)
 yarn test:watch   # modo watch
 ```
 
-`vitest` + `@testing-library/react` + `jsdom`. 653 testes em 64 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+`vitest` + `@testing-library/react` + `jsdom`. 658 testes em 64 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
 
 ## Filtros em pílula: primeira página + busca
 

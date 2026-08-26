@@ -1496,6 +1496,38 @@ host global, e o `virtual` que a API fixa emite o regional).
 🔴 **`vercel.json` só vale em produção.** Isto passa 100% no `yarn offline` e
 quebraria no deploy -- mesma categoria do IAM.
 
+### 🔴 Quem pode DESTRUIR não é quem pode mexer
+
+`podeDestruirDocumento` espelha `documentos_service._garantir_pode_destruir`:
+`manager`+ destrói qualquer um, abaixo disso só quem adicionou.
+
+A régua é mais apertada que a de tarefa e atendimento **porque o que se perde
+é diferente**: lá some uma linha, aqui some o **arquivo**, e o bucket não tem
+versionamento. Com o piso `user` seco que a feature nasceu, qualquer colega de
+subgrupo destruía o arquivo de qualquer outro.
+
+⚠️ **Vale pros DOIS botões, e o segundo é a porta irmã.** "Substituir" apaga o
+objeto antigo do mesmo jeito -- e, ao contrário de "Excluir", **não passa por
+diálogo de confirmação**. Esconder só um deixaria o caminho mais silencioso
+aberto. Uma mutação que ignora a régua no `CartaoDoArquivo` mata o teste.
+
+⚠️ **O que NÃO some**: "Baixar" e "Salvar". A trava é sobre destruir, não
+sobre usar nem sobre mexer -- baixar é leitura, e corrigir um título é
+reversível. Estender a trava a esses dois seria burocracia sem nada protegido
+em troca.
+
+⚠️ **`criado_por` vazio cai pro lado restritivo.** Sem o teste de vazio, um
+`getEmail()` nulo comparado a `""` passaria -- mesma armadilha já escrita em
+`podeExcluirSubgrupo`, e ela **sobreviveu à suíte da API inteira** até ganhar
+teste próprio dos dois lados.
+
+🔴 **Esconder o botão não é a proteção** -- quem manda é a rota, e ela recusa
+com 403. É pra não oferecer o que a API vai negar: um botão que existe,
+confirma num diálogo que promete apagar e volta 403 parece defeito do
+sistema. A mensagem do servidor nomeia a ação que a pessoa tentou e dá duas
+saídas, a mais rápida primeiro ("peça a essa pessoa ou a um gerente do
+subgrupo").
+
 ### O modal só CRIA
 
 Editar e excluir vivem na tela do documento, como em Processos e Clientes: a

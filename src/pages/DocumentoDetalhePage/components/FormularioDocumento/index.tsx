@@ -26,6 +26,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { mascararNumeroProcesso } from "../../../../utils";
 import CartaoDoArquivo from "../CartaoDoArquivo";
+import { podeDestruirDocumento } from "../../podeDestruirDocumento";
 import type { Documento, VinculosDeRegistro } from "../../../../types";
 import type { RespostaDeMembros } from "../../../../types/respostas";
 
@@ -64,6 +65,9 @@ export default function FormularioDocumento({
 }: FormularioDocumentoProps) {
   const toast = useToast();
   const ehArquivo = documento.tipo === DOCUMENTO_ARQUIVO;
+  /* Excluir e substituir são as duas ações que DESTROEM o arquivo -- a mesma
+     régua vale pras duas. Ver `podeDestruirDocumento`. */
+  const podeDestruir = podeDestruirDocumento(documento);
 
   const [titulo, setTitulo] = useState(documento.titulo ?? "");
   const [descricao, setDescricao] = useState(documento.descricao ?? "");
@@ -155,14 +159,17 @@ export default function FormularioDocumento({
         </Box>
 
         <Flex gap="8px" flexShrink="0">
-          {/* Sem trava de papel: o piso da rota é `user` + participar do
-              subgrupo, e quem enxerga o documento pode excluí-lo. Mostrar um
-              botão que a API vai negar seria pior que não mostrar -- mas
-              aqui ela não nega. */}
-          <Botao variante="perigoContorno" type="button" onClick={onRemover}>
-            <IconeLixeira />
-            Excluir
-          </Botao>
+          {/* 🔴 Some pra quem não pode destruir. Mostrar um botão que a API
+              vai negar é pior que não mostrar: a pessoa clica, confirma num
+              diálogo que promete apagar, e recebe um 403 que parece defeito.
+              Salvar continua pra todo mundo do subgrupo -- a trava é sobre
+              DESTRUIR, não sobre mexer. */}
+          {podeDestruir && (
+            <Botao variante="perigoContorno" type="button" onClick={onRemover}>
+              <IconeLixeira />
+              Excluir
+            </Botao>
+          )}
           <Botao type="submit" disabled={salvar.isPending || !titulo.trim()}>
             {salvar.isPending ? "Salvando…" : "Salvar"}
           </Botao>
@@ -170,7 +177,11 @@ export default function FormularioDocumento({
       </Flex>
 
       <Stack gap="14px">
-        <CartaoDoArquivo documento={documento} onSubstituido={onSalvo} />
+        <CartaoDoArquivo
+          documento={documento}
+          podeSubstituir={podeDestruir}
+          onSubstituido={onSalvo}
+        />
 
         <Cartao>
           <Campo

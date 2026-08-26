@@ -21,6 +21,10 @@ import type { Documento } from "../../../../types";
 
 interface CartaoDoArquivoProps {
   documento: Documento;
+  /** Trocar o arquivo APAGA o antigo, então segue a mesma régua do excluir
+   * -- ver `podeDestruirDocumento`. Quem decide é a página; aqui só se
+   * obedece, pra a regra não ficar escrita em dois lugares. */
+  podeSubstituir: boolean;
   onSubstituido: () => void;
 }
 
@@ -32,7 +36,11 @@ interface CartaoDoArquivoProps {
  * "Salvar" pareceria confirmar também a troca do arquivo -- que já
  * aconteceu.
  */
-export default function CartaoDoArquivo({ documento, onSubstituido }: CartaoDoArquivoProps) {
+export default function CartaoDoArquivo({
+  documento,
+  podeSubstituir,
+  onSubstituido,
+}: CartaoDoArquivoProps) {
   const toast = useToast();
   const [trocando, setTrocando] = useState(false);
   /* 🔴 O escolhido fica guardado AQUI, e não só passa pela mutação.
@@ -130,17 +138,23 @@ export default function CartaoDoArquivo({ documento, onSubstituido }: CartaoDoAr
         </Box>
 
         <Flex gap="8px" flexShrink="0">
-          <Botao
-            variante="ghost"
-            type="button"
-            onClick={() => {
-              setTrocando((aberto) => !aberto);
-              setSubstituto(null);
-            }}
-            disabled={substituir.isPending}
-          >
-            {trocando ? "Cancelar troca" : "Substituir"}
-          </Botao>
+          {/* 🔴 BAIXAR continua pra todo mundo do subgrupo -- é leitura, e o
+              documento está ali justamente pra ser lido. O que some é
+              SUBSTITUIR, porque ele destrói o arquivo antigo e nem passa por
+              diálogo de confirmação. */}
+          {podeSubstituir && (
+            <Botao
+              variante="ghost"
+              type="button"
+              onClick={() => {
+                setTrocando((aberto) => !aberto);
+                setSubstituto(null);
+              }}
+              disabled={substituir.isPending}
+            >
+              {trocando ? "Cancelar troca" : "Substituir"}
+            </Botao>
+          )}
           <Botao type="button" onClick={() => baixar.mutate()} disabled={baixar.isPending}>
             {baixar.isPending ? "Preparando…" : "Baixar"}
           </Botao>

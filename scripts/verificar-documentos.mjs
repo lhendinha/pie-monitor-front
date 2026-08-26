@@ -149,6 +149,30 @@ console.log("\n— permissão, com uma conta `user` —");
     (await dele.getByText("NAO-DEVE-APARECER.pdf").count()) === 0,
     "🔴 `user` NÃO enxerga o documento do subgrupo alheio",
   );
+
+  /* 🔴 A régua de DESTRUIR, na única conta em que ela morde.
+   *
+   * Os documentos semeados são de `chefe@local.test`, então pra `colega`
+   * eles são de outra pessoa. `manager` pra cima destrói qualquer um -- com
+   * as contas de antes, esta checagem passaria sem provar nada. */
+  await dele.getByText("procuracao-ad-judicia.pdf").click();
+  await dele.getByRole("heading", { name: "procuracao-ad-judicia.pdf" }).waitFor();
+
+  conferir(
+    (await dele.getByRole("button", { name: /Excluir/ }).count()) === 0,
+    "🔴 `user` não vê Excluir em documento de outra pessoa",
+  );
+  conferir(
+    (await dele.getByRole("button", { name: /Substituir/ }).count()) === 0,
+    "🔴 nem Substituir -- trocar o arquivo destrói o antigo igual",
+  );
+  /* O par: a trava é sobre DESTRUIR, não sobre usar. Baixar é leitura, e o
+     documento está ali justamente pra ser lido. */
+  conferir(
+    await dele.getByRole("button", { name: /^Baixar$/ }).isVisible(),
+    "mas Baixar continua -- a trava é sobre destruir, não sobre ler",
+  );
+
   await outro.close();
 }
 
