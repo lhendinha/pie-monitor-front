@@ -2,7 +2,14 @@ import { Box } from "@chakra-ui/react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Abas, BotaoDeTexto, CabecalhoDePagina, Cartao, IconeSeta } from "../../components";
+import {
+  Abas,
+  BotaoDeTexto,
+  CabecalhoDePagina,
+  Cartao,
+  IconeSeta,
+  PainelDaAba,
+} from "../../components";
 import FormularioIdentificacao from "./components/FormularioIdentificacao";
 import ModalDeSenha from "./components/ModalDeSenha";
 import { ABAS_DO_PERFIL } from "./constants";
@@ -32,16 +39,19 @@ export default function PerfilPage() {
       <CabecalhoDePagina titulo="Meu perfil" subtitulo="Identificação e segurança da sua conta." />
 
       <Abas
+        grupo="perfil"
         abas={ABAS_DO_PERFIL.map((a) => ({ id: a.id, rotulo: a.rotulo }))}
         ativa="identificacao"
         onMudar={() => {}}
       />
 
-      <Box maxW="660px">
-        <Cartao>
-          <FormularioIdentificacao onAlterarSenha={() => setTrocandoSenha(true)} />
-        </Cartao>
-      </Box>
+      <PainelDaAba grupo="perfil" id="identificacao" ativa="identificacao">
+        <Box maxW="660px">
+          <Cartao>
+            <FormularioIdentificacao onAlterarSenha={() => setTrocandoSenha(true)} />
+          </Cartao>
+        </Box>
+      </PainelDaAba>
 
       {trocandoSenha && <ModalDeSenha onFechar={() => setTrocandoSenha(false)} />}
     </Box>

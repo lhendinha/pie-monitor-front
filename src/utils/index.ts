@@ -4,6 +4,7 @@ export * from "./deepLink";
 export * from "./select";
 export * from "./iniciais";
 export * from "./plural";
+export * from "./abas";
 export * from "./calendario";
 export * from "./email";
 export * from "./suporte";

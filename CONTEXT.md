@@ -28,7 +28,7 @@ produto pra Argos. Conferir publicação por um endereço morto dá "não subiu"
 pra um deploy que subiu. React Compiler configurado
 e testado. Build (`yarn build`) passa limpo com type-check completo. Suite
 de testes com `vitest` + `@testing-library/react` (`yarn test`): 59 arquivos,
-562 testes, cobrindo `pages/` (27 arquivos), `components/` (11), `utils/`
+605 testes, cobrindo `pages/` (27 arquivos), `components/` (11), `utils/`
 (9), `services/` (7) e `hooks/` (3). O `yarn lint` roda ESLint com
 `react-hooks` e passa sem erros.
 
@@ -1299,3 +1299,130 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
    `autor_id` e `coluna_id`; sem acrescentar os campos novos ali, a
    verificação visual em Chrome mostra nome vazio e parece defeito do
    código, não do stub.
+
+---
+
+## Abas nos dois detalhes, e o teor da movimentação com endereço (26/08/2026)
+
+**O que mudou.** Detalhe do processo virou três abas (Detalhes / Tarefas /
+Movimentações); detalhe do cliente, duas (Detalhes / Processos vinculados).
+As listas das duas telas deixaram de ser texto morto: linha de tarefa abre o
+`ModalDeTarefa`, linha de movimentação abre o teor, linha de processo do
+cliente abre um resumo com "Abrir processo".
+
+**Três decisões que valem mais que o layout:**
+
+1. **A aba mora na URL** (`?aba=tarefas`), ao contrário de `GrupoPage` e
+   `PerfilPage`, que guardam em estado local. A diferença é real: telas de
+   detalhe são alcançadas por LINK -- do e-mail, do Kanban, da Agenda --, e
+   um F5 que devolve pra primeira aba ali incomoda de verdade. `replace` na
+   navegação: trocar de aba não é passo do histórico.
+
+2. **Os painéis vão MONTADOS, só escondidos** (`display: none`). A aba de
+   Detalhes das duas telas é um formulário com estado local; desmontar ao
+   trocar de aba jogaria fora o que a pessoa acabou de digitar. Quem decide
+   isso é **quem chama** -- `GrupoPage` continua montando condicional,
+   porque lá cada aba é uma página com consultas próprias.
+
+   ⚠️ `display: none`, nunca `opacity`/`visibility`: só o `display` tira o
+   conteúdo do fluxo de foco. Verificado em Chrome com 40 `Tab` seguidos: o
+   cursor só passeia dentro do painel ativo.
+
+3. **A movimentação ganhou endereço** (`?comunicacao=900001`), a pedido do
+   usuário -- "abrir a movimentação dentro do sistema e não fora dele". O
+   link "Abrir o documento no tribunal" (campo `link`, que a API já mandava
+   e nenhuma tela mostrava) continua, agora como a saída pra fora, não como
+   a única forma de abrir.
+
+   O resumo do processo no detalhe do cliente **não** ganhou URL, e é
+   deliberado: a coisa que ele resume já tem uma, que é a tela do processo.
+
+### O modal do teor virou tela de detalhe, e ganhou o caminho pro envio
+
+O modal mostrava etiquetas soltas no topo (data · órgão) e o texto. Virou
+rótulo e valor -- Tipo de comunicação, Disponibilizada em, Órgão, Teor --,
+porque "TJMG" sozinho não diz se é o órgão, o tribunal ou o autor. Mesmo par
+de leitura do detalhe do envio (`CampoDeLeitura`, que subiu pra
+`components/` justamente por isso).
+
+**"Ver o e-mail enviado" aparece só quando houve e-mail**, lendo `tem_envio`
+da resposta de detalhes (campo novo da API, 26/08/2026). Leva ao Histórico
+já naquele envio, pelo `state.deepLink` -- o mesmo caminho que `RotaRaiz`
+usa pro link do e-mail, sem o desvio pela raiz.
+
+🔴 **A maioria das movimentações NÃO tem e-mail, e isso não é falha.** O robô
+grava o acervo inteiro do processo na primeira checagem e só notifica o que
+está dentro da janela de 30 dias: publicação anterior ao cadastro nunca
+gerou aviso. Medido sobre dado de produção: **9 de 73**. Oferecer o botão
+sempre levaria, em 64 casos, a um Histórico que responde "não foi possível
+localizar a notificação" -- que soa como falha do sistema.
+
+⚠️ `tem_envio` ausente (resposta de API anterior a 26/08/2026) também não
+oferece o botão: não saber não é motivo pra prometer. É o que torna o deploy
+do front seguro mesmo sem a API -- mas a ORDEM continua sendo API primeiro,
+senão o botão simplesmente não existe pra ninguém.
+
+⚠️ **Sem "Fechar" no rodapé dos dois modais novos.** O X do cabeçalho já é
+esse controle, e dois botões com o mesmo nome acessível no mesmo diálogo
+fazem o leitor de tela anunciar a escolha duas vezes -- e quebram qualquer
+busca por nome (foi exatamente assim que um teste começou a falhar:
+"Found multiple elements with the role button and name Fechar").
+
+⚠️ **`BotaoDeLink` não serve pra `href`.** Ele é `<button>` de propósito --
+a própria docstring diz --, e botão não abre em outra aba nem oferece
+"copiar endereço". O link do tribunal é `<a>` de verdade, com
+`rel="noopener noreferrer"`.
+
+**A lista de movimentações parou de despejar o teor.** Cada item trazia a
+publicação inteira num bloco rolável de 200px -- cinco itens viravam cinco
+áreas de rolagem dentro da rolagem da página. O teor foi pro modal, que tem
+espaço pra ele.
+
+**Compartilhados que subiram de lugar** (alcance mudou, destino muda):
+`abaValida` e `PARAM_DA_ABA` foram pra `utils/abas.ts`, junto de `idDaAba`/
+`idDoPainel`; `CampoDeLeitura` saiu de `HistoricoPage/components` pra
+`components/`.
+
+🔴 **Os testes que já existiam nestas duas telas passariam com as abas
+completamente quebradas.** Com os painéis montados, o conteúdo das três abas
+está no documento o tempo todo, e `findByText` acha texto escondido. A régua
+virou `toBeVisible`, e o helper de painel chega nele pelo `aria-controls` da
+aba -- painel escondido tem nome acessível VAZIO, então
+`getByRole("tabpanel", { name })` nunca acha os inativos.
+
+Cinco mutações confirmaram que cada teste novo consegue falhar: painel que
+nunca esconde, `?comunicacao=` que não manda na aba, `abaValida` sem
+fallback, painel de Detalhes desmontado, e "Verificado em" de volta pra
+dentro da aba.
+
+⚠️ **Um comentário meu foi desmentido por mutação.** Eu havia escrito que o
+painel de processos do cliente não podia desmontar "porque a contagem dele é
+o que trava a exclusão" -- é falso: a página tem o próprio
+`processosQuery`. O comentário foi corrigido e o teste que afirmava isso,
+removido.
+
+🔴 **O Chrome achou um defeito que o jsdom não achava.** Chegando por
+`?comunicacao=` sem `?aba=` e fechando o teor, a pessoa caía na aba
+Detalhes -- fechar uma publicação expulsava quem estava lendo a lista. O
+teste em jsdom conferia só a URL e dava "ok". Corrigido (fechar crava
+`aba=movimentacoes`), e as duas verificações passaram a olhar a lista atrás
+do modal.
+
+**Onde os tipos das abas moram.** `AbaDoProcesso` e `AbaDoCliente` ficam em
+`pages/<Pagina>/types.ts`, não em `constants.ts` -- a convenção do projeto
+(`KanbanPage/types.ts`, `HistoricoPage/types.ts`). Os dois são DERIVADOS da
+lista de abas (`(typeof ABAS_DO_PROCESSO)[number]["id"]`), e não uniões
+escritas à mão: acrescentar uma aba passa a ser erro de compilação em todo
+lugar que não a trata.
+
+**Verificação:** `scripts/verificar-abas.mjs` (Chrome com janela, 34
+checagens) contra `yarn offline` + `scripts/offline/semear_abas.py` na API.
+O cenário semeia PARES de propósito -- movimentação com teor e sem, uma com
+e-mail enviado e outra sem, tarefa em coluna que conclui e em coluna que
+não, dois processos no mesmo cliente --, porque aba vazia passa por qualquer
+defeito e um botão que aparece sempre passa em qualquer lista onde tudo é
+igual.
+
+⚠️ O `.env` do front aponta pra PRODUÇÃO. Subir `yarn dev` sem
+`VITE_API_URL=http://localhost:8099` deixa a verificação "local" batendo na
+API de verdade.

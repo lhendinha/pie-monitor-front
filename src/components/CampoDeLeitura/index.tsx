@@ -1,7 +1,9 @@
 import { Stack } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
-import { Rotulo } from "../../../../components";
+/* Irmão importado direto, e não pelo índice de `components`: este
+   componente É exportado por aquele índice. */
+import { Rotulo } from "../Rotulo";
 
 interface CampoDeLeituraProps {
   rotulo: string;
@@ -12,8 +14,13 @@ interface CampoDeLeituraProps {
  * controle.
  *
  * O `Campo` do sistema não serve aqui: ele é de formulário e exige o `id` de
- * um controle pra apontar o `htmlFor`, e neste modal não há controle nenhum
- * -- um `<label for>` apontando pra nada é rótulo que não rotula.
+ * um controle pra apontar o `htmlFor`, e num modal de leitura não há
+ * controle nenhum -- um `<label for>` apontando pra nada é rótulo que não
+ * rotula.
+ *
+ * ⚠️ Morava dentro de `HistoricoPage`, onde nasceu. Subiu pra cá em
+ * 26/08/2026, quando o modal de movimentação do detalhe do processo passou
+ * a precisar do mesmo par rótulo/valor: o alcance deixou de ser uma página.
  */
 export default function CampoDeLeitura({ rotulo, children }: CampoDeLeituraProps) {
   return (

@@ -1,17 +1,19 @@
-import { Box, Stack, Text } from "@chakra-ui/react";
+import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import {
+  Abas,
   BotaoDeTexto,
   Cartao,
   IconeSeta,
   Esqueleto,
   ModalDeConfirmacao,
+  PainelDaAba,
   useToast,
 } from "../../components";
-import { contar, formatarDataHoraAmPm } from "../../utils";
+import { abaValida, contar, formatarDataHoraAmPm, PARAM_DA_ABA } from "../../utils";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import { detalhesProcesso, removerProcesso } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
@@ -21,6 +23,8 @@ import FormularioProcesso from "./components/FormularioProcesso";
 import NumeroDoProcesso from "./components/NumeroDoProcesso";
 import Movimentacoes from "./components/Movimentacoes";
 import TarefasVinculadas from "./components/TarefasVinculadas";
+import { ABAS_DO_PROCESSO, GRUPO_DE_ABAS, PARAM_DA_COMUNICACAO } from "./constants";
+import type { AbaDoProcesso } from "./types";
 import type {
   RespostaDeDetalhesDoProcesso,
 } from "../../types/respostas";
@@ -42,6 +46,39 @@ export default function ProcessoDetalhePage() {
   const apoio = useCatalogosDeProcesso();
   const toast = useToast();
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
+
+  /** A aba escolhida vive na URL (`?aba=tarefas`).
+   *
+   * 🔴 Diferente de `GrupoPage` e `PerfilPage`, que guardam em `useState`.
+   * Esta tela é alcançada por LINK -- do e-mail de lembrete, do Kanban, da
+   * Agenda --, e recarregar devolvendo a pessoa pra primeira aba incomoda
+   * mais num detalhe do que numa tela de gestão. De quebra, dá pra mandar
+   * "olha as movimentações deste processo" pra alguém.
+   *
+   * `replace` na navegação: trocar de aba não é um passo do histórico. Sem
+   * isso, quem visse as três abas precisaria de três "voltar" pra sair da
+   * tela. */
+  const [params, setParams] = useSearchParams();
+
+  /* ⚠️ `?comunicacao=` MANDA na aba, e não é enfeite: o modal do teor é
+     filho do painel de Movimentações, e painel escondido é `display: none`
+     -- com a aba em Detalhes, o modal existiria no documento e não
+     apareceria na tela. É o que aconteceria com todo link de movimentação
+     colado sem a aba junto.
+
+     Sair da aba é possível porque `irParaAba` LARGA o parâmetro: ele quer
+     dizer "o teor está aberto", e trocar de aba é fechá-lo. */
+  const vendoComunicacao = Boolean(params.get(PARAM_DA_COMUNICACAO));
+  const aba = vendoComunicacao
+    ? "movimentacoes"
+    : abaValida(ABAS_DO_PROCESSO, params.get(PARAM_DA_ABA));
+
+  const irParaAba = (nova: AbaDoProcesso) => {
+    const proximos = new URLSearchParams(params);
+    proximos.set(PARAM_DA_ABA, nova);
+    proximos.delete(PARAM_DA_COMUNICACAO);
+    setParams(proximos, { replace: true });
+  };
 
   /** Mesma consulta do cartão de tarefas -- serve pra dizer, na hora de
    * excluir, quantas tarefas ficam sem processo. */
@@ -101,50 +138,70 @@ export default function ProcessoDetalhePage() {
 
   return (
     <Box>
-      <Box mb="14px">
+      <Flex
+        mb="14px"
+        align="center"
+        justify="space-between"
+        gap="10px"
+        wrap="wrap"
+      >
         <BotaoDeTexto onClick={voltar}>
           <IconeSeta />
           Voltar
         </BotaoDeTexto>
-      </Box>
 
-      <FormularioProcesso
-        processo={processo}
-        subgrupoNome={apoio.subgrupoNome(processo.subgrupo_id)}
-        faseRotulo={apoio.faseRotulo(processo.fase_id)}
-        situacaoRotulo={apoio.situacaoRotulo(processo.situacao_id)}
-        onSalvo={() => {
-          queryClient.invalidateQueries({ queryKey: qk.detalhesProcesso(numero) });
-          queryClient.invalidateQueries({ queryKey: ["processos"] });
-          toast.sucesso("Processo atualizado.");
-        }}
-        onRemover={() => setConfirmandoRemocao(true)}
+        {/* 🔴 Quando o robô olhou pela última vez fica FORA das abas, e não
+            no cabeçalho do cartão de Movimentações como antes.
+            É o que diz se o silêncio é do processo ou do sistema: um
+            processo sem novidade e um que o robô não conseguiu verificar
+            têm a mesma cara -- lista curta, nada novo. Dentro da aba, só
+            veria quem entrasse nela; e a tela abre em "Detalhes". */}
+        <Text fontSize="12px" color="fg.subtle">
+          {processo.ultima_verificacao
+            ? `Verificado em ${formatarDataHoraAmPm(processo.ultima_verificacao)}`
+            : "Ainda não verificado"}
+        </Text>
+      </Flex>
+
+      <Abas
+        grupo={GRUPO_DE_ABAS}
+        abas={ABAS_DO_PROCESSO.map((a) => ({ id: a.id, rotulo: a.rotulo }))}
+        ativa={aba}
+        onMudar={irParaAba}
       />
 
-      <Box mt="16px">
+      {/* ⚠️ Os três painéis vão MONTADOS -- ver `PainelDaAba`. O de
+          Detalhes é um formulário com estado local, e desmontá-lo ao trocar
+          de aba jogaria fora o que a pessoa acabou de digitar. Não custa
+          consulta: `GET /processos/{n}/detalhes` já traz as comunicações, e
+          as tarefas vêm de uma query que a página assina de qualquer jeito
+          (ela conta as vinculadas na hora de excluir). */}
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="detalhes" ativa={aba}>
+        <FormularioProcesso
+          processo={processo}
+          subgrupoNome={apoio.subgrupoNome(processo.subgrupo_id)}
+          faseRotulo={apoio.faseRotulo(processo.fase_id)}
+          situacaoRotulo={apoio.situacaoRotulo(processo.situacao_id)}
+          onSalvo={() => {
+            queryClient.invalidateQueries({ queryKey: qk.detalhesProcesso(numero) });
+            queryClient.invalidateQueries({ queryKey: ["processos"] });
+            toast.sucesso("Processo atualizado.");
+          }}
+          onRemover={() => setConfirmandoRemocao(true)}
+        />
+      </PainelDaAba>
+
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="tarefas" ativa={aba}>
         <Cartao titulo="Tarefas vinculadas">
           <TarefasVinculadas numeroProcesso={numero} />
         </Cartao>
-      </Box>
+      </PainelDaAba>
 
-      <Box mt="16px">
-        <Cartao
-          titulo="Movimentações"
-          /* Quando o robô olhou pela última vez fica no cabeçalho do
-             cartão: é o que diz se o silêncio é do processo ou do sistema.
-             Sem isso, uma lista curta parece desatualizada sem que dê pra
-             saber. */
-          acoes={
-            <Text fontSize="12px" color="fg.subtle">
-              {processo.ultima_verificacao
-                ? `Verificado em ${formatarDataHoraAmPm(processo.ultima_verificacao)}`
-                : "Ainda não verificado"}
-            </Text>
-          }
-        >
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="movimentacoes" ativa={aba}>
+        <Cartao titulo="Movimentações">
           <Movimentacoes comunicacoes={query.data.comunicacoes} />
         </Cartao>
-      </Box>
+      </PainelDaAba>
 
       {confirmandoRemocao && (
         <ModalDeConfirmacao

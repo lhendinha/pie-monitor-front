@@ -1,5 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 
+import { idDaAba, idDoPainel } from "../../utils/abas";
 import { BotaoNu } from "../BotaoNu";
 
 interface Aba<T extends string> {
@@ -11,15 +12,23 @@ interface AbasProps<T extends string> {
   abas: Aba<T>[];
   ativa: T;
   onMudar: (id: T) => void;
+  /** Prefixo dos `id`/`aria-controls`, pra duas listas de abas na mesma
+   * página não colidirem. Combina com o `grupo` do `PainelDaAba`. */
+  grupo: string;
 }
 
 /** Navegação por abas (`.tabs-row` do artifact): sublinhado de 2px na ativa,
  * sobre uma divisória de 1px que atravessa a linha inteira.
  *
- * `role="tablist"` e `aria-selected` são o que faz o leitor de tela
- * anunciar "aba 2 de 5" em vez de ler cinco botões soltos.
+ * `role="tablist"` e `aria-selected` são o que faz o leitor de tela anunciar
+ * "aba 2 de 5" em vez de ler cinco botões soltos.
+ *
+ * ⚠️ `aria-controls` entrou em 26/08/2026, junto com `PainelDaAba`. Sem ele
+ * o leitor anuncia as abas mas não sabe QUAL painel cada uma comanda -- e
+ * quem navega por teclado não tem como pular da aba pro conteúdo dela. Os
+ * ids saem de `utils/abas`, compartilhados com o painel.
  */
-export default function Abas<T extends string>({ abas, ativa, onMudar }: AbasProps<T>) {
+export default function Abas<T extends string>({ abas, ativa, onMudar, grupo }: AbasProps<T>) {
   return (
     <Flex
       role="tablist"
@@ -33,9 +42,11 @@ export default function Abas<T extends string>({ abas, ativa, onMudar }: AbasPro
         return (
           <BotaoNu
             key={aba.id}
+            id={idDaAba(grupo, aba.id)}
             role="tab"
             type="button"
             aria-selected={selecionada}
+            aria-controls={idDoPainel(grupo, aba.id)}
             onClick={() => onMudar(aba.id)}
             p="11px 4px"
             mr="22px"

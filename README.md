@@ -112,7 +112,7 @@ yarn test         # roda uma vez (CI)
 yarn test:watch   # modo watch
 ```
 
-`vitest` + `@testing-library/react` + `jsdom`. 562 testes em 59 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+`vitest` + `@testing-library/react` + `jsdom`. 605 testes em 59 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
 
 ## Filtros em pílula: primeira página + busca
 

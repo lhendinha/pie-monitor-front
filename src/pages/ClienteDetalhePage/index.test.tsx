@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderComProviders } from "../../test/queryTestUtils";
@@ -30,14 +30,46 @@ const CLIENTE = {
   processos: 2,
 };
 
-function montar() {
+/** Revela o endereço atual -- a aba mora nele, e "Abrir processo" navega. */
+function Espiao() {
+  const { pathname, search } = useLocation();
+  return <div data-testid="url">{`${pathname}${search}`}</div>;
+}
+
+function montar(rota = "/clientes/c1") {
   return renderComProviders(
-    <MemoryRouter initialEntries={["/clientes/c1"]}>
+    <MemoryRouter initialEntries={[rota]}>
+      <Espiao />
       <Routes>
         <Route path="/clientes" element={<div>lista de clientes</div>} />
         <Route path="/clientes/:clienteId" element={<ClienteDetalhePage />} />
+        <Route
+          path="/processos/:subgrupoId/:numero"
+          element={<div>tela do processo</div>}
+        />
       </Routes>
     </MemoryRouter>,
+  );
+}
+
+const url = () => screen.getByTestId("url").textContent ?? "";
+
+/** O painel que a aba de nome `nome` comanda -- ver o gêmeo em
+ * `ProcessoDetalhePage`: painel escondido tem nome acessível vazio, então
+ * `getByRole("tabpanel", { name })` não acha os inativos. */
+function painel(nome: string) {
+  const aba = screen.getByRole("tab", { name: nome });
+  const alvo = document.getElementById(aba.getAttribute("aria-controls") ?? "");
+  if (!alvo) throw new Error(`A aba "${nome}" aponta pra um painel que não existe.`);
+  return alvo;
+}
+
+/** Entra na aba dos processos. Os testes da lista precisam dela ABERTA:
+ * o painel fica montado, então `findByText` acharia o conteúdo escondido e
+ * passaria mesmo com as abas quebradas. */
+async function irParaProcessos() {
+  await userEvent.click(
+    await screen.findByRole("tab", { name: "Processos vinculados" }),
   );
 }
 
@@ -180,8 +212,9 @@ describe("ClienteDetalhePage", () => {
       total_paginas: 1,
     });
     montar();
+    await irParaProcessos();
 
-    expect(await screen.findByText("0000266-87.2021.8.13.0559")).toBeInTheDocument();
+    expect(await screen.findByText("0000266-87.2021.8.13.0559")).toBeVisible();
     expect(mocks.listarProcessos).toHaveBeenCalledWith(
       expect.objectContaining({ clienteId: "c1" }),
     );
@@ -243,10 +276,9 @@ describe("ClienteDetalhePage", () => {
 
   it("sem processo vinculado, diz isso", async () => {
     montar();
+    await irParaProcessos();
 
-    expect(
-      await screen.findByText("Nenhum processo vinculado a este cliente."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Nenhum processo vinculado a este cliente.")).toBeVisible();
   });
 
   it("'Voltar' devolve pra listagem", async () => {
@@ -265,10 +297,11 @@ describe("ClienteDetalhePage", () => {
      * -- já tratava assim, com o mesmo raciocínio escrito. */
     mocks.listarProcessos.mockRejectedValue(new Error("rede"));
     montar();
+    await irParaProcessos();
 
     expect(
       await screen.findByText(/Não foi possível carregar os processos deste cliente/),
-    ).toBeInTheDocument();
+    ).toBeVisible();
     expect(
       screen.queryByText("Nenhum processo vinculado a este cliente."),
     ).not.toBeInTheDocument();
@@ -292,3 +325,130 @@ describe("ClienteDetalhePage", () => {
     );
   });
 });
+
+const PROCESSO = {
+  subgrupo_id: "sg1",
+  numero_processo: "00002668720218130559",
+  apelido: "Obra da Alfa",
+  fase_id: "fase-1",
+  situacao_id: "sit-1",
+  prazo_final: "2026-09-15",
+};
+
+/** As duas abas.
+ *
+ * 🔴 `toBeVisible`, e não `toBeInTheDocument`: os dois painéis vão MONTADOS
+ * (o de Detalhes é formulário com estado local; a lista de processos é o que
+ * trava a exclusão), e painel escondido continua no documento. Os testes que
+ * já existiam liam as duas abas ao mesmo tempo e passariam com as abas
+ * completamente quebradas.
+ */
+describe("as duas abas", () => {
+  it("abre em Detalhes, com o painel de processos escondido", async () => {
+    montar();
+
+    expect(await screen.findByLabelText(/Nome/)).toBeVisible();
+    expect(painel("Detalhes")).toBeVisible();
+    expect(painel("Processos vinculados")).not.toBeVisible();
+  });
+
+  it("trocar de aba escreve na URL", async () => {
+    montar();
+    await irParaProcessos();
+
+    expect(url()).toContain("aba=processos");
+    expect(painel("Processos vinculados")).toBeVisible();
+    expect(painel("Detalhes")).not.toBeVisible();
+  });
+
+  it("a aba da URL é a que abre -- um F5 não devolve pra primeira", async () => {
+    montar("/clientes/c1?aba=processos");
+
+    expect(await screen.findByText("Nenhum processo vinculado a este cliente.")).toBeVisible();
+    expect(painel("Detalhes")).not.toBeVisible();
+  });
+
+  it("aba inventada na URL cai na primeira, e não numa tela em branco", async () => {
+    montar("/clientes/c1?aba=inventada");
+
+    expect(await screen.findByLabelText(/Nome/)).toBeVisible();
+    expect(painel("Detalhes")).toBeVisible();
+  });
+
+  it("o que foi digitado sobrevive à ida e volta entre abas", async () => {
+    // É a razão de os painéis irem montados.
+    montar();
+
+    const nome = await screen.findByLabelText(/Nome/);
+    await userEvent.clear(nome);
+    await userEvent.type(nome, "Construtora Beta");
+
+    await irParaProcessos();
+    await userEvent.click(screen.getByRole("tab", { name: "Detalhes" }));
+
+    expect(await screen.findByLabelText(/Nome/)).toHaveValue("Construtora Beta");
+  });
+});
+
+describe("o resumo do processo vinculado", () => {
+  beforeEach(() => {
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO],
+      total: 1,
+      total_paginas: 1,
+    });
+    mocks.listarOpcoesProcesso.mockImplementation((tipo: string) =>
+      Promise.resolve({
+        opcoes:
+          tipo === "fase"
+            ? [{ opcao_id: "fase-1", tipo: "fase", rotulo: "Conhecimento", ordem: 1, ativo: true }]
+            : [{ opcao_id: "sit-1", tipo: "situacao", rotulo: "Aguardando sentença", ordem: 1, ativo: true }],
+      }),
+    );
+  });
+
+  it("clicar na linha abre o resumo com número, apelido, situação, fase e prazo", async () => {
+    // Antes a lista era texto morto: chegar num daqueles processos exigia
+    // copiar o número, sair pra listagem e colar na busca.
+    montar();
+    await irParaProcessos();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Obra da Alfa/ }));
+
+    const modal = await screen.findByRole("dialog");
+    expect(within(modal).getByText("Obra da Alfa")).toBeVisible();
+    expect(within(modal).getByText("0000266-87.2021.8.13.0559")).toBeVisible();
+    expect(within(modal).getByText("Aguardando sentença")).toBeVisible();
+    expect(within(modal).getByText("Conhecimento")).toBeVisible();
+    expect(within(modal).getByText("15/09/2026")).toBeVisible();
+  });
+
+  it("'Abrir processo' leva pra tela do processo, no subgrupo certo", async () => {
+    montar();
+    await irParaProcessos();
+    await userEvent.click(await screen.findByRole("button", { name: /Obra da Alfa/ }));
+
+    await userEvent.click(await screen.findByRole("button", { name: "Abrir processo" }));
+
+    expect(await screen.findByText("tela do processo")).toBeVisible();
+    expect(url()).toBe("/processos/sg1/00002668720218130559");
+  });
+
+  it("processo sem prazo mostra travessão, e não um campo que some", async () => {
+    /* Campo vazio sumindo faz parecer que a informação não existe no
+       sistema, quando o que houve foi ninguém ter preenchido. */
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [{ ...PROCESSO, prazo_final: null }],
+      total: 1,
+      total_paginas: 1,
+    });
+    montar();
+    await irParaProcessos();
+    await userEvent.click(await screen.findByRole("button", { name: /Obra da Alfa/ }));
+
+    const modal = await screen.findByRole("dialog");
+    expect(within(modal).getByText("Prazo final")).toBeVisible();
+    expect(within(modal).getByText("—")).toBeVisible();
+  });
+});
+

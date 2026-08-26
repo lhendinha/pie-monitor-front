@@ -2,6 +2,7 @@ import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 
 import {
+  CampoDeLeitura,
   Esqueleto,
   Etiqueta,
   EtiquetaDeMetadado,
@@ -13,7 +14,6 @@ import { detalhesProcesso } from "../../../../services";
 import { qk } from "../../../../services/queryKeys";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
 import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
-import CampoDeLeitura from "../CampoDeLeitura";
 import type { HistoricoItem } from "../../../../types";
 import type {
   RespostaDeDetalhesDoProcesso,

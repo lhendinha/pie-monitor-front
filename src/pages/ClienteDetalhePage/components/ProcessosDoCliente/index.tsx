@@ -1,10 +1,14 @@
-import { Flex, Stack, Text } from "@chakra-ui/react";
+import { Stack, Text } from "@chakra-ui/react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { Esqueleto, Ponto } from "../../../../components";
+import { BotaoNu, Esqueleto, Ponto } from "../../../../components";
 import { useCatalogosDeProcesso } from "../../../../hooks/useCatalogosDeProcesso";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
 import { useProcessosDoCliente } from "../../hooks/useProcessosDoCliente";
+import ModalDoProcesso from "../ModalDoProcesso";
+import type { Processo } from "../../../../types";
 
 interface ProcessosDoClienteProps {
   clienteId: string;
@@ -15,9 +19,15 @@ interface ProcessosDoClienteProps {
  * Sai de `GET /processos?cliente_id=X`, filtro que já existia -- é a mesma
  * pergunta que a coluna "Processos" da listagem responde em número, aqui
  * respondida por extenso.
+ *
+ * As linhas ABREM um resumo (26/08/2026). Antes eram texto morto: a lista
+ * mostrava vinte números mascarados e a única forma de chegar em um deles
+ * era copiar o número, sair pra listagem de processos e colar na busca.
  */
 export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProps) {
   const apoio = useCatalogosDeProcesso();
+  const navegar = useNavigate();
+  const [aberto, setAberto] = useState<Processo | null>(null);
   const query = useProcessosDoCliente(clienteId);
   useToastOnQueryError(query.error, "Não foi possível carregar os processos do cliente.");
 
@@ -52,25 +62,55 @@ export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProp
   return (
     <Stack gap="0">
       {processos.map((p) => (
-        <Flex
+        <BotaoNu
           key={`${p.subgrupo_id}-${p.numero_processo}`}
-          align="center"
+          type="button"
+          onClick={() => setAberto(p)}
+          display="flex"
+          alignItems="center"
           gap="10px"
-          py="4px"
-          wrap="wrap"
+          w="100%"
+          py="7px"
+          px="4px"
+          borderRadius="sm"
+          flexWrap="wrap"
+          _hover={{ bg: "bg.canvas" }}
         >
           {/* Mesma bolinha das outras listas do sistema. */}
           <Ponto />
           <Text fontFamily="mono" fontSize="12.5px" fontWeight="700">
             {mascararNumeroProcesso(p.numero_processo)}
           </Text>
+          {/* O apelido é o nome que alguém deu pra reconhecer o processo;
+              vinte dígitos não dizem qual é qual. Sai quando não há. */}
+          {p.apelido && (
+            <Text fontSize="13px" flex="1" minW="0" truncate>
+              {p.apelido}
+            </Text>
+          )}
           <Text fontSize="13px" color="fg.subtle">
             {[apoio.situacaoRotulo(p.situacao_id), apoio.faseRotulo(p.fase_id)]
               .filter(Boolean)
               .join(" · ")}
           </Text>
-        </Flex>
+        </BotaoNu>
       ))}
+
+      {aberto && (
+        <ModalDoProcesso
+          processo={aberto}
+          situacao={apoio.situacaoRotulo(aberto.situacao_id)}
+          fase={apoio.faseRotulo(aberto.fase_id)}
+          /* 🔴 O resumo NÃO tem endereço próprio, ao contrário da aba e do
+             teor da movimentação -- e de propósito: a coisa que ele resume
+             já tem um, que é a tela do processo. Dar URL ao resumo seria
+             criar um segundo endereço pro mesmo processo. */
+          onAbrirProcesso={() =>
+            navegar(`/processos/${aberto.subgrupo_id}/${aberto.numero_processo}`)
+          }
+          onFechar={() => setAberto(null)}
+        />
+      )}
     </Stack>
   );
 }

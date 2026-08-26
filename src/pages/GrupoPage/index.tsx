@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Abas, CabecalhoDePagina } from "../../components";
+import { Abas, CabecalhoDePagina, PainelDaAba } from "../../components";
 import { ABAS_DO_GRUPO } from "../../constants";
 import { papelAtende } from "../../services";
 import ConfiguracoesDoGrupo from "./components/ConfiguracoesDoGrupo";
@@ -23,17 +23,37 @@ export default function GrupoPage() {
       <CabecalhoDePagina titulo="Grupo" subtitulo="Gestão de definições do grupo." />
 
       <Abas
+        grupo="grupo"
         abas={abas.map((a) => ({ id: a.id, rotulo: a.label }))}
         ativa={abaAtiva}
         onMudar={setAbaAtiva}
       />
 
-      {abaAtiva === "subgrupos" && <SubgruposPage />}
-      {abaAtiva === "membros" && <MembrosPage />}
-      {abaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" nomeSingular="fase" />}
-      {abaAtiva === "situacoes" && <OpcoesLista tipo="situacao" titulo="Situações" nomeSingular="situação" />}
-      {abaAtiva === "convidar" && <ConvidarPage />}
-      {abaAtiva === "configuracoes" && <ConfiguracoesDoGrupo />}
+      {/* ⚠️ O conteúdo continua CONDICIONAL aqui, ao contrário das telas de
+          detalhe: cada aba é uma página inteira com consultas próprias, e
+          montar as seis de uma vez dispararia todas juntas. O painel existe
+          pra o `aria-controls` da aba ter onde apontar -- vazio quando
+          inativo, o que é correto. */}
+      <PainelDaAba grupo="grupo" id="subgrupos" ativa={abaAtiva}>
+        {abaAtiva === "subgrupos" && <SubgruposPage />}
+      </PainelDaAba>
+      <PainelDaAba grupo="grupo" id="membros" ativa={abaAtiva}>
+        {abaAtiva === "membros" && <MembrosPage />}
+      </PainelDaAba>
+      <PainelDaAba grupo="grupo" id="fases" ativa={abaAtiva}>
+        {abaAtiva === "fases" && <OpcoesLista tipo="fase" titulo="Fases" nomeSingular="fase" />}
+      </PainelDaAba>
+      <PainelDaAba grupo="grupo" id="situacoes" ativa={abaAtiva}>
+        {abaAtiva === "situacoes" && (
+          <OpcoesLista tipo="situacao" titulo="Situações" nomeSingular="situação" />
+        )}
+      </PainelDaAba>
+      <PainelDaAba grupo="grupo" id="convidar" ativa={abaAtiva}>
+        {abaAtiva === "convidar" && <ConvidarPage />}
+      </PainelDaAba>
+      <PainelDaAba grupo="grupo" id="configuracoes" ativa={abaAtiva}>
+        {abaAtiva === "configuracoes" && <ConfiguracoesDoGrupo />}
+      </PainelDaAba>
     </>
   );
 }

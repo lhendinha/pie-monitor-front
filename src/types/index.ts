@@ -147,6 +147,19 @@ export interface Comunicacao {
   nome_orgao?: string;
   texto?: string;
   link?: string;
+  /** Esta movimentação gerou e-mail -- derivado, o servidor resolve
+   * (`processos_service.detalhes`).
+   *
+   * 🔴 Existe porque "ver o envio no Histórico" só faz sentido quando há
+   * envio, e na maioria das vezes não há: na primeira checagem de um
+   * processo o robô grava o acervo inteiro do PJe e só NOTIFICA o que está
+   * dentro da janela de 30 dias. Publicação de 2024 num processo cadastrado
+   * em 2026 nunca gerou e-mail -- e não podia ter gerado. Medido em
+   * 26/08/2026 sobre dado de produção: 9 de 73.
+   *
+   * Ausente em resposta de API anterior a 26/08/2026; quem lê trata
+   * `undefined` como "não sei, não oferece". */
+  tem_envio?: boolean;
 }
 
 export interface HistoricoItem {
