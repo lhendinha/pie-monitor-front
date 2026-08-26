@@ -7,9 +7,16 @@
  */
 export const STATUS_TODOS = "todos";
 
+/** O status que a Área de trabalho conta em "Atendimentos em andamento".
+ *
+ * Constante, e não a string solta: o número lá e o filtro daqui têm que ser
+ * o MESMO valor -- se um mudar sozinho, o clique passa a mostrar uma lista
+ * que não bate com o número que a pessoa clicou. */
+export const STATUS_EM_ANDAMENTO = "Em andamento";
+
 export const OPCOES_DE_STATUS = [
   { id: STATUS_TODOS, rotulo: "Todos" },
-  { id: "Em andamento", rotulo: "Em andamento" },
+  { id: STATUS_EM_ANDAMENTO, rotulo: "Em andamento" },
   { id: "Fechado", rotulo: "Fechados" },
 ] as const;
 

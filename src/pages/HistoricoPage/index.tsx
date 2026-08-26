@@ -20,9 +20,14 @@ import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { contar } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
-import FiltroDeTipo from "./components/FiltroDeTipo";
+import FiltroDeMenu from "./components/FiltroDeMenu";
 import ItemDeHistorico from "./components/ItemDeHistorico";
-import { TIPO_DE_ENVIO_PADRAO } from "./constants";
+import {
+  FILTROS_DE_FALHA,
+  FILTROS_DE_PERIODO,
+  TIPOS_DE_ENVIO,
+  TIPO_DE_ENVIO_PADRAO,
+} from "./constants";
 import type { DeepLinkHistorico, HistoricoItem } from "../../types";
 import type { AlvoDoDeepLink } from "./types";
 import type {
@@ -40,6 +45,15 @@ interface HistoricoPageProps {
    * número da tela não batia com o número clicado. Só vale na PRIMEIRA
    * montagem -- depois quem manda é o filtro da própria tela. */
   tipoEnvioInicial?: string;
+  /** Idem, pros dois filtros que a home aciona.
+   *
+   * "Envios com falha" manda `{ tipoEnvio: "", apenasComFalha: true }` -- a
+   * falha cruza os dois tipos. "Movimentações (N dias)" manda
+   * `{ tipoEnvio: "movimentacao", dias: DIAS_DA_JANELA_RECENTE }`. Sem eles,
+   * o clique abria uma lista MAIOR que o número clicado: medido em
+   * 26/08/2026, 2 contra 6 e 3 contra 4. */
+  apenasComFalhaInicial?: boolean;
+  diasInicial?: number;
   onDeepLinkConsumido?: () => void;
 }
 
@@ -51,6 +65,8 @@ interface HistoricoPageProps {
 export default function HistoricoPage({
   deepLink,
   tipoEnvioInicial,
+  apenasComFalhaInicial,
+  diasInicial,
   onDeepLinkConsumido,
 }: HistoricoPageProps) {
   const [pagina, setPagina] = useState(1);
@@ -58,18 +74,20 @@ export default function HistoricoPage({
   const [tipoEnvio, setTipoEnvio] = useState<string>(
     tipoEnvioInicial ?? TIPO_DE_ENVIO_PADRAO,
   );
+  const [apenasComFalha, setApenasComFalha] = useState<boolean>(apenasComFalhaInicial ?? false);
+  const [dias, setDias] = useState<number>(diasInicial ?? 0);
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const toast = useToast();
 
   const query = useQuery<RespostaDeHistoricoPaginada>({
-    queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio }),
+    queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias }),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
        tabela DESMONTA -- pisca a cada página, a cada filtro e a cada tecla
        da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
        visível ainda é o antigo. */
     placeholderData: keepPreviousData,
-    queryFn: () => listarHistorico({ pagina, tamanhoPagina, tipoEnvio }),
+    queryFn: () => listarHistorico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar o histórico.");
   const historico = query.data?.historico || [];
@@ -121,8 +139,32 @@ export default function HistoricoPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLink]);
 
+  /* Voltar pra página 1 a cada filtro: estar na página 4 de um conjunto que
+     acabou de encolher pra 2 páginas mostraria vazio sem motivo. */
   function handleMudarTipo(novo: string) {
     setTipoEnvio(novo);
+    setPagina(1);
+  }
+
+  function handleMudarFalha(nova: boolean) {
+    setApenasComFalha(nova);
+    setPagina(1);
+  }
+
+  function handleMudarDias(novo: number) {
+    setDias(novo);
+    setPagina(1);
+  }
+
+  /** O caminho de volta do estado vazio: derruba TODOS os filtros de uma vez.
+   *
+   * ⚠️ `""` no tipo, e não `TIPO_DE_ENVIO_PADRAO` -- a tela abre em
+   * "Movimentações", mas "ver todos" tem que ver todos. Voltar pro padrão
+   * deixaria os lembretes de fora e a lista poderia seguir vazia. */
+  function limparFiltros() {
+    setTipoEnvio("");
+    setApenasComFalha(false);
+    setDias(0);
     setPagina(1);
   }
 
@@ -134,7 +176,9 @@ export default function HistoricoPage({
       />
 
       <Flex align="center" gap="8px" wrap="wrap" mb="18px">
-        <FiltroDeTipo valor={tipoEnvio} onMudar={handleMudarTipo} />
+        <FiltroDeMenu opcoes={TIPOS_DE_ENVIO} valor={tipoEnvio} onMudar={handleMudarTipo} />
+        <FiltroDeMenu opcoes={FILTROS_DE_FALHA} valor={apenasComFalha} onMudar={handleMudarFalha} />
+        <FiltroDeMenu opcoes={FILTROS_DE_PERIODO} valor={dias} onMudar={handleMudarDias} />
       </Flex>
 
       {/* Some enquanto carrega, em vez de dizer "carregando…": o esqueleto
@@ -167,14 +211,21 @@ export default function HistoricoPage({
                tela abre filtrada, "não tem nada" costuma ser mentira. Por
                isso o caminho de saída fica junto do recado. */
             <EstadoVazio
+              /* 🔴 "deste tipo" mentia desde que a tela ganhou mais dois
+                 filtros: o vazio pode vir de "Só com falha" ou do recorte de
+                 período, e a frase mandava a pessoa olhar pro filtro errado. */
               mensagem={
                 totalSemFiltro > 0
-                  ? "Nenhum envio deste tipo."
+                  ? "Nenhum envio com esses filtros."
                   : "Nenhum e-mail enviado ainda. Os avisos de movimentação e de prazo aparecem aqui."
               }
               acao={
                 totalSemFiltro > 0 && (
-                  <Botao variante="ghost" onClick={() => handleMudarTipo("")}>
+                  /* ⚠️ Limpa os TRÊS. Antes limpava só o tipo -- com "Só com
+                     falha" ligado, o botão de saída não saía: a lista seguia
+                     vazia e o único caminho de volta não levava a lugar
+                     nenhum. */
+                  <Botao variante="ghost" onClick={limparFiltros}>
                     Ver todos os envios
                   </Botao>
                 )

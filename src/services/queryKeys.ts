@@ -52,8 +52,17 @@ export const qk = {
     dataVerificarAte?: string;
     prazoFinalAte?: string;
   }) => ["processos", params] as const,
-  historico: (params: { pagina?: number; tamanhoPagina?: number; tipoEnvio?: string }) =>
-    ["historico", params] as const,
+  /** ⚠️ Todo filtro do Histórico entra AQUI. Filtro fora da chave faz a
+   * consulta reusar o resultado do filtro anterior -- lista errada, sem erro
+   * nenhum. O tipo é explícito de propósito: acrescentar parâmetro na API e
+   * esquecer aqui vira erro de compilação, não bug silencioso. */
+  historico: (params: {
+    pagina?: number;
+    tamanhoPagina?: number;
+    tipoEnvio?: string;
+    apenasComFalha?: boolean;
+    dias?: number;
+  }) => ["historico", params] as const,
   detalhesProcesso: (numeroProcesso: string) => ["detalhesProcesso", numeroProcesso] as const,
   detalheCliente: (clienteId: string) => ["cliente", clienteId] as const,
   clientes: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) => ["clientes", params] as const,

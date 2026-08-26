@@ -12,7 +12,12 @@ import type { DeepLinkHistorico } from "../types";
 export default function RotaHistorico() {
   const local = useLocation();
   const estado = local.state as
-    | { deepLink?: DeepLinkHistorico; tipoEnvio?: string }
+    | {
+        deepLink?: DeepLinkHistorico;
+        tipoEnvio?: string;
+        apenasComFalha?: boolean;
+        dias?: number;
+      }
     | null;
   const [deepLink, setDeepLink] = useState<DeepLinkHistorico | null>(
     () => estado?.deepLink || null,
@@ -27,6 +32,12 @@ export default function RotaHistorico() {
          nada explica por quê. Só na primeira montagem: depois disso quem
          manda é o filtro da própria tela. */
       tipoEnvioInicial={estado?.tipoEnvio}
+      /* 🔴 O mesmo defeito, medido em 26/08/2026: "Envios com falha" dizia 2
+         e abria 6; "Movimentações (7 dias)" dizia 3 e abria 4. O tipo já
+         chegava aqui, mas não existia filtro de falha nem de data -- nem na
+         tela, nem na API. */
+      apenasComFalhaInicial={estado?.apenasComFalha}
+      diasInicial={estado?.dias}
       onDeepLinkConsumido={() => setDeepLink(null)}
     />
   );

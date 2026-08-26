@@ -1,5 +1,6 @@
-import { Grid, Stack } from "@chakra-ui/react";
+import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
 import { Avatar, CabecalhoDePagina, useToast } from "../../components";
 import { getApelido, getEmail, resumoDaAreaDeTrabalho } from "../../services";
@@ -8,6 +9,7 @@ import { qk } from "../../services/queryKeys";
 import BotaoDeAssumir from "./components/BotaoDeAssumir";
 import BotaoDeConcluir from "./components/BotaoDeConcluir";
 import CardDeTarefas from "./components/CardDeTarefas";
+import { DESTAQUE_MS } from "./constants";
 import MinhasAtividades from "./components/MinhasAtividades";
 import ResumoRapido from "./components/ResumoRapido";
 import { useAssumirTarefa } from "./hooks/useAssumirTarefa";
@@ -42,6 +44,34 @@ export default function WorkspacePage() {
   function recarregar() {
     queryClient.invalidateQueries({ queryKey: ["tarefas"] });
     queryClient.invalidateQueries({ queryKey: qk.resumo() });
+  }
+
+  /** "Tarefas sem responsável", no Resumo rápido, conta exatamente o que o
+   * card "Disponíveis para assumir" lista -- mesmo filtro, mesma tela.
+   *
+   * 🔴 Rolar E destacar, não só rolar. Em tela larga as duas colunas cabem
+   * juntas, e aí `scrollIntoView` não move nada: o clique não teria resposta
+   * nenhuma e pareceria quebrado. O destaque breve é o que liga o número à
+   * lista nos dois tamanhos.
+   *
+   * ⚠️ O `setTimeout` é limpo ao desmontar. Sem isso, sair da tela dentro da
+   * janela do destaque chamaria `setState` num componente morto. */
+  const cardSemResponsavel = useRef<HTMLDivElement>(null);
+  const [destacando, setDestacando] = useState(false);
+  const relogioDoDestaque = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(relogioDoDestaque.current), []);
+
+  function verSemResponsavel() {
+    /* ⚠️ O destaque PRIMEIRO, e a rolagem com `?.()`. Nesta ordem porque
+       `scrollIntoView` não existe em todo ambiente -- no jsdom ele nem é
+       função. Chamando antes e sem guarda, o TypeError abortava o handler e
+       o destaque nunca acontecia: a interação inteira morria por causa do
+       enfeite. */
+    setDestacando(true);
+    clearTimeout(relogioDoDestaque.current);
+    relogioDoDestaque.current = setTimeout(() => setDestacando(false), DESTAQUE_MS);
+    cardSemResponsavel.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }
 
   const concluir = useConcluirTarefa(
@@ -86,6 +116,12 @@ export default function WorkspacePage() {
             responsavel={() => <Avatar nome={meuNome} tamanho="pequeno" />}
           />
 
+          <Box
+            ref={cardSemResponsavel}
+            borderRadius="lg"
+            transition="box-shadow 200ms"
+            boxShadow={destacando ? "0 0 0 2px var(--chakra-colors-brand)" : "none"}
+          >
           <CardDeTarefas
             titulo="Disponíveis para assumir"
             filtro={{ semResponsavel: true }}
@@ -103,6 +139,7 @@ export default function WorkspacePage() {
               />
             )}
           />
+          </Box>
         </Stack>
 
         <Stack gap="20px">
@@ -119,6 +156,7 @@ export default function WorkspacePage() {
             falhou={resumoQuery.isError}
             onTentarDeNovo={() => resumoQuery.refetch()}
             tentando={resumoQuery.isFetching}
+            onVerSemResponsavel={verSemResponsavel}
           />
         </Stack>
       </Grid>

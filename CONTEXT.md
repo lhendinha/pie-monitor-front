@@ -42,6 +42,98 @@ via `?processo=&comunicacao=`) já implementados -- ver seção 3.
 
 ## 3) Decisões importantes já tomadas
 
+### Todo número da home leva à lista que ele contou (26/08/2026)
+
+Três números do "Resumo rápido" não eram clicáveis enquanto os vizinhos
+eram, e o motivo estava no código: `// Tarefas levam ao Kanban, que ainda
+não existe` e `// Atendimentos ainda não tem tela`. **As telas passaram a
+existir e ninguém voltou lá.**
+
+Medindo os que TINHAM link, dois abriam a lista errada:
+
+| card | contava | abria |
+|---|---|---|
+| Envios com falha | 2 | **6** |
+| Movimentações (7 dias) | 3 | **4** |
+
+A régua é o cabeçalho de `ResumoRapido`: *"o número e o destino contam a
+MESMA história -- o clique aplica exatamente o filtro da contagem"*. Foi ela
+que decidiu cada caso, e não a simetria visual.
+
+**Atendimentos em andamento** → `/atendimentos` já filtrado, via
+`useLocation().state` como `ProcessosPage` faz. O status vive numa constante
+compartilhada, pra o número e o filtro não divergirem sozinhos.
+
+**Envios com falha** e **Movimentações (N dias)** → o Histórico ganhou duas
+pílulas ("Todos os envios"/"Só com falha" e "Todos os períodos"/"Últimos N
+dias"), e a API ganhou os filtros correspondentes -- ela não tinha nenhum
+dos dois.
+
+⚠️ `DIAS_DA_JANELA_RECENTE` é UM valor, usado no rótulo do card E no `dias`
+que vai pra API. Dois literais divergiriam no primeiro ajuste, e aí o card
+voltaria a anunciar uma janela diferente da que a lista aplica.
+
+**Tarefas sem responsável** → **não navega**. A lista já está na mesma tela
+(o card "Disponíveis para assumir" usa filtro idêntico): o clique rola até
+ele e o destaca por 1,6s. ⚠️ Destacar E rolar -- em tela larga as duas
+colunas cabem juntas e `scrollIntoView` não move nada, então o clique
+ficaria sem resposta.
+
+**Tarefas atrasadas** → a Agenda, **em modo novo**. Este é o interessante:
+
+🔴 Ela passou um tempo sem link **de propósito**, e havia um teste guardando
+essa ausência com o pedido de que quem lhe desse destino apagasse o teste e
+escrevesse por quê. O motivo era real: "atrasadas" é `data < hoje` em
+QUALQUER dia passado, e toda visão da Agenda é limitada por janela de datas
+(dia, semana, 14 dias, grade de 42) abrindo no mês corrente. Mandar pra lá
+levava a uma tela mostrando **zero** delas.
+
+A Agenda ganhou a pílula "Todos os períodos" com a opção "Atrasadas". Com
+ela ligada:
+
+- a consulta troca de FORMA: sai a janela, entram `apenasAbertas` +
+  `dataAte: ontem` -- a mesma definição que o card conta;
+- a lista monta os dias **presentes no resultado**, não 14 à frente, e o
+  vazio diz "Nenhuma tarefa atrasada";
+- **setas e "Hoje" somem**; o **rótulo fica**, dizendo *"Atrasadas — até
+  25/08"*. ⚠️ Manter "Agosto de 2026" ali seria a tela afirmando o contrário
+  do que é -- o defeito que a própria Agenda acabou de perder;
+- o **seletor de visão fica desabilitado**, com o motivo no `title`.
+  Controle desabilitado sem explicação é pior que controle que some.
+
+⚠️ **`periodo` entra na `queryKey`.** Sem isso, ligar "Atrasadas" reusaria o
+resultado da janela anterior -- lista errada, sem erro nenhum. Vale igual
+para os dois filtros do Histórico, e há teste de mutação provando: tirar da
+chave derruba exatamente os testes que a vigiam.
+
+**A auditoria das mudanças achou quatro defeitos, todos introduzidos por
+esta própria rodada** -- e três eram a tela afirmando o contrário do que é,
+que é exatamente o que ela veio consertar:
+
+- **A pílula de visão dizia "Por mês" sobre uma lista corrida.** No modo
+  atrasadas `visao` continuava `"mes"`, e a pílula desabilitada exibia o
+  rótulo antigo. Acontecia pelos DOIS caminhos: chegando da home e ligando o
+  filtro na própria tela. Ligar o modo passou a trocar a visão junto.
+- 🔴 **O cartão "Hoje" afirmava "Nenhuma tarefa para hoje"** -- num modo cuja
+  consulta pede `data_ate: ontem`, então as de hoje NUNCA chegam. A pessoa
+  podia ter cinco vencendo hoje. Agora ele diz que a lista traz só o passado.
+- **"Ver todos os envios" não saía.** O botão do estado vazio limpava só o
+  tipo; com "Só com falha" ligado, o único caminho de volta deixava a lista
+  vazia. E a frase "Nenhum envio deste tipo" apontava pro filtro errado.
+- **"Nova tarefa" herdava o mês navegado** -- quem fosse pra dezembro e
+  depois ligasse o filtro criaria tarefa em 1º/12, já nascida atrasada.
+
+⚠️ E um teste meu **não guardava nada**: o do caminho de volta montava a tela
+com os filtros nos padrões (`apenasComFalha: false`, `dias: 0`), então
+passava mesmo com o botão limpando só o tipo. Agora monta com os três
+LIGADOS -- e a mutação prova que falha sem a correção.
+
+**Como se prova**: `scripts/verificar-links-da-home.mjs` clica em cada
+número em Chrome e compara com o total da tela. Na Agenda a asserção é
+QUAIS tarefas aparecem -- a atrasada **concluída** tem que ficar de fora,
+senão um filtro que esquecesse `apenasAbertas` passaria por acaso. O
+controle (front anterior, mesma API) falha no primeiro clique.
+
 ### A API agora roda local, fora da AWS (25/08/2026)
 
 Na pasta `api`, `yarn offline` sobe o sistema inteiro na máquina: DynamoDB

@@ -92,6 +92,21 @@ export function rotuloDoPeriodo(visao: VisaoDaAgenda, data: Date): string {
   return comInicialMaiuscula(FORMATO_DIA.format(data));
 }
 
+/** O rótulo do modo "Atrasadas".
+ *
+ * 🔴 Existe porque manter `rotuloDoPeriodo` nesse modo seria a tela mentindo:
+ * ele deriva da VISÃO e da data navegada, e diria "Agosto de 2026" sobre uma
+ * lista de tarefas de julho. A barra perde as setas e o "Hoje" ali, mas o
+ * rótulo fica -- e passa a ser a única frase que explica o que está na tela.
+ *
+ * Diz até QUANDO, e não só "Atrasadas", porque "atrasada" depende de qual é
+ * o hoje -- e a Agenda fixa `hoje` no primeiro render pra não mudar sozinha
+ * na virada da meia-noite.
+ */
+export function rotuloDeAtrasadas(hoje: Date): string {
+  return `Atrasadas — até ${diaEMes(somarDias(hoje, -1))}`;
+}
+
 /** Rótulo de um dia dentro das listas ("segunda-feira, 24 de agosto"). */
 export function rotuloDoDia(data: Date): string {
   return comInicialMaiuscula(FORMATO_DIA.format(data));

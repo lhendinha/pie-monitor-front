@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -66,8 +67,19 @@ beforeEach(() => {
   comLista([atendimento()]);
 });
 
-async function montar() {
-  renderComProviders(<AtendimentosPage />);
+/** ⚠️ Dentro de `MemoryRouter`, como o teste de `ProcessosPage`. A tela
+ * passou a ler `useLocation()` -- a Área de trabalho abre ela já filtrada
+ * por "Atendimentos em andamento" --, e `useLocation` fora de um Router
+ * lança. `useNavigate` continua mockado, então nada navega de verdade.
+ *
+ * `estadoInicial` é o que a navegação carrega: é assim que o número do
+ * Resumo rápido chega aqui. */
+async function montar(estadoInicial?: Record<string, unknown>) {
+  renderComProviders(
+    <MemoryRouter initialEntries={[{ pathname: "/atendimentos", state: estadoInicial }]}>
+      <AtendimentosPage />
+    </MemoryRouter>,
+  );
   return await screen.findByRole("heading", { name: "Atendimentos" });
 }
 
@@ -244,7 +256,11 @@ describe("criar", () => {
 describe("erro", () => {
   it("oferece tentar de novo", async () => {
     mocks.listarAtendimentos.mockRejectedValue(new Error("caiu"));
-    renderComProviders(<AtendimentosPage />);
+    renderComProviders(
+      <MemoryRouter>
+        <AtendimentosPage />
+      </MemoryRouter>,
+    );
     expect(
       await screen.findByRole("button", { name: /Tentar de novo/ }, { timeout: 8000 }),
     ).toBeInTheDocument();

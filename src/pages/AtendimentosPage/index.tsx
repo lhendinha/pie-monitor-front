@@ -1,6 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -42,7 +42,17 @@ export default function AtendimentosPage() {
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const [buscaInput, setBuscaInput] = useState("");
-  const [status, setStatus] = useState<string>(STATUS_TODOS);
+  /** A Área de trabalho abre esta tela já filtrada: clicar em "Atendimentos
+   * em andamento" tem que mostrar exatamente os que geraram aquele número.
+   *
+   * Por `state` da navegação e não por query string, como em `ProcessosPage`:
+   * é atalho interno, não URL pra compartilhar. E só vale na PRIMEIRA
+   * montagem -- reagindo à prop, trocar o filtro aqui seria desfeito no
+   * render seguinte.
+   */
+  const { state } = useLocation();
+  const navegacao = state as { status?: string } | null;
+  const [status, setStatus] = useState<string>(navegacao?.status ?? STATUS_TODOS);
   const [modalAberto, setModalAberto] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();

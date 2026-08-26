@@ -6,3 +6,11 @@
 export const TAMANHOS_PAGINA_CARD = [5, 10, 20] as const;
 
 export const TAMANHO_PAGINA_CARD_PADRAO = 5;
+
+/** Quanto tempo o card "Disponíveis para assumir" fica destacado depois de
+ * clicar em "Tarefas sem responsável".
+ *
+ * Curto de propósito: é confirmação de que o clique ligou o número à lista,
+ * não um estado a ser lido. Destaque que fica esquece por que apareceu.
+ */
+export const DESTAQUE_MS = 1600;

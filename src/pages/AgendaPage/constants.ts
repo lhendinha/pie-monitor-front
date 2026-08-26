@@ -25,3 +25,17 @@ export const PONTOS_POR_CELULA = 4;
  * `periodoDaAgenda.ts` -- constante mora em `constants`, mesmo quando quem
  * a usa primeiro é um helper. */
 export const DIAS_DA_LISTA = 14;
+
+
+/** A pílula de período. A primeira opção é a neutra, como nas outras.
+ *
+ * 🔴 Uma opção só, e é de propósito: ela existe porque o card "Tarefas
+ * atrasadas" da Área de trabalho não tinha destino que contasse a MESMA
+ * história que ele. A Agenda seria o destino óbvio e era o pior -- toda
+ * visão dela é limitada por janela de datas, e o clique levaria a uma tela
+ * mostrando zero das atrasadas.
+ */
+export const PERIODOS_DA_AGENDA = [
+  { value: "", label: "Todos os períodos" },
+  { value: "atrasadas", label: "Atrasadas" },
+] as const;

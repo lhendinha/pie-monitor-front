@@ -9,6 +9,12 @@ import type { VisaoDaAgenda } from "../../types";
 interface SeletorDeVisaoProps {
   visao: VisaoDaAgenda;
   onMudar: (visao: VisaoDaAgenda) => void;
+  /** No modo "Atrasadas" a lista ignora o calendário, então trocar de visão
+   * não teria efeito -- e uma pílula que não faz nada parece quebrada. */
+  desabilitado?: boolean;
+  /** Vira `title`: quem passa o mouse descobre POR QUE está desabilitada.
+   * Controle desabilitado sem explicação é o pior dos dois. */
+  motivo?: string;
 }
 
 /** A pílula que troca a visão da Agenda (`#agenda-view-btn` do artifact).
@@ -17,7 +23,12 @@ interface SeletorDeVisaoProps {
  * delas está sempre valendo, e apagar a pílula sugeriria que dá pra
  * desligá-la.
  */
-export default function SeletorDeVisao({ visao, onMudar }: SeletorDeVisaoProps) {
+export default function SeletorDeVisao({
+  visao,
+  onMudar,
+  desabilitado,
+  motivo,
+}: SeletorDeVisaoProps) {
   const [aberto, setAberto] = useState(false);
 
   function escolher(nova: VisaoDaAgenda) {
@@ -27,7 +38,7 @@ export default function SeletorDeVisao({ visao, onMudar }: SeletorDeVisaoProps) 
 
   return (
     <Popover.Root
-      open={aberto}
+      open={aberto && !desabilitado}
       onOpenChange={(e) => setAberto(e.open)}
       /* Mesmas duas travas do `SeletorDePeriodo`: sem `unmountOnExit` o
          painel fechado fica plantado na tela, porque a animação de saída não
@@ -37,7 +48,9 @@ export default function SeletorDeVisao({ visao, onMudar }: SeletorDeVisaoProps) 
       positioning={{ placement: "bottom-start", gutter: PAINEL.margemTopo }}
     >
       <Popover.Trigger asChild>
-        <PilulaDeFiltro ativo>{rotuloDaVisao(visao)}</PilulaDeFiltro>
+        <PilulaDeFiltro ativo disabled={desabilitado} title={desabilitado ? motivo : undefined}>
+          {rotuloDaVisao(visao)}
+        </PilulaDeFiltro>
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>

@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderComProviders } from "../../test/queryTestUtils";
@@ -112,5 +112,100 @@ describe("WorkspacePage — retorno por linha", () => {
 
     expect(await screen.findByRole("button", { name: "Concluir Protocolar réplica" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Assumir Conferir prazo" })).toBeEnabled();
+  });
+});
+
+/** Rota de mentira que revela pra onde a navegação foi, e com que estado. */
+function Destino() {
+  const { pathname, state } = useLocation();
+  return <div data-testid="destino">{`${pathname} ${JSON.stringify(state)}`}</div>;
+}
+
+describe("cada número leva à lista que o gerou", () => {
+  /* 🔴 Três números da home ficaram SEM link por inércia: os comentários
+     diziam "Kanban ainda não existe" e "Atendimentos ainda não tem tela".
+     As telas passaram a existir e ninguém voltou lá.
+
+     A régua deste cartão é o cabeçalho de `ResumoRapido`: o clique aplica
+     EXATAMENTE o filtro da contagem. Link que leva a uma lista diferente do
+     número clicado é pior que link nenhum -- a pessoa deixa de confiar nos
+     dois. */
+
+  /** Monta com uma rota de destino que mostra pra onde foi E com que estado.
+   *
+   * ⚠️ Sem espião de `useNavigate`: aqui a navegação é a de verdade, dentro
+   * do `MemoryRouter`, e o que se afirma é o RESULTADO -- a rota que abriu e
+   * o filtro que chegou nela. Um espião provaria que a função foi chamada;
+   * isto prova que a pessoa chegou onde o número prometeu. */
+  function montarComDestino() {
+    return renderComProviders(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<WorkspacePage />} />
+          <Route path="/atendimentos" element={<Destino />} />
+          <Route path="/agenda" element={<Destino />} />
+          <Route path="/historico" element={<Destino />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  it("'Atendimentos em andamento' abre a tela já filtrada por esse status", async () => {
+    mocks.resumoDaAreaDeTrabalho.mockResolvedValue({ ...RESUMO, atendimentos_em_andamento: 4 });
+    montarComDestino();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Atendimentos em andamento/ }));
+    expect(await screen.findByTestId("destino")).toHaveTextContent(
+      '/atendimentos {"status":"Em andamento"}',
+    );
+  });
+
+  it("'Tarefas sem responsável' aponta pra lista que já está NESTA tela", async () => {
+    /* O card "Disponíveis para assumir" usa o mesmo filtro da contagem
+       (`semResponsavel` + apenas abertas). Não navega: rola e destaca -- a
+       lista já está a poucos centímetros. */
+    mocks.resumoDaAreaDeTrabalho.mockResolvedValue({ ...RESUMO, tarefas_sem_responsavel: 2 });
+    montarComDestino();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Tarefas sem responsável/ }));
+    expect(screen.queryByTestId("destino")).not.toBeInTheDocument();
+    expect(screen.getByText("Disponíveis para assumir")).toBeInTheDocument();
+  });
+
+  it("'Tarefas atrasadas' abre a Agenda no modo atrasadas", async () => {
+    /* ⚠️ Aqui havia o teste inverso, afirmando que este número NÃO tinha
+       link -- e ele pedia, por escrito, que quem lhe desse destino apagasse
+       o teste e explicasse o porquê. É o que esta linha é.
+
+       O motivo de não ter link era real: "atrasadas" é `data < hoje` em
+       QUALQUER dia passado, e toda visão da Agenda é limitada por janela de
+       datas. Mandar pra lá levava a uma tela mostrando ZERO delas.
+
+       Em 26/08/2026 a Agenda ganhou um MODO: a pílula "Todos os períodos"
+       com a opção "Atrasadas" ignora a janela, trava a visão em lista e some
+       com a navegação de datas. O destino passou a contar a mesma história
+       que o número -- e só por isso o link existe. */
+    mocks.resumoDaAreaDeTrabalho.mockResolvedValue({ ...RESUMO, tarefas_atrasadas: 7 });
+    montarComDestino();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Tarefas atrasadas/ }));
+    expect(await screen.findByTestId("destino")).toHaveTextContent(
+      '/agenda {"periodo":"atrasadas"}',
+    );
+  });
+
+  it("'Envios com falha' e 'Movimentações' abrem o Histórico já filtrado", async () => {
+    /* 🔴 Medido em 26/08/2026: o primeiro dizia 2 e abria 6; o segundo dizia
+       3 e abria 4. O Histórico não tinha filtro de falha nem de data.
+       A falha cruza os DOIS tipos de envio, daí `tipoEnvio: ""`. */
+    mocks.resumoDaAreaDeTrabalho.mockResolvedValue({
+      ...RESUMO, envios_com_falha: 2, movimentacoes_7_dias: 3,
+    });
+    montarComDestino();
+
+    await userEvent.click(await screen.findByRole("button", { name: /Envios com falha/ }));
+    expect(await screen.findByTestId("destino")).toHaveTextContent(
+      '/historico {"tipoEnvio":"","apenasComFalha":true}',
+    );
   });
 });

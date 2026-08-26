@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { TETO_POR_PAGINA } from "../../../constants";
 import { listarTarefas } from "../../../services";
 import { qk } from "../../../services/queryKeys";
+import { emDias } from "../../../utils";
 import type { IntervaloDeDatas, Tarefa } from "../../../types";
+import type { PeriodoDaAgenda } from "../types";
 
 /** As tarefas que a Agenda mostra: as dos subgrupos escolhidos, dentro do
  * período visível.
@@ -23,17 +25,42 @@ import type { IntervaloDeDatas, Tarefa } from "../../../types";
  * `subgrupoIds` vazio significa "todos os visíveis" -- é o que o servidor
  * entende quando o parâmetro não vai.
  */
-export function useTarefasDaAgenda(subgrupoIds: string[], intervalo: IntervaloDeDatas) {
+export function useTarefasDaAgenda(
+  subgrupoIds: string[],
+  intervalo: IntervaloDeDatas,
+  periodo: PeriodoDaAgenda = "todos",
+) {
+  /* 🔴 "Atrasadas" troca a FORMA da consulta, não só um valor: sai a janela
+     da visão e entram `apenasAbertas` + `dataAte: ontem`. É a mesma
+     definição que o card "Tarefas atrasadas" da Área de trabalho conta --
+     abertas com `data < hoje` --, e é ela que faz o número bater com a
+     lista que o clique abre.
+
+     ⚠️ `emDias(-1)`, o mesmo auxiliar que o Resumo rápido usa -- ele monta
+     pelo relógio LOCAL, nunca por `toISOString()`, que às 21h em Brasília já
+     devolve o dia seguinte e faria a tarefa de hoje aparecer como atrasada
+     toda noite. */
+  const atrasadas = periodo === "atrasadas";
+  const parametrosDeData = atrasadas
+    ? { apenasAbertas: true, dataAte: emDias(-1) }
+    : { dataDe: intervalo.de, dataAte: intervalo.ate };
+
   return useQuery<Tarefa[]>({
-    queryKey: qk.tarefas({ agenda: true, subgrupoIds: [...subgrupoIds].sort(), ...intervalo }),
+    /* ⚠️ `periodo` na CHAVE. Sem ele, ligar "Atrasadas" reusaria o resultado
+       da janela anterior -- lista errada, sem erro nenhum. */
+    queryKey: qk.tarefas({
+      agenda: true,
+      subgrupoIds: [...subgrupoIds].sort(),
+      periodo,
+      ...(atrasadas ? {} : intervalo),
+    }),
     queryFn: async () => {
       const juntas: Tarefa[] = [];
       let pagina = 1;
       for (;;) {
         const resposta = (await listarTarefas({
           subgrupoId: subgrupoIds.length ? subgrupoIds : undefined,
-          dataDe: intervalo.de,
-          dataAte: intervalo.ate,
+          ...parametrosDeData,
           pagina,
           tamanhoPagina: TETO_POR_PAGINA,
         })) as { tarefas: Tarefa[]; total: number; total_paginas: number };

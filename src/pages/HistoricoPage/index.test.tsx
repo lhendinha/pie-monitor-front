@@ -38,6 +38,8 @@ describe("HistoricoPage", () => {
       pagina: 1,
       tamanhoPagina: 10,
       tipoEnvio: "movimentacao",
+      apenasComFalha: false,
+      dias: 0,
     });
     // Filtro ligado precisa PARECER ligado: senão a pessoa vê uma lista
     // incompleta achando que está vendo tudo.
@@ -57,6 +59,8 @@ describe("HistoricoPage", () => {
         pagina: 1,
         tamanhoPagina: 10,
         tipoEnvio: "lembrete",
+        apenasComFalha: false,
+        dias: 0,
       }),
     );
   });
@@ -78,6 +82,8 @@ describe("HistoricoPage", () => {
         pagina: 1,
         tamanhoPagina: 10,
         tipoEnvio: "",
+        apenasComFalha: false,
+        dias: 0,
       }),
     );
   });
@@ -103,9 +109,19 @@ describe("HistoricoPage", () => {
         : Promise.resolve({ historico: [], total: 0, total_paginas: 0 }),
     );
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    /* 🔴 Monta com os TRÊS filtros ligados, e não com os padrões.
+       A primeira versão deste teste montava sem props: a tela nasce com
+       `apenasComFalha: false` e `dias: 0`, então o assert lá embaixo passava
+       mesmo que o botão limpasse SÓ o tipo -- que era exatamente o defeito.
+       Um teste que não pode falhar não guarda nada. */
+    renderComProviders(
+      <HistoricoPage tipoEnvioInicial="lembrete" apenasComFalhaInicial diasInicial={7} />,
+    );
 
-    expect(await screen.findByText("Nenhum envio deste tipo.")).toBeInTheDocument();
+    /* ⚠️ "deste tipo" virou "com esses filtros" em 26/08/2026: com três
+       filtros na tela, o vazio pode vir da falha ou do período, e a frase
+       antiga mandava a pessoa olhar pro filtro errado. */
+    expect(await screen.findByText("Nenhum envio com esses filtros.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Ver todos os envios" }));
 
     await waitFor(() =>
@@ -113,6 +129,8 @@ describe("HistoricoPage", () => {
         pagina: 1,
         tamanhoPagina: 10,
         tipoEnvio: "",
+        apenasComFalha: false,
+        dias: 0,
       }),
     );
   });
@@ -226,6 +244,94 @@ describe("HistoricoPage", () => {
     await screen.findByText("Intimação", { exact: false });
     expect(mocks.listarHistorico).not.toHaveBeenCalledWith(
       expect.objectContaining({ numeroProcesso: expect.anything() })
+    );
+  });
+});
+
+describe("os filtros que a Área de trabalho aciona", () => {
+  /* 🔴 Medido em 26/08/2026, no ambiente local: "Envios com falha" contava
+     2 e abria uma lista de 6; "Movimentações (7 dias)" contava 3 e abria 4.
+     A rota `/historico` só aceitava `numero_processo` e `tipo_envio` --
+     não havia filtro de falha nem de data, nem na API nem aqui.
+
+     Número que não bate com a lista que ele abre é pior que número sem
+     link: a pessoa deixa de confiar nos dois. */
+
+  it("abre já filtrado em SÓ COM FALHA quando a home manda", async () => {
+    renderComProviders(<HistoricoPage tipoEnvioInicial="" apenasComFalhaInicial />);
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith({
+        pagina: 1,
+        tamanhoPagina: 10,
+        tipoEnvio: "",
+        apenasComFalha: true,
+        dias: 0,
+      }),
+    );
+    /* ⚠️ E a pílula tem que PARECER ligada. Filtro invisível faz a pessoa
+       ver uma lista incompleta achando que está vendo tudo -- a mesma regra
+       que a pílula de tipo já seguia. */
+    expect(await screen.findByRole("button", { name: "Só com falha" })).toHaveAttribute(
+      "data-ativo",
+    );
+  });
+
+  it("abre já recortado nos últimos dias quando a home manda", async () => {
+    renderComProviders(<HistoricoPage tipoEnvioInicial="movimentacao" diasInicial={7} />);
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith({
+        pagina: 1,
+        tamanhoPagina: 10,
+        tipoEnvio: "movimentacao",
+        apenasComFalha: false,
+        dias: 7,
+      }),
+    );
+    expect(await screen.findByRole("button", { name: "Últimos 7 dias" })).toHaveAttribute(
+      "data-ativo",
+    );
+  });
+
+  it("as pílulas valem JUNTAS", async () => {
+    /* Nenhum card da home leva a essa combinação -- mas a pessoa pode
+       montá-la, e um filtro que ignora o outro mostra lista errada em
+       silêncio. */
+    const user = userEvent.setup();
+    renderComProviders(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    await user.click(screen.getByRole("button", { name: "Todos os envios" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Só com falha" }));
+    await user.click(screen.getByRole("button", { name: "Todos os períodos" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Últimos 7 dias" }));
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith({
+        pagina: 1,
+        tamanhoPagina: 10,
+        tipoEnvio: "movimentacao",
+        apenasComFalha: true,
+        dias: 7,
+      }),
+    );
+  });
+
+  it("🔴 o filtro entra na CHAVE de cache, não só na chamada", async () => {
+    /* Sem isso, ligar um filtro reusaria o resultado do anterior: lista
+       errada, sem erro nenhum. O jeito de provar é ver que a consulta é
+       REFEITA -- se a chave não mudasse, o React Query serviria o cache. */
+    const user = userEvent.setup();
+    renderComProviders(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+    const antes = mocks.listarHistorico.mock.calls.length;
+
+    await user.click(screen.getByRole("button", { name: "Todos os períodos" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Últimos 7 dias" }));
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico.mock.calls.length).toBeGreaterThan(antes),
     );
   });
 });

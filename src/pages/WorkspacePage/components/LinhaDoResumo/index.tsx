@@ -22,9 +22,14 @@ const ESTILO = {
 
 /** Uma linha do "Resumo rápido": rótulo à esquerda, número à direita.
  *
- * Vira botão só quando há destino. Enquanto Kanban e Atendimentos não
- * existirem, esses números informam sem prometer navegação que não tem pra
- * onde ir.
+ * Vira botão só quando há destino -- botão que não vai a lugar nenhum é pior
+ * que texto.
+ *
+ * ⚠️ Este comentário dizia "enquanto Kanban e Atendimentos não existirem".
+ * Eles passaram a existir e ninguém voltou aqui, então três números ficaram
+ * sem link por inércia. Hoje só "Tarefas atrasadas" continua sem, e por uma
+ * razão que se sustenta: não há tela que mostre o que ele conta (abertas em
+ * QUALQUER dia passado) -- ver o comentário em `ResumoRapido`.
  */
 export default function LinhaDoResumo({ numero }: LinhaDoResumoProps) {
   const cor =

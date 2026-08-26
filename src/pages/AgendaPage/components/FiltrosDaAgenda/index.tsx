@@ -2,8 +2,9 @@ import { Flex } from "@chakra-ui/react";
 
 import { MultiSelect, Select } from "../../../../components";
 import { comOpcaoEscolhida, comOpcoesEscolhidas } from "../../../../hooks/useOpcoesBuscaveis";
+import { PERIODOS_DA_AGENDA } from "../../constants";
 import SeletorDeVisao from "../SeletorDeVisao";
-import type { FiltrosDaAgenda as Filtros } from "../../types";
+import type { FiltrosDaAgenda, FiltrosDaAgenda as Filtros } from "../../types";
 import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
 
 interface FiltrosDaAgendaProps {
@@ -40,7 +41,38 @@ export default function FiltrosDaAgenda({
 
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="14px">
-      <SeletorDeVisao visao={filtros.visao} onMudar={(visao) => onMudar({ visao })} />
+      {/* 🔴 Desabilitado no modo atrasadas. "Atrasada" está sempre no passado
+          e a Agenda abre no mês corrente -- uma visão de calendário com esse
+          filtro mostraria zero. Ele TRAVA em lista, e a pílula diz por quê em
+          vez de sumir: controle que some parece defeito. */}
+      <SeletorDeVisao
+        visao={filtros.visao}
+        onMudar={(visao) => onMudar({ visao })}
+        desabilitado={filtros.periodo === "atrasadas"}
+        motivo="Em Atrasadas a lista ignora o calendário"
+      />
+
+      <Select
+        variante="chip"
+        placeholder="Todos os períodos"
+        opcoes={[...PERIODOS_DA_AGENDA].filter((o) => o.value !== "")}
+        valor={filtros.periodo === "todos" ? "" : filtros.periodo}
+        /* 🔴 Ligar "Atrasadas" muda a VISÃO junto, e não é conveniência.
+           O modo ignora o calendário e renderiza a lista de qualquer forma;
+           sem trocar `visao`, a pílula ao lado -- agora desabilitada --
+           continuaria exibindo "Por mês" sobre uma lista corrida. Rótulo
+           dizendo uma coisa e conteúdo sendo outra é o defeito que esta tela
+           acabou de perder.
+
+           Desligar NÃO volta a visão anterior: a pessoa fica em "Em lista",
+           que é o que ela está vendo. Restaurar a de antes seria a tela
+           mudando sozinha sem ninguém pedir. */
+        onMudar={(periodo) => {
+          const novo = (periodo || "todos") as FiltrosDaAgenda["periodo"];
+          onMudar(novo === "atrasadas" ? { periodo: novo, visao: "lista" } : { periodo: novo });
+        }}
+        permitirLimpar
+      />
 
       <MultiSelect
         variante="chip"

@@ -1,4 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { emDias } from "../../utils";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -93,8 +95,22 @@ beforeEach(() => {
   comTarefas();
 });
 
-async function montar() {
-  renderComProviders(<AgendaPage />);
+/** ⚠️ Dentro de `MemoryRouter`: a tela passou a ler `useLocation()` -- a
+ * Área de trabalho abre ela já no modo atrasadas --, e `useLocation` fora de
+ * um Router lança.
+ *
+ * `periodoInicial` é o que a navegação carrega: é assim que o card "Tarefas
+ * atrasadas" chega aqui. */
+async function montar(periodoInicial?: "atrasadas") {
+  renderComProviders(
+    <MemoryRouter
+      initialEntries={[
+        { pathname: "/agenda", state: periodoInicial ? { periodo: periodoInicial } : undefined },
+      ]}
+    >
+      <AgendaPage />
+    </MemoryRouter>,
+  );
   return await screen.findByRole("heading", { name: "Agenda" });
 }
 
@@ -376,7 +392,11 @@ describe("filtro de pessoa", () => {
 describe("erro e espera", () => {
   it("erro na consulta oferece tentar de novo", async () => {
     mocks.listarTarefas.mockRejectedValue(new Error("caiu"));
-    renderComProviders(<AgendaPage />);
+    renderComProviders(
+      <MemoryRouter>
+        <AgendaPage />
+      </MemoryRouter>,
+    );
     expect(
       await screen.findByRole("button", { name: /Tentar de novo/ }, { timeout: 8000 }),
     ).toBeInTheDocument();
@@ -460,5 +480,136 @@ describe("nova tarefa", () => {
       await waitFor(() => expect(mocks.resumosDeAtendimentos).toHaveBeenCalled());
       expect(screen.queryByText(/at-sumido/)).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("modo Atrasadas", () => {
+  /* 🔴 O card "Tarefas atrasadas" da Área de trabalho passou um tempo SEM
+     link, e não por falta de tela: ele conta abertas com `data < hoje` em
+     QUALQUER dia passado, e toda visão da Agenda é limitada por janela de
+     datas. Mandar pra cá levaria a uma tela mostrando ZERO das atrasadas --
+     pior que link nenhum.
+
+     Este modo é o que faz o clique contar a mesma história que o número. */
+
+  it("troca a FORMA da consulta: sem janela, com apenas abertas", async () => {
+    await montar("atrasadas");
+
+    await waitFor(() =>
+      expect(mocks.listarTarefas).toHaveBeenCalledWith(
+        expect.objectContaining({ apenasAbertas: true }),
+      ),
+    );
+    /* ⚠️ Índice, não `.at(-1)`: o alvo do `tsc` deste projeto não tem
+       `Array.prototype.at`, e o vitest transpila diferente -- passaria aqui
+       e quebraria no `yarn build`. Mesma armadilha do `useCatalogos.test`. */
+    const chamadas = mocks.listarTarefas.mock.calls;
+    const [chamada] = chamadas[chamadas.length - 1];
+    expect(chamada.dataDe, "a janela da visão não pode ir junto").toBeUndefined();
+    expect(chamada.dataAte, "recorta em ontem").toBeTruthy();
+  });
+
+  it("desabilita a troca de visão, e diz por quê", async () => {
+    await montar("atrasadas");
+
+    const pilula = pilulaDeVisao();
+    expect(pilula).toBeDisabled();
+    expect(pilula).toHaveAttribute("title", expect.stringContaining("calendário"));
+  });
+
+  it("some com as setas e o 'Hoje' -- navegar período não muda nada", async () => {
+    await montar("atrasadas");
+
+    expect(screen.queryByRole("button", { name: "Período anterior" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Próximo período" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hoje" })).not.toBeInTheDocument();
+  });
+
+  it("🔴 mas MANTÉM o rótulo, dizendo o que está na tela", async () => {
+    /* Ele some junto seria perder a única frase que explica a lista. Ficar
+       com o mês navegado seria pior: "Agosto de 2026" sobre tarefas de julho
+       é a tela afirmando o contrário do que é. */
+    await montar("atrasadas");
+
+    expect(await screen.findByText(/^Atrasadas — até /)).toBeInTheDocument();
+    expect(screen.queryByText(/^Agosto de/)).not.toBeInTheDocument();
+  });
+
+  it("lista os dias que VIERAM, não os próximos catorze", async () => {
+    /* A visão em lista monta 14 dias pra frente a partir da data visível --
+       nenhum deles conteria uma tarefa atrasada, que está no passado. */
+    comTarefas(
+      tarefa({ tarefa_id: "t1", titulo: "De ontem", data: emDias(-1) }),
+      tarefa({ tarefa_id: "t2", titulo: "De um mês atrás", data: emDias(-30) }),
+    );
+    await montar("atrasadas");
+
+    expect(await screen.findByText("De um mês atrás")).toBeInTheDocument();
+    expect(screen.getByText("De ontem")).toBeInTheDocument();
+  });
+
+  it("o vazio fala de atrasadas, não de 'próximos 14 dias'", async () => {
+    comTarefas();
+    await montar("atrasadas");
+
+    expect(await screen.findByText("Nenhuma tarefa atrasada.")).toBeInTheDocument();
+  });
+
+  it("🔴 o período entra na CHAVE de cache", async () => {
+    /* Sem isso, ligar "Atrasadas" reusaria o resultado da janela anterior --
+       lista errada, sem erro nenhum. */
+    const user = userEvent.setup();
+    await montar();
+    const antes = mocks.listarTarefas.mock.calls.length;
+
+    /* ⚠️ A pílula é um `Select` (variante chip), como a de pessoas: o
+       gatilho não é `button` e as opções são `option`, num portal. */
+    await user.click(screen.getByText("Todos os períodos"));
+    await user.click(await screen.findByRole("option", { name: "Atrasadas" }));
+
+    await waitFor(() => expect(mocks.listarTarefas.mock.calls.length).toBeGreaterThan(antes));
+  });
+});
+
+describe("modo Atrasadas: a pílula de visão não pode mentir", () => {
+  /* 🔴 Achado da auditoria de 26/08/2026, e pelos DOIS caminhos.
+     O modo renderiza a lista ignorando o calendário. Se `visao` continuasse
+     "mes", a pílula -- desabilitada -- exibiria "Por mês" sobre uma lista
+     corrida: rótulo dizendo uma coisa e conteúdo sendo outra, que é o
+     defeito que esta tela acabou de perder. */
+
+  it("chegando da Área de trabalho, a visão já nasce em lista", async () => {
+    await montar("atrasadas");
+    expect(pilulaDeVisao()).toHaveTextContent("Em lista");
+  });
+
+  it("ligando a pílula aqui dentro, a visão troca junto", async () => {
+    const user = userEvent.setup();
+    await montar();
+    expect(pilulaDeVisao()).toHaveTextContent("Por mês");
+
+    await user.click(screen.getByText("Todos os períodos"));
+    await user.click(await screen.findByRole("option", { name: "Atrasadas" }));
+
+    await waitFor(() => expect(pilulaDeVisao()).toHaveTextContent("Em lista"));
+  });
+});
+
+describe("modo Atrasadas: o cartão 'Hoje' não pode afirmar o que não sabe", () => {
+  it("🔴 não diz 'Nenhuma tarefa para hoje' -- ele não perguntou por hoje", async () => {
+    /* Achado da segunda auditoria de 26/08/2026. A consulta do modo pede
+       `data_ate: ontem`, então as tarefas de hoje NUNCA chegam. O cartão
+       lateral montava a frase em cima desse conjunto e afirmava zero -- a
+       pessoa podia ter cinco vencendo hoje.
+
+       Lista vazia sem dizer por quê é justamente o que este projeto
+       persegue; aqui o porquê é o próprio filtro. */
+    comTarefas(tarefa({ titulo: "Atrasada", data: emDias(-2) }));
+    await montar("atrasadas");
+
+    expect(screen.queryByText("Nenhuma tarefa para hoje.")).not.toBeInTheDocument();
+    expect(
+      await screen.findByText(/Em Atrasadas a lista traz só o passado/),
+    ).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import {
   Botao,
@@ -28,10 +29,11 @@ import {
   dataPadraoDaNovaTarefa,
   intervaloDaVisao,
   navegar,
+  rotuloDeAtrasadas,
   rotuloDoPeriodo,
   somarDias,
 } from "./periodoDaAgenda";
-import type { FiltrosDaAgenda as Filtros } from "./types";
+import type { FiltrosDaAgenda as Filtros, PeriodoDaAgenda } from "./types";
 import type { OpcaoDeSelect, Tarefa } from "../../types";
 import { usePessoasBuscaveis, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 
@@ -46,15 +48,32 @@ import { usePessoasBuscaveis, useSubgruposBuscaveis } from "../../hooks/useOpcoe
  * só responde uma fração dela.
  */
 export default function AgendaPage() {
+  /** A Área de trabalho abre esta tela já no modo atrasadas: clicar em
+   * "Tarefas atrasadas" tem que mostrar exatamente as que geraram o número.
+   *
+   * Por `state` da navegação e não por query string, como `ProcessosPage` e
+   * `AtendimentosPage`: é atalho interno, não URL pra compartilhar. */
+  const { state } = useLocation();
+  const navegacao = state as { periodo?: PeriodoDaAgenda } | null;
+
   /* `hoje` fixado no primeiro render: recalcular a cada um faria a tela
      mudar sozinha na virada da meia-noite, no meio de uma navegação. */
   const [hoje] = useState(() => new Date());
   const [dataVisivel, setDataVisivel] = useState(() => new Date());
   const [filtros, setFiltros] = useState<Filtros>({
-    visao: "mes",
+    /* 🔴 Chegando no modo atrasadas, a visão nasce em LISTA -- não em "mes".
+       O modo ignora o calendário e renderiza a lista de qualquer jeito; com
+       `visao` em "mes" a pílula (desabilitada) exibiria "Por mês" sobre uma
+       lista corrida. Rótulo dizendo uma coisa e conteúdo sendo outra é
+       exatamente o defeito que esta tela acabou de perder. */
+    visao: navegacao?.periodo === "atrasadas" ? "lista" : "mes",
     subgrupoIds: [],
     subgrupoNomes: {},
     pessoa: "todas",
+    /* A Área de trabalho abre esta tela já no modo atrasadas -- é o destino
+       do card "Tarefas atrasadas", que antes não tinha nenhum. Só na
+       PRIMEIRA montagem: depois quem manda é a pílula. */
+    periodo: navegacao?.periodo ?? "todos",
   });
   const [tarefaAberta, setTarefaAberta] = useState<Tarefa | null>(null);
   const [criando, setCriando] = useState(false);
@@ -68,7 +87,8 @@ export default function AgendaPage() {
   const pessoas = usePessoasBuscaveis();
 
   const intervalo = intervaloDaVisao(filtros.visao, dataVisivel);
-  const tarefasQuery = useTarefasDaAgenda(filtros.subgrupoIds, intervalo);
+  const atrasadas = filtros.periodo === "atrasadas";
+  const tarefasQuery = useTarefasDaAgenda(filtros.subgrupoIds, intervalo, filtros.periodo);
   useToastOnQueryError(tarefasQuery.error, "Não foi possível carregar as tarefas.");
 
   /* Os quadros de quem está à vista -- é deles que sai "esta tarefa está
@@ -166,8 +186,17 @@ export default function AgendaPage() {
           o calendário. */}
       <Grid templateColumns={{ base: "1fr", lg: "1fr 320px" }} gap="20px" alignItems="start">
         <Box minW="0">
+          {/* 🔴 No modo atrasadas as setas e o "Hoje" saem: a lista ignora o
+              calendário, então navegar período não muda nada. O RÓTULO fica,
+              mas dizendo o que está sendo mostrado -- manter "Agosto de 2026" sobre
+              uma lista de julho seria a tela afirmando o contrário do que é. */}
           <BarraDeDatas
-            rotulo={rotuloDoPeriodo(filtros.visao, dataVisivel)}
+            semNavegacao={atrasadas}
+            rotulo={
+              atrasadas
+                ? rotuloDeAtrasadas(hoje)
+                : rotuloDoPeriodo(filtros.visao, dataVisivel)
+            }
             onNavegar={(passo) =>
               setDataVisivel((atual) => navegar(filtros.visao, atual, passo))
             }
@@ -204,6 +233,14 @@ export default function AgendaPage() {
             <Box px="16px" py="10px">
               <Esqueleto linhas={3} />
             </Box>
+          ) : atrasadas ? (
+            /* 🔴 "Nenhuma tarefa para hoje" seria MENTIRA aqui, e uma
+               mentira que a tela não tem como perceber: no modo atrasadas a
+               consulta pede `data_ate: ontem`, então as de hoje nunca vêm --
+               a pessoa pode ter cinco e o cartão diria zero.
+               Lista vazia sem dizer por quê é o defeito que este projeto
+               persegue; aqui o "por quê" é o próprio filtro. */
+            <EstadoVazio mensagem="Em Atrasadas a lista traz só o passado — as de hoje não entram." />
           ) : doDiaDeHoje.length === 0 ? (
             <EstadoVazio mensagem="Nenhuma tarefa para hoje." />
           ) : (
@@ -236,7 +273,17 @@ export default function AgendaPage() {
             ""
           }
           dataInicial={
-            criando ? dataPadraoDaNovaTarefa(filtros.visao, dataVisivel, hoje) : undefined
+            /* ⚠️ No modo atrasadas o padrão é HOJE, e não o que
+               `dataPadraoDaNovaTarefa` derivaria: ela usa a janela da visão,
+               e aqui não há janela -- a data visível pode ter ficado num mês
+               que a pessoa navegou antes de ligar o filtro, e a tarefa nova
+               nasceria lá. Ninguém cria tarefa querendo que ela já nasça
+               atrasada. */
+            criando
+              ? atrasadas
+                ? paraIso(hoje)
+                : dataPadraoDaNovaTarefa(filtros.visao, dataVisivel, hoje)
+              : undefined
           }
           onSalvo={() => {
             fecharModal();
@@ -271,7 +318,16 @@ function AreaDaVisao({
   onAbrirTarefa,
   onEscolherDia,
 }: PropsDaArea) {
-  if (filtros.visao === "semana") {
+  /* 🔴 No modo atrasadas os três ramos de calendário são PULADOS e a
+     renderização cai na lista, lá embaixo.
+     As outras visões são recortes de calendário, e aqui a lista ignora o
+     calendário: renderizar o mês mostraria a grade do mês corrente com zero
+     pontinhos -- a tela dizendo que não há nada atrasado. A pílula de visão
+     fica desabilitada, então isto só é alcançado ao LIGAR o filtro estando
+     noutra visão. */
+  const atrasadas = filtros.periodo === "atrasadas";
+
+  if (!atrasadas && filtros.visao === "semana") {
     return (
       <VisaoPorSemana
         data={dataVisivel}
@@ -282,7 +338,7 @@ function AreaDaVisao({
     );
   }
 
-  if (filtros.visao === "mes") {
+  if (!atrasadas && filtros.visao === "mes") {
     return (
       <VisaoPorMes
         data={dataVisivel}
@@ -293,7 +349,7 @@ function AreaDaVisao({
     );
   }
 
-  if (filtros.visao === "dia") {
+  if (!atrasadas && filtros.visao === "dia") {
     const tarefas = porDia.get(paraIso(dataVisivel)) || [];
     if (tarefas.length === 0) {
       return (
@@ -315,15 +371,31 @@ function AreaDaVisao({
   }
 
   /* Em lista: só os dias COM tarefa, na ordem. Mostrar catorze cabeçalhos
-     pra encontrar três com conteúdo faria rolar a tela à toa. */
-  const dias = Array.from({ length: DIAS_DA_LISTA }, (_, i) => somarDias(dataVisivel, i))
-    .map((dia) => ({ dia, tarefas: porDia.get(paraIso(dia)) || [] }))
-    .filter((grupo) => grupo.tarefas.length > 0);
+     pra encontrar três com conteúdo faria rolar a tela à toa.
+
+     🔴 No modo atrasadas os dias vêm do RESULTADO, não de uma janela. A
+     consulta já traz só o que interessa (abertas, `data < hoje`), e a
+     janela de 14 dias pra frente não conteria nenhuma delas -- tarefa
+     atrasada está no passado, então a lista sairia vazia com uma mensagem
+     falando de "próximos 14 dias". */
+  const dias = atrasadas
+    ? [...porDia.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([iso, tarefas]) => ({ dia: new Date(`${iso}T00:00:00`), tarefas }))
+    : Array.from({ length: DIAS_DA_LISTA }, (_, i) => somarDias(dataVisivel, i))
+        .map((dia) => ({ dia, tarefas: porDia.get(paraIso(dia)) || [] }))
+        .filter((grupo) => grupo.tarefas.length > 0);
 
   if (dias.length === 0) {
     return (
       <Cartao>
-        <EstadoVazio mensagem={`Nenhuma tarefa nos próximos ${DIAS_DA_LISTA} dias.`} />
+        <EstadoVazio
+          mensagem={
+            atrasadas
+              ? "Nenhuma tarefa atrasada."
+              : `Nenhuma tarefa nos próximos ${DIAS_DA_LISTA} dias.`
+          }
+        />
       </Cartao>
     );
   }
