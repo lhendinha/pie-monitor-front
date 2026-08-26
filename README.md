@@ -190,6 +190,48 @@ react-select desenha uma linha de DOM por opção, sem virtualização, e por
 isso o filtro local tem teto de 50 (com o painel dizendo quantos ficaram de
 fora).
 
+## Verificar contra PRODUÇÃO (o único teste que prova o envio real)
+
+```bash
+node scripts/verificar-producao.mjs
+```
+
+Roda contra `https://argos-monitor.vercel.app` **e escreve dados de verdade**:
+envia um PDF minúsculo, abre a tela do documento, dá F5, baixa, mede a cor do
+âmbar novo e apaga o que criou. O documento carrega `VERIFICACAO AUTOMATICA`
+no título, e a limpeza roda num `finally` — se algo sobrar, é esse nome que
+se procura.
+
+🔴 **É o único teste que prova o que nem o `yarn offline` nem o Chrome local
+alcançam**: o envio atravessando o CSP do `vercel.json` e o CORS do bucket,
+com IAM, SigV4 e a política do S3 valendo ao mesmo tempo. Cada um desses
+falha *só* em produção, e o erro que aparece é sempre o mesmo — algo com cara
+de CORS que manda quem investiga procurar no lugar errado.
+
+### As credenciais
+
+Ficam em **`.env.local`** (gitignorado), e o `.env.example` traz o formato:
+
+```
+PJE_TEST_EMAIL=...
+PJE_TEST_SENHA=...
+```
+
+⚠️ **Sem prefixo `VITE_`, e isso não é descuido.** Tudo que começa com
+`VITE_` é embutido no bundle e chega ao navegador de todo mundo — uma senha
+ali seria pública. Estas duas são lidas pelo Node, direto do arquivo, e nunca
+entram no build. O script também não imprime nenhuma das duas.
+
+### 🔴 Se o login falhar, o script PARA
+
+`auth_service` bloqueia a conta em **5 tentativas**, e um laço de retry
+queimaria as cinco em segundos. Por isso: uma tentativa, e para.
+
+E o login é feito **pela tela**, não por `fetch` montado à mão — quem monta o
+corpo é o próprio front, que já sabe que o campo é `password` e não `senha`.
+Uma sessão chegou a queimar três tentativas numa conta `super_admin`
+justamente por montar esse payload por conta própria.
+
 ## Verificar contra a API de verdade, sem stub
 
 Os outros scripts stubam a rede. Este não: ele dirige o front contra o
