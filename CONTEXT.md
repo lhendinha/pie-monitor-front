@@ -1,9 +1,10 @@
-# Contexto do projeto — PJe Monitor (Frontend)
+# Contexto do projeto — Argos (Frontend)
 
 > Este arquivo existe pra você (Claude) retomar o projeto numa sessão nova
 > sem precisar que o usuário reexplique tudo do zero. Leia isso primeiro.
 > Uma cópia equivalente (focada no backend) existe em `CONTEXT.md` no
-> repositório `pje-monitor-aws (caminho interno: /Users/pedrohenriquesousaalmeida/Documents/Projects/PJE Monitor/api)`.
+> repositório da API, `argos-monitor-api` (caminho interno:
+> /Users/pedrohenriquesousaalmeida/Documents/Projects/PJE Monitor/api).
 
 ## 1) Objetivo do projeto
 
@@ -40,6 +41,49 @@ o link do e-mail de notificação abrindo direto na aba Histórico (deep link
 via `?processo=&comunicacao=`) já implementados -- ver seção 3.
 
 ## 3) Decisões importantes já tomadas
+
+### A API agora roda local, fora da AWS (25/08/2026)
+
+Na pasta `api`, `yarn offline` sobe o sistema inteiro na máquina: DynamoDB
+Local em docker, as seis lambdas com os handlers Python de verdade, o cron e
+o canal WebSocket. Para apontar o front pra lá:
+
+```bash
+VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
+  yarn dev --port 5174
+```
+
+⚠️ `VITE_WS_URL` junto, e não só a API: sem ele o front abre o canal no
+endereço de PRODUÇÃO a partir de uma tela local — o sino "funciona" ali
+mostrando notificação de verdade, e o que se estava testando não foi
+testado.
+
+Contas semeadas, senha `Senha!Local1`: `movida@local.test` (admin no
+escritório Alfa) e `chefe@local.test` (super_admin, quem move). Cada
+escritório tem um cliente com nome próprio, pra dar pra VER de qual grupo é a
+tela.
+
+**A regra combinada:** todo teste passa por ali antes de qualquer deploy --
+inclusive os do front, que até aqui usavam `scripts/stubsDaApi.mjs`. O stub
+continua útil para telas de UI pura; ele não vale como validação pré-deploy,
+porque responde o que eu escrevi que ele responde.
+
+### O produto é Argos; `pje-monitor` fica só onde renomear quebra algo (25/08/2026)
+
+Documentação, títulos e `package.json` (`argos-monitor-front`) usam o nome
+novo. **Não foram renomeadas as chaves de `localStorage`**
+(`pje-monitor-access-token` e as outras seis em `services/auth.ts`,
+`pje-monitor-ultimo-subgrupo-` em `hooks/useUltimoSubgrupo.ts`): elas são o
+endereço sob o qual a sessão de cada pessoa já está gravada no navegador
+dela, e trocar sem migrar desloga todo mundo no primeiro carregamento depois
+do deploy.
+
+Do lado da API, pela mesma lógica, `service: pje-monitor` continua no
+`serverless.yml` -- é dele que saem os nomes das tabelas, da pilha e das
+funções na AWS.
+
+O repositório no GitHub ainda se chama `pie-monitor-front` (com "pie", erro
+de digitação antigo); o domínio é `argos-monitor.vercel.app`.
 
 ### Por que Vercel, não AWS
 

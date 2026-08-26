@@ -25,6 +25,10 @@ interface SubgrupoLembrado {
   nome: string;
 }
 
+/* ⚠️ `pje-monitor-` de propósito, mesmo o produto sendo Argos: é chave de
+   `localStorage` já gravada nos navegadores. Trocar não migra, esquece --
+   aqui o custo é só perder a lembrança do último subgrupo, bem menor que o
+   de `services/auth.ts`, mas a razão é a mesma. */
 const PREFIXO = "pje-monitor-ultimo-subgrupo-";
 
 function ler(chave: string): SubgrupoLembrado | null {

@@ -6,6 +6,18 @@ import type {
   RespostaDeMensagem,
 } from "../types/respostas";
 
+/** 🔴 O prefixo `pje-monitor-` fica, e o produto chama-se Argos desde
+ * 25/08/2026. Não é resíduo do rename: é a chave sob a qual a sessão de cada
+ * pessoa JÁ está gravada no navegador dela.
+ *
+ * Renomear não migra nada -- o valor antigo continua lá, órfão, e o código
+ * passa a ler uma chave vazia. O efeito é que TODO MUNDO é deslogado no
+ * primeiro carregamento depois do deploy, sem aviso e sem motivo visível.
+ *
+ * ⚠️ Se um dia valer a pena trocar, o caminho é ler a chave antiga, gravar
+ * na nova e só então apagar a antiga -- e manter esse código de migração no
+ * ar por mais tempo do que parece necessário, porque quem não abriu o
+ * sistema nesse meio-tempo ainda tem a chave velha. */
 const KEYS = {
   access: "pje-monitor-access-token",
   refresh: "pje-monitor-refresh-token",

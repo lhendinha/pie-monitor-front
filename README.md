@@ -1,6 +1,24 @@
-# Diário de Acompanhamento — front-end do PJe Monitor
+# Diário de Acompanhamento — front-end do Argos
 
 Front-end React + **TypeScript** (Vite) com login (JWT + refresh), gestão de **Grupos → Subgrupos → Processos**, membros por papel (`user`/`manager`/`admin`/`super_admin`), convites por e-mail e histórico de notificações — consumindo a API que já está rodando na AWS.
+
+## Rodar contra a API local (fora da AWS)
+
+Na pasta `api`, `yarn offline` sobe DynamoDB Local, as lambdas e o canal
+WebSocket na sua máquina. Depois:
+
+```bash
+VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
+  yarn dev --port 5174
+```
+
+⚠️ `VITE_WS_URL` junto: sem ele o front abre o canal no endereço de
+**produção** a partir de uma tela local.
+
+Contas semeadas, senha `Senha!Local1`: `movida@local.test` (admin) e
+`chefe@local.test` (super_admin). **É por ali que se valida antes de subir** —
+o `scripts/stubsDaApi.mjs` responde o que foi escrito nele, e serve para
+telas de UI pura, não como prova de que a integração funciona.
 
 ## Por que não hospedar na AWS (S3 + CloudFront)?
 

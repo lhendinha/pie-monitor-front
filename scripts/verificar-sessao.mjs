@@ -1,7 +1,8 @@
 /** Fluxo completo, sem stub nenhum: front real contra API real.
  *
- *   1) cd ../api && python scripts/api_local.py
- *   2) VITE_API_URL=http://localhost:8099 yarn dev --port 5174
+ *   1) cd ../api && yarn offline
+ *   2) VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
+ *        yarn dev --port 5174
  *   3) node scripts/verificar-sessao.mjs
  *
  * A pessoa está no Escritório Alfa, é MOVIDA pro Beta por um super_admin, e a
@@ -23,12 +24,15 @@
  *   - os `401` em `/subgrupos`, `/fases`, `/processos` são o token velho sendo
  *     recusado -- é o mecanismo funcionando, não falha;
  *   - o `404` de `/favicon.ico` é do dev server do Vite;
- *   - os de WebSocket são o front tentando o endereço de PRODUÇÃO (vem do
- *     `.env`), já que este arranjo local não sobe o canal.
+ *   - ⚠️ os de WebSocket eram o front tentando o endereço de PRODUÇÃO, porque
+ *     o arranjo antigo (`../api/scripts/api_local.py`) não subia o canal.
+ *     Com o `yarn offline` ele sobe: passando `VITE_WS_URL=ws://localhost:8098`
+ *     esses erros deixam de aparecer. Sem passar, voltam -- e aí são o front
+ *     falando com produção a partir de uma tela local.
  *
- * ⚠️ Ele NÃO cobre IAM, API Gateway, Lambda de verdade nem o canal -- e o
- * primeiro é o furo que já derrubou produção uma vez. Ver a pendência de
- * ambiente offline no CONTEXT.md. */
+ * ⚠️ O que continua descoberto é **IAM** -- nada local aplica política, e é
+ * exatamente esse o furo que já derrubou produção. Quem guarda essa porta é
+ * `api/tests/test_iam_cobre_o_codigo.py`, por leitura estática. */
 import { chromium } from "playwright";
 
 const API = "http://localhost:8099";
