@@ -18,6 +18,18 @@ interface ModalProps {
    * `.modal-foot` é irmão de `.modal-body`, não filho. Dentro, os botões
    * sobem junto com o conteúdo e somem da vista em formulário longo. */
   rodape?: ReactNode;
+  /** Uma ação no CABEÇALHO, à esquerda do X.
+   *
+   * ⚠️ Existe porque o rodapé nem sempre serve: em `ModalDeMovimentacao` ele
+   * é condicional de propósito (*"rodapé SÓ quando há pra onde ir;
+   * `RodapeDeAcoes` vazio desenharia uma faixa cinza no pé do modal sem nada
+   * dentro"*), e pôr uma ação lá o tornaria incondicional pra todo mundo.
+   *
+   * 🔴 Ela e o X vão dentro de um `Flex` próprio, e NÃO como irmãos diretos
+   * do título: aquele `Flex` é `justify="space-between"` com dois filhos
+   * (título e X), e um terceiro faria a ação flutuar no MEIO do cabeçalho,
+   * longe do botão de fechar. */
+  acaoNoCabecalho?: ReactNode;
   children: ReactNode;
 }
 
@@ -36,7 +48,7 @@ interface ModalProps {
  */
 const pilhaDeModais: symbol[] = [];
 
-export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, children }: ModalProps) {
+export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, acaoNoCabecalho, children }: ModalProps) {
   // Esc fecha -- é o que se espera de qualquer diálogo, e sem isso quem
   // navega por teclado fica preso dentro dele. Mas só o de CIMA fecha.
   /* 🔴 O efeito roda UMA vez, e o `onFechar` atual vem de um ref.
@@ -129,22 +141,32 @@ export default function Modal({ titulo, subtitulo, onFechar, largo, rodape, chil
               </Text>
             )}
           </Box>
-          <BotaoNu
-            type="button"
-            title="Fechar"
-            aria-label="Fechar"
-            onClick={onFechar}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            w="34px"
-            h="34px"
-            borderRadius="full"
-            color="fg.muted"
-            _hover={{ bg: "border.subtle", color: "fg" }}
-          >
-            ✕
-          </BotaoNu>
+          {/* Ação e X num grupo só, à direita: o `Flex` de fora é
+              `space-between` e precisa continuar com DOIS filhos -- título
+              de um lado, ações do outro. Um terceiro filho direto jogaria a
+              ação pro meio do cabeçalho. */}
+          <Flex align="center" gap="8px" flexShrink={0}>
+            {acaoNoCabecalho}
+            {/* ⚠️ O X é sempre o ÚLTIMO. É o alvo que as pessoas procuram no
+                canto, e inverter a ordem faria alguém fechar o modal
+                querendo clicar na ação. */}
+            <BotaoNu
+              type="button"
+              title="Fechar"
+              aria-label="Fechar"
+              onClick={onFechar}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              w="34px"
+              h="34px"
+              borderRadius="full"
+              color="fg.muted"
+              _hover={{ bg: "border.subtle", color: "fg" }}
+            >
+              ✕
+            </BotaoNu>
+          </Flex>
         </Flex>
         <Box p="20px 22px" maxH="70vh" overflowY="auto">
           {children}

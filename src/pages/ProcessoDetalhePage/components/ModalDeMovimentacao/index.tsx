@@ -3,6 +3,7 @@ import { Stack, Text } from "@chakra-ui/react";
 import {
   Botao,
   CampoDeLeitura,
+  IconePlus,
   Modal,
   RodapeDeAcoes,
   TextoDaComunicacao,
@@ -15,6 +16,8 @@ interface ModalDeMovimentacaoProps {
   /** Leva ao e-mail que avisou desta movimentação, no Histórico. Ausente
    * quando não houve e-mail -- ver `tem_envio`. */
   onVerOEnvio?: () => void;
+  /** Abre o formulário de tarefa já vinculado a este processo. */
+  onAdicionarTarefa: () => void;
   onFechar: () => void;
 }
 
@@ -44,6 +47,7 @@ interface ModalDeMovimentacaoProps {
 export default function ModalDeMovimentacao({
   comunicacao,
   onVerOEnvio,
+  onAdicionarTarefa,
   onFechar,
 }: ModalDeMovimentacaoProps) {
   return (
@@ -51,6 +55,15 @@ export default function ModalDeMovimentacao({
       largo
       titulo="Detalhes da movimentação"
       onFechar={onFechar}
+      /* No CABEÇALHO, e não no rodapé logo abaixo: aquele rodapé é
+         condicional de propósito (só existe quando há e-mail pra onde ir), e
+         pôr a tarefa lá o tornaria incondicional pra todo mundo. */
+      acaoNoCabecalho={
+        <Botao variante="ghost" onClick={onAdicionarTarefa}>
+          <IconePlus />
+          Adicionar tarefa
+        </Botao>
+      }
       /* Rodapé SÓ quando há pra onde ir. `RodapeDeAcoes` vazio desenharia
          uma faixa cinza no pé do modal sem nada dentro -- que lê como
          controle que sumiu, não como "não há ação aqui".

@@ -10,7 +10,9 @@ import {
   EstadoVazio,
   EstadoDeErro,
   Esqueleto,
+  IconePlus,
   Modal,
+  ModalDeTarefa,
   Pagination,
   useToast,
 } from "../../components";
@@ -18,7 +20,7 @@ import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { ApiError, listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { contar } from "../../utils";
+import { contar, mascararNumeroProcesso } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
 import FiltroDeMenu from "./components/FiltroDeMenu";
 import ItemDeHistorico from "./components/ItemDeHistorico";
@@ -77,6 +79,17 @@ export default function HistoricoPage({
   const [apenasComFalha, setApenasComFalha] = useState<boolean>(apenasComFalhaInicial ?? false);
   const [dias, setDias] = useState<number>(diasInicial ?? 0);
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
+  const [criandoTarefa, setCriandoTarefa] = useState(false);
+
+  /** De qual subgrupo a tarefa nasceria -- `null` quando não há resposta
+   * certa, e aí o botão não aparece. Ver o comentário no modal abaixo.
+   *
+   * 🔴 `subgrupos_notificados` é OPCIONAL e é uma LISTA: são três estados
+   * (ausente, um, vários), não dois. Um `[0]` cru estouraria no ausente e
+   * escolheria errado no plural. */
+  const notificados = itemAberto?.subgrupos_notificados;
+  const subgrupoDaTarefa =
+    itemAberto && !itemAberto.tarefa_id && notificados?.length === 1 ? notificados[0] : null;
   const toast = useToast();
 
   const query = useQuery<RespostaDeHistoricoPaginada>({
@@ -263,10 +276,33 @@ export default function HistoricoPage({
           tem contexto nenhum: sem isto ela cai numa lista comum, sem nada
           indicando que o item do link está sendo buscado -- e se falhar, só
           um toast que ela pode nem associar ao link. */}
+      {/* 🔴 O botão só existe quando há UM subgrupo certo pra tarefa nascer.
+          Três casos deixam ele de fora, e cada um por um motivo diferente:
+
+          1. LEMBRETE DE TAREFA (`tarefa_id`): não tem processo nenhum --
+             `numero_processo` ali guarda `TAREFA#{id}` porque é chave de
+             partição. Vincular a tarefa nova a isso gravaria lixo num campo
+             que a tela lê como número de processo.
+          2. VÁRIOS subgrupos notificados: o mesmo número vive em N
+             subgrupos e o e-mail foi pra todos. Escolher um arbitrariamente
+             faria a tarefa nascer no lugar errado sem ninguém perceber, e
+             `ModalDeTarefa` não tem estado "nenhum subgrupo" -- `subgrupoAtual`
+             é obrigatório e semeia o seletor.
+          3. AUSENTE: `subgrupos_notificados` é opcional, e registro anterior
+             a 26/08/2026 não o tem (9 de 73 medidos em produção). `undefined`
+             é "não sei", e não se oferece o que não se sabe. */}
       {(itemAberto || deepLinkMutation.isPending) && (
         <Modal
           titulo="Detalhes do envio"
           onFechar={() => setItemAberto(null)}
+          acaoNoCabecalho={
+            subgrupoDaTarefa ? (
+              <Botao variante="ghost" onClick={() => setCriandoTarefa(true)}>
+                <IconePlus />
+                Adicionar tarefa
+              </Botao>
+            ) : undefined
+          }
         >
           {itemAberto ? (
             <DetalheHistorico item={itemAberto} />
@@ -279,6 +315,22 @@ export default function HistoricoPage({
             </Stack>
           )}
         </Modal>
+      )}
+
+      {/* Irmão do modal de detalhe: os dois ficam abertos, e só este sai ao
+          salvar -- fechar os dois devolveria a pessoa pra lista sem o envio
+          que ela estava lendo. O Escape fecha só o de cima (`pilhaDeModais`). */}
+      {criandoTarefa && itemAberto && subgrupoDaTarefa && (
+        <ModalDeTarefa
+          subgrupoAtual={subgrupoDaTarefa}
+          vinculoInicial={{
+            tipo: "processo",
+            id: itemAberto.numero_processo,
+            rotulo: mascararNumeroProcesso(itemAberto.numero_processo),
+          }}
+          onSalvo={() => setCriandoTarefa(false)}
+          onFechar={() => setCriandoTarefa(false)}
+        />
       )}
     </>
   );

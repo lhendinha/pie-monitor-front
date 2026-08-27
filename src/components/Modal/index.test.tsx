@@ -56,3 +56,52 @@ describe("pilha de modais", () => {
     expect(fecharDeBaixo).not.toHaveBeenCalled();
   });
 });
+
+describe("acaoNoCabecalho", () => {
+  function montar(acao?: React.ReactNode) {
+    return renderComProviders(
+      <Modal titulo="Detalhes" onFechar={vi.fn()} acaoNoCabecalho={acao}>
+        <p>corpo</p>
+      </Modal>,
+    );
+  }
+
+  it("renderiza a ação no cabeçalho quando ela existe", () => {
+    montar(<button type="button">Adicionar tarefa</button>);
+
+    expect(screen.getByRole("button", { name: "Adicionar tarefa" })).toBeInTheDocument();
+  });
+
+  it("sem a prop, o cabeçalho fica só com o X -- nada muda pros outros 10 modais", () => {
+    montar();
+
+    const botoes = screen.getAllByRole("button");
+    expect(botoes).toHaveLength(1);
+    expect(botoes[0]).toHaveAccessibleName("Fechar");
+  });
+
+  it("🔴 o X é o ÚLTIMO na ordem do DOM", () => {
+    /* Ele é o alvo que as pessoas procuram no canto: inverter a ordem faria
+       alguém fechar o modal querendo clicar na ação. */
+    montar(<button type="button">Adicionar tarefa</button>);
+
+    const nomes = screen.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent);
+    expect(nomes).toEqual(["Adicionar tarefa", "Fechar"]);
+  });
+
+  it("🔴 a ação e o X ficam no MESMO grupo, à direita do título", () => {
+    /* O `Flex` de fora é `space-between` com dois filhos (título e ações).
+       Um terceiro filho direto jogaria a ação pro MEIO do cabeçalho, longe
+       do X -- que é o oposto do que foi pedido. */
+    montar(<button type="button">Adicionar tarefa</button>);
+
+    const acao = screen.getByRole("button", { name: "Adicionar tarefa" });
+    const fechar = screen.getByRole("button", { name: "Fechar" });
+    expect(acao.parentElement).toBe(fechar.parentElement);
+
+    const grupo = acao.parentElement!;
+    const cabecalho = grupo.parentElement!;
+    expect(cabecalho.children).toHaveLength(2);
+    expect(cabecalho.lastElementChild).toBe(grupo);
+  });
+});

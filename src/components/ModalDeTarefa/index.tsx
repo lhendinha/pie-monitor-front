@@ -28,7 +28,7 @@ import { hojeISO, mascararNumeroProcesso } from "../../utils";
 import { PRIORIDADES, TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA } from "../../constants";
 import VinculoDeRegistro from "../VinculoDeRegistro";
 
-import type { Tarefa, VinculosDeRegistro } from "../../types";
+import type { Tarefa, Vinculo, VinculosDeRegistro } from "../../types";
 import type { RespostaDeMembros, RespostaDoQuadro } from "../../types/respostas";
 
 interface ModalDeTarefaProps {
@@ -43,6 +43,19 @@ interface ModalDeTarefaProps {
   subgrupoAtualNome?: string;
   /** Coluna pré-escolhida, quando veio do "+ Nova atividade" de uma coluna. */
   colunaInicial?: string;
+  /** Vínculo já preenchido ao CRIAR -- quando a tarefa nasce de dentro de
+   * um processo ou atendimento que a pessoa já está olhando.
+   *
+   * Molde de `DocumentosVinculados`, que tem o mesmo par
+   * `subgrupoInicial`/`vinculoInicial` pela mesma necessidade: uma segunda
+   * forma aqui seria a porta irmã de sempre.
+   *
+   * ⚠️ Leva o RÓTULO junto, não só o id: `VinculoDeRegistro` mostra a
+   * etiqueta do que foi vinculado, e um número CNJ cru não se confere de
+   * relance.
+   *
+   * Ignorado ao EDITAR: ali o vínculo é o da tarefa. */
+  vinculoInicial?: Vinculo | null;
   /** Data pré-escolhida ao CRIAR -- é o dia que a Agenda tem à vista.
    *
    * Sem isto a tarefa criada na Agenda nasceria com a data de hoje e
@@ -77,6 +90,7 @@ export default function ModalDeTarefa({
   subgrupoAtual,
   subgrupoAtualNome,
   colunaInicial,
+  vinculoInicial,
   dataInicial,
   onSalvo,
   onFechar,
@@ -147,17 +161,29 @@ export default function ModalDeTarefa({
    * processo, assunto do atendimento) exigiria buscar o item só pra abrir o
    * modal, e mostrar campo vazio numa tarefa QUE TEM vínculo seria pior --
    * salvar por cima apagaria o vínculo sem a pessoa perceber. */
-  const [vinculos, setVinculos] = useState<VinculosDeRegistro>({
-    processo: tarefa?.processo_numero
-      ? {
-          tipo: "processo",
-          id: tarefa.processo_numero,
-          rotulo: mascararNumeroProcesso(tarefa.processo_numero),
-        }
-      : null,
-    atendimento: tarefa?.atendimento_id
-      ? { tipo: "atendimento", id: tarefa.atendimento_id, rotulo: tarefa.atendimento_id }
-      : null,
+  const [vinculos, setVinculos] = useState<VinculosDeRegistro>(() => {
+    /* ⚠️ Editar tem precedência: `vinculoInicial` só semeia quando NÃO há
+       tarefa. Deixar os dois competirem faria abrir uma tarefa já
+       vinculada a partir de uma tela de outro processo trocar o vínculo
+       dela em silêncio -- e salvar gravaria a troca. */
+    if (tarefa) {
+      return {
+        processo: tarefa.processo_numero
+          ? {
+              tipo: "processo",
+              id: tarefa.processo_numero,
+              rotulo: mascararNumeroProcesso(tarefa.processo_numero),
+            }
+          : null,
+        atendimento: tarefa.atendimento_id
+          ? { tipo: "atendimento", id: tarefa.atendimento_id, rotulo: tarefa.atendimento_id }
+          : null,
+      };
+    }
+    return {
+      processo: vinculoInicial?.tipo === "processo" ? vinculoInicial : null,
+      atendimento: vinculoInicial?.tipo === "atendimento" ? vinculoInicial : null,
+    };
   });
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
   const toast = useToast();

@@ -335,3 +335,87 @@ describe("os filtros que a Área de trabalho aciona", () => {
     );
   });
 });
+
+describe("botão 'Adicionar tarefa' nos Detalhes do envio", () => {
+  /** Abre o modal de detalhes do primeiro item da lista. */
+  async function abrirDetalhes(item: Record<string, unknown>) {
+    mocks.listarHistorico.mockResolvedValue({
+      historico: [{ ...ITEM, ...item }],
+      total: 1,
+      total_paginas: 1,
+    });
+    const user = userEvent.setup();
+    renderComProviders(<HistoricoPage />);
+    await user.click(await screen.findByText("Intimação", { exact: false }));
+    await screen.findByText("Detalhes do envio");
+    return user;
+  }
+
+  const botao = () => screen.queryByRole("button", { name: /Adicionar tarefa/ });
+
+  it("aparece quando há UM subgrupo notificado", async () => {
+    await abrirDetalhes({ subgrupos_notificados: ["s1"] });
+
+    expect(botao()).toBeInTheDocument();
+  });
+
+  it("🔴 NÃO aparece em lembrete de tarefa -- ali não há processo nenhum", async () => {
+    /* `numero_processo` num lembrete guarda `TAREFA#{id}`, porque é chave de
+       partição. Vincular a tarefa nova a isso gravaria lixo num campo que a
+       tela lê como número de processo. */
+    await abrirDetalhes({
+      subgrupos_notificados: ["s1"],
+      tarefa_id: "t1",
+      numero_processo: "TAREFA#t1",
+    });
+
+    expect(botao()).not.toBeInTheDocument();
+  });
+
+  it("🔴 NÃO aparece com VÁRIOS subgrupos -- não há resposta certa", async () => {
+    /* O mesmo número vive em N subgrupos e o e-mail foi pra todos. Escolher
+       um arbitrariamente faria a tarefa nascer no lugar errado sem ninguém
+       perceber -- e `ModalDeTarefa` não tem estado "nenhum subgrupo":
+       `subgrupoAtual` é obrigatório e semeia o seletor. */
+    await abrirDetalhes({ subgrupos_notificados: ["s1", "s2"] });
+
+    expect(botao()).not.toBeInTheDocument();
+  });
+
+  it("🔴 NÃO aparece quando `subgrupos_notificados` está AUSENTE", async () => {
+    /* O campo é opcional, e registro anterior a 26/08/2026 não o tem -- 9 de
+       73 medidos em produção. `undefined` é "não sei", e não se oferece o
+       que não se sabe. Um `[0]` cru estouraria aqui. */
+    await abrirDetalhes({});
+
+    expect(botao()).not.toBeInTheDocument();
+  });
+
+  it("🔴 NÃO aparece com a lista VAZIA", async () => {
+    /* Lista vazia não é o mesmo que um subgrupo: não há de onde a tarefa
+       nascer, e `[0]` seria `undefined`. */
+    await abrirDetalhes({ subgrupos_notificados: [] });
+
+    expect(botao()).not.toBeInTheDocument();
+  });
+
+  it("abre a tarefa com o processo vinculado, e o detalhe segue aberto", async () => {
+    const user = await abrirDetalhes({ subgrupos_notificados: ["s1"] });
+
+    await user.click(botao()!);
+
+    expect(await screen.findByText("Nova tarefa")).toBeInTheDocument();
+
+    /* ⚠️ Procurado DENTRO do modal de tarefa, e não pela página: o número
+       mascarado aparece três vezes com os dois modais abertos (na lista
+       atrás, no detalhe do envio e na etiqueta do vínculo), então contar
+       ocorrências prova o número errado e quebra ao mexer na lista. */
+    const dialogos = await screen.findAllByRole("dialog");
+    const modalDaTarefa = dialogos.find((d) => within(d).queryByText("Nova tarefa"));
+    expect(within(modalDaTarefa!).getByText("0000266-87.2021.8.13.0559")).toBeInTheDocument();
+
+    // Os dois empilhados: fechar os dois devolveria a pessoa pra lista sem
+    // o envio que ela estava lendo.
+    expect(screen.getByText("Detalhes do envio")).toBeInTheDocument();
+  });
+});

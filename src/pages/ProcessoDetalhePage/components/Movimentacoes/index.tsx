@@ -1,9 +1,9 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
-import { Faixa, ItemDeMovimentacao, Pagination } from "../../../../components";
-import { formatarData, PARAM_DA_ABA } from "../../../../utils";
+import { Faixa, ItemDeMovimentacao, ModalDeTarefa, Pagination } from "../../../../components";
+import { formatarData, mascararNumeroProcesso, PARAM_DA_ABA } from "../../../../utils";
 import {
   MOVIMENTACOES_POR_PAGINA,
   PARAM_DA_COMUNICACAO,
@@ -31,6 +31,11 @@ interface MovimentacoesProps {
  */
 export default function Movimentacoes({ comunicacoes }: MovimentacoesProps) {
   const navegar = useNavigate();
+  /* ⚠️ O subgrupo vem da URL (`/processos/:subgrupoId/:numero`), e não de
+     uma busca: o MESMO número de processo vive em vários subgrupos, e é
+     justamente por isso que ele está na rota. Aqui não há ambiguidade. */
+  const { subgrupoId = "" } = useParams();
+  const [criandoTarefa, setCriandoTarefa] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(MOVIMENTACOES_POR_PAGINA);
 
@@ -162,7 +167,26 @@ export default function Movimentacoes({ comunicacoes }: MovimentacoesProps) {
                   })
               : undefined
           }
+          onAdicionarTarefa={() => setCriandoTarefa(true)}
           onFechar={() => trocarAberta(null)}
+        />
+      )}
+
+      {/* ⚠️ Irmão do modal de detalhe, não filho: os dois ficam abertos, e
+          quem sai ao salvar é só este. Fechar os dois devolveria a pessoa
+          pra lista sem a movimentação que ela estava lendo.
+
+          O Escape fecha só o de cima -- ver a `pilhaDeModais` do `Modal`. */}
+      {criandoTarefa && aberta && (
+        <ModalDeTarefa
+          subgrupoAtual={subgrupoId}
+          vinculoInicial={{
+            tipo: "processo",
+            id: aberta.numero_processo,
+            rotulo: mascararNumeroProcesso(aberta.numero_processo),
+          }}
+          onSalvo={() => setCriandoTarefa(false)}
+          onFechar={() => setCriandoTarefa(false)}
         />
       )}
     </Stack>
