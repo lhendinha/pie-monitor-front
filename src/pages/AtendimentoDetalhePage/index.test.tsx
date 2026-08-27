@@ -250,9 +250,14 @@ describe("aba Detalhes", () => {
 });
 
 describe("exclusão", () => {
+
   it("pede confirmação e diz quantos registros somem", async () => {
     await montar();
-    await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
+    /* ⚠️ Por /Excluir/, e não pelo `aria-label` "Excluir atendimento": o
+       botão passou a ter TEXTO em 26/08/2026, no visual de
+       `FormularioProcesso` -- só o ícone obrigava a passar o mouse pra
+       descobrir o que ele faz. */
+    await userEvent.click(screen.getByRole("button", { name: /Excluir/ }));
 
     const dialogo = await screen.findByRole("dialog");
     expect(dialogo).toHaveTextContent(
@@ -265,7 +270,11 @@ describe("exclusão", () => {
     /* É o nome que a pessoa confere antes de apagar -- tem que saltar da
      * frase. Todas as outras confirmações do sistema fazem assim. */
     await montar();
-    await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
+    /* ⚠️ Por /Excluir/, e não pelo `aria-label` "Excluir atendimento": o
+       botão passou a ter TEXTO em 26/08/2026, no visual de
+       `FormularioProcesso` -- só o ícone obrigava a passar o mouse pra
+       descobrir o que ele faz. */
+    await userEvent.click(screen.getByRole("button", { name: /Excluir/ }));
 
     const dialogo = await screen.findByRole("dialog");
     const negrito = dialogo.querySelector("strong");
@@ -279,7 +288,11 @@ describe("exclusão", () => {
       registros: [ATENDIMENTO.registros[0]],
     });
     await montar();
-    await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
+    /* ⚠️ Por /Excluir/, e não pelo `aria-label` "Excluir atendimento": o
+       botão passou a ter TEXTO em 26/08/2026, no visual de
+       `FormularioProcesso` -- só o ícone obrigava a passar o mouse pra
+       descobrir o que ele faz. */
+    await userEvent.click(screen.getByRole("button", { name: /Excluir/ }));
 
     const dialogo = await screen.findByRole("dialog");
     expect(dialogo).toHaveTextContent("o seu único registro será removido");
@@ -288,7 +301,11 @@ describe("exclusão", () => {
 
   it("confirmando, exclui e volta pra lista", async () => {
     await montar();
-    await userEvent.click(screen.getByRole("button", { name: "Excluir atendimento" }));
+    /* ⚠️ Por /Excluir/, e não pelo `aria-label` "Excluir atendimento": o
+       botão passou a ter TEXTO em 26/08/2026, no visual de
+       `FormularioProcesso` -- só o ícone obrigava a passar o mouse pra
+       descobrir o que ele faz. */
+    await userEvent.click(screen.getByRole("button", { name: /Excluir/ }));
     const dialogo = await screen.findByRole("dialog");
     await userEvent.click(within(dialogo).getByRole("button", { name: "Excluir" }));
 

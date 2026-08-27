@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Abas,
   BotaoDeTexto,
-  BotaoQuadrado,
+  Botao,
   Cartao,
   DocumentosVinculados,
   EstadoDeErro,
@@ -15,9 +15,9 @@ import {
   EtiquetaDeMetadado,
   IconeClientes,
   IconeLink,
-  IconeLixeira,
   IconeSeta,
   ModalDeConfirmacao,
+  IconeLixeira,
   PainelDaAba,
   useToast,
 } from "../../components";
@@ -207,17 +207,26 @@ export default function AtendimentoDetalhePage() {
 
             A ETIQUETA de status continua no cabeçalho: ela informa, e é o que
             se quer ver de relance ao abrir. */}
+
+        {/* 🔴 Lixeira + a palavra "Excluir", como em `FormularioProcesso` --
+            que já escreve o porquê: *"só o texto não distingue a ação
+            destrutiva das outras à primeira vista"*. Era um `BotaoQuadrado`
+            só-ícone, e o rótulo só aparecia ao passar o mouse.
+
+            ⚠️ Continua no CABEÇALHO, e não no rodapé do formulário como no
+            processo: lá a aba Detalhes é a PRIMEIRA, aqui é a segunda --
+            movê-lo pra dentro dela esconderia a ação atrás de um clique a
+            mais, numa tela que abre na conversa. Mesmo visual; o lugar é o
+            que cada tela pede. */}
         <Flex gap="8px" align="flex-start" flexShrink="0">
-          <BotaoQuadrado
-            type="button"
-            tom="perigo"
-            title="Excluir atendimento"
-            aria-label="Excluir atendimento"
+          <Botao
+            variante="perigoContorno"
             onClick={() => setConfirmandoExclusao(true)}
             disabled={excluir.isPending}
           >
             <IconeLixeira />
-          </BotaoQuadrado>
+            Excluir
+          </Botao>
         </Flex>
       </Flex>
 

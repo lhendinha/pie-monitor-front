@@ -195,6 +195,10 @@ conferir(
   "salvou e confirmou na tela",
 );
 
+// --- 6. o botão de excluir, igual ao do processo ------------------------
+const excluir = pagina.getByRole("button", { name: /^Excluir/ });
+conferir(await excluir.isVisible(), "o botão de excluir mostra o TEXTO, não só o ícone");
+
 // --- fecho --------------------------------------------------------------
 const falhas = checagens.filter((c) => !c.ok);
 console.log(`\n${checagens.length - falhas.length}/${checagens.length} checagens`);
