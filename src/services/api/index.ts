@@ -2,6 +2,7 @@ export { ApiError } from "./client";
 export * from "./subgrupos";
 export * from "./membros";
 export * from "./processos";
+export * from "./importacao";
 export * from "./convites";
 export * from "./historico";
 export * from "./grupos";

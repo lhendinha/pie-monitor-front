@@ -135,6 +135,59 @@ export interface EnderecoDoCep {
   uf: string;
 }
 
+/* --- importação de processos por OAB ------------------------------------ */
+
+/** Uma linha da prévia: o que a busca por OAB achou, antes de gravar nada.
+ *
+ * ⚠️ **`comunicacoes` é CONTAGEM, não conteúdo.** O texto fica no servidor --
+ * 1.000 processos com o histórico junto são 19,6 MB, e o limite de resposta
+ * da API é 6 MB. */
+export interface ProcessoEncontrado {
+  numero_processo: string;
+  /** A classe processual, já normalizada pelo servidor. O PJe manda
+   * `APELAçãO CíVEL`, com os acentos em minúscula. */
+  apelido: string;
+  comunicacoes: number;
+  /** 🔴 Neste SUBGRUPO, não no grupo: o mesmo número vive legitimamente em
+   * vários, e importar para outro é cadastro válido. */
+  ja_existe: boolean;
+}
+
+/** O que `POST /subgrupos/{id}/processos/buscar-por-oab` devolve. */
+export interface PreviaDaImportacao {
+  /** Identifica a busca guardada no servidor -- é o que a confirmação usa.
+   * Opaco: o caminho é remontado lá com o grupo de quem pede. */
+  id: string;
+  total_encontrado: number;
+  /** A busca parou por limite, e há mais processos que não vieram. Não é
+   * erro: é o sinal de que a tela deve oferecer o período. */
+  atingiu_o_teto: boolean;
+  processos: ProcessoEncontrado[];
+}
+
+/** O que `POST /subgrupos/{id}/processos/importar` devolve.
+ *
+ * 🔴 **`ja_existiam` NÃO é falha**: alguém cadastrou pela tela entre a prévia
+ * e a confirmação. Somá-lo a `falharam` faria a tela acusar erro onde o
+ * sistema funcionou como devia. */
+export interface ResultadoDaImportacao {
+  cadastrados: number;
+  ja_existiam: number;
+  /** Os NÚMEROS, não a contagem -- senão não há o que tentar de novo. */
+  falharam: string[];
+}
+
+/** O progresso que chega pelo canal enquanto a importação grava.
+ *
+ * ⚠️ `feitos` conta o TENTADO, não o que deu certo: uma barra que só andasse
+ * com sucesso ficaria parada numa importação com falhas, sugerindo
+ * travamento. */
+export interface ProgressoDaImportacao {
+  tipo: "importacao_progresso";
+  feitos: number;
+  total: number;
+}
+
 /** O que `POST`/`PATCH /clientes` recebe. Em camelCase porque é o que a tela
  * monta; quem traduz pros nomes da API é o serviço. */
 export interface CamposCliente {
