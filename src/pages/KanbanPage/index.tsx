@@ -43,7 +43,11 @@ import type { FiltrosDoQuadro } from "./types";
 import type { RespostaDoQuadro } from "../../types/respostas";
 import type { Tarefa } from "../../types";
 import type { MoverTarefa, TarefaDoLink } from "./types";
-import { usePessoasBuscaveis, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import {
+  podeListarPessoas,
+  usePessoasBuscaveis,
+  useSubgruposBuscaveis,
+} from "../../hooks/useOpcoesBuscaveis";
 import { useUltimoSubgrupo } from "../../hooks/useUltimoSubgrupo";
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
@@ -354,6 +358,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
             subgrupos={subgrupos}
             subgrupoNome={subgrupoNome}
             pessoas={pessoas}
+            mostrarPessoas={podeListarPessoas()}
             filtros={{ ...filtros, subgrupoId }}
             onMudar={(parcial) => setFiltros((f) => ({ ...f, subgrupoId, ...parcial }))}
             onEscolherSubgrupo={(id, nome) => {

@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   listarQuadro: vi.fn(),
   listarTarefas: vi.fn(),
   listarTodosOsMembrosDoGrupo: vi.fn(),
+  /* O que a PÍLULA de pessoas usa -- ver `usePessoasBuscaveis`. */
+  listarMembrosDoGrupo: vi.fn(),
   listarMembrosDoSubgrupo: vi.fn(),
   detalhesTarefa: vi.fn(),
   atualizarTarefa: vi.fn(),
@@ -93,6 +95,11 @@ beforeEach(() => {
   // A listagem do quadro NÃO contém a tarefa do link -- é o ponto.
   mocks.listarTarefas.mockResolvedValue({ tarefas: [], total: 0, total_paginas: 0 });
   mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [] });
+  mocks.listarMembrosDoGrupo.mockResolvedValue({
+    membros: [{ email: "ana@x.com", apelido: "Ana" }],
+    total: 1,
+    total_paginas: 1,
+  });
   mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
   mocks.criarTarefa.mockResolvedValue({ tarefa_id: "nova" });
   mocks.detalhesTarefa.mockResolvedValue(TAREFA_DO_LINK);
@@ -462,5 +469,35 @@ describe("subgrupo sem quadro montado", () => {
 
     expect(await screen.findByRole("button", { name: /Nova tarefa/ })).toBeInTheDocument();
     expect(screen.queryByText(/ainda não tem quadro/)).not.toBeInTheDocument();
+  });
+
+  it("🔴 ESCONDE a lista de pessoas do FILTRO de quem é `user`", async () => {
+    /* `GET /grupos/membros` (o catálogo do GRUPO) tem piso `manager` e
+       responde 403 pra `user` -- e uma opção que falha é pior que uma
+       ausente.
+
+       ⚠️ NÃO confundir com `GET /subgrupos/{id}/membros`, que o teste acima
+       exercita: aquele é piso `user` de propósito, e é o que faz um `user`
+       conseguir ATRIBUIR tarefa. Aqui é só o FILTRO da barra, e a pílula
+       continua existindo -- "Todas as pessoas" e "Sem responsável" não
+       dependem do catálogo. */
+    const user = userEvent.setup();
+    mocks.papelAtende.mockReturnValue(false);
+    renderComProviders(<MemoryRouter><KanbanPage /></MemoryRouter>);
+    await screen.findByText("Todas as pessoas");
+
+    await user.click(screen.getByText("Todas as pessoas"));
+    expect(await screen.findByRole("option", { name: "Sem responsável" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Ana" })).not.toBeInTheDocument();
+  });
+
+  it("oferece a lista de pessoas no filtro pra manager+", async () => {
+    const user = userEvent.setup();
+    mocks.papelAtende.mockReturnValue(true);
+    renderComProviders(<MemoryRouter><KanbanPage /></MemoryRouter>);
+    await screen.findByText("Todas as pessoas");
+
+    await user.click(screen.getByText("Todas as pessoas"));
+    expect(await screen.findByRole("option", { name: "Ana" })).toBeInTheDocument();
   });
 });

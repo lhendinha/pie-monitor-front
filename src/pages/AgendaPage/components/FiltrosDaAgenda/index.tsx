@@ -12,6 +12,9 @@ interface FiltrosDaAgendaProps {
   subgrupos: OpcoesBuscaveis;
   /** Idem, pras pessoas. Só carrega quando a pílula abre. */
   pessoas: OpcoesBuscaveis;
+  /** Se a lista de PESSOAS entra na pílula -- ver `podeListarPessoas`.
+   * Quem é `user` fica com as opções que não dependem dela. */
+  mostrarPessoas: boolean;
   filtros: Filtros;
   onMudar: (parcial: Partial<Filtros>) => void;
 }
@@ -30,6 +33,7 @@ interface FiltrosDaAgendaProps {
 export default function FiltrosDaAgenda({
   subgrupos,
   pessoas,
+  mostrarPessoas,
   filtros,
   onMudar,
 }: FiltrosDaAgendaProps) {
@@ -107,19 +111,32 @@ export default function FiltrosDaAgenda({
         placeholder="Todas as pessoas"
         opcoes={[
           { value: "sem", label: "Sem responsável" },
-          ...comOpcaoEscolhida(
-            pessoas.opcoes,
-            filtros.pessoa === "todas" || filtros.pessoa === "sem" ? "" : filtros.pessoa,
-            filtros.pessoa,
-          ),
+          /* 🔴 A lista de PESSOAS só pra `manager`+.
+
+             `GET /grupos/membros` responde 403 pra quem é `user`, e uma opção
+             que falha é pior que uma ausente -- o princípio que
+             `podeDestruirDocumento` já escreve nesta base. Ver
+             `podeListarPessoas`.
+
+             ⚠️ A pílula continua existindo pra todo papel: "Todas as pessoas"
+             (o placeholder) e "Sem responsável" não dependem da lista. */
+          ...(mostrarPessoas
+            ? comOpcaoEscolhida(
+                pessoas.opcoes,
+                filtros.pessoa === "todas" || filtros.pessoa === "sem" ? "" : filtros.pessoa,
+                filtros.pessoa,
+              )
+            : []),
         ]}
         valor={filtros.pessoa === "todas" ? "" : filtros.pessoa}
         onMudar={(pessoa) => onMudar({ pessoa: pessoa || "todas" })}
         permitirLimpar
-        carregando={pessoas.carregando}
-        onBuscar={pessoas.buscar}
+        carregando={mostrarPessoas && pessoas.carregando}
+        /* Sem a lista não há o que buscar: a caixa de digitar prometeria um
+           resultado que nunca vem. */
+        onBuscar={mostrarPessoas ? pessoas.buscar : undefined}
         placeholderBusca="Buscar pessoa"
-        erro={pessoas.erro}
+        erro={mostrarPessoas && pessoas.erro}
         onTentarDeNovo={pessoas.tentarDeNovo}
       />
     </Flex>

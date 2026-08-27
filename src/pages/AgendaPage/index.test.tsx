@@ -612,4 +612,35 @@ describe("modo Atrasadas: o cartão 'Hoje' não pode afirmar o que não sabe", (
       await screen.findByText(/Em Atrasadas a lista traz só o passado/),
     ).toBeInTheDocument();
   });
+
+  it("🔴 ESCONDE a lista de pessoas de quem é `user`, e mantém 'Sem responsável'", async () => {
+    /* `GET /grupos/membros` tem piso `manager`: pra um `user` ela responde
+       403. Uma opção que falha é pior que uma ausente -- o princípio que
+       `podeDestruirDocumento` já escreve nesta base.
+
+       ⚠️ O par importa: escondendo a pílula INTEIRA, quem é `user` perderia
+       "Sem responsável", que não depende daquela rota e é filtro de verdade
+       (não é ausência de filtro, é filtro por ausência).
+
+       ⚠️ Procurado por ROLE: "Sem responsável" também aparece em cartões da
+       agenda, e buscar por texto casaria com os dois. */
+    const user = userEvent.setup();
+    mocks.papelAtende.mockReturnValue(false);
+    renderComProviders(<MemoryRouter><AgendaPage /></MemoryRouter>);
+    await screen.findByText("Todas as pessoas");
+
+    await user.click(screen.getByText("Todas as pessoas"));
+    expect(await screen.findByRole("option", { name: "Sem responsável" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Ana" })).not.toBeInTheDocument();
+  });
+
+  it("oferece a lista de pessoas pra manager+", async () => {
+    const user = userEvent.setup();
+    mocks.papelAtende.mockReturnValue(true);
+    renderComProviders(<MemoryRouter><AgendaPage /></MemoryRouter>);
+    await screen.findByText("Todas as pessoas");
+
+    await user.click(screen.getByText("Todas as pessoas"));
+    expect(await screen.findByRole("option", { name: "Ana" })).toBeInTheDocument();
+  });
 });

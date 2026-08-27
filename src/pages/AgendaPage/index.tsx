@@ -35,7 +35,11 @@ import {
 } from "./periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros, PeriodoDaAgenda } from "./types";
 import type { OpcaoDeSelect, Tarefa } from "../../types";
-import { usePessoasBuscaveis, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import {
+  podeListarPessoas,
+  usePessoasBuscaveis,
+  useSubgruposBuscaveis,
+} from "../../hooks/useOpcoesBuscaveis";
 
 /** Agenda: as tarefas do escritório projetadas por data.
  *
@@ -177,6 +181,7 @@ export default function AgendaPage() {
       <FiltrosDaAgenda
         subgrupos={subgrupos}
         pessoas={pessoas}
+        mostrarPessoas={podeListarPessoas()}
         filtros={filtros}
         onMudar={(parcial) => setFiltros((atual) => ({ ...atual, ...parcial }))}
       />
