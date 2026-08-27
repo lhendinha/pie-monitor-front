@@ -1,8 +1,15 @@
 import {
   ALVO_ATENDIMENTO,
+  ALVO_DOCUMENTO,
   ALVO_PROCESSO,
   ALVO_TAREFA,
+  TIPO_ATENDIMENTO_ATRIBUIDO,
+  TIPO_ATENDIMENTO_DESATRIBUIDO,
   TIPO_ATENDIMENTO_STATUS,
+  TIPO_DOCUMENTO_ATRIBUIDO,
+  TIPO_DOCUMENTO_VINCULADO,
+  TIPO_PROCESSO_ATRIBUIDO,
+  TIPO_PROCESSO_DESATRIBUIDO,
   TIPO_LEMBRETE,
   TIPO_TAREFA_ATRIBUIDA,
   TIPO_SESSAO_ALTERADA,
@@ -42,6 +49,47 @@ export function frasePrincipal(n: Notificacao): string {
       // Sem autor de propósito -- foi o robô. O motivo ("Vence hoje") já
       // diz tudo, e um sujeito inventado só atrapalharia.
       return n.detalhe || "Lembrete de prazo";
+
+    /* --- "quem responde, recebe" ------------------------------------- */
+
+    /* ⚠️ "passou a responder", e não "foi atribuído a você": o que muda com
+       a régua nova é de quem é a RESPONSABILIDADE -- e é ela que decide quem
+       recebe os avisos daquele item daqui pra frente. "Atribuiu" descreveria
+       a mesma frase de tarefa, que é outra coisa (trabalho individual). */
+    case TIPO_PROCESSO_ATRIBUIDO:
+      return autor
+        ? `${autor} colocou você como responsável por um processo`
+        : "Você passou a responder por um processo";
+    case TIPO_ATENDIMENTO_ATRIBUIDO:
+      return autor
+        ? `${autor} colocou você como responsável por um atendimento`
+        : "Você passou a responder por um atendimento";
+    case TIPO_DOCUMENTO_ATRIBUIDO:
+      return autor
+        ? `${autor} colocou você como responsável por um documento`
+        : "Você passou a responder por um documento";
+
+    /* ⚠️ A frase diz o que a pessoa PERDE, não o que foi feito: ela deixa de
+       receber os avisos daquele processo, e é isso que precisa ficar claro --
+       "removeu você da lista" soaria administrativo e esconderia a
+       consequência. */
+    case TIPO_PROCESSO_DESATRIBUIDO:
+      return autor
+        ? `${autor} tirou você dos responsáveis por um processo`
+        : "Você não responde mais por um processo";
+    case TIPO_ATENDIMENTO_DESATRIBUIDO:
+      return autor
+        ? `${autor} tirou você dos responsáveis por um atendimento`
+        : "Você não responde mais por um atendimento";
+
+    case TIPO_DOCUMENTO_VINCULADO:
+      /* ⚠️ "um documento", no singular, mesmo quando foram doze: o servidor
+         SUPRIME os repetidos por janela em vez de agrupar, então este aviso
+         representa um ou vários. A contagem exata está na aba Documentos,
+         que é pra onde ele leva. */
+      return autor
+        ? `${autor} anexou um documento`
+        : "Um documento foi anexado";
     default:
       return n.titulo || "Notificação";
   }
@@ -72,6 +120,8 @@ export function destinoDaNotificacao(n: Notificacao): string | null {
       return n.subgrupo_id ? `/atendimentos/${n.subgrupo_id}/${n.alvo_id}` : null;
     case ALVO_PROCESSO:
       return n.subgrupo_id ? `/processos/${n.subgrupo_id}/${n.alvo_id}` : null;
+    case ALVO_DOCUMENTO:
+      return n.subgrupo_id ? `/documentos/${n.subgrupo_id}/${n.alvo_id}` : null;
     default:
       return null;
   }

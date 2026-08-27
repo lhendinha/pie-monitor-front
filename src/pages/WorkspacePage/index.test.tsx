@@ -143,6 +143,7 @@ describe("cada número leva à lista que o gerou", () => {
         <Routes>
           <Route path="/" element={<WorkspacePage />} />
           <Route path="/atendimentos" element={<Destino />} />
+          <Route path="/processos" element={<Destino />} />
           <Route path="/agenda" element={<Destino />} />
           <Route path="/historico" element={<Destino />} />
         </Routes>
@@ -207,5 +208,26 @@ describe("cada número leva à lista que o gerou", () => {
     expect(await screen.findByTestId("destino")).toHaveTextContent(
       '/historico {"tipoEnvio":"","apenasComFalha":true}',
     );
+  });
+
+  it("🔴 as duas linhas de PRAZO abrem a lista filtrada por 'eu'", async () => {
+    /* O servidor conta OS MEUS nesses dois números desde 26/08/2026. Sem o
+       filtro no clique, o cartão diria 2 e a lista abriria 9 -- o defeito de
+       que `resumo_service.montar` já se protege: "o número do card não
+       bateria com a lista que o clique abre".
+
+       ⚠️ O valor que viaja é o SENTINELA (`__eu__`), não o e-mail: quem
+       traduz é `useFiltrosProcessos`, e mandar o e-mail daqui duplicaria essa
+       regra em duas telas. */
+    const user = userEvent.setup();
+    mocks.resumoDaAreaDeTrabalho.mockResolvedValue({ ...RESUMO, a_verificar_ate_hoje: 3 });
+    montarComDestino();
+
+    await user.click(await screen.findByText("A verificar até hoje"));
+
+    const destino = await screen.findByTestId("destino");
+    expect(destino).toHaveTextContent("/processos");
+    expect(destino).toHaveTextContent('"responsavelId":"__eu__"');
+    expect(destino).toHaveTextContent('"dataVerificarAte"');
   });
 });

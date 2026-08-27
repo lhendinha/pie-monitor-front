@@ -39,3 +39,63 @@ describe("notificação de sessão alterada", () => {
     expect(destinoDaNotificacao(BASE)).toBeNull();
   });
 });
+
+describe('os avisos de "quem responde, recebe" (26/08/2026)', () => {
+  const COM = (extra: Partial<typeof BASE>) => ({ ...BASE, autor: "bruno@x.com", autor_nome: "Bruno", ...extra });
+
+  it("diz que a pessoa passou a RESPONDER, não que recebeu uma tarefa", () => {
+    /* ⚠️ A escolha da frase é o ponto: o que muda com a régua nova é de quem
+       é a RESPONSABILIDADE, e é ela que decide quem recebe os avisos daquele
+       item daqui pra frente. "Atribuiu uma tarefa" é outra coisa -- trabalho
+       individual. */
+    expect(frasePrincipal(COM({ tipo: "processo_atribuido" }))).toBe(
+      "Bruno colocou você como responsável por um processo",
+    );
+    expect(frasePrincipal(COM({ tipo: "atendimento_atribuido" }))).toBe(
+      "Bruno colocou você como responsável por um atendimento",
+    );
+  });
+
+  it("no aviso de SAÍDA, a frase diz o que a pessoa perde", () => {
+    /* "Removeu você da lista" soaria administrativo e esconderia a
+       consequência: ela deixa de receber os avisos daquele processo. */
+    expect(frasePrincipal(COM({ tipo: "processo_desatribuido" }))).toBe(
+      "Bruno tirou você dos responsáveis por um processo",
+    );
+  });
+
+  it("sem autor, a frase continua fazendo sentido", () => {
+    /* O `autor` é opcional em todo tipo -- o lembrete vem do robô. Uma frase
+       que só funciona com sujeito quebraria o dia em que um aviso vier sem
+       ele. */
+    expect(frasePrincipal({ ...BASE, tipo: "processo_atribuido" })).toBe(
+      "Você passou a responder por um processo",
+    );
+  });
+
+  it('documento vinculado fala no SINGULAR mesmo quando foram vários', () => {
+    /* O servidor SUPRIME os repetidos por janela em vez de agrupar (o
+       repositório não tem atualizar, e o Stream publica só INSERT -- um
+       agrupamento por update não chegaria ao sino). Então este aviso
+       representa um OU vários, e a contagem exata está na aba pra onde ele
+       leva. */
+    expect(frasePrincipal(COM({ tipo: "documento_vinculado" }))).toBe(
+      "Bruno anexou um documento",
+    );
+  });
+
+  it("o alvo `documento` leva pra tela do documento", () => {
+    expect(
+      destinoDaNotificacao({ ...BASE, alvo_tipo: "documento", alvo_id: "doc1", subgrupo_id: "sg1" }),
+    ).toBe("/documentos/sg1/doc1");
+  });
+
+  it("🔴 tipo e alvo DESCONHECIDOS degradam sem quebrar -- é o que deixa a API subir antes", () => {
+    /* A ordem do plano é API primeiro. Enquanto o front não subir, ele vai
+       receber tipos que não conhece: a frase cai no título cru (o aviso
+       aparece) e a linha não vira link (em vez de levar a lugar nenhum). */
+    const futuro = { ...BASE, tipo: "coisa_que_ainda_nao_existe", titulo: "Algo aconteceu" };
+    expect(frasePrincipal(futuro)).toBe("Algo aconteceu");
+    expect(destinoDaNotificacao({ ...futuro, alvo_tipo: "coisa_nova", alvo_id: "x" })).toBeNull();
+  });
+});

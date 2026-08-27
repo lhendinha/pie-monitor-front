@@ -11,6 +11,7 @@ import { emDias, hojeISO } from "../../../../utils";
    defeito que esta rodada inteira existiu pra tirar. Coupling explícito e
    com uma fonte só é melhor que dois literais concordando por sorte. */
 import { STATUS_EM_ANDAMENTO } from "../../../AtendimentosPage/constants";
+import { RESPONSAVEL_EU } from "../../../ProcessosPage/constants";
 import { DIAS_DA_JANELA_RECENTE } from "../../../HistoricoPage/constants";
 import GrupoDeNumeros from "../GrupoDeNumeros";
 import type { NumeroDoResumo } from "../../types";
@@ -59,18 +60,32 @@ export default function ResumoRapido({
     navegar("/processos", { state: { filtros } });
   }
 
+  /** As duas linhas de PRAZO abrem a listagem já filtrada por "eu".
+   *
+   * 🔴 O servidor conta OS MEUS nesses dois números desde 26/08/2026 (a
+   * régua "eu seria avisado", que inclui os órfãos). Sem o filtro no clique,
+   * o cartão diria 2 e a lista abriria 9 -- exatamente o defeito de que
+   * `resumo_service.montar` já se protege: *"o número do card não bateria
+   * com a lista que o clique abre"*.
+   *
+   * ⚠️ `RESPONSAVEL_EU` é traduzido pro e-mail da sessão dentro de
+   * `useFiltrosProcessos`. Mandar o e-mail daqui duplicaria essa regra. */
+  function irParaMeusPrazos(filtros: Record<string, string>) {
+    irParaProcessos({ ...filtros, responsavelId: RESPONSAVEL_EU });
+  }
+
   const atencao: NumeroDoResumo[] = [
     {
       rotulo: "A verificar até hoje",
       valor: resumo?.a_verificar_ate_hoje ?? 0,
       tom: "bad",
-      ir: () => irParaProcessos({ dataVerificarAte: hojeISO() }),
+      ir: () => irParaMeusPrazos({ dataVerificarAte: hojeISO() }),
     },
     {
       rotulo: "Prazo final em até 7 dias",
       valor: resumo?.prazo_final_em_7_dias ?? 0,
       tom: "warn",
-      ir: () => irParaProcessos({ prazoFinalAte: emDias(7) }),
+      ir: () => irParaMeusPrazos({ prazoFinalAte: emDias(7) }),
     },
     {
       rotulo: "Tarefas atrasadas",

@@ -21,10 +21,35 @@ export const TIPO_LEMBRETE = "lembrete";
  * canal e antecipa a correção. */
 export const TIPO_SESSAO_ALTERADA = "sessao_alterada";
 
+/* --- "quem responde, recebe" (26/08/2026) ------------------------------- */
+
+/** Alguém passou a responder por um processo/atendimento/documento. */
+export const TIPO_PROCESSO_ATRIBUIDO = "processo_atribuido";
+export const TIPO_ATENDIMENTO_ATRIBUIDO = "atendimento_atribuido";
+export const TIPO_DOCUMENTO_ATRIBUIDO = "documento_atribuido";
+
+/** Alguém DEIXOU de responder, porque outra pessoa a tirou da lista.
+ *
+ * 🔴 É o simétrico da régua: se receber aviso passa a depender de estar na
+ * lista, sair dela é informação de quem saiu -- senão a pessoa deixa de ser
+ * avisada de um prazo sem nunca saber que deixou. É a única perda que a
+ * mudança introduz e que a listagem sozinha não denuncia (ela mostra o
+ * estado, não a mudança). */
+export const TIPO_PROCESSO_DESATRIBUIDO = "processo_desatribuido";
+export const TIPO_ATENDIMENTO_DESATRIBUIDO = "atendimento_desatribuido";
+
+/** Um documento foi anexado a algo pelo qual eu respondo.
+ *
+ * ⚠️ O ALVO é o processo/atendimento, não o documento: com vários anexos,
+ * apontar pra um deles seria escolher arbitrariamente. O aviso leva pra aba
+ * Documentos de lá. */
+export const TIPO_DOCUMENTO_VINCULADO = "documento_vinculado";
+
 /** Os alvos possíveis -- espelha `ALVO_*` do backend. */
 export const ALVO_TAREFA = "tarefa";
 export const ALVO_ATENDIMENTO = "atendimento";
 export const ALVO_PROCESSO = "processo";
+export const ALVO_DOCUMENTO = "documento";
 
 /** Largura do painel do sino. Estreito o bastante pra caber ao lado do
  * botão em telas médias, largo o bastante pra uma frase não quebrar em
