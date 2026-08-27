@@ -165,6 +165,21 @@ export interface PreviaDaImportacao {
   processos: ProcessoEncontrado[];
 }
 
+/** O que impede a busca por OAB de sair, e onde pintar o erro.
+ *
+ * ⚠️ **Carrega o CAMPO, não só a frase.** A primeira versão da tela decidia
+ * onde mostrar o erro por substring da mensagem ("contém OAB", "contém UF") --
+ * e "Selecione a UF da OAB" contém as duas. Amarrar posição de erro ao texto
+ * quebra no dia em que alguém melhora a frase.
+ *
+ * ⚠️ O nome diz **PorOab** porque aqui ele não tem o arquivo em volta para
+ * dizer de que busca se trata -- `ErroDaBusca` era claro em
+ * `utils/importacao` e fica vago no meio dos outros tipos.
+ */
+export type ErroDaBuscaPorOab =
+  | { campo: "numeroOab" | "ufOab" | "periodo"; mensagem: string }
+  | null;
+
 /** O que `POST /subgrupos/{id}/processos/importar` devolve.
  *
  * 🔴 **`ja_existiam` NÃO é falha**: alguém cadastrou pela tela entre a prévia

@@ -1,6 +1,6 @@
-import type { ProcessoEncontrado } from "../types";
+import type { ErroDaBuscaPorOab, ProcessoEncontrado } from "../types";
 
-/** O que impede a busca de sair, com a frase que a pessoa lê.
+/** O que impede a busca de sair.
  *
  * 🔴 **A UF sozinha não filtra nada** -- medido contra o PJe: mandar só ela é
  * o mesmo que mandar um parâmetro inventado, e a resposta vem com a base
@@ -15,15 +15,21 @@ export function erroDaBusca(
   ufOab: string,
   de: string,
   ate: string,
-): string {
-  if (!numeroOab.trim()) return "Informe o número da OAB";
-  if (!/^\d+$/.test(numeroOab.trim())) return "O número da OAB tem só dígitos";
-  if (!ufOab) return "Selecione a UF da OAB";
+): ErroDaBuscaPorOab {
+  if (!numeroOab.trim()) {
+    return { campo: "numeroOab", mensagem: "Informe o número da OAB" };
+  }
+  if (!/^\d+$/.test(numeroOab.trim())) {
+    return { campo: "numeroOab", mensagem: "O número da OAB tem só dígitos" };
+  }
+  if (!ufOab) return { campo: "ufOab", mensagem: "Selecione a UF da OAB" };
   /* 🔴 A única regra desta tela sem precedente no projeto: nenhum lugar da
    * API compara duas datas. Cada uma está certa -- errada é a ordem, e por
    * isso a frase não fala em "data inválida". */
-  if (de && ate && de > ate) return "A data inicial não pode ser posterior à final";
-  return "";
+  if (de && ate && de > ate) {
+    return { campo: "periodo", mensagem: "A data inicial não pode ser posterior à final" };
+  }
+  return null;
 }
 
 /** Quais processos podem ser marcados: os que ainda não estão no subgrupo.

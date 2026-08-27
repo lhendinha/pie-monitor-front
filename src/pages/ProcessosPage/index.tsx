@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { Box } from "@chakra-ui/react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { listarProcessos } from "../../services";
+import { papelAtende } from "../../services/auth";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import {
@@ -16,6 +18,7 @@ import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants";
 import CabecalhoProcessos from "./components/CabecalhoProcessos";
 import TabelaProcessos from "./components/TabelaProcessos";
+import ImportarPorOab from "./components/ImportarPorOab";
 import NovoProcessoForm from "./components/NovoProcessoForm";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
 import {
@@ -40,6 +43,12 @@ import type {
  */
 export default function ProcessosPage() {
   const [modalAberto, setModalAberto] = useState(false);
+  /** 🔴 A importação é uma TELA, não um modal.
+   *
+   * Ela tem três etapas, uma lista de até mil linhas e uma espera de dezenas
+   * de segundos -- um modal viraria uma caixa com rolagem própria dentro da
+   * página, e fechar por engano (Escape, clique fora) perderia a busca. */
+  const [importando, setImportando] = useState(false);
   const navegar = useNavigate();
   /** A Área de trabalho abre esta tela já filtrada -- clicar em "A verificar
    * até hoje" tem que mostrar exatamente os processos que geraram aquele
@@ -169,7 +178,22 @@ export default function ProcessosPage() {
         onRecarregarFases={apoio.recarregarFases}
         onRecarregarSituacoes={apoio.recarregarSituacoes}
         onNovoProcesso={() => setModalAberto(true)}
+        onImportarPorOab={
+          /* A mesma régua do servidor: piso `manager`. Mostrar o botão a quem
+             a API vai negar é o defeito que `FormularioCliente` já documenta. */
+          papelAtende("manager") ? () => setImportando(true) : undefined
+        }
       />
+
+      {importando && (
+        <Box mt="16px">
+          <ImportarPorOab
+            subgrupos={apoio.subgrupos}
+            onFechar={() => setImportando(false)}
+            onImportou={invalidarProcessos}
+          />
+        </Box>
+      )}
 
       {carregando ? (
         <Esqueleto />

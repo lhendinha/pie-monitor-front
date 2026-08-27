@@ -41,6 +41,10 @@ interface CabecalhoProcessosProps {
   onRecarregarFases?: () => void;
   onRecarregarSituacoes?: () => void;
   onNovoProcesso: () => void;
+  /** 🔴 Só `manager`+ importa em massa. Um erro custa 1 processo no cadastro
+   * individual e até 1.000 aqui, desfeitos um a um -- e mostrar um botão que
+   * a API vai negar é pior que não mostrar. */
+  onImportarPorOab?: () => void;
 }
 
 /** Cabeçalho da tela de Processos: título, ação, filtros e contagem.
@@ -71,6 +75,7 @@ export default function CabecalhoProcessos({
   onRecarregarFases,
   onRecarregarSituacoes,
   onNovoProcesso,
+  onImportarPorOab,
 }: CabecalhoProcessosProps) {
   return (
     <Box mb="14px">
@@ -84,17 +89,31 @@ export default function CabecalhoProcessos({
             Monitoramento automático de movimentações
           </Text>
         </Box>
-        <Button
-          bg="fg.brand"
-          color="white"
-          fontWeight="700"
-          px="18px"
-          flexShrink={0}
-          _hover={{ bg: "brand.dark" }}
-          onClick={onNovoProcesso}
-        >
-          + Novo processo
-        </Button>
+        <Flex gap="9px" flexShrink={0} flexWrap="wrap">
+          {/* ⚠️ Dois botões, não um menu: "Novo processo" é uso diário e
+              "Importar por OAB" se procura com intenção. Esconder a segunda
+              atrás de um clique a mais não ajudaria nenhuma das duas. */}
+          {onImportarPorOab && (
+            <Button
+              variant="outline"
+              fontWeight="700"
+              px="16px"
+              onClick={onImportarPorOab}
+            >
+              Importar por OAB
+            </Button>
+          )}
+          <Button
+            bg="fg.brand"
+            color="white"
+            fontWeight="700"
+            px="18px"
+            _hover={{ bg: "brand.dark" }}
+            onClick={onNovoProcesso}
+          >
+            + Novo processo
+          </Button>
+        </Flex>
       </Flex>
 
       <Wrap gap="10px" mb="10px">

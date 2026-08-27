@@ -14,29 +14,35 @@ function achado(numero: string, ja_existe = false): ProcessoEncontrado {
 
 describe("o que impede a busca de sair", () => {
   it("aceita o caminho comum", () => {
-    expect(erroDaBusca("123456", "RS", "", "")).toBe("");
+    expect(erroDaBusca("123456", "RS", "", "")).toBeNull();
   });
 
   it("exige o número da OAB", () => {
-    expect(erroDaBusca("", "RS", "", "")).toBe("Informe o número da OAB");
-    expect(erroDaBusca("   ", "RS", "", "")).toBe("Informe o número da OAB");
+    expect(erroDaBusca("", "RS", "", "")).toEqual({
+      campo: "numeroOab", mensagem: "Informe o número da OAB",
+    });
+    expect(erroDaBusca("   ", "RS", "", "")?.campo).toBe("numeroOab");
   });
 
   it("exige que o número seja só dígitos", () => {
-    expect(erroDaBusca("12A456", "RS", "", "")).toContain("só dígitos");
+    expect(erroDaBusca("12A456", "RS", "", "")?.mensagem).toContain("só dígitos");
   });
 
   it("🔴 exige a UF -- ela sozinha não filtra nada", () => {
     /* Medido contra o PJe: mandar só a UF é o mesmo que mandar um parâmetro
        inventado, e vem a base inteira. Aceitar essa combinação cadastraria
        processos de outra pessoa. */
-    expect(erroDaBusca("123456", "", "", "")).toBe("Selecione a UF da OAB");
+    const erro = erroDaBusca("123456", "", "", "");
+    expect(erro?.mensagem).toBe("Selecione a UF da OAB");
+    /* ⚠️ E o CAMPO é a UF, apesar de a frase citar as duas coisas -- é o que
+       a primeira versão errava ao decidir por substring. */
+    expect(erro?.campo).toBe("ufOab");
   });
 
   it("recusa período invertido", () => {
-    expect(erroDaBusca("123456", "RS", "2024-12-31", "2024-01-01")).toContain(
-      "não pode ser posterior",
-    );
+    const erro = erroDaBusca("123456", "RS", "2024-12-31", "2024-01-01");
+    expect(erro?.mensagem).toContain("não pode ser posterior");
+    expect(erro?.campo).toBe("periodo");
   });
 
   it.each([
@@ -45,14 +51,14 @@ describe("o que impede a busca de sair", () => {
     ["intervalo normal", "2024-01-01", "2024-12-31"],
     ["futuro", "2030-01-01", "2030-12-31"],
   ])("aceita %s", (_, de, ate) => {
-    expect(erroDaBusca("123456", "RS", de, ate)).toBe("");
+    expect(erroDaBusca("123456", "RS", de, ate)).toBeNull();
   });
 
   it("⚠️ data futura NÃO é erro", () => {
     /* Recusá-la inventaria uma regra para poupar a pessoa de um resultado
        vazio que a tela já sabe explicar -- e "de janeiro que vem" é um jeito
        legítimo de perguntar "tem algo novo?". */
-    expect(erroDaBusca("123456", "RS", "2099-01-01", "")).toBe("");
+    expect(erroDaBusca("123456", "RS", "2099-01-01", "")).toBeNull();
   });
 });
 
