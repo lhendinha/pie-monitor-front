@@ -1,6 +1,7 @@
 import { Box, Button, Flex, Heading, Text, Wrap } from "@chakra-ui/react";
 
 import { CampoDeBusca, MultiSelect, Select } from "../../../../components";
+import { RESPONSAVEL_EU, SEM_RESPONSAVEL } from "../../constants";
 import FiltroDatas from "../FiltroDatas";
 import { comOpcaoEscolhida } from "../../../../hooks/useOpcoesBuscaveis";
 import { contar } from "../../../../utils";
@@ -27,6 +28,10 @@ interface CabecalhoProcessosProps {
   /** A lista de clientes NÃO chega pronta: ela se completa por busca. Ver
    * `useClientesBuscaveis`. */
   clientes: OpcoesBuscaveis;
+  pessoas: OpcoesBuscaveis;
+  /** Se a lista de PESSOAS entra na pílula de responsável -- ver
+   * `podeListarPessoas`. Quem é `user` fica com as opções fixas. */
+  mostrarPessoas: boolean;
   fases: OpcaoProcesso[];
   situacoes: OpcaoProcesso[];
   /** Fase e situação vieram com a tela; se a busca delas falhou, o painel
@@ -55,6 +60,8 @@ export default function CabecalhoProcessos({
   busca,
   onBuscar,
   filtros,
+  pessoas,
+  mostrarPessoas,
   onMudarFiltro,
   clientes,
   fases,
@@ -147,6 +154,41 @@ export default function CabecalhoProcessos({
           permitirLimpar
           erro={clientes.erro}
           onTentarDeNovo={clientes.tentarDeNovo}
+        />
+        {/* ⚠️ **As opções fixas primeiro, a lista de pessoas depois.**
+            "Todos", "Meus" e "Sem responsável" funcionam pra QUALQUER papel;
+            a lista de pessoas vem de `GET /grupos/membros`, que tem piso
+            `manager` -- pra um `user` ela chega vazia (com o estado de erro
+            da pílula), e as três primeiras continuam servindo.
+
+            🔴 "Sem responsável" é opção de filtro de propósito: é o sintoma
+            de um item órfão, cujo aviso passou a ir pro subgrupo inteiro pelo
+            fallback. Sem um jeito de listar isso, ninguém entende por quê. */}
+        <Select
+          variante="chip"
+          placeholder="Todos os responsáveis"
+          opcoes={[
+            { value: RESPONSAVEL_EU, label: "Meus processos" },
+            { value: SEM_RESPONSAVEL, label: "Sem responsável" },
+            /* 🔴 A lista de PESSOAS só pra `manager`+.
+               `GET /grupos/membros` responde 403 pra `user`, e uma opção que
+               falha é pior que uma ausente. As duas de cima não dependem dela
+               e são as que respondem à pergunta do dia a dia -- por isso a
+               pílula continua existindo pra todo papel, só mais curta. */
+            ...(mostrarPessoas
+              ? comOpcaoEscolhida(pessoas.opcoes, filtros.responsavelId, "")
+              : []),
+          ]}
+          valor={filtros.responsavelId}
+          onMudar={(v) => onMudarFiltro({ responsavelId: v })}
+          carregando={mostrarPessoas && pessoas.carregando}
+          /* Sem a lista, não há o que buscar: a caixa de digitar sumiria
+             prometendo um resultado que nunca vem. */
+          onBuscar={mostrarPessoas ? pessoas.buscar : undefined}
+          placeholderBusca="Buscar pessoa"
+          permitirLimpar
+          erro={mostrarPessoas && pessoas.erro}
+          onTentarDeNovo={pessoas.tentarDeNovo}
         />
         <FiltroDatas
           dataVerificarAte={filtros.dataVerificarAte}

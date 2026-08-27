@@ -13,6 +13,11 @@ const mocks = vi.hoisted(() => ({
   listarClientes: vi.fn(),
   listarOpcoesProcesso: vi.fn(),
   detalhesProcesso: vi.fn(),
+  listarMembrosDoGrupo: vi.fn(),
+  /* A pílula de responsável decide o que oferecer pelo papel -- ver
+     `podeListarPessoas`. Mockado por teste. */
+  papelAtende: vi.fn(() => true),
+  getEmail: vi.fn(() => "eu@x.com"),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -50,6 +55,10 @@ beforeEach(() => {
     }),
   );
   mocks.detalhesProcesso.mockResolvedValue({ comunicacoes: [] });
+  mocks.listarMembrosDoGrupo.mockResolvedValue({
+    membros: [{ email: "colega@x.com", apelido: "Colega" }],
+  });
+  mocks.papelAtende.mockReturnValue(true);
 });
 
 describe("ProcessosPage", () => {
@@ -75,16 +84,17 @@ describe("ProcessosPage", () => {
        * `pagina`/`tamanhoPagina`. Era por isso que a suíte passava verde com
        * o defeito -- filtrar tornava inalcançável tudo além dos 10
        * primeiros, e o teste dizia que estava certo. */
-      expect(mocks.listarProcessos).toHaveBeenCalledWith({
-        busca: "cobrança de honorários",
-        clienteId: "",
-        faseIds: [],
-        situacaoIds: [],
-        dataVerificarAte: "",
-        prazoFinalAte: "",
-        pagina: 1,
-        tamanhoPagina: 10,
-      })
+      /* ⚠️ `objectContaining`, e não igualdade exata. A asserção literal
+       * quebrava a cada campo novo de filtro (`responsavelId` e
+       * `semResponsavel`, em 26/08/2026) -- e o que este teste afirma é que
+       * a PAGINAÇÃO sobrevive à busca, não quantos filtros existem. */
+      expect(mocks.listarProcessos).toHaveBeenCalledWith(
+        expect.objectContaining({
+          busca: "cobrança de honorários",
+          pagina: 1,
+          tamanhoPagina: 10,
+        }),
+      )
     );
   });
 
@@ -508,5 +518,85 @@ describe("coluna de cliente", () => {
     renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
 
     expect(await screen.findByText("cli-9")).toBeInTheDocument();
+  });
+
+  describe("pílula de responsável", () => {
+    /** As duas opções que NÃO dependem da lista do grupo.
+     *
+     * ⚠️ Procuradas por ROLE, não por texto: "Sem responsável" aparece
+     * também na COLUNA da tabela, como marca do item órfão. Buscar por texto
+     * casaria com os dois e o teste falharia por ambiguidade -- sem que nada
+     * estivesse errado. */
+    const FIXAS = ["Meus processos", "Sem responsável"];
+
+    const opcao = (nome: string) => screen.findByRole("option", { name: nome });
+
+    it("oferece as opções fixas E as pessoas pra manager+", async () => {
+      const user = userEvent.setup();
+      mocks.papelAtende.mockReturnValue(true);
+      renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+      await screen.findByText("Meu processo");
+
+      await user.click(screen.getByText("Todos os responsáveis"));
+      for (const rotulo of FIXAS) {
+        expect(await opcao(rotulo)).toBeInTheDocument();
+      }
+      expect(await opcao("Colega")).toBeInTheDocument();
+    });
+
+    it("🔴 ESCONDE a lista de pessoas de quem é `user`, e mantém as fixas", async () => {
+      /* `GET /grupos/membros` tem piso `manager`: pra um `user` ela responde
+         403. Uma opção que falha é pior que uma ausente -- é o princípio que
+         `podeDestruirDocumento` já escreve nesta base.
+   
+         ⚠️ O par importa: escondendo a pílula INTEIRA, quem é `user` perderia
+         "Meus processos" e "Sem responsável", que funcionam pra todo papel e
+         são as que respondem à pergunta do dia a dia. */
+      const user = userEvent.setup();
+      mocks.papelAtende.mockReturnValue(false);
+      renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+      await screen.findByText("Meu processo");
+
+      await user.click(screen.getByText("Todos os responsáveis"));
+      for (const rotulo of FIXAS) {
+        expect(await opcao(rotulo)).toBeInTheDocument();
+      }
+      expect(screen.queryByRole("option", { name: "Colega" })).not.toBeInTheDocument();
+    });
+
+    it("filtrar por 'Meus processos' manda o E-MAIL da sessão, não o rótulo", async () => {
+      /* "eu" é resolvido no FRONT: o servidor não precisa saber o que "eu"
+         significa. */
+      const user = userEvent.setup();
+      renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+      await screen.findByText("Meu processo");
+
+      await user.click(screen.getByText("Todos os responsáveis"));
+      await user.click(await opcao("Meus processos"));
+
+      await waitFor(() =>
+        expect(mocks.listarProcessos).toHaveBeenCalledWith(
+          expect.objectContaining({ responsavelId: "eu@x.com", semResponsavel: false }),
+        ),
+      );
+    });
+
+    it("🔴 'Sem responsável' vira o BOOLEANO, nunca `responsavelId` vazio", async () => {
+      /* `montarQuery` descarta valor vazio, e no servidor `""` já é "não
+         filtrar". Pedido como string vazia, o filtro não sairia daqui e a
+         tela mostraria a lista inteira parecendo filtrada. */
+      const user = userEvent.setup();
+      renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+      await screen.findByText("Meu processo");
+
+      await user.click(screen.getByText("Todos os responsáveis"));
+      await user.click(await opcao("Sem responsável"));
+
+      await waitFor(() =>
+        expect(mocks.listarProcessos).toHaveBeenCalledWith(
+          expect.objectContaining({ semResponsavel: true, responsavelId: "" }),
+        ),
+      );
+    });
   });
 });

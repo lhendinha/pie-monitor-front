@@ -18,7 +18,11 @@ import CabecalhoProcessos from "./components/CabecalhoProcessos";
 import TabelaProcessos from "./components/TabelaProcessos";
 import NovoProcessoForm from "./components/NovoProcessoForm";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
-import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import {
+  podeListarPessoas,
+  useClientesBuscaveis,
+  usePessoasBuscaveis,
+} from "../../hooks/useOpcoesBuscaveis";
 import { useFiltrosProcessos } from "./hooks/useFiltrosProcessos";
 import type { FiltrosProcessos } from "../../types";
 import type {
@@ -54,6 +58,13 @@ export default function ProcessosPage() {
   const apoio = useCatalogosDeProcesso();
   /** Não pede nada até a pílula abrir -- ver `useOpcoesBuscaveis`. */
   const clientes = useClientesBuscaveis();
+  /* ⚠️ `GET /grupos/membros` tem piso `manager`: pra um `user` esta lista
+     chega vazia, e a pílula cai no estado de erro. As três opções fixas
+     ("Todos", "Meus processos", "Sem responsável") não dependem dela e
+     continuam servindo -- que é o que faz o filtro ser útil pra todo papel.
+
+     Mesmo hook que Kanban e Agenda usam, pela mesma razão de consistência. */
+  const pessoas = usePessoasBuscaveis();
   const queryClient = useQueryClient();
 
   /** 🔴 A paginação vai SEMPRE, com ou sem filtro.
@@ -149,6 +160,8 @@ export default function ProcessosPage() {
         filtros={f.aplicados}
         onMudarFiltro={f.mudar}
         clientes={clientes}
+        pessoas={pessoas}
+        mostrarPessoas={podeListarPessoas()}
         fases={apoio.fases}
         situacoes={apoio.situacoes}
         erroNasFases={apoio.erroNasFases}

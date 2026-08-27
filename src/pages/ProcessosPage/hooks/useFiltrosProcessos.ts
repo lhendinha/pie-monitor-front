@@ -1,7 +1,8 @@
 import { useState } from "react";
 
 import { useValorComEspera } from "../../../hooks/useValorComEspera";
-import { FILTROS_PROCESSOS_VAZIOS } from "../constants";
+import { FILTROS_PROCESSOS_VAZIOS, RESPONSAVEL_EU, SEM_RESPONSAVEL } from "../constants";
+import { getEmail } from "../../../services";
 import { temFiltroAtivo } from "../../../services/api/processos";
 import type { FiltrosProcessos } from "../../../types";
 
@@ -42,6 +43,22 @@ export function useFiltrosProcessos(
      faria a mesma consulta virar duas entradas de cache (id com nome e id
      sem nome, que é o que chega pelo atalho da Área de trabalho) e faria
      `temFiltroAtivo` contar um filtro que não filtra nada. */
+  /* 🔴 UM campo na tela vira DOIS parâmetros na consulta.
+     A pílula guarda uma escolha só, mas "sem responsável" não pode viajar
+     como `responsavel_id=""`: `montarQuery` descarta valor vazio e o servidor
+     lê `""` como "não filtrar" -- o pedido nem sairia do navegador, e a tela
+     mostraria a lista inteira parecendo filtrada.
+
+     E "eu" é resolvido AQUI, no front: o servidor não precisa saber o que
+     "eu" significa. */
+  const escolhido = aplicados.responsavelId;
+  const semResponsavel = escolhido === SEM_RESPONSAVEL;
+  const responsavelId = semResponsavel
+    ? ""
+    : escolhido === RESPONSAVEL_EU
+      ? getEmail() ?? ""
+      : escolhido;
+
   const filtros = {
     busca,
     clienteId: aplicados.clienteId,
@@ -49,6 +66,8 @@ export function useFiltrosProcessos(
     situacaoIds: aplicados.situacaoIds,
     dataVerificarAte: aplicados.dataVerificarAte,
     prazoFinalAte: aplicados.prazoFinalAte,
+    responsavelId,
+    semResponsavel,
   };
 
   return {

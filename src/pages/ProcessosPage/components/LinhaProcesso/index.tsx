@@ -20,6 +20,22 @@ interface LinhaProcessoProps {
  * abrir processo nenhum -- e não há outro caminho, porque as ações saíram
  * da linha e foram pro detalhe.
  */
+/** O primeiro responsável, pelo apelido.
+ *
+ * ⚠️ Lê `responsaveis_nomes` PAREADO POR ÍNDICE com `responsaveis` -- é como
+ * o servidor devolve, e é por isso que ele nunca omite uma posição (cai pro
+ * próprio e-mail quando não há apelido). */
+function nomeDoResponsavel(p: Processo): string {
+  return p.responsaveis_nomes?.[0] ?? p.responsaveis?.[0] ?? "";
+}
+
+/** "+2" quando responde mais de uma pessoa. O nome de todos não cabe numa
+ * célula, e a lista completa está na tela do processo. */
+function restoDosResponsaveis(p: Processo): string | undefined {
+  const quantos = p.responsaveis?.length ?? 0;
+  return quantos > 1 ? `+${quantos - 1}` : undefined;
+}
+
 export default function LinhaProcesso({
   processo: p,
   subgrupoNome,
@@ -87,6 +103,19 @@ export default function LinhaProcesso({
           )
         }
         sub={(p.prazo_final && p.proxima_providencia) || undefined}
+      />
+      {/* 🔴 "Sem responsável" NÃO é um traço como as outras colunas vazias.
+          É o sintoma de um item órfão: o aviso dele passou a ir pro subgrupo
+          inteiro pelo fallback, e sem a marca ninguém entende por quê. */}
+      <CelulaComSub
+        principal={
+          nomeDoResponsavel(p) || (
+            <Text as="span" color="fg.subtle">
+              Sem responsável
+            </Text>
+          )
+        }
+        sub={restoDosResponsaveis(p)}
       />
     </Table.Row>
   );

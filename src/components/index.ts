@@ -25,6 +25,7 @@ export { PilulaDeFiltro } from "./PilulaDeFiltro";
 export { default as CartaoDeTabela } from "./CartaoDeTabela";
 export { default as CampoDeBusca } from "./CampoDeBusca";
 export { default as CampoDeClientes } from "./CampoDeClientes";
+export { CampoDeResponsaveis } from "./CampoDeResponsaveis";
 export { default as Cartao } from "./Cartao";
 export { default as Abas } from "./Abas";
 export { default as PainelDaAba } from "./PainelDaAba";

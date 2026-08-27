@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Campo,
   CampoDeClientes,
+  CampoDeResponsaveis,
   LinhaDeCampos,
   Select,
   SeletorData,
@@ -25,6 +26,16 @@ interface CamposProcessoProps {
    * serve pra etiqueta na tela de EDIÇÃO -- no cadastro não existe nada
    * escolhido ainda. */
   nomesDosClientes?: string[];
+  /** De qual subgrupo saem as opções de responsável.
+   *
+   * 🔴 Vem de FORA porque este componente nunca soube o subgrupo, e as duas
+   * telas o conhecem por caminhos diferentes: na edição ele vem do processo;
+   * na criação, de um seletor que vive no `NovoProcessoForm` -- fora daqui.
+   *
+   * Sem ele o campo de responsável listaria as pessoas erradas, ou nenhuma. */
+  subgrupoId: string;
+  /** Apelido de cada e-mail em `valores.responsaveis`, na MESMA ordem. */
+  nomesDosResponsaveis?: string[];
 }
 
 /** Campos opcionais compartilhados entre cadastro (`NovoProcessoForm`) e
@@ -47,6 +58,8 @@ export default function CamposProcesso({
   valores,
   onMudar,
   nomesDosClientes,
+  subgrupoId,
+  nomesDosResponsaveis,
 }: CamposProcessoProps) {
   /* Semeado uma vez, na montagem: depois quem manda é o próprio campo. Os
      dois arrays vêm pareados por índice do servidor (`cliente_nomes` cai pro
@@ -94,6 +107,16 @@ export default function CamposProcesso({
             setNomes(novosNomes);
             mudarCampo("clienteIds", ids);
           }}
+        />
+      </Campo>
+
+      <Campo rotulo="Responsáveis" para="responsaveis-processo">
+        <CampoDeResponsaveis
+          id="responsaveis-processo"
+          subgrupoId={subgrupoId}
+          valor={valores.responsaveis || []}
+          nomes={nomesDosResponsaveis}
+          onMudar={(emails) => mudarCampo("responsaveis", emails)}
         />
       </Campo>
 

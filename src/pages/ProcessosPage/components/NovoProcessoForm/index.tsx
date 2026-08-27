@@ -46,6 +46,25 @@ export default function NovoProcessoForm({
   const [numeroMascarado, setNumeroMascarado] = useState("");
   const [apelido, setApelido] = useState("");
   const [campos, setCampos] = useState<CamposOpcionaisProcesso>({});
+
+  /** Trocar de subgrupo joga fora o que era do subgrupo anterior.
+   *
+   * 🔴 O responsável precisa ser ZERADO -- `ModalDeTarefa` já documenta esse
+   * defeito com a razão: alguém do subgrupo antigo seguiria escolhido e o
+   * salvamento falharia na validação do servidor, num campo que a pessoa nem
+   * lembra de ter mexido.
+   *
+   * ⚠️ O cliente NÃO é zerado junto, e a diferença é o escopo: cliente é do
+   * GRUPO (a validação dele não olha subgrupo), responsável é do SUBGRUPO.
+   *
+   * ⚠️ E o default não é reposto aqui. Quem cria vira responsável no
+   * SERVIDOR, e só se for membro do subgrupo escolhido -- repor na tela
+   * exigiria replicar essa régua aqui, e ela já é a resposta que
+   * `GET /subgrupos/{id}/membros` dá. Lista vazia = o servidor decide. */
+  function trocarSubgrupo(novo: string) {
+    setSubgrupoId(novo);
+    setCampos((atuais) => ({ ...atuais, responsaveis: [] }));
+  }
   const toast = useToast();
 
   const numeroLimpo = apenasDigitos(numeroMascarado);
@@ -157,11 +176,11 @@ export default function NovoProcessoForm({
               label: s.nome,
             }))}
             valor={subgrupoId}
-            onMudar={setSubgrupoId}
+            onMudar={trocarSubgrupo}
           />
         </Campo>
 
-        <CamposProcesso valores={campos} onMudar={setCampos} />
+        <CamposProcesso valores={campos} onMudar={setCampos} subgrupoId={subgrupoId} />
       </form>
     </Modal>
   );

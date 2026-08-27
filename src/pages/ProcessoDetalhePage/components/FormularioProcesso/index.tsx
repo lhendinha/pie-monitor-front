@@ -110,6 +110,13 @@ export default function FormularioProcesso({
              processo: a busca só traz a primeira página, e o cliente
              escolhido meses atrás quase nunca está nela. */
           nomesDosClientes={processo.cliente_nomes}
+          /* Na edição o subgrupo vem do próprio processo -- não há seletor.
+             É a mesma prop com origem diferente, e quem monta decide. */
+          subgrupoId={processo.subgrupo_id}
+          /* Mesma razão de `nomesDosClientes`: sem isto, quem já é
+             responsável mas SAIU do subgrupo apareceria como e-mail cru --
+             ele não está na lista de membros. */
+          nomesDosResponsaveis={processo.responsaveis_nomes}
         />
       </Cartao>
     </form>

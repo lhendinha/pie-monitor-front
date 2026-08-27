@@ -16,13 +16,18 @@ export function temFiltroAtivo(f: FiltrosBuscaProcessos): boolean {
       f.faseIds?.length ||
       f.situacaoIds?.length ||
       f.dataVerificarAte ||
-      f.prazoFinalAte,
+      f.prazoFinalAte ||
+      f.responsavelId ||
+      f.semResponsavel,
   );
 }
 
 function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {
   return {
     cliente_ids: campos.clienteIds || [],
+    // Sempre presente. O servidor resolve o vazio (vira quem está criando,
+    // SE for membro do subgrupo) -- ver `responsaveis_na_criacao`.
+    responsaveis: campos.responsaveis || [],
     objeto_assunto: campos.objetoAssunto || "",
     proxima_providencia: campos.proximaProvidencia || "",
     data_verificar: campos.dataVerificar || "",
@@ -45,7 +50,10 @@ function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {
  * página". Os outros 30 eram inalcançáveis.
  */
 export function listarProcessos(opcoes: OpcoesListarProcessos = {}) {
-  const { pagina, tamanhoPagina, busca, clienteId, faseIds, situacaoIds, dataVerificarAte, prazoFinalAte } = opcoes;
+  const {
+    pagina, tamanhoPagina, busca, clienteId, faseIds, situacaoIds,
+    dataVerificarAte, prazoFinalAte, responsavelId, semResponsavel,
+  } = opcoes;
   return chamar("/processos", {
     query: {
       busca,
@@ -55,6 +63,16 @@ export function listarProcessos(opcoes: OpcoesListarProcessos = {}) {
       situacao_id: situacaoIds,
       data_verificar_ate: dataVerificarAte,
       prazo_final_ate: prazoFinalAte,
+      responsavel_id: responsavelId,
+      // 🔴 Booleano PRÓPRIO, e não um valor mágico dentro de `responsavel_id`.
+      //
+      // `montarQuery` descarta valor vazio, e no servidor `""` já significa
+      // "não filtrar". "Sem responsável" pedido como string vazia nem sairia
+      // daqui -- a tela mostraria a lista inteira parecendo filtrada.
+      //
+      // ⚠️ `undefined` quando falso, pelo mesmo motivo: `sem_responsavel=false`
+      // na URL seria ruído, e o servidor já trata a ausência como falso.
+      sem_responsavel: semResponsavel ? "true" : undefined,
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
     },

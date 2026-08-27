@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { PRIMEIRA_PAGINA_DE_OPCOES } from "../constants/busca";
 import { listarClientes, listarMembrosDoGrupo, listarSubgrupos } from "../services";
+import { papelAtende } from "../services";
 import { qk } from "../services/queryKeys";
 import type { OpcaoDeSelect } from "../types";
 import type {
@@ -137,6 +138,18 @@ export function useSubgruposBuscaveis(sempreLigada = false): OpcoesBuscaveis {
   );
 }
 
+/** As pessoas do grupo, pra escolher num filtro.
+ *
+ * 🔴 **`GET /grupos/membros` tem piso `manager`** -- pra quem é `user` esta
+ * lista responde 403. Quem oferece a pílula precisa **esconder a opção**, não
+ * mostrá-la quebrada: é o mesmo princípio que `podeDestruirDocumento` já
+ * escreve, *"não oferecer o que a API vai negar -- um controle que existe e
+ * falha em 403 é pior que um ausente, porque a pessoa tenta, espera, e recebe
+ * uma recusa que parece defeito"*.
+ *
+ * Use `podeListarPessoas()` pra decidir, e não uma checagem própria de papel
+ * espalhada por tela.
+ */
 export function usePessoasBuscaveis(): OpcoesBuscaveis {
   return useListaBuscavel<RespostaDeMembros>(
     (busca) => qk.membros({ ...PAGINA, busca }),
@@ -181,4 +194,17 @@ export function comOpcoesEscolhidas(
     .filter((v) => !presentes.has(v))
     .map((v) => ({ value: v, label: nomes[v] || v }));
   return faltantes.length ? [...faltantes, ...opcoes] : opcoes;
+}
+
+/** Se esta pessoa consegue listar o catálogo do grupo (`GET /grupos/membros`).
+ *
+ * Espelho do piso da rota, no idioma de `podeDestruirDocumento`: uma função
+ * pura, num lugar só, em vez de `papelAtende("manager")` repetido em cada
+ * tela que oferece a pílula.
+ *
+ * ⚠️ **Esconder não é a proteção** -- quem manda é a rota. É pra não oferecer
+ * o que ela vai negar.
+ */
+export function podeListarPessoas(): boolean {
+  return papelAtende("manager");
 }

@@ -53,6 +53,18 @@ export interface Processo {
    * servidor resolve pra página pedida (cai pro próprio id quando o cliente
    * não existe mais). Mesmo campo de `ComClientes`. */
   cliente_nomes?: string[];
+  /** Quem RESPONDE por este item -- e, por isso, quem recebe os avisos dele.
+   *
+   * ⚠️ **OPCIONAL no tipo, embora o servidor sempre devolva.** `Processo` e
+   * `Atendimento` aparecem em dezenas de objetos-literais nos testes, e nenhum
+   * deles tem a ver com responsável: tipar como obrigatório quebraria todos de
+   * uma vez. Opcional aqui, garantido no servidor. */
+  responsaveis?: string[];
+  /** Apelido de cada e-mail em `responsaveis`, NA MESMA ORDEM -- derivado,
+   * resolvido pelo servidor pra página pedida. Cai pro próprio e-mail quando
+   * a pessoa não tem apelido: sumir com a posição desalinharia os dois
+   * arrays, que a tela lê pareados por índice. */
+  responsaveis_nomes?: string[];
   objeto_assunto?: string | null;
   proxima_providencia?: string | null;
   data_verificar?: string | null;
@@ -120,6 +132,14 @@ export interface FiltrosProcessos {
   situacaoIds: string[];
   dataVerificarAte: string;
   prazoFinalAte: string;
+  /** E-mail de quem responde, ou `SEM_RESPONSAVEL` pros órfãos.
+   *
+   * 🔴 UM campo na tela, DOIS parâmetros na consulta. A pílula é uma escolha
+   * só ("todos / eu / fulano / sem responsável"), mas "sem responsável" não
+   * pode virar `responsavel_id=""`: `montarQuery` descarta vazio e o servidor
+   * lê `""` como "não filtrar" -- o pedido nem sairia do navegador. A
+   * tradução acontece em `useFiltrosProcessos`. */
+  responsavelId: string;
 }
 
 export interface Membro {
@@ -380,6 +400,10 @@ export interface Atendimento {
    * Opcional porque nem toda rota o devolve (o vínculo da tarefa, por
    * exemplo, não precisa). Ausente, quem mostra cai no id. */
   cliente_nomes?: string[];
+  /** Quem RESPONDE por este atendimento. Mesma forma e mesmas ressalvas de
+   * `Processo.responsaveis` -- ver lá. */
+  responsaveis?: string[];
+  responsaveis_nomes?: string[];
   processo_numero?: string | null;
   /** A listagem devolve o atendimento inteiro, registros inclusos -- é de
    * onde sai a prévia do último registro em cada linha. */
@@ -601,6 +625,18 @@ export interface FiltrosBuscaProcessos {
   situacaoIds?: string[];
   dataVerificarAte?: string;
   prazoFinalAte?: string;
+  /** E-mail de quem responde. "eu" é resolvido no FRONT (vira `getEmail()`):
+   * o servidor não precisa saber o que "eu" significa. */
+  responsavelId?: string;
+  /** Só os ÓRFÃOS -- os que caíram no fallback e avisam o subgrupo inteiro.
+   *
+   * 🔴 Campo próprio, e não `responsavelId: ""`. `montarQuery` descarta valor
+   * vazio, e no servidor `""` já é "não filtrar": pedido assim, o filtro nem
+   * sairia do navegador e a tela mostraria tudo parecendo filtrada.
+   *
+   * ⚠️ Mutuamente exclusivo com `responsavelId` -- mandar os dois é erro de
+   * front, e o servidor ignora este. */
+  semResponsavel?: boolean;
 }
 
 /** Campos novos do processo, todos opcionais -- mesmo conjunto usado no
@@ -608,6 +644,9 @@ export interface FiltrosBuscaProcessos {
  * `Opcionais` de propósito: evita colidir com o componente `CamposProcesso`. */
 export interface CamposOpcionaisProcesso {
   clienteIds?: string[];
+  /** Quem responde pelo processo. Vai como `responsaveis` no corpo -- ver
+   * `paraCorpoDeProcesso`. */
+  responsaveis?: string[];
   objetoAssunto?: string;
   proximaProvidencia?: string;
   dataVerificar?: string;
