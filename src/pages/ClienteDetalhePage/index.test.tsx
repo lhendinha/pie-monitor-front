@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,6 +54,20 @@ function montar(rota = "/clientes/c1") {
 }
 
 const url = () => screen.getByTestId("url").textContent ?? "";
+
+/** Faz `papelAtende` responder como o de verdade, respeitando a HIERARQUIA.
+ *
+ * 🔴 O `mockReturnValue(true/false)` do `beforeEach` devolve o MESMO booleano
+ * para qualquer mínimo pedido -- serve enquanto a tela consulta um papel só,
+ * e mente assim que ela consulta dois. Aqui são dois: `admin` pra excluir e
+ * `manager` pra editar, e um `manager` tem que dar false num e true no outro.
+ */
+function comPapelAte(papel: "user" | "manager" | "admin" | "super_admin") {
+  const hierarquia = ["user", "manager", "admin", "super_admin"];
+  mocks.papelAtende.mockImplementation(
+    (minimo: string) => hierarquia.indexOf(papel) >= hierarquia.indexOf(minimo),
+  );
+}
 
 /** O painel que a aba de nome `nome` comanda -- ver o gêmeo em
  * `ProcessoDetalhePage`: painel escondido tem nome acessível vazio, então
@@ -213,6 +227,83 @@ describe("ClienteDetalhePage", () => {
     await screen.findByLabelText(/Nome/);
 
     expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+  });
+
+  it("🔴 `user` vê o cadastro, mas não consegue editar -- a API recusa o PATCH", async () => {
+    /* `POST`/`PATCH /clientes` são `manager`; só o `GET` é `user`. Sem esta
+       guarda os campos vinham editáveis e o Salvar habilitado, e o 403 só
+       aparecia depois de a pessoa digitar tudo. */
+    comPapelAte("user");
+    montar();
+
+    expect(await screen.findByLabelText(/Nome/)).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/CPF\/CNPJ/)).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/Telefone/)).toHaveAttribute("readonly");
+    expect(screen.getByLabelText(/E-mail/)).toHaveAttribute("readonly");
+    expect(screen.queryByRole("button", { name: /Salvar/ })).not.toBeInTheDocument();
+  });
+
+  it("🔴 `manager` edita -- a guarda é `manager`, não `admin`", async () => {
+    /* O par que impede copiar o `podeExcluir` sem pensar: com
+       `papelAtende("admin")` no lugar de `manager`, este teste cai. */
+    comPapelAte("manager");
+    montar();
+
+    expect(await screen.findByLabelText(/Nome/)).not.toHaveAttribute("readonly");
+    expect(screen.getByRole("button", { name: /Salvar/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+  });
+
+  it("`user` continua VENDO o que está cadastrado -- e podendo copiar", async () => {
+    /* `readOnly`, não escondido nem desabilitado: o `GET` é `user`, então
+       ele tem direito ao dado. `disabled` apagaria o texto (3,26:1, medido
+       em Chrome) e ainda impediria selecionar pra copiar o telefone. */
+    comPapelAte("user");
+    montar();
+
+    expect(await screen.findByLabelText(/Nome/)).toHaveValue("Construtora Alfa");
+    expect(screen.getByLabelText(/Telefone/)).toHaveValue("(31) 98888-7777");
+  });
+
+  /** Submete o formulário direto no elemento.
+   *
+   * 🔴 Não vai por Enter no campo: com quatro campos e nenhum botão submit,
+   * o browser não faz submit implícito -- um teste por Enter passa COM e SEM
+   * a guarda, provando nada. */
+  async function submeterOFormulario() {
+    const formulario = (await screen.findByLabelText(/Nome/)).closest("form");
+    fireEvent.submit(formulario!);
+  }
+
+  it("`manager` submetendo o formulário salva -- prova que o instrumento aciona", async () => {
+    /* O par POSITIVO do teste abaixo, e ele existe por necessidade: sem
+       este, um `fireEvent.submit` que não acionasse nada faria o negativo
+       passar de graça. */
+    mocks.atualizarCliente.mockResolvedValue({});
+    comPapelAte("manager");
+    montar();
+
+    await submeterOFormulario();
+
+    await waitFor(() => expect(mocks.atualizarCliente).toHaveBeenCalled());
+  });
+
+  it("🔴 `user` submetendo o formulário NÃO salva -- esconder o botão é aviso, não guarda", async () => {
+    /* A diferença que o `readOnly` trouxe: campo `disabled` não participa do
+       formulário, `readOnly` participa. Some só o botão, então quem impede
+       de verdade é o `handleSubmit`. */
+    mocks.atualizarCliente.mockResolvedValue({});
+    comPapelAte("user");
+    montar();
+
+    await submeterOFormulario();
+
+    /* ⚠️ A espera é o que dá valor à asserção: `mutate()` chama a função por
+       fora do tick, então um `not.toHaveBeenCalled()` logo depois do submit
+       é verdadeiro mesmo SEM guarda nenhuma -- ele mede o relógio, não o
+       código. */
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(mocks.atualizarCliente).not.toHaveBeenCalled();
   });
 
   it("lista os processos vinculados", async () => {

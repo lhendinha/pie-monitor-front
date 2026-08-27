@@ -38,6 +38,10 @@ export default function ClienteDetalhePage() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
+  /* Dois papéis diferentes, e é assim no backend: `PATCH /clientes` é
+     `manager`, `DELETE` é `admin`. Um só booleano aqui deixaria um dos dois
+     mais frouxo ou mais rígido que a API. */
+  const podeEditar = papelAtende("manager");
   const podeExcluir = papelAtende("admin");
   const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
 
@@ -121,6 +125,7 @@ export default function ClienteDetalhePage() {
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="detalhes" ativa={aba}>
         <FormularioCliente
           cliente={query.data}
+          podeEditar={podeEditar}
           podeExcluir={podeExcluir}
           onSalvo={() => {
             queryClient.invalidateQueries({ queryKey: qk.detalheCliente(clienteId) });

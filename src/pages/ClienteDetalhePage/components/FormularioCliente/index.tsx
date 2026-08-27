@@ -11,6 +11,7 @@ import { TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
 
 interface FormularioClienteProps {
   cliente: Cliente;
+  podeEditar: boolean;
   podeExcluir: boolean;
   onSalvo: () => void;
   onRemover: () => void;
@@ -22,8 +23,29 @@ interface FormularioClienteProps {
  * Excluir só aparece pra `admin` -- é a mesma régua do backend, que recusa
  * a exclusão abaixo disso. Mostrar um botão que a API vai negar é pior que
  * não mostrar.
+ *
+ * 🔴 E EDITAR só pra `manager`+, pela mesma razão -- que este arquivo
+ * enunciava no parágrafo acima e não aplicava a si mesmo. `PATCH /clientes`
+ * é `manager`; os campos vinham habilitados e o "Salvar" clicável pra
+ * qualquer um, e o 403 só aparecia depois de a pessoa digitar tudo.
+ *
+ * ⚠️ Campos em `readOnly`, não escondidos nem desabilitados: `GET /clientes`
+ * é `user`, então quem não pode gravar ainda tem direito a VER o que está
+ * cadastrado -- e a copiar dali o telefone ou o e-mail, que é metade do
+ * motivo de abrir a ficha. O que some é o botão, que é o que promete uma
+ * ação impossível.
+ *
+ * 🔴 `readOnly` e não `disabled` porque `disabled` apaga o texto: medido em
+ * Chrome, o `opacity: 0.5` que o Chakra aplica deixa o valor em 3,26:1 de
+ * contraste sobre o branco -- abaixo dos 4,5:1 de texto normal. Travar a
+ * edição não pode custar a leitura, que é a única coisa que sobrou pra
+ * quem está vendo.
+ *
+ * 🔴 E por isso `handleSubmit` também confere: campo `readOnly` continua
+ * participando do formulário (o `disabled` não participava), então esconder
+ * o botão não basta como guarda -- só como aviso.
  */
-export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRemover }: FormularioClienteProps) {
+export default function FormularioCliente({ cliente, podeEditar, podeExcluir, onSalvo, onRemover }: FormularioClienteProps) {
   const [nome, setNome] = useState(cliente.nome);
   const [cpfCnpj, setCpfCnpj] = useState(mascararCpfCnpj(cliente.cpf_cnpj || ""));
   const [telefone, setTelefone] = useState(mascararTelefone(cliente.telefone || ""));
@@ -46,6 +68,7 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!podeEditar) return;
     salvarMutation.mutate();
   }
 
@@ -62,12 +85,14 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
               Excluir
             </Botao>
           )}
-          <Botao
-            type="submit"
-            disabled={salvarMutation.isPending || !nome.trim() || emailInvalido}
-          >
-            {salvarMutation.isPending ? "Salvando…" : "Salvar"}
-          </Botao>
+          {podeEditar && (
+            <Botao
+              type="submit"
+              disabled={salvarMutation.isPending || !nome.trim() || emailInvalido}
+            >
+              {salvarMutation.isPending ? "Salvando…" : "Salvar"}
+            </Botao>
+          )}
         </Flex>
       </Flex>
 
@@ -75,6 +100,7 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
         <Campo rotulo="Nome" para="nome-cliente-edicao" obrigatorio>
           <Input
             id="nome-cliente-edicao"
+            readOnly={!podeEditar}
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             maxLength={TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE}
@@ -84,6 +110,7 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
         <Campo rotulo="CPF/CNPJ (opcional)" para="cpf-cnpj-cliente-edicao">
           <Input
             id="cpf-cnpj-cliente-edicao"
+            readOnly={!podeEditar}
             value={cpfCnpj}
             onChange={(e) => setCpfCnpj(mascararCpfCnpj(e.target.value))}
             inputMode="numeric"
@@ -93,6 +120,7 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
         <Campo rotulo="Telefone (opcional)" para="telefone-cliente-edicao">
           <Input
             id="telefone-cliente-edicao"
+            readOnly={!podeEditar}
             value={telefone}
             onChange={(e) => setTelefone(mascararTelefone(e.target.value))}
             inputMode="numeric"
@@ -106,6 +134,7 @@ export default function FormularioCliente({ cliente, podeExcluir, onSalvo, onRem
         >
           <Input
             id="email-cliente-edicao"
+            readOnly={!podeEditar}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
