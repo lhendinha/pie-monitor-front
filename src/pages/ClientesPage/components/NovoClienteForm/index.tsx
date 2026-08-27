@@ -2,11 +2,12 @@ import { Input } from "@chakra-ui/react";
 import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { Botao, Campo, Modal, RodapeDeAcoes, useToast } from "../../../../components";
+import { Botao, Campo, CamposDeEndereco, Modal, RodapeDeAcoes, useToast } from "../../../../components";
 import { criarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
-import { TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
+import { ENDERECO_VAZIO, TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
+import type { EnderecoDoCliente } from "../../../../types";
 
 interface NovoClienteFormProps {
   onCadastrado: () => void;
@@ -25,6 +26,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
+  const [endereco, setEndereco] = useState<EnderecoDoCliente>(ENDERECO_VAZIO);
   const toast = useToast();
 
   // Só reclama de e-mail PREENCHIDO e malformado: o campo é opcional, e
@@ -41,6 +43,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
         cpfCnpj: apenasDigitos(cpfCnpj),
         telefone: apenasDigitos(telefone),
         email: email.trim(),
+        endereco,
       }),
     onSuccess: () => {
       // Todas as outras criações do sistema confirmam; estas duas não
@@ -119,6 +122,8 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
             onChange={(e) => setEmail(e.target.value)}
           />
         </Campo>
+
+        <CamposDeEndereco valores={endereco} onMudar={setEndereco} />
       </form>
     </Modal>
   );

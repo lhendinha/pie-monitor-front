@@ -147,6 +147,9 @@ describe("ClientesPage", () => {
         cpfCnpj: "12345678901",
         telefone: "31988887777",
         email: "",
+        // O bloco vai INTEIRO, mesmo em branco -- ver o gêmeo em
+        // `ClienteDetalhePage`.
+        endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" },
       }),
     );
   });

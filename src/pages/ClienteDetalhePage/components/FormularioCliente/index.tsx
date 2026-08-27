@@ -2,11 +2,11 @@ import { Flex, Heading, Input } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { Botao, Campo, Cartao, IconeLixeira, useToast } from "../../../../components";
+import { Botao, Campo, CamposDeEndereco, Cartao, IconeLixeira, useToast } from "../../../../components";
 import { atualizarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
-import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
-import type { Cliente } from "../../../../types";
+import { apenasDigitos, emailValido, mascararCep, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
+import type { Cliente, EnderecoDoCliente } from "../../../../types";
 import { TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
 
 interface FormularioClienteProps {
@@ -50,6 +50,17 @@ export default function FormularioCliente({ cliente, podeEditar, podeExcluir, on
   const [cpfCnpj, setCpfCnpj] = useState(mascararCpfCnpj(cliente.cpf_cnpj || ""));
   const [telefone, setTelefone] = useState(mascararTelefone(cliente.telefone || ""));
   const [email, setEmail] = useState(cliente.email || "");
+  /* `?? ""` em cada um: a API manda `null` pro que não foi preenchido, e um
+     `<input>` controlado com `null` vira não-controlado. */
+  const [endereco, setEndereco] = useState<EnderecoDoCliente>({
+    cep: mascararCep(cliente.cep ?? ""),
+    logradouro: cliente.logradouro ?? "",
+    numero: cliente.numero ?? "",
+    complemento: cliente.complemento ?? "",
+    bairro: cliente.bairro ?? "",
+    cidade: cliente.cidade ?? "",
+    uf: cliente.uf ?? "",
+  });
   const toast = useToast();
 
   const emailInvalido = email.trim() !== "" && !emailValido(email);
@@ -61,6 +72,7 @@ export default function FormularioCliente({ cliente, podeEditar, podeExcluir, on
         cpfCnpj: apenasDigitos(cpfCnpj),
         telefone: apenasDigitos(telefone),
         email: email.trim(),
+        endereco,
       }),
     onSuccess: onSalvo,
     onError: (err) => toastErroMutation(toast, err, "Não foi possível atualizar o cliente."),
@@ -140,6 +152,13 @@ export default function FormularioCliente({ cliente, podeEditar, podeExcluir, on
             onChange={(e) => setEmail(e.target.value)}
           />
         </Campo>
+
+        <CamposDeEndereco
+          valores={endereco}
+          onMudar={setEndereco}
+          sufixoDoId="-edicao"
+          somenteLeitura={!podeEditar}
+        />
       </Cartao>
     </form>
   );

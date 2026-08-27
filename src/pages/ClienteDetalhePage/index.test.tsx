@@ -140,6 +140,10 @@ describe("ClienteDetalhePage", () => {
         cpfCnpj: "12345678000195",
         telefone: "31988887777",
         email: "contato@alfa.test",
+        // O bloco vai INTEIRO, mesmo vazio: no PATCH, campo omitido
+        // significa "não toca" -- é o que faz esvaziar um campo de endereço
+        // realmente esvaziá-lo.
+        endereco: { cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" },
       }),
     );
   });

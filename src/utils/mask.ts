@@ -53,3 +53,15 @@ export function mascararTelefone(valorComOuSemMascara: string | null | undefined
   if (d.length > 2 + prefixoTamanho) out += "-" + d.slice(2 + prefixoTamanho, 11);
   return out;
 }
+
+/**
+ * CEP progressivamente: `30130010` -> `30130-010`.
+ *
+ * ⚠️ O que fica GRAVADO são só os dígitos, como `cpf_cnpj` e `telefone` --
+ * a máscara é exibição, e quem envia aplica `apenasDigitos` antes.
+ */
+export function mascararCep(valorComOuSemMascara: string | null | undefined): string {
+  const d = apenasDigitos(valorComOuSemMascara).slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}

@@ -19,6 +19,7 @@ export { default as Botao } from "./Botao";
 export { default as Campo } from "./Campo";
 export { default as CampoDeLeitura } from "./CampoDeLeitura";
 export { default as LinhaDeCampos } from "./LinhaDeCampos";
+export { default as CamposDeEndereco } from "./CamposDeEndereco";
 export { default as RodapeDeAcoes } from "./RodapeDeAcoes";
 export { default as RodapeDeFiltro } from "./RodapeDeFiltro";
 export { PilulaDeFiltro } from "./PilulaDeFiltro";

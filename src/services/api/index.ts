@@ -5,6 +5,7 @@ export * from "./processos";
 export * from "./convites";
 export * from "./historico";
 export * from "./grupos";
+export * from "./cep";
 export * from "./clientes";
 export * from "./opcoesProcesso";
 export * from "./tarefas";

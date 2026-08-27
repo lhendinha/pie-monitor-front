@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apenasDigitos, mascararCpfCnpj, mascararNumeroProcesso, mascararTelefone } from "./mask";
+import { apenasDigitos, mascararCep, mascararCpfCnpj, mascararNumeroProcesso, mascararTelefone } from "./mask";
 
 describe("apenasDigitos", () => {
   it("remove tudo que não é dígito", () => {
@@ -101,5 +101,37 @@ describe("mascararTelefone", () => {
   it("string vazia/nula vira string vazia", () => {
     expect(mascararTelefone("")).toBe("");
     expect(mascararTelefone(null)).toBe("");
+  });
+});
+
+describe("mascararCep", () => {
+  it("aplica a máscara completa em 8 dígitos", () => {
+    expect(mascararCep("30130010")).toBe("30130-010");
+  });
+
+  it("aplica a máscara progressivamente conforme a pessoa digita", () => {
+    expect(mascararCep("3")).toBe("3");
+    expect(mascararCep("30130")).toBe("30130");
+    expect(mascararCep("301300")).toBe("30130-0");
+    expect(mascararCep("30130010")).toBe("30130-010");
+  });
+
+  it("aceita entrada já mascarada (idempotente)", () => {
+    expect(mascararCep("30130-010")).toBe("30130-010");
+  });
+
+  it("limita a 8 dígitos mesmo com mais", () => {
+    expect(mascararCep("301300109999")).toBe("30130-010");
+  });
+
+  it("descarta o que não é dígito", () => {
+    expect(mascararCep("30.130-010")).toBe("30130-010");
+    expect(mascararCep("abc")).toBe("");
+  });
+
+  it("string vazia/nula vira string vazia", () => {
+    expect(mascararCep("")).toBe("");
+    expect(mascararCep(null)).toBe("");
+    expect(mascararCep(undefined)).toBe("");
   });
 });

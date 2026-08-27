@@ -1,17 +1,6 @@
+import type { CamposCliente, OpcoesListarClientes } from "../../types";
+import { corpoDoEndereco } from "../../utils";
 import { chamar } from "./client";
-
-interface CamposCliente {
-  nome: string;
-  cpfCnpj?: string;
-  telefone?: string;
-  email?: string;
-}
-
-interface OpcoesListarClientes {
-  pagina?: number;
-  tamanhoPagina?: number;
-  busca?: string;
-}
 
 /** GET /clientes -- paginado de verdade. `CamposProcesso` (dropdown de
  * Cliente no processo) pede `tamanhoPagina: 100` pra cobrir a lista
@@ -35,14 +24,22 @@ export function detalheCliente(clienteId: string) {
 export function criarCliente(campos: CamposCliente) {
   return chamar("/clientes", {
     method: "POST",
-    body: { nome: campos.nome, cpf_cnpj: campos.cpfCnpj || "", telefone: campos.telefone || "", email: campos.email || "" },
+    body: {
+      nome: campos.nome, cpf_cnpj: campos.cpfCnpj || "",
+      telefone: campos.telefone || "", email: campos.email || "",
+      ...corpoDoEndereco(campos.endereco),
+    },
   });
 }
 
 export function atualizarCliente(clienteId: string, campos: CamposCliente) {
   return chamar(`/clientes/${clienteId}`, {
     method: "PATCH",
-    body: { nome: campos.nome, cpf_cnpj: campos.cpfCnpj || "", telefone: campos.telefone || "", email: campos.email || "" },
+    body: {
+      nome: campos.nome, cpf_cnpj: campos.cpfCnpj || "",
+      telefone: campos.telefone || "", email: campos.email || "",
+      ...corpoDoEndereco(campos.endereco),
+    },
   });
 }
 
