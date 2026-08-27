@@ -42,6 +42,24 @@ via `?processo=&comunicacao=`) já implementados -- ver seção 3.
 
 ## 3) Decisões importantes já tomadas
 
+### `services/api/` tem SÓ as chamadas de API (27/08/2026)
+
+Nada de `interface`, `type` ou função auxiliar dentro de
+`src/services/api/*.ts`: ali entra só a função que fala com a API
+(`criarCliente`, `listarProcessos`, `lerConfiguracoesDoGrupo`). **Tipos vão
+para `types/`, auxiliares de transformação para `utils/`.**
+
+⚠️ O padrão anterior era o oposto -- há **15 interfaces locais em 12 arquivos**
+de serviço, e a medição disso chegou a ser usada como argumento para manter as
+coisas onde estavam. A decisão foi a inversa: o padrão existente é que está
+errado, e migra.
+
+`clientes.ts` e `cep.ts` já estão limpos (`CamposCliente` e
+`OpcoesListarClientes` foram para `types/`, `corpoDoEndereco` para
+`utils/endereco.ts`). Os outros migram conforme forem tocados -- **ao mexer num
+arquivo de lá, tire dele o que não for chamada de API**, mesmo que a tarefa não
+tenha criado aquilo.
+
 ### Toda mudança nasce com o teste que a cobre (26/08/2026)
 
 **Regra**: nenhuma mudança ou adição -- componente, campo, filtro, correção --
@@ -1934,3 +1952,129 @@ para um botão que ele não tem.
 ⚠️ **"Nova tarefa" também some.** Sem coluna não há onde a tarefa cair: o modal
 abriria, `colunaEscolhida` ficaria vazia e "Salvar" nasceria travado — um
 formulário inteiro que não conclui.
+
+## Endereço do cliente, e o botão de tarefa nos detalhes (27/08/2026)
+
+Duas entregas independentes, e um defeito de permissão que estava no caminho.
+
+### O passo 0: o formulário de cliente era editável para quem não pode salvar
+
+`ClienteDetalhePage` renderizava `FormularioCliente` **sem guarda de papel
+nenhuma**. `PATCH /clientes` é `manager` -- um `user` abria a ficha, via os
+campos editáveis e o "Salvar" habilitado, digitava tudo e tomava **403** no
+clique.
+
+🔴 E o próprio arquivo enunciava a regra que quebrava: o docstring de
+`FormularioCliente` explica que Excluir só aparece para `admin` porque
+*"mostrar um botão que a API vai negar é pior que não mostrar"* -- três linhas
+acima do Salvar que fazia exatamente isso.
+
+**A forma escolhida foi `readOnly`, não `disabled` nem esconder**, e a razão é
+medida: `GET /clientes` é `user`, então quem não pode gravar ainda tem direito
+a **ver** o cadastro -- e a copiar dali o telefone ou o e-mail. Em Chrome, o
+`opacity: 0.5` que o Chakra aplica no `disabled` deixa o valor em **3,26:1** de
+contraste sobre o branco, abaixo dos 4,5:1 de texto normal. Travar a edição não
+pode custar a leitura, que é a única coisa que sobra para quem está vendo.
+
+🔴 **E `handleSubmit` confere também.** Campo `disabled` não participa do
+formulário; `readOnly` participa -- esconder o botão virou aviso, não guarda.
+
+⚠️ A régua tem **dois papéis diferentes** (editar é `manager`, excluir é
+`admin`), e isso segue o backend. Só `/clientes` e `/subgrupos` divergem assim;
+os outros sete recursos usam o mesmo papel para os dois verbos.
+
+### `useCep` não tem debounce, e a razão é aritmética
+
+A guarda é o **tamanho**: só consulta com 8 dígitos. Quem digita "30130010"
+passa por sete valores incompletos, e os sete têm menos de 8 dígitos -- a
+guarda os elimina sozinha, sem timer. **Um debounce não evitaria consulta
+nenhuma**; só atrasaria em 300ms a única que importa.
+
+⚠️ E `ESPERA_DA_BUSCA_MS` diz de si mesma que é dos **campos de busca**
+(Clientes, Processos, vínculo de tarefa), compartilhada para que a mesma ação
+não pareça mais lenta numa tela que na outra. CEP não é busca por texto: é
+campo de tamanho fixo, que se sabe completo.
+
+🔴 **A memória do último CEP é esquecida quando a consulta FALHA.** Sem isso a
+mensagem "tente de novo" era mentira: com a memória intacta, redigitar o mesmo
+CEP não disparava nada e não havia como tentar. E ela **não** é limpa quando o
+campo fica incompleto -- limpar ali fazia apagar um dígito e redigitar o mesmo
+consultar de novo, sobrescrevendo o que a pessoa tivesse corrigido à mão.
+
+### A consulta passa pela nossa API porque o CSP obriga
+
+O `connect-src` do `vercel.json` lista `'self'`, a Lambda URL, o WebSocket e o
+bucket. **`viacep.com.br` não está lá** -- chamar o provedor direto do
+navegador é bloqueado. Não é preferência de arquitetura: quem tentar
+"simplificar" por ali bate num erro de CSP em produção.
+
+⚠️ O roteiro em Chrome vigia isso, e a checagem é dos **provedores de CEP**,
+não de "qualquer host externo": as fontes do Google saem em toda página e o CSP
+as permite -- uma asserção de "nenhum host externo" acusa aquilo e não prova
+nada sobre o CEP.
+
+### O `Select` não é clearable, e a UF precisa da opção vazia
+
+`CamposProcesso` já escreve isso, e por isso Fase e Situação montam
+`[{value: "", label: "Nenhuma"}, ...]` à mão. Sem a opção explícita, **quem
+escolhesse uma UF nunca voltaria ao vazio** -- um estado que a API aceita e a
+tela não alcançaria.
+
+⚠️ As 27 siglas em `constants/endereco.ts` são **espelhadas à mão** de
+`api/src/shared/validacao.py`: não há canal para buscá-las
+(`GET /configuracoes` é `admin` e é config do grupo, não catálogo). Mesmo
+arranjo de `PRIMEIRA_PAGINA_DE_OPCOES`, com comentário cruzado nos dois lados.
+
+### `CamposDeEndereco` mora em `components/`, e não dentro de uma página
+
+Quem o usa são **duas** páginas. `CamposProcesso` -- de quem ele copia a forma
+(objeto de valores + `mudarCampo` tipado) -- vive em `ProcessosPage` e é
+importado por `ProcessoDetalhePage`, o que já é uma exceção à regra de
+estrutura e não vale repetir.
+
+⚠️ **Sem prefixo de `id`.** Uma auditoria chegou a exigir um, alegando colisão;
+conferido, o argumento não se sustenta: `/clientes` e `/clientes/:id` são rotas
+distintas e as duas telas nunca coexistem no documento -- e `CamposProcesso` já
+é compartilhado com `id` fixo.
+
+### O botão de tarefa vai no CABEÇALHO, e num grupo com o X
+
+`ModalDeMovimentacao` já tem `RodapeDeAcoes` e seria o lugar óbvio -- mas o
+rodapé dele é condicional de propósito (*"só quando há para onde ir;
+`RodapeDeAcoes` vazio desenharia uma faixa cinza no pé do modal sem nada
+dentro"*), e o botão lá o tornaria incondicional para todo mundo. Pior: sumiria
+justamente na maioria das movimentações, que nunca geraram e-mail.
+
+🔴 **A ação e o X vão num `Flex` próprio, não como irmãos do título.** Aquele
+`Flex` é `justify="space-between"` com **dois** filhos (título e X), e um
+terceiro faria a ação flutuar no MEIO do cabeçalho, longe do botão de fechar --
+o oposto do que foi pedido. O X continua sendo o último: é o alvo que se
+procura no canto.
+
+### `subgrupos_notificados` tem TRÊS estados, não dois
+
+O campo é `string[] | undefined`, e o próprio `types/index.ts` documenta o
+gêmeo com a medição junto: *"26/08/2026 sobre dado de produção: 9 de 73.
+Ausente em resposta de API anterior; quem lê trata `undefined` como 'não sei,
+não oferece'"*.
+
+Um `[0]` cru estouraria no ausente e escolheria errado no plural. Por isso o
+botão só aparece com **exatamente um** subgrupo -- `ModalDeTarefa` exige
+`subgrupoAtual` e semeia o seletor com ele, então não existe estado "nenhum
+subgrupo" para oferecer.
+
+### O que a verificação em Chrome pegou e os testes não
+
+- **Só o CEP dizia "(opcional)"** e os outros seis não diziam nada, do lado de
+  campos de contato que dizem um por um -- lia como se apenas o CEP fosse
+  dispensável. O "(opcional)" subiu para o `RotuloDeSecao` do bloco.
+- **Clicar em `#uf-cliente` não abre o painel**: o react-select põe esse id num
+  input escondido de **1px** de altura. Quem abre é o controle visível.
+- **Uma asserção que esperava para sempre**: das duas ocorrências do número
+  mascarado com o modal aberto, a primeira em ordem de DOM é o `<h1>` da página
+  atrás, **invisível sob o overlay**. `.first().waitFor({visible})` nunca
+  resolve; a busca tem que ser dentro do `[role=dialog]` certo.
+
+**A lição, repetida três vezes nesta entrega**: asserção logo depois de uma
+ação assíncrona mede o relógio, não o código. `not.toHaveBeenCalled()` sem
+espera é sempre verdadeiro, e um teste que nunca falhou não provou nada.

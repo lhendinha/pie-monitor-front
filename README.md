@@ -160,6 +160,45 @@ da própria são de qualquer membro. Ver `podeRemoverResponsavel`.
 cabeçalho, onde era um `Select` que salvava sozinho. A etiqueta continua lá,
 porque informa.
 
+## Endereço do cliente, com o CEP preenchendo o resto
+
+O cadastro de cliente tem um bloco **Endereço (opcional)**, nas duas telas --
+"Novo cliente" e a de detalhe. Digitar um CEP completo busca logradouro,
+bairro, cidade e UF, e joga o foco no **Número**, que é o campo que a consulta
+nunca traz.
+
+- A busca **só dispara com 8 dígitos** -- não há espera entre teclas, porque
+  não faz falta: os valores incompletos já não chegam a consultar.
+- **Nenhum campo fica travado** depois: endereço que o provedor erra existe
+  (imóvel novo, loteamento recente), e a pessoa precisa poder corrigir.
+- **CEP não encontrado** avisa e deixa preencher à mão -- é caminho normal, não
+  erro. Serviço fora do ar dá uma mensagem diferente, porque ali vale tentar de
+  novo.
+- O **Complemento não vem preenchido**, e isso é de propósito: o que os
+  provedores chamam de complemento é a faixa de numeração do CEP ("até 99999999
+  - lado ímpar"), não "sala 302".
+
+⚠️ Editar cliente é `manager`+: quem está abaixo disso **vê** o cadastro, em
+`readOnly`, sem o botão Salvar.
+
+## Adicionar tarefa a partir de um detalhe
+
+**Histórico → Detalhes do envio** e **Processo → Movimentações → Detalhes da
+movimentação** têm um botão "Adicionar tarefa" no cabeçalho, que abre o
+formulário **já vinculado** ao processo que está na tela. O modal de detalhe
+continua aberto atrás: a pessoa estava lendo aquilo.
+
+No Histórico o botão **não aparece** em três casos, e cada um por um motivo:
+
+| caso | por quê |
+|---|---|
+| lembrete de tarefa | não tem processo nenhum -- o vínculo gravaria lixo |
+| e-mail que notificou **vários** subgrupos | não há resposta certa, e escolher um faria a tarefa nascer no lugar errado |
+| registro sem `subgrupos_notificados` | dado antigo; "não sei" não vira palpite |
+
+Na movimentação isso não acontece: o subgrupo vem da URL, então é sempre o
+certo.
+
 ## Papéis e o que cada um vê
 
 4 abas no topo: Processos, Clientes, Histórico e **Grupo** -- essa última agrupa, como sub-navegação própria, Subgrupos/Membros/Convidar/Fases/Situações (cada sub-aba mantém o piso de papel de antes, só a organização visual mudou).
@@ -324,6 +363,8 @@ src/
     auth.ts                 -- login, refresh automático, papel/grupo do JWT
     api/client.ts           -- núcleo HTTP (chamar, ApiError)
     api/<area>.ts           -- um arquivo por área (processos, tarefas, membros…)
+                               🔴 SÓ as funções que chamam a API. Tipos vão pra
+                               `types/`, auxiliares pra `utils/` -- ver abaixo.
     queryClient.ts, queryKeys.ts
   theme/                    -- tokens e paletas de design
   hooks/                    -- hooks usados por mais de uma página
@@ -342,6 +383,19 @@ scripts/                    -- verificação visual em Chrome DE VERDADE, com ja
 vite.config.ts              -- Vite + React Compiler + vitest (jsdom)
 eslint.config.js            -- config enxuta, focada no que pega bug
 ```
+
+### 🔴 `services/api/` tem SÓ as chamadas de API
+
+Nada de `interface`, `type` ou função auxiliar nesses arquivos: só
+`criarCliente`, `listarProcessos`, `lerConfiguracoesDoGrupo`. Tipos vão para
+`types/`, auxiliares de transformação para `utils/`.
+
+⚠️ **A maior parte de `services/api/` ainda não segue isto** -- há 15
+interfaces locais espalhadas por 12 arquivos, de quando o padrão era outro.
+`clientes.ts` e `cep.ts` já estão limpos; os demais migram conforme forem
+tocados. Ao mexer num arquivo de lá, tire de dentro dele o que não for chamada
+de API, mesmo que a tarefa não tenha criado aquilo.
+
 
 **Onde um arquivo novo mora**, em quatro regras:
 
