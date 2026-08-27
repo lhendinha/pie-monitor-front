@@ -192,6 +192,39 @@ try {
   );
   // Fecha o diálogo -- a limpeza abaixo o reabre pelo caminho normal.
   await pagina.keyboard.press("Escape");
+
+  // ───────────────────────────── "quem responde, recebe" (26/08/2026)
+  console.log("\n— responsáveis, em produção —");
+  /* ⚠️ SÓ LEITURA. Estas checagens não criam nem alteram nada: mexer nos
+     responsáveis de um processo real mudaria quem recebe e-mail de um caso
+     de verdade. O que se prova aqui é que o campo migrado CHEGOU na tela e
+     que os filtros funcionam contra o dado real -- o comportamento já foi
+     provado no `yarn offline`. */
+  await pagina.goto(APP + "/processos");
+  await pagina.locator("table tbody tr").first().waitFor({ timeout: 25_000 });
+
+  const cabecalhos = (await pagina.locator("table thead th").allInnerTexts()).map((c) =>
+    c.toLocaleUpperCase("pt-BR"),
+  );
+  conferir(cabecalhos.includes("RESPONSÁVEL"), "a coluna Responsável está em produção");
+  conferir(
+    cabecalhos.includes("ÚLTIMA MOVIMENTAÇÃO"),
+    "e 'Última movimentação' continua lá -- a sétima foi ACRESCENTADA",
+  );
+
+  /* 🔴 A prova de que a MIGRAÇÃO pegou: nenhuma linha pode estar marcada como
+     órfã. Foram 10 processos e 1 atendimento preenchidos com `criado_por`. */
+  const linhas = await pagina.locator("table tbody tr").allInnerTexts();
+  conferir(
+    linhas.length > 0 && !linhas.some((l) => l.includes("Sem responsável")),
+    "🔴 a migração pegou: nenhum processo ficou órfão",
+    `${linhas.length} linha(s)`,
+  );
+
+  await pagina.getByText("Todos os responsáveis").click();
+  const semDono = await pagina.getByRole("option", { name: "Sem responsável" }).isVisible();
+  conferir(semDono, "a pílula de responsável abre com as opções");
+  await pagina.keyboard.press("Escape");
 } finally {
   // ───────────────────────────── limpeza, aconteça o que acontecer
   if (criado) {
