@@ -59,6 +59,10 @@ export function criarAtendimento(dados: {
   assunto: string;
   cliente_ids: string[];
   primeiro_registro: string;
+  /** Quem responde. Ausente ou vazio vira quem está criando -- resolvido no
+   * SERVIDOR, e só se essa pessoa for membro do subgrupo. É isso que faz a
+   * API poder subir antes do front. */
+  responsaveis?: string[];
   processo_numero?: string | null;
 }) {
   return chamar("/atendimentos", { method: "POST", body: { ...dados } });
@@ -72,6 +76,9 @@ export function atualizarAtendimento(
     assunto?: string;
     status?: string;
     cliente_ids?: string[];
+    /** ⚠️ Lista VAZIA é recusada pelo servidor: no PATCH quem edita está na
+     * tela e vê o campo, então esvaziá-lo é engano. Omitir é "não enviei". */
+    responsaveis?: string[];
     processo_numero?: string | null;
   },
 ) {

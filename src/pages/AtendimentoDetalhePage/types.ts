@@ -1,6 +1,6 @@
 import type { ABAS_DO_ATENDIMENTO } from "./constants";
 
-/** Qual das duas abas da tela.
+/** Qual das três abas da tela.
  *
  * Derivado da lista em `constants`, e não escrito à mão: acrescentar uma aba
  * lá passa a ser um erro de compilação em todo lugar que não a trata. Uma

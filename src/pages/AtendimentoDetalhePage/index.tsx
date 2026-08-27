@@ -19,10 +19,8 @@ import {
   IconeSeta,
   ModalDeConfirmacao,
   PainelDaAba,
-  Select,
   useToast,
 } from "../../components";
-import { STATUS_DE_ATENDIMENTO } from "../../constants";
 import {
   adicionarRegistro,
   atualizarAtendimento,
@@ -36,6 +34,7 @@ import { abaValida, contar, mascararNumeroProcesso, PARAM_DA_ABA } from "../../u
 import LinhaDoTempo from "./components/LinhaDoTempo";
 import NovoRegistro from "./components/NovoRegistro";
 import { ABAS_DO_ATENDIMENTO, GRUPO_DE_ABAS } from "./constants";
+import FormularioAtendimento from "./components/FormularioAtendimento";
 import type { AbaDoAtendimento } from "./types";
 import type { Atendimento } from "../../types";
 
@@ -92,13 +91,20 @@ export default function AtendimentoDetalhePage() {
     queryClient.invalidateQueries({ queryKey: ["atendimentos"] });
   }
 
-  const mudarStatus = useMutation({
-    mutationFn: (status: string) => atualizarAtendimento(subgrupoId, atendimentoId, { status }),
+  /** Salva a aba Detalhes: assunto, status e responsáveis, num PATCH só.
+   *
+   * 🔴 Substituiu `mudarStatus`, que salvava sozinho ao escolher no `Select`
+   * do cabeçalho. Um PATCH por campo faria o servidor comparar e notificar
+   * três vezes o que é uma edição só.
+   */
+  const salvarDetalhes = useMutation({
+    mutationFn: (campos: { assunto: string; status: string; responsaveis: string[] }) =>
+      atualizarAtendimento(subgrupoId, atendimentoId, campos),
     onSuccess: () => {
       invalidar();
-      toast.sucesso("Status atualizado.");
+      toast.sucesso("Atendimento atualizado.");
     },
-    onError: (err) => toastErroMutation(toast, err, "Não foi possível atualizar o status."),
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível salvar o atendimento."),
   });
 
   const registrar = useMutation({
@@ -191,19 +197,17 @@ export default function AtendimentoDetalhePage() {
           </Flex>
         </Box>
 
+        {/* 🔴 O `Select` de status SAIU daqui em 26/08/2026 e virou campo da
+            aba **Detalhes**.
+
+            Ele era um controle que salvava sozinho, sem "Salvar", plantado ao
+            lado do botão de excluir -- enquanto o assunto não tinha onde ser
+            editado. Status é campo, e campo se edita em formulário; a aba é o
+            que tornou isso possível.
+
+            A ETIQUETA de status continua no cabeçalho: ela informa, e é o que
+            se quer ver de relance ao abrir. */}
         <Flex gap="8px" align="flex-start" flexShrink="0">
-          <Box w="170px">
-            <Select
-              id="status-do-atendimento"
-              opcoes={STATUS_DE_ATENDIMENTO.map((nome) => ({ value: nome, label: nome }))}
-              valor={atendimento.status}
-              onMudar={(novo) => {
-                // Escolher o que já está posto só gera requisição à toa.
-                if (novo && novo !== atendimento.status) mudarStatus.mutate(novo);
-              }}
-              carregando={mudarStatus.isPending}
-            />
-          </Box>
           <BotaoQuadrado
             type="button"
             tom="perigo"
@@ -244,6 +248,14 @@ export default function AtendimentoDetalhePage() {
             />
           </Box>
         </Cartao>
+      </PainelDaAba>
+
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="detalhes" ativa={aba}>
+        <FormularioAtendimento
+          atendimento={atendimento}
+          salvando={salvarDetalhes.isPending}
+          onSalvar={(campos) => salvarDetalhes.mutate(campos)}
+        />
       </PainelDaAba>
 
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="documentos" ativa={aba}>

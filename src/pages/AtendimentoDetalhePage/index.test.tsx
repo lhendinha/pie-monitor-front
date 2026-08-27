@@ -187,15 +187,65 @@ describe("novo registro", () => {
   });
 });
 
-describe("status", () => {
-  it("escolher outro status salva", async () => {
+describe("aba Detalhes", () => {
+  /** 🔴 **Este bloco MUDOU em 26/08/2026, e a mudança é a feature.**
+   *
+   * O status era um `Select` solto no cabeçalho que salvava SOZINHO ao
+   * escolher -- um controle sem "Salvar", ao lado do botão de excluir,
+   * enquanto o assunto não tinha onde ser editado.
+   *
+   * Virou campo da aba Detalhes: status é campo, e campo se edita em
+   * formulário.
+   */
+  async function abrirDetalhes() {
     await montar();
-    await userEvent.click(screen.getByText("Em andamento", { selector: "div" }));
-    await userEvent.click(await screen.findByText("Fechado"));
+    await userEvent.click(screen.getByRole("tab", { name: "Detalhes" }));
+  }
+
+  it("salva assunto, status e responsáveis num PATCH só", async () => {
+    /* Um PATCH por campo faria o servidor comparar e notificar três vezes o
+       que é uma edição só. */
+    await abrirDetalhes();
+
+    await userEvent.click(screen.getByLabelText("Status"));
+    await userEvent.click(await screen.findByRole("option", { name: "Fechado" }));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() =>
-      expect(mocks.atualizarAtendimento).toHaveBeenCalledWith("s1", "a1", { status: "Fechado" }),
+      expect(mocks.atualizarAtendimento).toHaveBeenCalledWith("s1", "a1", {
+        assunto: "Revisão de contrato",
+        status: "Fechado",
+        responsaveis: [],
+      }),
     );
+  });
+
+  it("🔴 'Salvar' fica DESABILITADO enquanto nada mudou", async () => {
+    /* Sem isto, salvar um formulário intocado manda um PATCH que reenvia a
+       mesma lista de responsáveis. O servidor compara antes de notificar, mas
+       a requisição à toa continua sendo à toa. */
+    await abrirDetalhes();
+    expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+  });
+
+  it("o campo de status NÃO aparece com a aba Registros aberta", async () => {
+    /* O par negativo: sem ele, deixar o `Select` antigo no cabeçalho por
+       engano passaria -- e a tela teria dois jeitos de mudar a mesma coisa,
+       um deles salvando sozinho.
+
+       ⚠️ **`toBeVisible`, não `toBeInTheDocument`.** Os painéis vão MONTADOS
+       de propósito (o rascunho de `NovoRegistro` não pode ser descartado ao
+       trocar de aba), então o campo EXISTE no DOM mesmo escondido. A pergunta
+       certa é o que a pessoa vê. */
+    await montar();
+    expect(screen.getByLabelText("Status")).not.toBeVisible();
+  });
+
+  it("a ETIQUETA de status continua no cabeçalho", async () => {
+    /* Ela informa, e é o que se quer ver de relance ao abrir -- só o
+       CONTROLE mudou de lugar. */
+    await montar();
+    expect(screen.getByText("Em andamento", { selector: "span" })).toBeVisible();
   });
 });
 

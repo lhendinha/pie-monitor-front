@@ -233,6 +233,12 @@ describe("criar", () => {
       assunto: "Nova demanda",
       cliente_ids: ["c1"],
       primeiro_registro: "Cliente ligou hoje",
+      /* ⚠️ VAZIO de propósito, e não o e-mail de quem cria: o default é
+         resolvido no SERVIDOR (vira quem está criando, SE for membro do
+         subgrupo). Repor aqui exigiria replicar essa régua na tela -- e é
+         justamente o que faz o `manager` não-membro continuar conseguindo
+         cadastrar, num fluxo que já funcionava. */
+      responsaveis: [],
       processo_numero: null,
     });
   });

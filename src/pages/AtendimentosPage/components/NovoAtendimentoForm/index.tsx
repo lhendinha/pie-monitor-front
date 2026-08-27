@@ -6,6 +6,7 @@ import {
   Botao,
   Campo,
   CampoDeClientes,
+  CampoDeResponsaveis,
   Modal,
   RodapeDeAcoes,
   Select,
@@ -49,12 +50,27 @@ export default function NovoAtendimentoForm({
      pessoa quer, o primeiro da lista não finge saber mais do que sabe -- e
      o campo é editável. */
   const [subgrupoId, setSubgrupoId] = useState("");
+  const [responsaveis, setResponsaveis] = useState<string[]>([]);
   const [processo, setProcesso] = useState<ProcessoEscolhido | null>(null);
   const [registro, setRegistro] = useState("");
 
   /* ⚠️ `primeiraPagina`: `opcoes` encolhe enquanto a pessoa digita NESTE
      mesmo campo, e o padrão passaria a ser o primeiro resultado da busca. */
   const subgrupoEscolhido = subgrupoId || subgrupos.primeiraPagina[0]?.value || "";
+
+  /** Trocar de subgrupo joga fora quem era do subgrupo anterior.
+   *
+   * 🔴 O mesmo defeito que `ModalDeTarefa` documenta: sem zerar, alguém do
+   * subgrupo antigo seguiria escolhido e o salvamento falharia na validação
+   * do servidor, num campo que a pessoa nem lembra de ter mexido.
+   *
+   * ⚠️ Os CLIENTES não são zerados junto, e a diferença é o escopo: cliente
+   * é do GRUPO (a validação dele não olha subgrupo), responsável é do
+   * SUBGRUPO. */
+  function trocarSubgrupo(novo: string) {
+    setSubgrupoId(novo);
+    setResponsaveis([]);
+  }
 
   const salvar = useMutation({
     mutationFn: () =>
@@ -63,6 +79,11 @@ export default function NovoAtendimentoForm({
         assunto: assunto.trim(),
         cliente_ids: clientes,
         primeiro_registro: registro.trim(),
+        /* Vazio é resolvido no SERVIDOR: vira quem está criando, SE for
+           membro do subgrupo. Repor o default aqui exigiria replicar essa
+           régua na tela -- e ela já é a resposta que
+           `GET /subgrupos/{id}/membros` dá. */
+        responsaveis,
         processo_numero: processo?.numero ?? null,
       }),
     onSuccess: () => {
@@ -125,11 +146,20 @@ export default function NovoAtendimentoForm({
             id={`${prefixo}-subgrupo`}
             opcoes={subgrupos.opcoes}
             valor={subgrupoEscolhido}
-            onMudar={setSubgrupoId}
+            onMudar={trocarSubgrupo}
             carregando={subgrupos.carregandoPrimeiraVez}
             onBuscar={subgrupos.buscar}
             erro={subgrupos.erro}
             onTentarDeNovo={subgrupos.tentarDeNovo}
+          />
+        </Campo>
+
+        <Campo rotulo="Responsáveis" para={`${prefixo}-responsaveis`}>
+          <CampoDeResponsaveis
+            id={`${prefixo}-responsaveis`}
+            subgrupoId={subgrupoEscolhido}
+            valor={responsaveis}
+            onMudar={setResponsaveis}
           />
         </Campo>
 
