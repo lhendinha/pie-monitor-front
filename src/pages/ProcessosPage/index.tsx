@@ -186,7 +186,10 @@ export default function ProcessosPage() {
       />
 
       {importando && (
-        <Box mt="16px">
+        /* ⚠️ Respiro dos DOIS lados: só `mt` deixava o cartão colado na
+           tabela, e as duas coisas são blocos independentes -- a importação
+           em curso e a lista que já existe. */
+        <Box mt="16px" mb="20px">
           <ImportarPorOab
             subgrupos={apoio.subgrupos}
             onFechar={() => setImportando(false)}
