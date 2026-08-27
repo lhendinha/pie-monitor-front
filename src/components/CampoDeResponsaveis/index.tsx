@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { MultiSelect } from "../Select/MultiSelect";
 import { listarMembrosDoSubgrupo } from "../../services";
+import { podeRemoverResponsavel } from "./podeRemoverResponsavel";
 import { qk } from "../../services/queryKeys";
 import type { RespostaDeMembros } from "../../types/respostas";
 
@@ -22,7 +23,6 @@ interface CampoDeResponsaveisProps {
   nomes?: string[];
   onMudar: (emails: string[]) => void;
 }
-
 /** Quem RESPONDE por um processo ou atendimento -- e, por isso, quem recebe
  * os avisos dele.
  *
@@ -73,12 +73,21 @@ export function CampoDeResponsaveis({
       .map((email) => ({ value: email, label: nomePorEmail.get(email) ?? email })),
   ];
 
+  /* Quem é `user` não pode DESMARCAR colega -- só a si mesmo. Sem isto o
+     "x" existiria, o PATCH sairia e o servidor devolveria 400 num campo que
+     a pessoa achava que podia mexer. */
+  function aoMudar(novos: string[]) {
+    const tirados = valor.filter((e) => !novos.includes(e));
+    if (tirados.some((e) => !podeRemoverResponsavel(e))) return;
+    onMudar(novos);
+  }
+
   return (
     <MultiSelect
       id={id}
       opcoes={opcoes}
       selecionados={valor}
-      onMudar={onMudar}
+      onMudar={aoMudar}
       placeholder="Selecione quem responde"
       permitirBusca
       placeholderBusca="Buscar pessoa"
