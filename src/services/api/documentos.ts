@@ -1,14 +1,5 @@
 import { chamar } from "./client";
-import type { Documento, EnvioPreparado } from "../../types";
-
-interface FiltrosDeDocumentos {
-  busca?: string;
-  processoNumero?: string;
-  atendimentoId?: string;
-  clienteId?: string;
-  pagina?: number;
-  tamanhoPagina?: number;
-}
+import type { CamposDeDocumento, Documento, EnvioPreparado, FiltrosDeDocumentos } from "../../types";
 
 /** `GET /documentos`, escopado aos subgrupos que a pessoa enxerga.
  *
@@ -84,21 +75,6 @@ export async function enviarArquivo(envio: EnvioPreparado, arquivo: File): Promi
   }
 }
 
-interface DadosDeDocumento {
-  tipo: string;
-  titulo: string;
-  descricao?: string;
-  /** Só no tipo `arquivo`, e vem do `prepararEnvio` -- nunca montada aqui. */
-  chave?: string;
-  nome_arquivo?: string;
-  /** Só no tipo `link`. */
-  url?: string;
-  processo_numero?: string | null;
-  atendimento_id?: string | null;
-  cliente_ids?: string[];
-  responsavel_id?: string | null;
-}
-
 /** Passo 3 do arquivo, e passo único do link -- a mesma rota pros dois.
  *
  * 🔴 O registro nasce AQUI, depois de o arquivo já estar no armazenamento.
@@ -107,7 +83,7 @@ interface DadosDeDocumento {
  * tudo pra cobrir uma janela que só existe porque o registro foi criado cedo
  * demais.
  */
-export function criarDocumento(subgrupoId: string, dados: DadosDeDocumento) {
+export function criarDocumento(subgrupoId: string, dados: CamposDeDocumento) {
   return chamar(`/subgrupos/${subgrupoId}/documentos`, { method: "POST", body: { ...dados } });
 }
 

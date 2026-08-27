@@ -390,11 +390,13 @@ Nada de `interface`, `type` ou função auxiliar nesses arquivos: só
 `criarCliente`, `listarProcessos`, `lerConfiguracoesDoGrupo`. Tipos vão para
 `types/`, auxiliares de transformação para `utils/`.
 
-⚠️ **A maior parte de `services/api/` ainda não segue isto** -- há 15
-interfaces locais espalhadas por 12 arquivos, de quando o padrão era outro.
-`clientes.ts` e `cep.ts` já estão limpos; os demais migram conforme forem
-tocados. Ao mexer num arquivo de lá, tire de dentro dele o que não for chamada
-de API, mesmo que a tarefa não tenha criado aquilo.
+✅ **Os 18 arquivos de `services/api/` seguem isto** (migrados em 27/08/2026).
+Ao mexer num deles, mantenha assim: o que não for chamada de API sai.
+
+⚠️ E ao mover algo pra `types/`, `utils/` ou `constants/`, **confira o nome**.
+O que era claro dentro do arquivo de origem costuma ficar vago num barrel
+compartilhado -- `RECURSO` virou `CAMINHO_POR_TIPO_DE_OPCAO`, `Envelope` virou
+`EnvelopePaginado`, `DadosDeDocumento` virou `CamposDeDocumento`.
 
 
 **Onde um arquivo novo mora**, em quatro regras:

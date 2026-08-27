@@ -1,6 +1,7 @@
 import { API_URL } from "../../constants/ambiente";
 import { getAccessToken, renovarToken } from "../auth";
-import type { OpcoesRequisicao } from "../../types";
+import { montarQuery } from "../../utils/query";
+import type { OpcoesRequisicao, RespostaCruaDaApi } from "../../types";
 
 if (!API_URL) {
    
@@ -28,31 +29,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Valor de um parâmetro de query. Array vira **parâmetro repetido**
- * (`?fase_id=a&fase_id=b`), que é o formato que o FastAPI lê como lista --
- * usado pelos filtros de seleção múltipla. */
-export type ValorQuery = string | string[] | undefined;
-
-function montarQuery(query?: Record<string, ValorQuery>): string {
-  if (!query || Object.keys(query).length === 0) return "";
-  const params = new URLSearchParams();
-  Object.entries(query).forEach(([k, v]) => {
-    if (v === undefined || v === null || v === "") return;
-    // `append`, não `set`: `set` sobrescreveria e só o último valor da
-    // lista chegaria ao servidor -- filtro múltiplo virando filtro de um.
-    if (Array.isArray(v)) v.filter(Boolean).forEach((item) => params.append(k, item));
-    else params.set(k, v);
-  });
-  const qs = params.toString();
-  return qs ? `?${qs}` : "";
-}
-
-interface RespostaCrua {
-  ok: boolean;
-  status: number;
-  dados: any;
-}
-
 // Achado 9: sem isso, 2+ requisições que tomam 401 ao mesmo tempo disparavam
 // cada uma seu próprio POST /refresh -- como o refresh token é rotacionado no
 // backend, a 2ª chamada usava um token já invalidado pela 1ª, falhava, e
@@ -70,7 +46,7 @@ export function renovarTokenCompartilhado(): Promise<boolean> {
   return renovacaoEmAndamento;
 }
 
-async function requisicaoCrua(path: string, opcoes: OpcoesRequisicao = {}): Promise<RespostaCrua> {
+async function requisicaoCrua(path: string, opcoes: OpcoesRequisicao = {}): Promise<RespostaCruaDaApi> {
   const { method = "GET", body, query } = opcoes;
   const resposta = await fetch(`${API_URL}${path}${montarQuery(query)}`, {
     method,

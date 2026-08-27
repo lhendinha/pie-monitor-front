@@ -5,7 +5,7 @@ import {
   listarSubgrupos,
   listarTodosOsMembrosDoGrupo,
 } from "../services";
-import { todasAsPaginas } from "../services/api/paginacao";
+import { todasAsPaginas } from "../utils/paginacao";
 import { qk } from "../services/queryKeys";
 import type { Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from "../types";
 

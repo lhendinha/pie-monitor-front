@@ -1,5 +1,6 @@
 export * from "./ambiente";
 export * from "./endereco";
+export * from "./opcoesProcesso";
 export * from "./limites";
 export * from "./roles";
 export * from "./paginacao";

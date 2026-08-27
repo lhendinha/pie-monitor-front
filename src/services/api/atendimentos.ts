@@ -1,12 +1,5 @@
 import { chamar } from "./client";
-import type { ResumoDeAtendimento } from "../../types";
-
-interface OpcoesListarAtendimentos {
-  busca?: string;
-  status?: string;
-  pagina?: number;
-  tamanhoPagina?: number;
-}
+import type { OpcoesListarAtendimentos, ResumoDeAtendimento } from "../../types";
 
 /** `GET /atendimentos`, escopado aos subgrupos que a pessoa enxerga.
  *

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { listarProcessos } from "../../../services";
-import { todasAsPaginas } from "../../../services/api/paginacao";
+import { todasAsPaginas } from "../../../utils/paginacao";
 import { qk } from "../../../services/queryKeys";
 import type { Processo } from "../../../types";
 

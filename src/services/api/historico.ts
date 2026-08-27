@@ -1,22 +1,5 @@
 import { chamar } from "./client";
-
-interface OpcoesListarHistorico {
-  numeroProcesso?: string;
-  /** "movimentacao" ou "lembrete". Vazio traz os dois. */
-  tipoEnvio?: string;
-  /** Só os envios que falharam. Cruza os DOIS tipos -- falha de lembrete é
-   * falha igual. */
-  apenasComFalha?: boolean;
-  /** Recorta pelos últimos N dias. `0`/ausente = sem recorte.
-   *
-   * ⚠️ Manda DIAS, não uma data. Quem converte pra instante é o servidor,
-   * com a mesma função que o resumo usa -- mandar data daqui abriria espaço
-   * pra um dia de Brasília ser comparado com um instante em UTC, que é a
-   * fresta de 3h que a API acabou de fechar. */
-  dias?: number;
-  pagina?: number;
-  tamanhoPagina?: number;
-}
+import type { OpcoesListarHistorico } from "../../types";
 
 /** GET /historico -- depende de contexto de grupo (resolvido no backend
  * pelo próprio token) e pagina de verdade, igual /processos. */

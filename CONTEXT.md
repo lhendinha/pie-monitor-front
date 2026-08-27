@@ -49,16 +49,28 @@ Nada de `interface`, `type` ou função auxiliar dentro de
 (`criarCliente`, `listarProcessos`, `lerConfiguracoesDoGrupo`). **Tipos vão
 para `types/`, auxiliares de transformação para `utils/`.**
 
-⚠️ O padrão anterior era o oposto -- há **15 interfaces locais em 12 arquivos**
-de serviço, e a medição disso chegou a ser usada como argumento para manter as
-coisas onde estavam. A decisão foi a inversa: o padrão existente é que está
-errado, e migra.
+⚠️ O padrão anterior era o oposto -- eram **15 interfaces locais em 12
+arquivos** de serviço, e a medição disso chegou a ser usada como argumento para
+manter as coisas onde estavam. A decisão foi a inversa: o padrão existente é
+que estava errado.
 
-`clientes.ts` e `cep.ts` já estão limpos (`CamposCliente` e
-`OpcoesListarClientes` foram para `types/`, `corpoDoEndereco` para
-`utils/endereco.ts`). Os outros migram conforme forem tocados -- **ao mexer num
-arquivo de lá, tire dele o que não for chamada de API**, mesmo que a tarefa não
-tenha criado aquilo.
+✅ **Migrados os 18 arquivos em 27/08/2026.** `services/api/` tem só chamadas.
+`paginacao.ts` saiu de lá inteiro -- ele não chama API nenhuma, RECEBE uma
+função de busca e a chama em laço.
+
+🔴 **E o nome muda junto com o lugar.** O que era claro dentro do arquivo de
+origem fica vago num barrel compartilhado, e foi preciso renomear seis:
+
+| era | virou | por quê |
+|---|---|---|
+| `RECURSO` | `CAMINHO_POR_TIPO_DE_OPCAO` | uma constante `RECURSO` no barrel não diz de que recurso |
+| `Envelope` | `EnvelopePaginado` | envelope de quê? |
+| `RespostaCrua` | `RespostaCruaDaApi` | crua em relação a quê? |
+| `OpcoesDePagina` | `OpcoesDePaginacao` | é o par que o laço passa, não "uma página" |
+| `ValorQuery` | `ValorDeParametroDeQuery` | query de banco ou de URL? |
+| `DadosDeDocumento` | `CamposDeDocumento` | "dados de documento" não diz nada |
+| `OpcoesListarOpcoesProcesso` | `OpcoesListarFasesOuSituacoes` | trava-língua, e escondia o recurso |
+| `corpoCamposOpcionais` | `corpoDosCamposDeProcesso` | opcionais de qual coisa? |
 
 ### Toda mudança nasce com o teste que a cobre (26/08/2026)
 

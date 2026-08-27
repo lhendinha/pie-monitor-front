@@ -1,15 +1,9 @@
-import { TETO_POR_PAGINA } from "../../constants";
+/* 🔴 Mora em `utils/`, e não em `services/api/`: ele não chama API nenhuma
+   -- RECEBE uma função de busca e a chama em laço. Ali só entram as funções
+   que falam com a API. */
+import { TETO_POR_PAGINA } from "../constants";
 
-interface Envelope {
-  total: number;
-  total_paginas: number;
-  [chave: string]: unknown;
-}
-
-interface OpcoesDePagina {
-  pagina?: number;
-  tamanhoPagina?: number;
-}
+import type { EnvelopePaginado, OpcoesDePaginacao } from "../types";
 
 /** Junta TODAS as páginas de uma listagem paginada.
  *
@@ -23,13 +17,13 @@ interface OpcoesDePagina {
  * girar para sempre se as duas contas discordarem.
  */
 export async function todasAsPaginas<T>(
-  buscar: (opcoes: OpcoesDePagina) => Promise<unknown>,
+  buscar: (opcoes: OpcoesDePaginacao) => Promise<unknown>,
   chave: string,
 ): Promise<T[]> {
   const juntos: T[] = [];
   let pagina = 1;
   for (;;) {
-    const resposta = (await buscar({ pagina, tamanhoPagina: TETO_POR_PAGINA })) as Envelope;
+    const resposta = (await buscar({ pagina, tamanhoPagina: TETO_POR_PAGINA })) as EnvelopePaginado;
     const daPagina = (resposta[chave] as T[]) || [];
     juntos.push(...daPagina);
     if (

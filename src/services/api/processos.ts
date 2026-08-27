@@ -1,10 +1,6 @@
 import { chamar } from "./client";
-import type { CamposOpcionaisProcesso, FiltrosBuscaProcessos } from "../../types";
-
-interface OpcoesListarProcessos extends FiltrosBuscaProcessos {
-  pagina?: number;
-  tamanhoPagina?: number;
-}
+import { corpoDosCamposDeProcesso } from "../../utils/processos";
+import type { CamposOpcionaisProcesso, FiltrosBuscaProcessos, OpcoesListarProcessos } from "../../types";
 
 /** true se qualquer filtro estiver preenchido -- mesma checagem que o
  * backend usa (processos_router.py) pra decidir entre listagem paginada
@@ -20,22 +16,6 @@ export function temFiltroAtivo(f: FiltrosBuscaProcessos): boolean {
       f.responsavelId ||
       f.semResponsavel,
   );
-}
-
-function corpoCamposOpcionais(campos: CamposOpcionaisProcesso = {}) {
-  return {
-    cliente_ids: campos.clienteIds || [],
-    // Sempre presente. O servidor resolve o vazio (vira quem está criando,
-    // SE for membro do subgrupo) -- ver `responsaveis_na_criacao`.
-    responsaveis: campos.responsaveis || [],
-    objeto_assunto: campos.objetoAssunto || "",
-    proxima_providencia: campos.proximaProvidencia || "",
-    data_verificar: campos.dataVerificar || "",
-    prazo_final: campos.prazoFinal || "",
-    observacoes: campos.observacoes || "",
-    fase_id: campos.faseId || "",
-    situacao_id: campos.situacaoId || "",
-  };
 }
 
 /** GET /processos -- paginado de verdade, COM ou SEM filtro.
@@ -84,7 +64,7 @@ export function criarProcesso(
 ) {
   return chamar(`/subgrupos/${subgrupoId}/processos`, {
     method: "POST",
-    body: { numero_processo: numeroProcesso, apelido, ...corpoCamposOpcionais(campos) },
+    body: { numero_processo: numeroProcesso, apelido, ...corpoDosCamposDeProcesso(campos) },
   });
 }
 
@@ -93,7 +73,7 @@ export function atualizarProcesso(
 ) {
   return chamar(`/subgrupos/${subgrupoId}/processos/${numeroProcesso}`, {
     method: "PATCH",
-    body: { apelido, ...corpoCamposOpcionais(campos) },
+    body: { apelido, ...corpoDosCamposDeProcesso(campos) },
   });
 }
 

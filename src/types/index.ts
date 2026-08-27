@@ -798,3 +798,160 @@ import type { STATUS_DE_ATENDIMENTO } from "../constants/atendimento";
 
 export type PrioridadeDaTarefa = (typeof PRIORIDADES)[number];
 export type StatusDeAtendimento = (typeof STATUS_DE_ATENDIMENTO)[number];
+
+// ---------------------------------------------------------------------------
+// Os parâmetros e corpos das chamadas de API
+//
+// 🔴 Moram AQUI, e não dentro de `services/api/*.ts`: lá ficam só as funções
+// que falam com a API. Eram 15 interfaces espalhadas por 12 arquivos, de
+// quando o padrão era o contrário.
+//
+// ⚠️ Em camelCase, porque é o que a TELA monta -- quem traduz para os nomes
+// da API (`tamanho_pagina`, `cpf_cnpj`) é o serviço, no ato da chamada.
+// ---------------------------------------------------------------------------
+
+export interface OpcoesListarAtendimentos {
+  busca?: string;
+  status?: string;
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface OpcoesListarHistorico {
+  numeroProcesso?: string;
+  /** "movimentacao" ou "lembrete". Vazio traz os dois. */
+  tipoEnvio?: string;
+  /** Só os envios que falharam. Cruza os DOIS tipos -- falha de lembrete é
+   * falha igual. */
+  apenasComFalha?: boolean;
+  /** Recorta pelos últimos N dias. `0`/ausente = sem recorte.
+   *
+   * ⚠️ Manda DIAS, não uma data. Quem converte pra instante é o servidor,
+   * com a mesma função que o resumo usa -- mandar data daqui abriria espaço
+   * pra um dia de Brasília ser comparado com um instante em UTC, que é a
+   * fresta de 3h que a API acabou de fechar. */
+  dias?: number;
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface OpcoesListarMembros {
+  pagina?: number;
+  tamanhoPagina?: number;
+  /** Filtra no SERVIDOR, por apelido OU e-mail
+   * (`membros_service.listar_pessoas_do_grupo`). Os dois porque nem todo
+   * mundo tem apelido: buscar só por apelido esconderia quem acabou de ser
+   * convidado, que é justamente quem se procura. */
+  busca?: string;
+}
+
+export interface OpcoesListarSubgrupos {
+  pagina?: number;
+  tamanhoPagina?: number;
+  /** Filtra por nome no SERVIDOR, sem acento e sem caixa
+   * (`subgrupos_service.listar_pagina`). É o que permite a pílula trazer a
+   * primeira página e completar por digitação, em vez de baixar a lista
+   * inteira pra filtrar aqui. */
+  busca?: string;
+}
+
+export interface OpcoesListarTarefas {
+  /** Filtra pelas tarefas de um processo -- é o que o detalhe do processo
+   * usa. Sem ele, a única saída seria paginar a lista inteira do grupo e
+   * peneirar no cliente. */
+  processoNumero?: string;
+  /** Um subgrupo, ou vários -- a Agenda escolhe um subconjunto.
+   *
+   * Array vira parâmetro repetido (`?subgrupo_id=a&subgrupo_id=b`), que é
+   * como o FastAPI lê lista. Omitir continua significando "todos os
+   * visíveis"; o servidor confere a permissão de CADA um. */
+  subgrupoId?: string | string[];
+  /** `"eu"` resolve pro e-mail do token, no servidor. */
+  responsavel?: string;
+  semResponsavel?: boolean;
+  apenasAbertas?: boolean;
+  /** Intervalo de `data`, inclusivo nas duas pontas. */
+  dataDe?: string;
+  dataAte?: string;
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface NovaTarefa {
+  subgrupo_id: string;
+  titulo: string;
+  data: string;
+  coluna_id: string;
+  prioridade: string;
+  responsavel_id?: string | null;
+  processo_numero?: string | null;
+  observacoes?: string | null;
+}
+
+export interface FiltrosDeDocumentos {
+  busca?: string;
+  processoNumero?: string;
+  atendimentoId?: string;
+  clienteId?: string;
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+/** O corpo de `POST`/`PATCH /documentos`.
+ *
+ * ⚠️ Chamava-se `DadosDeDocumento` enquanto vivia dentro de
+ * `services/api/documentos.ts`: ali o arquivo já dizia de que documento se
+ * falava. Num barrel compartilhado, "dados de documento" não diz nada. */
+export interface CamposDeDocumento {
+  tipo: string;
+  titulo: string;
+  descricao?: string;
+  /** Só no tipo `arquivo`, e vem do `prepararEnvio` -- nunca montada aqui. */
+  chave?: string;
+  nome_arquivo?: string;
+  /** Só no tipo `link`. */
+  url?: string;
+  processo_numero?: string | null;
+  atendimento_id?: string | null;
+  cliente_ids?: string[];
+  responsavel_id?: string | null;
+}
+
+/** Os parâmetros de `GET /fases` e `GET /situacoes` -- as duas rotas
+ * compartilham o formato, e é por isso que há um tipo só.
+ *
+ * ⚠️ Chamava-se `OpcoesListarOpcoesProcesso`, que era trava-língua e ainda
+ * escondia quais são os recursos de verdade. */
+export interface OpcoesListarFasesOuSituacoes {
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface OpcoesListarProcessos extends FiltrosBuscaProcessos {
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface RespostaCruaDaApi {
+  ok: boolean;
+  status: number;
+  dados: any;
+}
+
+/** O envelope de qualquer listagem paginada da API. */
+export interface EnvelopePaginado {
+  total: number;
+  total_paginas: number;
+  [chave: string]: unknown;
+}
+
+/** O par que `todasAsPaginas` passa a cada volta do laço. */
+export interface OpcoesDePaginacao {
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+/** Valor de um parâmetro de query. Array vira **parâmetro repetido**
+ * (`?fase_id=a&fase_id=b`), que é o formato que o FastAPI lê como lista --
+ * usado pelos filtros de seleção múltipla. */
+export type ValorDeParametroDeQuery = string | string[] | undefined;

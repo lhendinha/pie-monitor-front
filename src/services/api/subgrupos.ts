@@ -1,14 +1,5 @@
 import { chamar } from "./client";
-
-interface OpcoesListarSubgrupos {
-  pagina?: number;
-  tamanhoPagina?: number;
-  /** Filtra por nome no SERVIDOR, sem acento e sem caixa
-   * (`subgrupos_service.listar_pagina`). É o que permite a pílula trazer a
-   * primeira página e completar por digitação, em vez de baixar a lista
-   * inteira pra filtrar aqui. */
-  busca?: string;
-}
+import type { OpcoesListarSubgrupos } from "../../types";
 
 /** GET /subgrupos -- paginado de verdade (mesmo mecanismo de /processos e
  * /historico), em ordem alfabética e com filtro por nome.

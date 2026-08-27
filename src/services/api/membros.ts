@@ -1,17 +1,7 @@
 import { chamar } from "./client";
-import { todasAsPaginas } from "./paginacao";
+import { todasAsPaginas } from "../../utils/paginacao";
 import type { DadosDoMembro } from "../../types/requisicoes";
-import type { Membro } from "../../types";
-
-interface OpcoesListarMembros {
-  pagina?: number;
-  tamanhoPagina?: number;
-  /** Filtra no SERVIDOR, por apelido OU e-mail
-   * (`membros_service.listar_pessoas_do_grupo`). Os dois porque nem todo
-   * mundo tem apelido: buscar só por apelido esconderia quem acabou de ser
-   * convidado, que é justamente quem se procura. */
-  busca?: string;
-}
+import type { Membro, OpcoesListarMembros } from "../../types";
 
 /** Uma página de `GET /grupos/membros`.
  *

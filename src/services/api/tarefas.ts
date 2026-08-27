@@ -1,26 +1,5 @@
 import { chamar } from "./client";
-
-interface OpcoesListarTarefas {
-  /** Filtra pelas tarefas de um processo -- é o que o detalhe do processo
-   * usa. Sem ele, a única saída seria paginar a lista inteira do grupo e
-   * peneirar no cliente. */
-  processoNumero?: string;
-  /** Um subgrupo, ou vários -- a Agenda escolhe um subconjunto.
-   *
-   * Array vira parâmetro repetido (`?subgrupo_id=a&subgrupo_id=b`), que é
-   * como o FastAPI lê lista. Omitir continua significando "todos os
-   * visíveis"; o servidor confere a permissão de CADA um. */
-  subgrupoId?: string | string[];
-  /** `"eu"` resolve pro e-mail do token, no servidor. */
-  responsavel?: string;
-  semResponsavel?: boolean;
-  apenasAbertas?: boolean;
-  /** Intervalo de `data`, inclusivo nas duas pontas. */
-  dataDe?: string;
-  dataAte?: string;
-  pagina?: number;
-  tamanhoPagina?: number;
-}
+import type { NovaTarefa, OpcoesListarTarefas } from "../../types";
 
 export function listarTarefas(opcoes: OpcoesListarTarefas = {}) {
   const {
@@ -53,17 +32,6 @@ export function atualizarTarefa(
   campos: Partial<Omit<NovaTarefa, "subgrupo_id">>,
 ) {
   return chamar(`/subgrupos/${subgrupoId}/tarefas/${tarefaId}`, { method: "PATCH", body: campos });
-}
-
-interface NovaTarefa {
-  subgrupo_id: string;
-  titulo: string;
-  data: string;
-  coluna_id: string;
-  prioridade: string;
-  responsavel_id?: string | null;
-  processo_numero?: string | null;
-  observacoes?: string | null;
 }
 
 /** POST /tarefas.
