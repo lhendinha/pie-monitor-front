@@ -552,7 +552,7 @@ export interface ComClientes {
 export interface Notificacao {
   usuario_id: string;
   notificacao_id: string;
-  tipo: string;
+  tipo: TipoDeNotificacao;
   criado_em: string;
   lida: boolean;
   /** Quem fez a ação. Vazio no lembrete de prazo -- ali não houve pessoa,
@@ -580,7 +580,11 @@ export interface Notificacao {
   /** Pra onde o clique leva, em duas partes em vez de um campo por tipo de
    * recurso -- o mesmo `tipo` pode apontar pra coisas diferentes (o
    * `lembrete` vale pra tarefa E pra processo). */
-  alvo_tipo: string;
+  /* ⚠️ `| ""` porque a API tem `alvo_tipo: str = ""` como DEFAULT: aviso
+     sem destino (o `sessao_alterada`, por exemplo) chega com string vazia.
+     Fechar só nos quatro faria o tipo mentir -- e o `destinoDaNotificacao`
+     precisa justamente distinguir "não tem alvo" de "alvo que não conheço". */
+  alvo_tipo: AlvoDeNotificacao | "";
   alvo_id: string;
 }
 
@@ -795,9 +799,21 @@ export interface EnvioPreparado {
    pacote inteiro, e puxá-lo daqui ligaria `types` a tudo que mora lá. */
 import type { PRIORIDADES } from "../constants/prioridade";
 import type { STATUS_DE_ATENDIMENTO } from "../constants/atendimento";
+import type { ALVOS_DE_NOTIFICACAO, TIPOS_DE_NOTIFICACAO } from "../constants/notificacoes";
 
 export type PrioridadeDaTarefa = (typeof PRIORIDADES)[number];
 export type StatusDeAtendimento = (typeof STATUS_DE_ATENDIMENTO)[number];
+
+/** O que o servidor pode mandar em `Notificacao.tipo`.
+ *
+ * 🔴 Fechado de propósito: era `string`, e aí o `switch` de
+ * `textoDaNotificacao` aceitava qualquer coisa -- tipo novo caía no
+ * `default` e virava linha vazia no sino, sem aviso nenhum. */
+export type TipoDeNotificacao = (typeof TIPOS_DE_NOTIFICACAO)[number];
+
+/** O que o servidor pode mandar em `Notificacao.alvo_tipo`. Decide PRA ONDE
+ * o clique leva (`destinoDaNotificacao`). */
+export type AlvoDeNotificacao = (typeof ALVOS_DE_NOTIFICACAO)[number];
 
 // ---------------------------------------------------------------------------
 // Os parâmetros e corpos das chamadas de API

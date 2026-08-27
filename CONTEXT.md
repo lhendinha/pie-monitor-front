@@ -72,6 +72,48 @@ origem fica vago num barrel compartilhado, e foi preciso renomear seis:
 | `OpcoesListarOpcoesProcesso` | `OpcoesListarFasesOuSituacoes` | trava-língua, e escondia o recurso |
 | `corpoCamposOpcionais` | `corpoDosCamposDeProcesso` | opcionais de qual coisa? |
 
+### Tipo de notificação novo: os DOIS lados, e o compilador cobra (27/08/2026)
+
+Ao acrescentar um tipo de notificação ou um alvo, **três arquivos mudam
+juntos** -- e o build quebra se algum ficar para trás:
+
+1. `api/src/domain/entities.py` -- a constante `NOTIFICACAO_*` / `ALVO_*`;
+2. `front/src/constants/notificacoes.ts` -- a constante `TIPO_*` / `ALVO_*`
+   **e** a entrada em `TIPOS_DE_NOTIFICACAO` / `ALVOS_DE_NOTIFICACAO`;
+3. `front/src/utils/notificacao.ts` -- o `case` no `switch`.
+
+🔴 **`Notificacao.tipo` e `alvo_tipo` são uniões FECHADAS, não `string`.** O
+`default` dos dois `switch` atribui a `const naoTratado: never`, então um
+tipo declarado e não tratado **não compila**. Antes disso, `tipo` era
+`string`: o caso novo caía no `default` e virava uma **linha vazia no sino**,
+sem o compilador dizer palavra.
+
+⚠️ **E não é `enum` do TypeScript, de propósito.** `enum` gera código em
+runtime (entra no bundle), `const enum` não funciona com `isolatedModules`
+-- que o Vite exige -- e o valor chega da API como string de JSON: com união
+de literais a string JÁ é o tipo; com `enum` seria preciso converter e
+validar na fronteira para o mesmo resultado. O padrão aqui é
+`[...] as const` + `(typeof X)[number]`, o mesmo de `PRIORIDADES` e
+`STATUS_DE_ATENDIMENTO`.
+
+⚠️ **`alvo_tipo` é `AlvoDeNotificacao | ""`**, e o `""` não é sobra: a API
+tem `alvo_tipo: str = ""` como default, então aviso sem destino chega com
+string vazia. Fechar só nos quatro faria o tipo mentir -- e
+`destinoDaNotificacao` precisa distinguir "não tem alvo" de "alvo que não
+conheço".
+
+⚠️ **O cast no teste de degradação é deliberado.** `notificacao.test.ts` usa
+`as Notificacao["tipo"]` para simular um valor que o front ainda não conhece
+-- e isso não é hipótese: a ordem de deploy é **API primeiro**, então
+acontece a cada entrega. Sem o cast o teste não compilaria, e a tentação
+seria apagá-lo, jogando fora a prova de que a degradação é graciosa.
+
+🔴 **Do lado da API há um guarda que lê ESTE repositório**:
+`tests/test_tipos_de_notificacao_batem_com_o_front.py` compara as duas listas
+e falha dizendo o que falta onde. Ele pula quando o front não está ao lado --
+e um quarto teste falha alto nesse caso, para o `skip` não sumir do relatório
+e deixar a suíte verde sem ter conferido nada.
+
 ### Toda mudança nasce com o teste que a cobre (26/08/2026)
 
 **Regra**: nenhuma mudança ou adição -- componente, campo, filtro, correção --

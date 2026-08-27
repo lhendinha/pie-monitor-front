@@ -11,8 +11,8 @@ import {
   TIPO_PROCESSO_ATRIBUIDO,
   TIPO_PROCESSO_DESATRIBUIDO,
   TIPO_LEMBRETE,
-  TIPO_TAREFA_ATRIBUIDA,
   TIPO_SESSAO_ALTERADA,
+  TIPO_TAREFA_ATRIBUIDA,
   TIPO_TAREFA_MOVIDA,
 } from "../constants";
 import type { Notificacao } from "../types";
@@ -90,8 +90,34 @@ export function frasePrincipal(n: Notificacao): string {
       return autor
         ? `${autor} anexou um documento`
         : "Um documento foi anexado";
-    default:
+    case TIPO_SESSAO_ALTERADA:
+      /* 🔴 Devolve o TÍTULO CRU, e isso é decisão, não sobra.
+       *
+       * A API manda este aviso com o título já pronto -- e o comentário dela
+       * diz por quê: *"um front mais antigo que o servidor mostra esta
+       * notificação corretamente sem saber o que ela é"*. Montar a frase
+       * aqui duplicaria o texto nos dois lados, e a versão do front venceria
+       * a do servidor justamente quando eles discordam.
+       *
+       * ⚠️ Estava caindo no `default` por acaso, com o mesmo resultado. O
+       * `never` abaixo é que cobrou tornar isso explícito. */
+      return n.titulo;
+    default: {
+      /* 🔴 A cobrança em tempo de compilação.
+       *
+       * Com `tipo` fechado, este `never` só compila enquanto TODOS os tipos
+       * estiverem tratados acima. Acrescentar um em `TIPOS_DE_NOTIFICACAO`
+       * sem escrever a frase dele quebra o build aqui -- em vez de virar uma
+       * linha vazia no sino, que era o que acontecia quando `tipo` era
+       * `string`.
+       *
+       * ⚠️ E o `return` continua: em produção a API sobe ANTES do front, e
+       * nesse intervalo chegam tipos que este código ainda não conhece. O
+       * `never` protege quem escreve; o fallback protege quem usa. */
+      const naoTratado: never = n.tipo;
+      void naoTratado;
       return n.titulo || "Notificação";
+    }
   }
 }
 
@@ -122,7 +148,15 @@ export function destinoDaNotificacao(n: Notificacao): string | null {
       return n.subgrupo_id ? `/processos/${n.subgrupo_id}/${n.alvo_id}` : null;
     case ALVO_DOCUMENTO:
       return n.subgrupo_id ? `/documentos/${n.subgrupo_id}/${n.alvo_id}` : null;
-    default:
+    default: {
+      /* Mesmo mecanismo do `textoDaNotificacao`: alvo novo sem destino
+       * quebra o build, em vez de virar uma linha que não é clicável.
+       *
+       * ⚠️ `""` é caso legítimo -- aviso sem alvo, como `sessao_alterada` --
+       * e cai aqui de propósito. */
+      const naoTratado: never = n.alvo_tipo as never;
+      void naoTratado;
       return null;
+    }
   }
 }

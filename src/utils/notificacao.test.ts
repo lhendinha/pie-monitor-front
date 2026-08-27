@@ -94,8 +94,29 @@ describe('os avisos de "quem responde, recebe" (26/08/2026)', () => {
     /* A ordem do plano é API primeiro. Enquanto o front não subir, ele vai
        receber tipos que não conhece: a frase cai no título cru (o aviso
        aparece) e a linha não vira link (em vez de levar a lugar nenhum). */
-    const futuro = { ...BASE, tipo: "coisa_que_ainda_nao_existe", titulo: "Algo aconteceu" };
+    /* 🔴 Os dois `as` são deliberados, e o tipo continua fechado por causa
+       deles -- não apesar.
+
+       `Notificacao.tipo` e `alvo_tipo` são uniões fechadas: é o que faz o
+       `switch` de `textoDaNotificacao` cobrar cada caso novo em tempo de
+       compilação. Mas o cenário AQUI é o de um valor que o front ainda não
+       conhece, vindo de uma API mais nova -- e isso não é hipótese: a ordem
+       de deploy é API primeiro, então acontece a cada entrega.
+
+       Sem o cast, este teste não compilaria, e a tentação seria apagá-lo --
+       jogando fora justamente a prova de que a degradação é graciosa. */
+    const futuro = {
+      ...BASE,
+      tipo: "coisa_que_ainda_nao_existe" as Notificacao["tipo"],
+      titulo: "Algo aconteceu",
+    };
     expect(frasePrincipal(futuro)).toBe("Algo aconteceu");
-    expect(destinoDaNotificacao({ ...futuro, alvo_tipo: "coisa_nova", alvo_id: "x" })).toBeNull();
+    expect(
+      destinoDaNotificacao({
+        ...futuro,
+        alvo_tipo: "coisa_nova" as Notificacao["alvo_tipo"],
+        alvo_id: "x",
+      }),
+    ).toBeNull();
   });
 });

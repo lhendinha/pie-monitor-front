@@ -51,6 +51,44 @@ export const ALVO_ATENDIMENTO = "atendimento";
 export const ALVO_PROCESSO = "processo";
 export const ALVO_DOCUMENTO = "documento";
 
+/** Todos os tipos, para derivar a UNIÃO em `types/`.
+ *
+ * 🔴 Existe porque `Notificacao.tipo` era `string`, e um `switch` sobre
+ * `string` não protege nada: um tipo novo vindo da API cai no `default` e o
+ * sino mostra uma linha VAZIA -- sem o compilador dizer palavra. Com a união
+ * fechada, o `default: never` de `textoDaNotificacao` cobra o caso novo.
+ *
+ * ⚠️ Deriva das constantes acima, nunca repete os valores: duas listas do
+ * mesmo conjunto divergem no primeiro ajuste.
+ *
+ * ⚠️ E NÃO é um `enum` do TypeScript, de propósito. `enum` gera código em
+ * runtime (entra no bundle), `const enum` não funciona com `isolatedModules`
+ * -- que o Vite exige --, e o valor chega da API como string de JSON: com
+ * união de literais a string JÁ é o tipo, com `enum` seria preciso converter
+ * e validar na fronteira pro mesmo resultado.
+ */
+export const TIPOS_DE_NOTIFICACAO = [
+  TIPO_TAREFA_ATRIBUIDA,
+  TIPO_TAREFA_MOVIDA,
+  TIPO_ATENDIMENTO_STATUS,
+  TIPO_LEMBRETE,
+  TIPO_SESSAO_ALTERADA,
+  TIPO_PROCESSO_ATRIBUIDO,
+  TIPO_ATENDIMENTO_ATRIBUIDO,
+  TIPO_DOCUMENTO_ATRIBUIDO,
+  TIPO_PROCESSO_DESATRIBUIDO,
+  TIPO_ATENDIMENTO_DESATRIBUIDO,
+  TIPO_DOCUMENTO_VINCULADO,
+] as const;
+
+/** Todos os alvos, para derivar a união em `types/`. */
+export const ALVOS_DE_NOTIFICACAO = [
+  ALVO_TAREFA,
+  ALVO_ATENDIMENTO,
+  ALVO_PROCESSO,
+  ALVO_DOCUMENTO,
+] as const;
+
 /** Largura do painel do sino. Estreito o bastante pra caber ao lado do
  * botão em telas médias, largo o bastante pra uma frase não quebrar em
  * três linhas. */
