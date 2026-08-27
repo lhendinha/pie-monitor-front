@@ -80,7 +80,7 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 | Gestão kanban | `/kanban` | o quadro de tarefas do subgrupo |
 | Agenda | `/agenda` | as tarefas por data |
 | Atendimentos | `/atendimentos` | conversas registradas por cliente |
-| Detalhe do atendimento | `/atendimentos/:subgrupoId/:atendimentoId` | **abas** Registros \| Documentos |
+| Detalhe do atendimento | `/atendimentos/:subgrupoId/:atendimentoId` | **abas** Registros \| Detalhes \| Documentos |
 | Processos | `/processos` | o acervo monitorado |
 | Detalhe do processo | `/processos/:subgrupoId/:numero` | **abas** Detalhes \| Tarefas \| Movimentações \| Documentos |
 | Clientes | `/clientes` | o cadastro |
@@ -90,6 +90,12 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 | Histórico | `/historico` | o que o robô enviou |
 | Grupo | `/grupo` | subgrupos, pessoas, convites, fases e situações |
 | Perfil | `/perfil` | a própria conta |
+
+⚠️ **No atendimento, "Detalhes" é a SEGUNDA aba** -- ao contrário de processo
+e cliente, onde ela abre. A aba padrão é a primeira da lista, e pôr Detalhes
+na frente faria abrir um atendimento mostrar o **formulário** em vez da
+conversa. Quem abre um atendimento quer ler o que aconteceu. A consistência
+com as telas irmãs é de _ter_ abas, não de qual vem primeiro.
 
 ⚠️ Toda tela de DETALHE guarda a aba na URL (`?aba=`), porque essas telas são
 alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
@@ -124,6 +130,36 @@ Substituir entra na mesma régua porque apaga o arquivo antigo do mesmo jeito
 -- e, ao contrário de excluir, nem passa por diálogo de confirmação. Quem não
 pode não vê os botões.
 
+## Responsáveis: quem responde, recebe
+
+Processo e atendimento têm **responsáveis** (múltiplo, mínimo 1), e são eles
+que recebem os avisos daquele item -- movimentação, prazo e mudança de status.
+Sem responsável válido, o aviso volta a ir pro subgrupo inteiro.
+
+Na tela isso aparece em quatro lugares:
+
+- **campo** no cadastro e na edição das duas telas, pré-selecionado com quem
+  está criando (o servidor decide o default; a tela só mostra o que ele faria);
+- **coluna** "Responsável" em Processos -- a **sétima**, acrescentada: nada
+  saiu. "Última movimentação" é o único lugar onde se percebe, para o acervo
+  inteiro, que a verificação parou;
+- **filtro** nas duas listagens: *todos / meus / cada pessoa / **sem
+  responsável***;
+- **Área de trabalho**: as duas linhas de prazo contam só os seus, e o clique
+  abre a lista já filtrada por "eu".
+
+🔴 **"Sem responsável" é achável de propósito.** Item órfão tem o aviso
+alargado pro subgrupo pelo fallback, e sem um jeito de listar isso ninguém
+entende por quê. Por isso ele é opção de filtro E marca na linha, em vez do
+traço que as outras colunas vazias usam.
+
+⚠️ **Quem pode tirar OUTRA pessoa da lista é `manager`+** -- acrescentar e sair
+da própria são de qualquer membro. Ver `podeRemoverResponsavel`.
+
+⚠️ No atendimento, o **status virou campo da aba Detalhes** e saiu do
+cabeçalho, onde era um `Select` que salvava sozinho. A etiqueta continua lá,
+porque informa.
+
 ## Papéis e o que cada um vê
 
 4 abas no topo: Processos, Clientes, Histórico e **Grupo** -- essa última agrupa, como sub-navegação própria, Subgrupos/Membros/Convidar/Fases/Situações (cada sub-aba mantém o piso de papel de antes, só a organização visual mudou).
@@ -134,6 +170,13 @@ pode não vê os botões.
 | `manager` | + sub-aba Membros (dentro de Grupo) |
 | `admin` | + sub-aba Convidar (dentro de Grupo) |
 | `super_admin` | Todas as sub-abas do próprio grupo, como um `admin`, mais **Fases** e **Situações** (2 sub-abas separadas) -- CRUD da lista global de opções de fase/situação de processo, valendo pra todos os grupos da plataforma, não só o próprio. Na sub-aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
+
+⚠️ **Filtro de PESSOA some para quem é `user`.** Ele se alimenta de
+`GET /grupos/membros`, que tem piso `manager` -- oferecê-lo a um `user` daria
+403 num controle que ele nunca poderia usar. As opções que não dependem
+daquela rota ("Todas as pessoas", "Meus processos", "Sem responsável")
+continuam para todo papel. Vale em Processos, Kanban e Agenda; ver
+`podeListarPessoas`.
 
 `admin`/`super_admin` também editam o **nome de um Subgrupo** (ícone ✎ na sub-aba Subgrupos, `PATCH /subgrupos/{id}`).
 
@@ -164,7 +207,7 @@ yarn test         # roda uma vez (CI)
 yarn test:watch   # modo watch
 ```
 
-`vitest` + `@testing-library/react` + `jsdom`. 679 testes em 65 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
+`vitest` + `@testing-library/react` + `jsdom`. 702 testes em 66 arquivos, cobrindo páginas, componentes, `services/` (auth, client HTTP) e `utils/` (máscara CNJ, formatação de data, parse de deep link) — `src/test/setup.ts` fixa o timezone em `America/Sao_Paulo` pra testes de data não variarem por máquina.
 
 ## Filtros em pílula: primeira página + busca
 

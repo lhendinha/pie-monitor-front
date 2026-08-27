@@ -1175,6 +1175,139 @@ só o `tsc --noEmit` rodava. A config é enxuta e focada no que pega bug --
 `react-hooks/exhaustive-deps` e variável não usada como erro, sem regra de
 estilo.
 
+## Responsáveis, e o que a tela decidiu (26/08/2026)
+
+### O status virou campo, e por isso a aba Detalhes existe
+
+O `Select` de status do atendimento era um controle que **salvava sozinho**,
+sem "Salvar", plantado no cabeçalho ao lado do botão de excluir -- enquanto o
+assunto não tinha onde ser editado. Status é campo, e campo se edita em
+formulário: a aba é o que tornou isso possível.
+
+A ETIQUETA de status continua no cabeçalho, porque ela informa e é o que se
+quer ver de relance ao abrir. Só o CONTROLE mudou de lugar.
+
+⚠️ **Um PATCH só para os três campos.** Um por campo faria o servidor comparar
+e notificar três vezes o que é uma edição só. E "Salvar" fica desabilitado
+enquanto nada mudou -- senão salvar um formulário intocado reenvia a mesma
+lista de responsáveis.
+
+### 🔴 "Detalhes" é a SEGUNDA aba do atendimento
+
+`abaValida` devolve `abas[0].id`, então a ordem da lista É a aba padrão. Pondo
+Detalhes em primeiro -- como em processo e cliente --, **abrir um atendimento
+passaria a mostrar o formulário em vez da conversa**.
+
+A consistência com as telas irmãs é de _ter_ abas, não de qual vem primeiro; e
+lá a primeira também é a que responde "o que é isto", que aqui é a conversa.
+
+A prova é negativa e vale registrar: os testes existentes continuaram verdes
+sem uma linha alterada, e a mutação (Detalhes em primeiro) derruba **quatro**
+deles.
+
+### Os painéis vão MONTADOS -- e isso muda como se testa
+
+O de Registros obriga: `NovoRegistro` tem estado local, e desmontá-lo ao
+trocar de aba jogaria fora a anotação que a pessoa acabou de escrever -- num
+campo cujo conteúdo, depois de salvo, não se edita nem se apaga.
+
+⚠️ **Consequência para os testes**: o conteúdo das três abas EXISTE no DOM o
+tempo todo. `toBeInTheDocument` passa com a tela completamente quebrada; a
+régua é **`toBeVisible`**. Escrevi a asserção errada na primeira versão do
+teste do status, e ela passou.
+
+### Quem já é responsável mas SAIU do subgrupo continua na lista
+
+`GET /subgrupos/{id}/membros` não devolve quem saiu -- então, sem a união
+explícita, abrir o item mostraria a lista sem essa pessoa e **salvar apagaria
+a atribuição em silêncio**. É a mesma guarda que `ModalDeTarefa` e
+`FormularioDocumento` já tinham.
+
+E com o NOME, não o e-mail cru: `responsaveis_nomes` vem pareado por índice
+com `responsaveis`, e o servidor resolve a lista INTEIRA (`apelidos_de` filtra
+por grupo, não por subgrupo). É o caso em que a pessoa mais precisa
+reconhecer de quem se trata.
+
+⚠️ **O campo não passa `permitirLimpar`.** O X do `MultiSelect` esvazia sem
+abrir o painel, e num campo de mínimo 1 isso leva direto a um 422 -- a pessoa
+usaria um controle que o próprio formulário oferece para chegar num erro do
+servidor.
+
+### Trocar de subgrupo ZERA os responsáveis -- e não os clientes
+
+O defeito que `ModalDeTarefa` já documenta: alguém do subgrupo antigo seguiria
+escolhido e o salvamento falharia na validação do servidor, num campo que a
+pessoa nem lembra de ter mexido.
+
+⚠️ **Cliente NÃO é zerado junto**, e a diferença é o escopo: cliente é do
+GRUPO (a validação dele não olha subgrupo), responsável é do SUBGRUPO.
+
+⚠️ E o default **não** é reposto na tela. Quem cria vira responsável no
+SERVIDOR, e só se for membro do subgrupo escolhido -- repor aqui exigiria
+replicar essa régua no front, e ela já é a resposta que
+`GET /subgrupos/{id}/membros` dá.
+
+### "Sem responsável" é achável de propósito
+
+Se o único responsável sai do subgrupo, o item fica órfão: o aviso passa a ir
+para o subgrupo inteiro pelo fallback, e **ninguém entende por quê**. A
+resposta não é mais um canal de aviso -- é a listagem deixar isso achável.
+Custa uma opção na pílula e uma marca na linha, no lugar do traço que as
+outras colunas vazias usam.
+
+🔴 **Ele é um parâmetro PRÓPRIO (`sem_responsavel`), não `responsavel_id=""`.**
+`montarQuery` descarta valor vazio, e no servidor `""` já significa "não
+filtrar": pedido como string vazia, o filtro nem sairia do navegador e a tela
+mostraria a lista inteira parecendo filtrada. Falha silenciosa, do tipo que
+ninguém nota até contar as linhas.
+
+⚠️ "Eu" é resolvido no FRONT (vira `getEmail()`), dentro de
+`useFiltrosProcessos`. O servidor não precisa saber o que "eu" significa, e
+traduzir em cada tela duplicaria a regra.
+
+### Não oferecer o que a API vai negar
+
+Duas funções puras nasceram disso, no molde de `podeDestruirDocumento`:
+
+- **`podeListarPessoas()`** -- `GET /grupos/membros` tem piso `manager`, e é a
+  ÚNICA rota de catálogo acima de `user`. A lista de pessoas some do filtro de
+  quem é `user` **nas três telas** (Processos, Kanban e Agenda); as opções que
+  não dependem dela ficam. Nas duas últimas o 403 já acontecia em produção.
+- **`podeRemoverResponsavel(email)`** -- acrescentar e sair da própria lista
+  são de qualquer membro; **tirar OUTRA pessoa é `manager`+**.
+
+⚠️ **Esconder não é a proteção** -- quem manda é a rota. É para não oferecer o
+que ela vai negar: um controle que existe e falha em 403 é pior que um
+ausente, porque a pessoa tenta, espera, e recebe uma recusa que parece
+defeito.
+
+⚠️ E não cabe um helper comum para as três `podeXxx`: elas têm a mesma FORMA
+("`manager`+ ou é seu") e regras diferentes -- uma compara `criado_por`, outra
+exige `admin` como atalho, a terceira compara a sessão. Um helper precisaria
+de um parâmetro por diferença e esconderia justamente o que cada tela decide.
+
+### Os seis avisos novos no sino, e o alvo `documento`
+
+As frases dizem que a pessoa passou a **RESPONDER**, não que recebeu uma
+tarefa: o que muda é de quem é a responsabilidade, e é ela que decide quem
+recebe os avisos daquele item daqui pra frente.
+
+No aviso de SAÍDA a frase diz o que a pessoa **perde** ("tirou você dos
+responsáveis"), não o que foi feito -- "removeu você da lista" soaria
+administrativo e esconderia a consequência.
+
+`documento_vinculado` fala no **singular** mesmo quando foram doze: o servidor
+suprime os repetidos por janela em vez de agrupar. A contagem exata está na
+aba para onde o aviso leva.
+
+🔴 **Tipo e alvo desconhecidos degradam sem quebrar** -- `frasePrincipal` cai
+no título cru e `destinoDaNotificacao` devolve `null` (a linha não vira link).
+É isso que permite a API subir antes do front, e tem teste próprio.
+
+⚠️ **A lista de tipos é espelhada à MÃO** entre `constants/notificacoes.ts` e
+`NOTIFICACAO_*` da API, e **nenhum teste atravessa os dois runtimes**. Lacuna
+conhecida, escrita aqui de propósito: a rede é a degradação graciosa acima.
+
 ## 4) Blocos de código essenciais
 
 **Variáveis de ambiente:**
