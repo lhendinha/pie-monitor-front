@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
  * testes precisam inspecionar, já que a URL agora é uma FUNÇÃO. */
 const criados = vi.hoisted(() => [] as { url: unknown; fechado: boolean }[]);
 
+/** Os listeners de `message` que o hook registrou -- é como se
+ * simula o servidor mandando algo. */
+const ouvintesDeMensagem: ((e: { data: string }) => void)[] = [];
+
 vi.mock("../services/auth", () => mocks);
 vi.mock("reconnecting-websocket", () => ({
   default: class {
@@ -19,7 +23,9 @@ vi.mock("reconnecting-websocket", () => ({
     constructor(url: unknown) {
       criados.push({ url, fechado: false });
     }
-    addEventListener() {}
+    addEventListener(evento: string, fn: (e: { data: string }) => void) {
+      if (evento === "message") ouvintesDeMensagem.push(fn);
+    }
     send() {}
     close() {
       criados[criados.length - 1].fechado = true;
@@ -28,10 +34,12 @@ vi.mock("reconnecting-websocket", () => ({
 }));
 
 import { useCanalDeNotificacoes } from "./useCanalDeNotificacoes";
+import { assinarCanal, limparOuvintesDoCanal } from "../utils/canalDeTempoReal";
 
 beforeEach(() => {
   vi.clearAllMocks();
   criados.length = 0;
+  ouvintesDeMensagem.length = 0;
   vi.stubEnv("VITE_WS_URL", "wss://exemplo/prod");
   mocks.getAccessToken.mockReturnValue("token-valido");
   mocks.tokenVenceEm.mockReturnValue(false);
@@ -120,5 +128,66 @@ describe("limpeza", () => {
     rerender();
     rerender();
     await waitFor(() => expect(criados).toHaveLength(1));
+  });
+});
+
+describe("uma conexão, vários interessados", () => {
+  function receber(corpo: unknown) {
+    for (const ouvir of ouvintesDeMensagem) {
+      ouvir({ data: JSON.stringify(corpo) });
+    }
+  }
+
+  it("🔴 o sino NÃO reage ao progresso da importação", async () => {
+    /* A trava que vale MAIS agora que o canal distribui.
+     *
+     * A barra anda dezenas de vezes numa importação. Se o filtro
+     * `tipo !== "notificacao"` caísse, cada movimento viraria uma linha no
+     * sino -- e quem alargar o canal de novo tem que passar por aqui. */
+    const aoChegar = vi.fn();
+    renderHook(() => useCanalDeNotificacoes(aoChegar));
+    await waitFor(() => expect(ouvintesDeMensagem.length).toBeGreaterThan(0));
+
+    receber({ tipo: "importacao_progresso", feitos: 25, total: 100 });
+
+    expect(aoChegar).not.toHaveBeenCalled();
+  });
+
+  it("o sino reage a notificação, como sempre", async () => {
+    const aoChegar = vi.fn();
+    renderHook(() => useCanalDeNotificacoes(aoChegar));
+    await waitFor(() => expect(ouvintesDeMensagem.length).toBeGreaterThan(0));
+
+    receber({ tipo: "notificacao" });
+
+    expect(aoChegar).toHaveBeenCalledOnce();
+  });
+
+  it("quem assinou o progresso RECEBE, com o payload", async () => {
+    /* 🔴 O ponto do barramento: `aoChegar` é `() => void` e não carrega
+     * mensagem nenhuma. Sem isto, a tela da importação teria que abrir uma
+     * SEGUNDA conexão para ver `{feitos, total}`. */
+    const ouviu = vi.fn();
+    limparOuvintesDoCanal();
+    assinarCanal("importacao_progresso", ouviu);
+    renderHook(() => useCanalDeNotificacoes(vi.fn()));
+    await waitFor(() => expect(ouvintesDeMensagem.length).toBeGreaterThan(0));
+
+    receber({ tipo: "importacao_progresso", feitos: 25, total: 100 });
+
+    expect(ouviu).toHaveBeenCalledWith({
+      tipo: "importacao_progresso",
+      feitos: 25,
+      total: 100,
+    });
+  });
+
+  it("mensagem que não é JSON não derruba o canal", async () => {
+    renderHook(() => useCanalDeNotificacoes(vi.fn()));
+    await waitFor(() => expect(ouvintesDeMensagem.length).toBeGreaterThan(0));
+
+    expect(() => {
+      for (const ouvir of ouvintesDeMensagem) ouvir({ data: "isto não é json" });
+    }).not.toThrow();
   });
 });

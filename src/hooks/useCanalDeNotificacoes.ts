@@ -10,9 +10,16 @@ import {
 } from "../constants";
 import { renovarTokenCompartilhado } from "../services/api/client";
 import { getAccessToken, tokenVenceEm } from "../services/auth";
+import { publicarNoCanal } from "../utils/canalDeTempoReal";
 import type { MensagemDoCanal } from "../types";
 
-/** Abre o canal de tempo real e chama `aoChegar` a cada notificação nova.
+/** Abre o canal de tempo real: chama `aoChegar` a cada notificação nova, e
+ * entrega toda mensagem a quem tiver assinado aquele tipo.
+ *
+ * 🔴 **Uma conexão por aba, vários interessados.** O `useEffect(…, [])` abre
+ * um socket por montagem deste hook -- então quem precisa de outra mensagem
+ * NÃO deve chamá-lo de novo (seriam duas conexões): assina em
+ * `utils/canalDeTempoReal`, e o sino continua sendo o único a abrir.
  *
  * ⚠️ O canal NÃO é fonte da verdade: ele antecipa o que o `GET
  * /notificacoes` já entregaria. Se o push falhar, se a rede cair, se o
@@ -69,6 +76,21 @@ export function useCanalDeNotificacoes(aoChegar: () => void) {
     socket.addEventListener("message", (evento) => {
       try {
         const corpo = JSON.parse(evento.data) as MensagemDoCanal;
+
+        /* Uma conexão, vários interessados. Quem assinou ESTE tipo recebe --
+         * a tela da importação escuta `importacao_progresso`, por exemplo.
+         * Ver `utils/canalDeTempoReal`. */
+        publicarNoCanal(corpo);
+
+        /* 🔴 A trava do sino, e ela vale MAIS agora que o canal distribui.
+         *
+         * Antes de existir o barramento, este `return` era a única razão de o
+         * sino nunca ver outra coisa. Ele continua aqui, e é o que impede a
+         * barra de progresso -- que anda dezenas de vezes numa importação --
+         * de virar dezenas de linhas no sino.
+         *
+         * ⚠️ Quem alargar o canal de novo: publicar é uma coisa, ALIMENTAR O
+         * SINO é outra. Este filtro não pode virar "recebe tudo". */
         if (corpo.tipo !== "notificacao") return;
         aoChegar();
         /* 🔴 Uma notificação que não é só aviso: ela CORRIGE a sessão.
