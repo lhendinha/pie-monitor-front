@@ -9,6 +9,7 @@ import {
   TIPO_DOCUMENTO_ATRIBUIDO,
   TIPO_DOCUMENTO_VINCULADO,
   TIPO_PROCESSO_ATRIBUIDO,
+  TIPO_PROCESSOS_ATRIBUIDOS,
   TIPO_PROCESSO_DESATRIBUIDO,
   TIPO_LEMBRETE,
   TIPO_SESSAO_ALTERADA,
@@ -60,6 +61,10 @@ export function frasePrincipal(n: Notificacao): string {
       return autor
         ? `${autor} colocou você como responsável por um processo`
         : "Você passou a responder por um processo";
+    /* O título já vem pronto do servidor ("201 processos atribuídos a você"),
+     * porque só ele sabe quantos foram. Aqui só se acrescenta quem fez. */
+    case TIPO_PROCESSOS_ATRIBUIDOS:
+      return autor ? `${autor}: ${n.titulo}` : n.titulo;
     case TIPO_ATENDIMENTO_ATRIBUIDO:
       return autor
         ? `${autor} colocou você como responsável por um atendimento`
@@ -138,6 +143,18 @@ export function detalheSecundario(n: Notificacao): string {
 /** Pra onde o clique leva. `null` quando não há destino -- e aí a linha não
  * é clicável, em vez de levar a lugar nenhum. */
 export function destinoDaNotificacao(n: Notificacao): string | null {
+  /* ⚠️ **PENDENTE, e conhecido**: a atribuição em massa deveria abrir a
+   * listagem filtrada por responsável -- o que `ResumoRapido.irParaProcessos`
+   * faz com `navegar("/processos", { state: { filtros } })`.
+   *
+   * 🔴 Não dá para fazer aqui: esta função devolve uma STRING de rota, e a
+   * tela de Processos lê os filtros de `state`, não de query string -- com a
+   * razão escrita lá ("é um atalho interno, não é URL pra compartilhar").
+   * Carregar o filtro exigiria mudar o contrato desta função e de quem a
+   * consome.
+   *
+   * Até lá a linha aparece com o texto e NÃO é clicável, que é o mesmo
+   * tratamento de `sessao_alterada`. Entra junto com a tela da importação. */
   if (!n.alvo_id) return null;
   switch (n.alvo_tipo) {
     case ALVO_TAREFA:

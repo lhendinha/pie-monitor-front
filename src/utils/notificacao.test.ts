@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { TIPO_SESSAO_ALTERADA } from "../constants";
+import { TIPO_PROCESSOS_ATRIBUIDOS, TIPO_SESSAO_ALTERADA } from "../constants";
 import { destinoDaNotificacao, detalheSecundario, frasePrincipal } from "./notificacao";
 import type { Notificacao } from "../types";
 
@@ -118,5 +118,38 @@ describe('os avisos de "quem responde, recebe" (26/08/2026)', () => {
         alvo_id: "x",
       }),
     ).toBeNull();
+  });
+});
+
+describe("atribuição em massa", () => {
+  const EM_MASSA: Notificacao = {
+    ...BASE,
+    tipo: TIPO_PROCESSOS_ATRIBUIDOS,
+    titulo: "201 processos atribuídos a você",
+    autor: "Chefe",
+    alvo_tipo: "processo",
+    alvo_id: "",
+  };
+
+  it("mostra a contagem que veio do servidor, com quem fez", () => {
+    /* 🔴 O título vem PRONTO da API porque só ela sabe quantos foram. O front
+       não pode montar "N processos" -- ele não recebe a lista. */
+    expect(frasePrincipal(EM_MASSA)).toBe("Chefe: 201 processos atribuídos a você");
+  });
+
+  it("sem autor, mostra só a contagem", () => {
+    expect(frasePrincipal({ ...EM_MASSA, autor: "" })).toBe(
+      "201 processos atribuídos a você",
+    );
+  });
+
+  it("não é clicável enquanto o destino filtrado não existir", () => {
+    /* ⚠️ Pendência conhecida, e o teste a fixa em vez de deixá-la implícita:
+       o destino certo é a listagem filtrada por responsável, que hoje só se
+       alcança por `state` de navegação -- e esta função devolve string.
+
+       🔴 Se alguém resolver isso, ESTE teste cai -- e é assim que ele avisa
+       que a pendência foi fechada, em vez de sobreviver mentindo. */
+    expect(destinoDaNotificacao(EM_MASSA)).toBeNull();
   });
 });

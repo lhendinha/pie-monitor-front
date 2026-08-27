@@ -25,6 +25,19 @@ export const TIPO_SESSAO_ALTERADA = "sessao_alterada";
 
 /** Alguém passou a responder por um processo/atendimento/documento. */
 export const TIPO_PROCESSO_ATRIBUIDO = "processo_atribuido";
+
+/** Muitos processos passaram a ser meus de uma vez -- o caso da importação
+ * por OAB.
+ *
+ * 🔴 Existe porque o aviso individual não escala: mil processos atribuídos a
+ * um colega dariam mil linhas no sino dele. O servidor agrega a partir de
+ * DOIS; com um, continua vindo `processo_atribuido`, que leva ao processo em
+ * si.
+ *
+ * ⚠️ **Chega sem `alvo_id`**, e não é descuido: não há UM processo para onde
+ * ir. O destino é a lista filtrada por responsável -- ver a ressalva em
+ * `destinoDaNotificacao`. */
+export const TIPO_PROCESSOS_ATRIBUIDOS = "processos_atribuidos";
 export const TIPO_ATENDIMENTO_ATRIBUIDO = "atendimento_atribuido";
 export const TIPO_DOCUMENTO_ATRIBUIDO = "documento_atribuido";
 
@@ -74,6 +87,7 @@ export const TIPOS_DE_NOTIFICACAO = [
   TIPO_LEMBRETE,
   TIPO_SESSAO_ALTERADA,
   TIPO_PROCESSO_ATRIBUIDO,
+  TIPO_PROCESSOS_ATRIBUIDOS,
   TIPO_ATENDIMENTO_ATRIBUIDO,
   TIPO_DOCUMENTO_ATRIBUIDO,
   TIPO_PROCESSO_DESATRIBUIDO,
