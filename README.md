@@ -424,3 +424,41 @@ AgendaPage/
   hooks/useTarefasDaAgenda.ts  hooks/useAssuntosDasTarefas.ts …
   components/VisaoPorMes/index.tsx  components/BarraDeDatas/index.tsx …
 ```
+
+## Importar processos por OAB
+
+Em **Processos**, o botão "Importar por OAB" (só para `manager`+) abre a tela
+de importação em massa.
+
+O fluxo tem três etapas, com uma decisão humana no meio:
+
+1. **Buscar** — inscrição, UF e subgrupo de destino. O período é opcional e
+   fica escondido atrás de um link: só é preciso quando a OAB tem processos
+   demais para uma busca só.
+2. **Conferir** — a lista com quantos vieram, quantos já estão no subgrupo e
+   quantos são novos. Os já cadastrados vêm travados: importar nunca
+   sobrescreve. "Marcar todos" age em **todos**, não só na página visível.
+3. **Importar** — grava os selecionados com o histórico que a busca já trouxe,
+   e a barra de progresso anda pelo canal em tempo real.
+
+⚠️ **A busca não cadastra nada.** É o único ponto em que ainda é barato
+desfazer — 200 processos cadastrados por engano são 200 que alguém apaga um a
+um.
+
+O apelido de cada processo nasce da **classe processual** normalizada
+("Execução Fiscal", "Procedimento Comum Cível"), porque o número já aparece na
+linha de baixo.
+
+### Verificar no ambiente local
+
+O front precisa apontar para o `yarn offline` da API — o `.env` aponta para
+produção:
+
+```bash
+cd api && yarn offline                                    # num terminal
+VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
+  yarn dev --port 5174 --strictPort                       # noutro
+```
+
+⚠️ **Sem `VITE_WS_URL` a barra de progresso não anda** — e nada acusa erro: o
+sino continua funcionando pela consulta, e publicar progresso é best-effort.

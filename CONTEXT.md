@@ -2132,3 +2132,118 @@ subgrupo" para oferecer.
 **A lição, repetida três vezes nesta entrega**: asserção logo depois de uma
 ação assíncrona mede o relógio, não o código. `not.toHaveBeenCalled()` sem
 espera é sempre verdadeiro, e um teste que nunca falhou não provou nada.
+
+## Importar processos por OAB (27/08/2026)
+
+Uma tela nova em Processos: buscar pela inscrição, conferir a lista, importar.
+
+### Por que é TELA, e não modal
+
+Três etapas, lista de até mil linhas e espera de dezenas de segundos. Um modal
+viraria uma caixa com rolagem própria dentro da página — e fechar por engano
+(Escape, clique fora) perderia uma busca que custou 25 segundos.
+
+O botão fica ao lado de "+ Novo processo", e são **dois botões, não um menu**:
+"Novo processo" é uso diário e "Importar por OAB" se procura com intenção;
+esconder a segunda atrás de um clique a mais não ajudaria nenhuma das duas.
+
+⚠️ **Só para `manager`+**, a mesma régua do servidor. É o princípio que
+`FormularioCliente` já documenta: *mostrar um botão que a API vai negar é pior
+que não mostrar*.
+
+### 🔴 A guarda do responsável não-membro
+
+Três regras que convivem sem atrito fora daqui:
+
+1. `manager`+ **age** em qualquer subgrupo do grupo, sem participar dele;
+2. `admin`+ **enxerga** subgrupo alheio no seletor;
+3. o servidor só aceita como responsável quem for **membro**.
+
+A tela tem seletor de subgrupo e pré-selecionaria quem importa. Junte as três
+e o resultado é uma importação que falha com *"Responsável não é membro do
+subgrupo"* — **depois** de a pessoa esperar a busca inteira.
+
+Por isso a tela consulta os membros do subgrupo **escolhido** e, não sendo
+membro, não pré-seleciona ninguém e diz por quê. Trocar de subgrupo revalida:
+a consulta tem o subgrupo na chave.
+
+### O período fica escondido
+
+Quem tem uma inscrição de tamanho normal nunca precisa dele, e um campo a mais
+é um campo a mais para ler antes de entender a tela. Aparece por um link — e
+sozinho quando a busca esbarra no limite, porque aí a saída passa a ser
+justamente ele.
+
+⚠️ **Sem o período, o teto seria uma parede**: buscar de novo traria as mesmas
+páginas, e os processos além delas ficariam inalcançáveis.
+
+### Três estados que a tela não pode confundir
+
+| | é o quê |
+|---|---|
+| **vazio** | o PJe respondeu e não achou nada — sucesso |
+| **erro** | o serviço não respondeu, ou recusou por excesso |
+| **acima do teto** | achou demais, trouxe o que coube — também sucesso |
+
+🔴 Misturar "vazio" com "erro" mandaria a pessoa corrigir um número que está
+certo, ou tentar de novo o que nunca vai funcionar.
+
+⚠️ E o texto do vazio **não pode dizer "OAB não encontrada"**: o PJe devolve
+zero e nada mais, e isso cobre três situações que não sabemos separar — OAB
+inexistente, OAB sem processos, e OAB com processos mas sem comunicação
+publicada.
+
+### 🔴 A mensagem de interrupção não afirma que nada foi gravado
+
+Um timeout no meio deixa os processos já criados no banco. Dizer "a importação
+falhou" mandaria a pessoa procurar o que já está lá.
+
+A frase admite a dúvida: *"parte dos processos pode ter sido cadastrada.
+Buscar de novo cadastra só o que falta."* — e repetir é seguro, porque o
+servidor pula o que já existe.
+
+### O canal virou multi-assinante
+
+`useCanalDeNotificacoes` nasceu com um consumidor só: `aoChegar: () => void`,
+sem argumento, e descartando tudo que não é `tipo: "notificacao"`. A barra de
+progresso precisa de `{feitos, total}`, que é **payload**, não gatilho.
+
+Sem `utils/canalDeTempoReal`, a saída seria a tela abrir uma **segunda
+conexão** — e o hook foi desenhado para uma (`useEffect(…, [])` abre um socket
+por montagem).
+
+🔴 **E a trava do sino vale MAIS agora.** O `if (corpo.tipo !== "notificacao")
+return` continua onde estava: é o que impede uma barra que anda dezenas de
+vezes de virar dezenas de linhas no sino. **Publicar é uma coisa, alimentar o
+sino é outra** — quem alargar o canal de novo tem que passar por lá.
+
+⚠️ Não existe assinante genérico, de propósito: um ouvinte "de tudo" desfaria
+essa trava por fora.
+
+### ⚠️ O hook ouve o canal desde a montagem, não ao clicar em "Importar"
+
+A primeira mensagem de progresso (`feitos: 0`) sai antes de o `await` devolver
+o controle. Assinar no clique perderia justamente ela — a barra começaria do
+segundo pulso, ou de lugar nenhum numa importação curta.
+
+E o progresso nasce em zero no próprio hook, para a barra existir mesmo com o
+WebSocket fechado (aí ela fica indeterminada, em vez de ausente).
+
+### ⚠️ A guarda de corrida da busca
+
+Buscar, corrigir a OAB e buscar de novo pode fazer a primeira resposta chegar
+depois — e a tela mostraria a lista da inscrição errada, sem nada indicando
+isso. O hook descarta resposta de busca que não é a mais recente.
+
+### O que o Chrome real pegou, e a suíte não
+
+A barra ficava parada: a lambda `api` não tinha `WEBSOCKET_ENDPOINT`, então
+`publicar` não sabia para onde mandar. Como publicar progresso é best-effort,
+nada quebrava — a importação gravava tudo e respondia 201.
+
+⚠️ **E quase escapou do Chrome também.** A barra some rápido demais no
+ambiente local (45 processos gravam em menos de 1,5s), então olhar a tela não
+bastava: foi preciso capturar os **quadros do WebSocket** com
+`pg.on("websocket", …)`.
+
+É o tipo de coisa que jsdom nunca veria, e que "abrir e olhar" também não.
