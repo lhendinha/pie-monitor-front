@@ -42,6 +42,49 @@ via `?processo=&comunicacao=`) já implementados -- ver seção 3.
 
 ## 3) Decisões importantes já tomadas
 
+### Toda mudança nasce com o teste que a cobre (26/08/2026)
+
+**Regra**: nenhuma mudança ou adição -- componente, campo, filtro, correção --
+entra sem teste que a cubra. Não é "se der tempo": é parte da mudança, no mesmo
+commit.
+
+**Por que está escrito.** Os defeitos deste front passaram por não terem par, e
+nenhum foi descuido:
+
+- `status.warn.text` apontava para um token que **não existia**; caía em `ink`,
+  passava no teste de contraste com 14,81:1 e a cor estava visualmente errada.
+  Só a **cor computada em Chrome real** revelou;
+- a verificação do documento de outro subgrupo afirmava a ausência **antes de a
+  lista carregar** -- um teste que passava sem provar nada;
+- três números da home não eram clicáveis porque as telas "ainda não
+  existiam", e passaram a existir sem ninguém voltar lá.
+
+**O que "cobrir" significa aqui**, e é mais que "existe um teste":
+
+- **O par negativo.** Afirmar que aparece não prova nada sozinho; afirme também
+  o que NÃO deve aparecer -- e **depois de a tela ter carregado**, senão o teste
+  passa por chegar cedo demais.
+- **A mutação.** Reverter a mudança e confirmar que **só** o teste dela falha.
+- **A concordância**, quando duas telas mostram a mesma coisa: cada uma pode
+  estar "certa" sozinha e diferente da outra.
+- **O guarda mecânico**, quando a regra depende de lembrar de repetir algo --
+  ver `src/constants/limites.test.ts`, que varre os `maxLength`.
+
+**O que NÃO precisa de teste novo**: o que um guarda existente já pega sozinho.
+Duplicar guarda é ruído, não cobertura.
+
+🔴 **Cobrir não é o mesmo que passar, e aqui isso é literal.** `jsdom` e Chrome
+**headless** já deram "passou" em tela quebrada. Interface se confere em
+**Chrome com janela**, pelos scripts `verificar-*.mjs` -- e o que se mede é o
+resultado computado (cor, tamanho, posição), não a existência do elemento.
+
+⚠️ **Quando uma mudança não puder ser coberta, isso se escreve** -- aqui,
+nominalmente, com o motivo. Lacuna conhecida é dívida; lacuna silenciosa é
+armadilha. Um caso vivo: `constants/notificacoes.ts` espelha à mão os
+`NOTIFICACAO_*` da API, e **nenhum teste atravessa os dois runtimes**. A rede é
+a degradação graciosa -- `frasePrincipal` cai no título cru para tipo
+desconhecido, `destinoDaNotificacao` devolve `null` para alvo desconhecido.
+
 ### Todo número da home leva à lista que ele contou (26/08/2026)
 
 Três números do "Resumo rápido" não eram clicáveis enquanto os vizinhos
