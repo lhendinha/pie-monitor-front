@@ -111,7 +111,7 @@ export default function PreviaDaImportacao({
             acontece se a pessoa confirmar, e é o número que ela confere antes
             de clicar. "Novos" descreveria a lista; este descreve a ação.
 
-            ⚠️ E "NESSE SUBGRUPO" no fim, porque sem isso o cartão respondia
+            ⚠️ E "NESTE SUBGRUPO" no fim, porque sem isso o cartão respondia
             uma pergunta mais larga do que a que ele responde: com 21 de 23
             já acompanhados em outro lugar, "21 seriam cadastrados" se lê
             como "21 são novos no sistema" -- e nenhum é.
@@ -126,8 +126,8 @@ export default function PreviaDaImportacao({
           numero={marcados.size}
           rotulo={concordar(
             marcados.size,
-            "seria cadastrado nesse subgrupo",
-            "seriam cadastrados nesse subgrupo",
+            "seria cadastrado neste subgrupo",
+            "seriam cadastrados neste subgrupo",
           )}
           tom="bom"
         />

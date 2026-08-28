@@ -2348,6 +2348,28 @@ com nada. A medida saiu de um clone posto no `body` da própria demo.
 ⚠️ **Ao mudar de casa, o NOME muda junto**: fora do arquivo de origem, `Aviso`,
 `Resumo`, `TONS` e `CORES` não dizem de que tela são.
 
+### O responsável é OPCIONAL na importação — e o desenho diverge
+
+⚠️ **O campo NÃO tem asterisco, e isso é deliberado.** O desenho põe um
+`<span class="obrigatorio">*</span>` ali; a tela está de acordo com o SERVIDOR,
+que nunca recusa lista vazia:
+
+- vazia vira `[quem importa]` — **mas só se essa pessoa for membro** do
+  subgrupo de destino;
+- não sendo, os processos nascem **sem responsável**, e é assim de propósito:
+  `manager`+ age em subgrupo que não participa, e um default incondicional
+  faria o servidor pôr alguém que o próprio validador recusaria
+  (`membros_service.responsaveis_na_criacao` explica o fluxo que isso
+  quebraria).
+
+🔴 Então **não "corrigir" a tela para exigir o campo** só porque o desenho o
+marca: a tela promete o que a API cumpre. Exigir passaria a ser decisão de
+produto, e teria de valer nos DOIS lados.
+
+⚠️ A consequência de importar sem responsável já é visível na listagem: os
+avisos vão para o subgrupo inteiro pelo fallback, e a coluna mostra
+`Sem responsável` — que ali não é campo vazio, é marca de item órfão.
+
 ### ➡️ Frente registrada: o nome acessível das setas de página
 
 `SetaPagina` põe "Página anterior" no `title`, mas o conteúdo do botão é o glifo

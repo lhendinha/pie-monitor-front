@@ -102,7 +102,7 @@ describe("a fileira de cartões", () => {
     montar([achado("1")]);
 
     expect(screen.getByText("encontrado")).toBeInTheDocument();
-    expect(screen.getByText("seria cadastrado nesse subgrupo")).toBeInTheDocument();
+    expect(screen.getByText("seria cadastrado neste subgrupo")).toBeInTheDocument();
     expect(screen.getByText("já estão neste subgrupo")).toBeInTheDocument();
     expect(screen.queryByText("encontrados")).not.toBeInTheDocument();
   });
@@ -111,7 +111,7 @@ describe("a fileira de cartões", () => {
     montar(muitos(23));
 
     expect(screen.getByText("encontrados")).toBeInTheDocument();
-    expect(screen.getByText("seriam cadastrados nesse subgrupo")).toBeInTheDocument();
+    expect(screen.getByText("seriam cadastrados neste subgrupo")).toBeInTheDocument();
   });
 });
 
