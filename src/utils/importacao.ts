@@ -1,4 +1,4 @@
-import type { ErroDaBuscaPorOab, ProcessoEncontrado } from "../types";
+import type { ErroDaBuscaPorOab, EstadoDoAchado, ProcessoEncontrado } from "../types";
 
 /** O que impede a busca de sair.
  *
@@ -53,6 +53,18 @@ export function rotuloDeImportar(quantos: number): string {
   return `Importar ${quantos} ${quantos === 1 ? "processo" : "processos"}`;
 }
 
+/** O rótulo do campo de responsável, que acompanha a SELEÇÃO.
+ *
+ * ⚠️ Três formas, e a do meio é a que denuncia formulário mal feito:
+ * "Responsável pelos 1 processos". Com zero marcado o número sai da frase --
+ * "Responsável por 0 processos" descreve um estado que ninguém pediu.
+ */
+export function rotuloDeResponsavel(quantos: number): string {
+  if (quantos === 0) return "Responsável";
+  if (quantos === 1) return "Responsável pelo processo";
+  return `Responsável pelos ${quantos} processos`;
+}
+
 /** O que dizer depois de gravar.
  *
  * 🔴 **`ja_existiam` não é falha**, e a frase não pode misturá-lo com
@@ -77,4 +89,67 @@ export function resumoDaImportacao(r: {
     );
   }
   return partes.join(" · ");
+}
+
+
+/** Qual etiqueta a linha mostra. Os estados NÃO são exclusivos.
+ *
+ * 🔴 Um processo pode estar no destino **e** em Civil **e** num subgrupo
+ * invisível, tudo ao mesmo tempo -- e a linha mostra UMA etiqueta. A ordem:
+ *
+ * 1. `ja_existe` ganha de tudo: é o único que muda o que dá para fazer, e
+ *    omiti-lo faria a caixa parecer marcável quando o servidor vai recusar;
+ * 2. o nome de um subgrupo visível, porque entre dizer *onde* e dizer *que
+ *    existe*, dizer onde é melhor;
+ * 3. "outro subgrupo", o que sobra;
+ * 4. "novo".
+ */
+export function estadoDoAchado(p: ProcessoEncontrado): EstadoDoAchado {
+  if (p.ja_existe) return "aqui";
+  if (p.noutros_subgrupos.length > 0) return "noutro";
+  if (p.em_outro_subgrupo) return "em_outro";
+  return "novo";
+}
+
+/** O texto da etiqueta -- os QUATRO estados têm um, "novo" inclusive.
+ *
+ * ⚠️ Deixar a linha nova sem etiqueta parecia tirar ruído, e tirava
+ * informação: numa coluna chamada "Situação", célula vazia se lê como dado
+ * que faltou, não como "nada a declarar". A tela é de conferência, e a
+ * pessoa precisa ver que o sistema OLHOU para aquela linha.
+ */
+export function etiquetaDoAchado(p: ProcessoEncontrado): string {
+  switch (estadoDoAchado(p)) {
+    case "aqui":
+      return "já cadastrado aqui";
+    case "noutro":
+      /* Vírgula e não "e": a lista pode ter três, e "Civil, Criminal e
+         Trabalhista" numa etiqueta de tabela quebra a linha. */
+      return `já está em ${p.noutros_subgrupos.join(", ")}`;
+    case "em_outro":
+      return "já acompanhado por outro subgrupo";
+    default:
+      return "novo";
+  }
+}
+
+/** Quantos já são acompanhados por algum outro subgrupo.
+ *
+ * 🔴 Conta os DOIS casos -- com nome e sem. Contar só `noutros_subgrupos`
+ * diria "3" numa lista com cinco etiquetas cinza, e o número contradiria a
+ * tela que está logo abaixo dele.
+ */
+export function quantosNoutroSubgrupo(processos: ProcessoEncontrado[]): number {
+  return processos.filter((p) => p.noutros_subgrupos.length > 0 || p.em_outro_subgrupo).length;
+}
+
+/** Singular de verdade nos rótulos do resumo.
+ *
+ * ⚠️ Os rótulos eram fixos ("encontrados", "novos"), então com um processo a
+ * fileira dizia "1 encontrados" -- enquanto o botão logo abaixo já acertava
+ * ("Importar 1 processo"). Errar a concordância em metade da tela parece
+ * descuido justamente onde ela pede confiança.
+ */
+export function concordar(n: number, singular: string, plural: string): string {
+  return n === 1 ? singular : plural;
 }

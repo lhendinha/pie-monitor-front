@@ -8,6 +8,7 @@ import { listarMembrosDoSubgrupo } from "../../../../services/api";
 import { getEmail } from "../../../../services/auth";
 import { qk } from "../../../../services/queryKeys";
 import { resumoDaImportacao } from "../../../../utils/importacao";
+import AvisoDaImportacao from "../AvisoDaImportacao";
 import FormularioDeOab from "../FormularioDeOab";
 import PreviaDaImportacao from "../PreviaDaImportacao";
 
@@ -108,17 +109,17 @@ export default function ImportarPorOab({
   return (
     <Cartao>
       {etapa === "vazio" && (
-        <Aviso titulo={`Nenhum processo encontrado.`}>
+        <AvisoDaImportacao titulo={`Nenhum processo encontrado.`}>
           Isso acontece quando o número ou a UF estão trocados, ou quando a OAB
           não tem comunicações publicadas.
-        </Aviso>
+        </AvisoDaImportacao>
       )}
 
       {etapa === "erro" && (
         /* 🔴 Erro é diferente de "nada encontrado": aqui a mensagem vem do
            servidor, que distingue PJe fora do ar de recusa por excesso -- e
            as duas pedem espera diferente. */
-        <Aviso titulo="Não deu para concluir">{erro}</Aviso>
+        <AvisoDaImportacao titulo="Não deu para concluir">{erro}</AvisoDaImportacao>
       )}
 
       <Campo
@@ -149,25 +150,5 @@ export default function ImportarPorOab({
         periodoAberto={etapa === "vazio"}
       />
     </Cartao>
-  );
-}
-
-function Aviso({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <Box
-      mb="18px"
-      p="14px 16px"
-      bg="bg.warning"
-      border="1px solid"
-      borderColor="border.warning"
-      borderRadius="10px"
-    >
-      <Text fontSize="14px" fontWeight="800" mb="4px">
-        {titulo}
-      </Text>
-      <Text fontSize="13px" color="fg.muted">
-        {children}
-      </Text>
-    </Box>
   );
 }

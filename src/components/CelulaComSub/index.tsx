@@ -10,6 +10,10 @@ interface CelulaComSubProps {
    * - `destaque`: a primeira coluna de uma tabela de lista, que o artifact
    *   escreve como `<td style="font-weight:700">`. */
   variante?: "padrao" | "processo" | "destaque";
+  /** Largura fixa da coluna -- só pra coluna de controle (a caixa de marcar
+   * da prévia da importação), que sem isto ganharia a mesma fatia das
+   * colunas de texto. As demais se distribuem pelo conteúdo. */
+  largura?: string;
 }
 
 /** Célula de duas linhas: o valor e um detalhe menor embaixo.
@@ -21,11 +25,17 @@ interface CelulaComSubProps {
  * Medidas do artifact: `.tbl td` 13px 14px com divisória em `line-soft`,
  * `.cell-sub` 12px em `slate-2` com 2px de respiro.
  */
-export default function CelulaComSub({ principal, sub, variante = "padrao" }: CelulaComSubProps) {
+export default function CelulaComSub({
+  principal,
+  sub,
+  variante = "padrao",
+  largura,
+}: CelulaComSubProps) {
   const processo = variante === "processo";
   const forte = processo || variante === "destaque";
   return (
     <Table.Cell
+      w={largura}
       verticalAlign="top"
       p="13px 14px"
       borderBottomWidth="1px"

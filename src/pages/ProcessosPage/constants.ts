@@ -1,4 +1,4 @@
-import type { FiltrosProcessos } from "../../types";
+import type { EstadoDoAchado, FiltrosProcessos } from "../../types";
 
 // ultima_verificacao muda por um job no backend, sem ação de usuário -- e
 // um apelido editado por outra pessoa também só apareceria aqui ao trocar
@@ -53,3 +53,62 @@ export const SEM_RESPONSAVEL = "__sem__";
 /** "eu", resolvido no front pro e-mail da sessão. O servidor não precisa
  * saber o que "eu" significa. */
 export const RESPONSAVEL_EU = "__eu__";
+
+/** Colunas da prévia da importação por OAB, na ordem do desenho.
+ *
+ * A primeira é a de marcar: sem nome, mas existe para a contagem de colunas
+ * bater com a das células -- é o que mantém valor embaixo de título. */
+export const COLUNAS_DA_PREVIA = ["", "Processo", "Tribunal", "Comunicações", "Situação"] as const;
+
+/** Um `BotaoNu` com cara de link, nas medidas do `.link-acao` do desenho:
+ * 12,5px/700 na cor da marca, e o escurecido no hover.
+ *
+ * ⚠️ `BotaoNu`, não `BotaoDeTexto`: aquele é o "← Voltar" das telas de
+ * detalhe, um `Button` do Chakra com 9px de padding vertical -- 40px de
+ * altura contra os 17px do desenho. O errado era o uso, não ele.
+ *
+ * ⚠️ Sem sublinhado: ele é a marca do `.link-periodo`, que abre um bloco de
+ * campos. Estes três ("Marcar todos", "Desmarcar todos", "Escolher um
+ * período") agem sobre o que já está na tela.
+ */
+export const ESTILO_DE_LINK = {
+  color: "fg.brand",
+  fontSize: "12.5px",
+  fontWeight: 700,
+  _hover: { color: "brand.dark" },
+} as const;
+
+/** O par de cores de cada cartão da fileira da prévia (`.bloco` do desenho).
+ *
+ * 🔴 A cor é o que separa as três respostas: verde "entra", âmbar "não
+ * entra", e azul o RECORTE dos que entram -- nem uma coisa nem outra. O
+ * primeiro cartão fica neutro porque ele não responde nada: é o total.
+ *
+ * ⚠️ Fundo e borda vêm do semáforo do projeto (`status.*`), não dos
+ * `bg.warning`/`fg.success` do Chakra: aqueles são laranja e verde da paleta
+ * DELE, e o texto sai fora da régua de contraste que `theme/index.ts`
+ * documenta -- só as variantes `.text` passam em 4,5:1.
+ */
+export const TONS_DO_CARTAO_DE_RESUMO = {
+  neutro: {},
+  bom: { bg: "status.good.bg", borderColor: "status.good", cor: "status.good.text" },
+  atencao: { bg: "status.warn.bg", borderColor: "status.warn", cor: "status.warn.text" },
+  marca: { bg: "bg.brand.subtle", borderColor: "fg.brand", cor: "brand.darker" },
+} as const;
+
+/** A cor de cada estado do achado -- TRÊS cores para quatro estados.
+ *
+ * 🔴 **A cor separa "não dá" de "dá"**, não graus de impedimento. Âmbar só no
+ * que o servidor recusa; os dois do meio dividem o cinza porque os dois dizem
+ * "dá, mas saiba disto" -- cores diferentes ali sugeririam que um impede mais
+ * que o outro, quando nenhum impede. Verde no que entra sem ressalva.
+ */
+export const CORES_DA_ETIQUETA_DE_SITUACAO: Record<
+  EstadoDoAchado,
+  { bg: string; color: string }
+> = {
+  aqui: { bg: "status.warn.bg", color: "status.warn.text" },
+  noutro: { bg: "bg.muted", color: "fg.muted" },
+  em_outro: { bg: "bg.muted", color: "fg.muted" },
+  novo: { bg: "status.good.bg", color: "status.good.text" },
+};

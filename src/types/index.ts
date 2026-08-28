@@ -147,10 +147,32 @@ export interface ProcessoEncontrado {
   /** A classe processual, já normalizada pelo servidor. O PJe manda
    * `APELAçãO CíVEL`, com os acentos em minúscula. */
   apelido: string;
+  /** A sigla do tribunal (`TJRS`, `TRF4`). Vazia quando o PJe não mandou.
+   *
+   * ⚠️ Vale a coluna própria porque uma OAB cruza justiças: quatro tribunais
+   * numa inscrição só, na amostra real. */
+  tribunal: string;
   comunicacoes: number;
-  /** 🔴 Neste SUBGRUPO, não no grupo: o mesmo número vive legitimamente em
-   * vários, e importar para outro é cadastro válido. */
+  /** 🔴 Neste SUBGRUPO, e é o único dos três que impede importar -- só aqui o
+   * servidor recusa. */
   ja_existe: boolean;
+  /** Os NOMES dos outros subgrupos onde ele está **e que esta pessoa vê**.
+   *
+   * ⚠️ Nunca inclui o subgrupo de destino: para aquele existe `ja_existe`, e
+   * repeti-lo aqui faria a tela dizer "já está em Destino, Civil" sobre o
+   * subgrupo em que se está importando. */
+  noutros_subgrupos: string[];
+  /** Está em algum subgrupo que esta pessoa **não** vê.
+   *
+   * 🔴 Booleano, e é a proteção: uma contagem já diria quanto trabalho existe
+   * fora do alcance dela. Isto responde "existe?" e nada mais.
+   *
+   * ⚠️ **Não é excludente com `noutros_subgrupos`** -- um processo pode estar
+   * em Civil (visível) e em Criminal (não). Some a etiqueta, não o dado: o
+   * cartão do resumo conta os dois casos.
+   *
+   * ⚠️ Sempre `false` para `admin`+, que enxerga todos os subgrupos do grupo. */
+  em_outro_subgrupo: boolean;
 }
 
 /** O que `POST /subgrupos/{id}/processos/buscar-por-oab` devolve. */
@@ -164,6 +186,19 @@ export interface PreviaDaImportacao {
   atingiu_o_teto: boolean;
   processos: ProcessoEncontrado[];
 }
+
+/** Em que situação um achado da busca está -- e é UMA, não várias.
+ *
+ * 🔴 Os quatro casos NÃO são exclusivos no dado: um processo pode estar no
+ * destino **e** em Civil **e** num subgrupo invisível. Este tipo é o
+ * resultado da precedência (ver `estadoDoAchado`), e existe para que a tela
+ * decida etiqueta, cor e trava a partir de um valor só.
+ *
+ * ⚠️ Mora aqui, e não em `utils/importacao`: é o vocabulário que a página, a
+ * etiqueta e os testes compartilham. Tipo com mais de um dono vai para
+ * `types` -- a função que o produz é que fica no util.
+ */
+export type EstadoDoAchado = "aqui" | "noutro" | "em_outro" | "novo";
 
 /** O que impede a busca por OAB de sair, e onde pintar o erro.
  *

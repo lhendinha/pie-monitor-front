@@ -1,15 +1,31 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  concordar,
   erroDaBusca,
+  estadoDoAchado,
+  etiquetaDoAchado,
+  quantosNoutroSubgrupo,
   resumoDaImportacao,
   rotuloDeImportar,
   selecionaveis,
 } from "./importacao";
 import type { ProcessoEncontrado } from "../types";
 
-function achado(numero: string, ja_existe = false): ProcessoEncontrado {
-  return { numero_processo: numero, apelido: "Execução Fiscal", comunicacoes: 3, ja_existe };
+function achado(
+  numero: string,
+  extra: Partial<ProcessoEncontrado> = {},
+): ProcessoEncontrado {
+  return {
+    numero_processo: numero,
+    apelido: "Execução Fiscal",
+    tribunal: "TJRS",
+    comunicacoes: 3,
+    ja_existe: false,
+    noutros_subgrupos: [],
+    em_outro_subgrupo: false,
+    ...extra,
+  };
 }
 
 describe("o que impede a busca de sair", () => {
@@ -66,13 +82,13 @@ describe("o que dá para marcar", () => {
   it("só os que ainda não estão no subgrupo", () => {
     /* Importar nunca sobrescreve: uma caixa que não faz nada é pior que uma
        caixa ausente. */
-    const lista = [achado("1"), achado("2", true), achado("3")];
+    const lista = [achado("1"), achado("2", { ja_existe: true }), achado("3")];
 
     expect(selecionaveis(lista)).toEqual(["1", "3"]);
   });
 
   it("lista sem nada novo devolve vazio", () => {
-    expect(selecionaveis([achado("1", true)])).toEqual([]);
+    expect(selecionaveis([achado("1", { ja_existe: true })])).toEqual([]);
   });
 });
 
@@ -119,5 +135,106 @@ describe("o resumo depois de gravar", () => {
     expect(resumoDaImportacao({ cadastrados: 1, ja_existiam: 1, falharam: ["x"] })).toBe(
       "1 processo importado · 1 já estava aqui · 1 não entrou",
     );
+  });
+});
+
+
+describe("qual etiqueta a linha mostra", () => {
+  it("o novo TAMBÉM tem etiqueta", () => {
+    /* ⚠️ Já foi vazio, e o vazio era pior: numa coluna chamada "Situação",
+       célula em branco se lê como dado que faltou. Os quatro estados
+       respondem. */
+    expect(estadoDoAchado(achado("1"))).toBe("novo");
+    expect(etiquetaDoAchado(achado("1"))).toBe("novo");
+  });
+
+  it("nenhum estado fica sem texto", () => {
+    /* 🔴 O guarda do conjunto: a versão anterior devolvia "" no `default`, e
+       um estado novo cairia lá calado -- sem etiqueta e sem teste falhando. */
+    const todos = [
+      achado("1", { ja_existe: true }),
+      achado("2", { noutros_subgrupos: ["Civil"] }),
+      achado("3", { em_outro_subgrupo: true }),
+      achado("4"),
+    ];
+
+    expect(todos.map(etiquetaDoAchado).filter((t) => !t)).toEqual([]);
+  });
+
+  it("o do destino ganha de todos", () => {
+    /* 🔴 É o único que muda o que dá para fazer. Se outro estado o
+       escondesse, a caixa pareceria marcável e o servidor recusaria. */
+    const p = achado("1", {
+      ja_existe: true,
+      noutros_subgrupos: ["Civil"],
+      em_outro_subgrupo: true,
+    });
+
+    expect(estadoDoAchado(p)).toBe("aqui");
+    expect(etiquetaDoAchado(p)).toBe("já cadastrado aqui");
+  });
+
+  it("o NOME ganha do genérico", () => {
+    /* Entre dizer onde e dizer que existe, dizer onde é melhor. */
+    const p = achado("1", { noutros_subgrupos: ["Civil"], em_outro_subgrupo: true });
+
+    expect(estadoDoAchado(p)).toBe("noutro");
+    expect(etiquetaDoAchado(p)).toBe("já está em Civil");
+  });
+
+  it("vários nomes entram na mesma etiqueta", () => {
+    const p = achado("1", { noutros_subgrupos: ["Civil", "Criminal"] });
+
+    expect(etiquetaDoAchado(p)).toBe("já está em Civil, Criminal");
+  });
+
+  it("🔴 sem nome, diz que existe sem dizer onde", () => {
+    /* O caso de quem não enxerga o subgrupo. A frase informa para a pessoa
+       não cadastrar às cegas, e não revela um subgrupo que a listagem de
+       Processos esconde dela. */
+    const p = achado("1", { em_outro_subgrupo: true });
+
+    expect(estadoDoAchado(p)).toBe("em_outro");
+    expect(etiquetaDoAchado(p)).toBe("já acompanhado por outro subgrupo");
+    expect(etiquetaDoAchado(p)).not.toContain("Criminal");
+  });
+});
+
+describe("quantos já são acompanhados por outro subgrupo", () => {
+  it("🔴 conta os DOIS casos, com nome e sem", () => {
+    /* Contar só os com nome diria "1" numa lista com duas etiquetas cinza --
+       e o número contradiria a tela logo abaixo dele. */
+    const lista = [
+      achado("1"),
+      achado("2", { noutros_subgrupos: ["Civil"] }),
+      achado("3", { em_outro_subgrupo: true }),
+      achado("4", { ja_existe: true }),
+    ];
+
+    expect(quantosNoutroSubgrupo(lista)).toBe(2);
+  });
+
+  it("não conta duas vezes quem está nos dois", () => {
+    const lista = [achado("1", { noutros_subgrupos: ["Civil"], em_outro_subgrupo: true })];
+
+    expect(quantosNoutroSubgrupo(lista)).toBe(1);
+  });
+
+  it("zero quando ninguém está", () => {
+    expect(quantosNoutroSubgrupo([achado("1"), achado("2")])).toBe(0);
+  });
+});
+
+describe("a concordância dos rótulos", () => {
+  it("⚠️ singular com um — o defeito que a tela real tinha", () => {
+    /* Os rótulos do resumo eram fixos, então com um processo a fileira dizia
+       "1 encontrados" enquanto o botão logo abaixo dizia "Importar 1
+       processo". */
+    expect(concordar(1, "encontrado", "encontrados")).toBe("encontrado");
+  });
+
+  it("plural com zero e com muitos", () => {
+    expect(concordar(0, "encontrado", "encontrados")).toBe("encontrados");
+    expect(concordar(45, "encontrado", "encontrados")).toBe("encontrados");
   });
 });
