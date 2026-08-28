@@ -14,10 +14,15 @@ export function lerParametroDaUrl<T extends ValorDaUrl>(params: URLSearchParams,
 
   if (typeof inicial === "number") {
     const n = Number(cru);
-    /* ⚠️ `?pagina=abc` cai no padrão em vez de virar `NaN`: a URL é editável
-       à mão e chega colada de qualquer lugar. Uma listagem não pode quebrar
-       por causa de um parâmetro torto. */
-    return (Number.isFinite(n) ? n : inicial) as T;
+    /* ⚠️ INTEIRO, e nada além disso. A URL é editável à mão e chega colada de
+       qualquer lugar: `?pagina=abc` e `?pagina=1.5` caem no padrão em vez de
+       virarem `NaN` ou fração (que o servidor recusa com 422, e a tela leria
+       como falha do sistema).
+
+       🔴 A FAIXA não mora aqui. Tentei "inteiro >= 1" e quebrei o filtro
+       `dias` do Histórico, cujo valor neutro é 0: quem sabe o intervalo
+       válido é quem declara o estado -- ver `usePaginacaoDaLista`. */
+    return (Number.isInteger(n) ? n : inicial) as T;
   }
   if (typeof inicial === "boolean") return (cru === "1") as T;
   return cru as T;

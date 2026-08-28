@@ -2573,3 +2573,40 @@ Medido: o React Router 7 **estoura** com dois `<Router>` aninhados, e dezesseis
 arquivos já trazem o seu. Por isso não dá para pôr o roteador dentro de
 `renderComProviders` -- nasceu `renderComRota(ui, rota)`, que também aceita a
 rota inicial: `"/processos?pagina=2"` é como se testa que a URL manda na lista.
+
+### URL torta não derruba a tela (28/08/2026)
+
+A pergunta *"e se eu colocar números inválidos?"* achou quatro buracos. Medido
+ANTES, com a URL editada à mão:
+
+| URL | o que acontecia |
+|---|---|
+| `?pagina=abc` | ✅ caía na página 1 |
+| `?pagina=-3`, `?pagina=1.5` | 🔴 422, e a tela dizia "Não foi possível carregar os processos" |
+| `?tamanho=9999` | 🔴 422 (o servidor tem `le=100`) |
+| `?pagina=999` | ⚠️ tabela vazia com a contagem dizendo 45 |
+
+Um 422 lido como falha do sistema é pior que o parâmetro torto: a pessoa
+conclui que o Argos está fora do ar.
+
+🔴 **A faixa não mora no codec.** Tentei "inteiro >= 1" em
+`lerParametroDaUrl` e quebrei o filtro `dias` do Histórico, cujo valor neutro
+é 0. O codec garante que é INTEIRO; quem conhece o intervalo válido é quem
+declara o estado -- `usePaginacaoDaLista` valida página (>= 1) e tamanho
+(tem de estar entre as opções que o seletor oferece).
+
+🔴 **Página fora da faixa volta para a primeira, e isso mora no `Pagination`.**
+Não é só URL digitada: filtrar estando na página 3 encolhe o conjunto e produz
+o mesmo estado. O componente já recebe página, total e o setter, e é a única
+peça que as sete listagens dividem -- não precisou de hook nem de chamada por
+tela.
+
+⚠️ E as guardas `processos.length > 0 &&` saíram de volta do `<Pagination>`:
+ele já se esconde sozinho quando não há o que paginar, e a guarda escondia
+justamente o caso em que ele PRECISA aparecer -- lista vazia com total cheio,
+onde a pessoa ficava presa sem botão.
+
+⚠️ **Um teste meu passou por engano aqui.** `toHaveBeenLastCalledWith({pagina:
+1})` casava com a consulta do TOTAL, que sempre pede a página 1 -- a mutação
+que desligava a correção não o derrubava. O desempate é `tamanhoPagina` na
+asserção.

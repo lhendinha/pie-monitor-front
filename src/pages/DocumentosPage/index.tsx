@@ -2,6 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -19,7 +20,6 @@ import {
   Pagination,
   Tabela,
 } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { listarDocumentos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -39,8 +39,7 @@ import type { RespostaDeDocumentosPaginada } from "../../types/respostas";
  * arranjo de Processos e Clientes.
  */
 export default function DocumentosPage() {
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   const [modalAberto, setModalAberto] = useState(false);
   const navegar = useNavigate();
@@ -64,6 +63,7 @@ export default function DocumentosPage() {
 
   const documentos = query.data?.documentos || [];
   const total = query.data?.total ?? 0;
+
   const buscando = query.isPlaceholderData || buscaInput !== busca;
 
   return (
@@ -157,7 +157,11 @@ export default function DocumentosPage() {
               ))}
             </Tabela>
 
-            {documentos.length > 0 && (
+          {/* ⚠️ Sem guarda de "tem linha": o `Pagination` já se esconde
+              sozinho quando não há o que paginar (`total <= menor tamanho`),
+              e a guarda escondia justamente o caso em que ele PRECISA
+              aparecer -- página fora da faixa, com a lista vazia e o total
+              cheio. Era ali que a pessoa ficava presa sem botão. */}
               <Pagination
                 pagina={pagina}
                 totalPaginas={query.data?.total_paginas ?? 1}
@@ -166,7 +170,7 @@ export default function DocumentosPage() {
                 onMudarPagina={setPagina}
                 onMudarTamanho={setTamanhoPagina}
               />
-            )}
+
           </CartaoDeTabela>
         </AreaAtualizando>
       )}

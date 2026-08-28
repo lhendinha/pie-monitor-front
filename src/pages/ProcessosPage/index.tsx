@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { Box } from "@chakra-ui/react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -16,7 +16,6 @@ import {
   Pagination,
   Esqueleto,
 } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { INTERVALO_POLLING_PROCESSOS_MS } from "./constants";
 import CabecalhoProcessos from "./components/CabecalhoProcessos";
 import TabelaProcessos from "./components/TabelaProcessos";
@@ -62,8 +61,7 @@ export default function ProcessosPage() {
     | null;
   const filtrosIniciais = navegacao?.filtros;
 
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
 
   const f = useFiltrosProcessos(filtrosIniciais, navegacao?.processoEmDestaque);
   const apoio = useCatalogosDeProcesso();
@@ -125,6 +123,7 @@ export default function ProcessosPage() {
   const processos = processosQuery.data?.processos || [];
   const total = processosQuery.data?.total ?? 0;
   const totalPaginas = processosQuery.data?.total_paginas ?? 0;
+
   const carregando = processosQuery.isPending;
 
   function invalidarProcessos() {
@@ -213,7 +212,11 @@ export default function ProcessosPage() {
           {/* 🔴 Sem `!f.filtroAtivo`: o servidor pagina o filtro desde a
               Fase 1a, e esconder a barra tornava inalcançável tudo que
               passasse da primeira página do conjunto filtrado. */}
-          {processos.length > 0 && (
+          {/* ⚠️ Sem guarda de "tem linha": o `Pagination` já se esconde
+              sozinho quando não há o que paginar (`total <= menor tamanho`),
+              e a guarda escondia justamente o caso em que ele PRECISA
+              aparecer -- página fora da faixa, com a lista vazia e o total
+              cheio. Era ali que a pessoa ficava presa sem botão. */}
             <Pagination
               pagina={pagina}
               totalPaginas={totalPaginas}
@@ -222,7 +225,7 @@ export default function ProcessosPage() {
               onMudarPagina={setPagina}
               onMudarTamanho={setTamanhoPagina}
             />
-          )}
+
         </CartaoDeTabela>
       )}
 

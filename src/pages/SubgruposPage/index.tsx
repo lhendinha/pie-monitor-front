@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -13,7 +13,6 @@ import {
   Pagination,
   useToast,
 } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import {
   atualizarSubgrupo,
   listarSubgrupos,
@@ -51,8 +50,7 @@ import type {
  * responde sobre pessoas. Cada aba com um assunto.
  */
 export default function SubgruposPage() {
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const [renomeandoId, setRenomeandoId] = useState<string | null>(null);
   /** Quem pediu pra excluir. Enquanto está aqui, a tela pergunta ao
    * servidor o que ainda tem dentro -- e só então decide se mostra o
@@ -84,6 +82,7 @@ export default function SubgruposPage() {
   const subgrupos = query.data?.subgrupos || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
+
 
   /** O servidor recusa excluir o último subgrupo de quem pede -- qualquer
    * papel, `admin` e `super_admin` inclusive. A resposta vem DELE, junto

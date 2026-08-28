@@ -2,6 +2,7 @@ import { Box } from "@chakra-ui/react";
 import { useState } from "react";
 
 import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +16,6 @@ import {
   Esqueleto,
   Pagination,
 } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import {
   listarAtendimentos,
@@ -42,8 +42,7 @@ import type {
  * atendimento não é endereçável só pelo id.
  */
 export default function AtendimentosPage() {
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   /** A Área de trabalho abre esta tela já filtrada: clicar em "Atendimentos
    * em andamento" tem que mostrar exatamente os que geraram aquele número.
@@ -100,6 +99,7 @@ export default function AtendimentosPage() {
 
   const atendimentos = query.data?.atendimentos || [];
   const total = query.data?.total ?? 0;
+
   const temFiltro = Boolean(busca) || status !== STATUS_TODOS;
 
   /* 🔴 UMA escrita para os dois filtros. Chamados em sequência, cada

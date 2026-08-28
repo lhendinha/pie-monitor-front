@@ -672,6 +672,52 @@ describe("o estado da lista mora na URL", () => {
     );
   });
 
+  it("🔴 página que NÃO EXISTE volta para a primeira", async () => {
+    /* `?pagina=99` numa lista de 3 páginas -- e o mesmo estado acontece por
+       caminho legítimo: filtrar estando na página 3 encolhe o conjunto. Sem
+       a correção a pessoa vê tabela vazia com a contagem cheia, e quando o
+       resultado cabe numa página a barra some: não sobra nem o botão "1". */
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO], total: 30, total_paginas: 3,
+    });
+    renderComProviders(
+      <MemoryRouter initialEntries={["/processos?pagina=99"]}>
+        <ProcessosPage />
+      </MemoryRouter>,
+    );
+
+    /* ⚠️ `tamanhoPagina` entra na asserção de propósito: a tela dispara uma
+       SEGUNDA consulta só para o total, com `pagina: 1, tamanhoPagina: 1`.
+       Sem esse desempate o teste passava pela consulta errada -- e a mutação
+       que desliga a correção não o derrubava. */
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ pagina: 1, tamanhoPagina: 10 }),
+      ),
+    );
+  });
+
+  it.each([
+    ["negativa", "?pagina=-3"],
+    ["fracionária", "?pagina=1.5"],
+    ["texto", "?pagina=abc"],
+    ["tamanho acima do teto", "?tamanho=9999"],
+  ])("⚠️ URL torta (%s) cai no padrão, sem erro na tela", async (_caso, query) => {
+    /* Medido antes desta guarda: `?pagina=-3` e `?tamanho=9999` batiam no
+       `ge=1`/`le=100` do servidor e a tela dizia "Não foi possível carregar
+       os processos" -- um 422 lido como falha do sistema. */
+    renderComProviders(
+      <MemoryRouter initialEntries={[`/processos${query}`]}>
+        <ProcessosPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+    const [pedido] = mocks.listarProcessos.mock.calls[0] as [{ pagina: number; tamanhoPagina: number }];
+    expect(pedido.pagina).toBe(1);
+    expect(pedido.tamanhoPagina).toBe(10);
+  });
+
   it("monta JÁ na página e no tamanho que a URL diz", async () => {
     /* É o que faz voltar do detalhe cair na lista como ela estava: a entrada
        do histórico carrega a query, e a tela a lê na montagem. */

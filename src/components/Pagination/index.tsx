@@ -1,4 +1,5 @@
 import { Flex, Text } from "@chakra-ui/react";
+import { useEffect } from "react";
 
 import { Select } from "../Select";
 import NumeroPagina from "./NumeroPagina";
@@ -45,6 +46,27 @@ export default function Pagination({
    * "100 por página" cabe tudo numa página, mas o seletor precisa
    * continuar visível: é por ele que se volta pra 10. Escondendo por
    * `totalPaginas <= 1`, a pessoa ficava presa no tamanho que escolheu. */
+  /** 🔴 Página que não existe volta para a primeira.
+   *
+   * Não é só URL digitada à mão (`?pagina=99` numa lista de 3 páginas): o
+   * mesmo estado acontece por caminho legítimo -- filtrar estando na página 3
+   * encolhe o conjunto, e a pessoa fica vendo uma tabela vazia enquanto a
+   * contagem diz que há 45 itens.
+   *
+   * ⚠️ Mora AQUI, e não num hook por tela: este componente já recebe página,
+   * total de páginas e o setter -- e é a única peça que todas as sete
+   * listagens compartilham.
+   *
+   * ⚠️ Antes do `return null` de propósito: efeito depois de um retorno
+   * antecipado não roda, e o caso a corrigir é justamente o de lista vazia.
+   *
+   * ⚠️ Só corrige com resposta na mão (`totalPaginas >= 1`): em voo o valor é
+   * o da consulta anterior, e corrigir por ele devolveria a pessoa para a
+   * página 1 no meio de uma navegação legítima. */
+  useEffect(() => {
+    if (totalPaginas >= 1 && pagina > totalPaginas) onMudarPagina(1);
+  }, [pagina, totalPaginas, onMudarPagina]);
+
   const menorTamanho = Math.min(...tamanhos);
   if (total <= menorTamanho) return null;
 

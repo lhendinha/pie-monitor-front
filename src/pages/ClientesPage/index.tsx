@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -11,7 +12,6 @@ import {
   Esqueleto,
 } from "../../components";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { listarClientes, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
@@ -29,8 +29,7 @@ import type {
  * justamente pra isso.
  */
 export default function ClientesPage() {
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const [modalAberto, setModalAberto] = useState(false);
   const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   /** ⚠️ Debounce de verdade, não `useDeferredValue`. Aquele não tem
@@ -60,6 +59,7 @@ export default function ClientesPage() {
   const clientes = query.data?.clientes || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
+
   const carregando = query.isPending;
 
   return (

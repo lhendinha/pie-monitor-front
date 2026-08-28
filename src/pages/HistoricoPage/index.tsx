@@ -1,6 +1,7 @@
 import { Flex, Stack, Text } from "@chakra-ui/react";
 
 import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
@@ -19,7 +20,6 @@ import {
   Pagination,
   useToast,
 } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { ApiError, listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
@@ -74,8 +74,7 @@ export default function HistoricoPage({
   diasInicial,
   onDeepLinkConsumido,
 }: HistoricoPageProps) {
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   /* ⚠️ Os filtros vão para a URL JUNTO com a página: restaurar a página sem
      o filtro que a produziu mostraria uma página diferente.
 
@@ -132,6 +131,7 @@ export default function HistoricoPage({
   const historico = query.data?.historico || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
+
 
   /** Total sem filtro nenhum -- é o "de Y" da contagem. Uma página de
    * tamanho 1: só o `total` do envelope interessa, e o React Query mantém

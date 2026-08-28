@@ -1,11 +1,10 @@
 import { Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 
-import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CartaoDeTabela, EstadoDeErro, Esqueleto, Pagination } from "../../components";
-import { TAMANHO_PAGINA_PADRAO } from "../../constants";
 import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
@@ -26,8 +25,7 @@ import type {
  */
 export default function MembrosPage() {
   const [membroEmEdicao, setMembroEmEdicao] = useState<Membro | null>(null);
-  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
-  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const queryClient = useQueryClient();
 
   const podeEditar = ehSuperAdmin();
@@ -63,6 +61,7 @@ export default function MembrosPage() {
   const pessoasDaPagina = pessoas;
   const total = membrosQuery.data?.total ?? 0;
   const totalPaginas = membrosQuery.data?.total_paginas ?? 1;
+
 
   function recarregarTudo() {
     // 🔴 PREFIXO nu, não `qk.membros()`. A chave virou `["membros", {}]`, e o
