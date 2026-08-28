@@ -301,8 +301,8 @@ export interface FiltrosProcessos {
    * cache -- e `temFiltroAtivo` contaria um filtro que não filtra nada. */
   clienteNome: string;
   /** O subgrupo escolhido. Não precisa de nome guardado ao lado como o
-   * cliente: a lista de subgrupos vem INTEIRA para a tela (são poucos), e o
-   * rótulo se resolve nela. */
+   * cliente: a lista de subgrupos que a pessoa VÊ vem inteira para a tela
+   * (são poucos -- 8 em produção), e o rótulo se resolve nela. */
   subgrupoId: string;
   faseIds: string[];
   situacaoIds: string[];
@@ -801,9 +801,16 @@ export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
 export interface FiltrosBuscaProcessos {
   busca?: string;
   clienteId?: string;
-  /** Um subgrupo só, e é ESCOLHA -- não permissão. O alcance de quem pede já
-   * é aplicado pelo servidor; isto recorta dentro dele. Pedir um subgrupo
-   * fora do alcance devolve lista vazia. */
+  /** Um subgrupo só, e ele RECORTA dentro do que a pessoa já vê.
+   *
+   * ⚠️ Pela tela não dá para pedir outra coisa: a pílula lista o que
+   * `GET /subgrupos` devolve, que já é escopado, e os filtros desta tela não
+   * vêm da URL (chegam por `state` de navegação, atalho interno).
+   *
+   * 🔴 A garantia mora no SERVIDOR mesmo assim, e não é redundância: a rota é
+   * alcançável por qualquer cliente autenticado, e lá `subgrupo_id` se SOMA a
+   * `subgrupos_permitidos` em vez de substituí-lo. Ver
+   * `test_filtrar_por_subgrupo_QUE_NAO_SE_VE_devolve_vazio`. */
   subgrupoId?: string;
   faseIds?: string[];
   situacaoIds?: string[];

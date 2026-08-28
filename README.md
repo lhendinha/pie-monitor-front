@@ -439,8 +439,10 @@ nada -- sumiria o `combobox` de que teclado e leitor de tela dependem.
 **Processos tem filtro por subgrupo.** Uma escolha só, ao lado das outras
 pílulas. Ela SOME para quem tem um subgrupo: ali não filtraria nada.
 
-⚠️ É escolha, não permissão -- o alcance de quem pede já é aplicado pelo
-servidor, e pedir subgrupo fora dele devolve lista vazia.
+⚠️ Ela RECORTA dentro do que a pessoa já vê -- e pela tela não dá para pedir
+outra coisa: a lista da pílula vem de `GET /subgrupos`, que já é escopado, e os
+filtros desta tela não vêm da URL. A garantia existe no SERVIDOR mesmo assim,
+porque a rota é alcançável por qualquer cliente autenticado.
 
 **Dá para cadastrar cliente sem sair do formulário.** Digitou um nome que não
 está no cadastro, aparece "+ Novo cliente «nome»" no fim da lista. Só o nome:

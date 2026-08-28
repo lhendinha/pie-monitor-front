@@ -2442,6 +2442,13 @@ e não "o menu não abre".
 
 ## Filtro por subgrupo, e a mutação que passou (28/08/2026)
 
+⚠️ **"Escolha, não permissão" descreve o SERVIDOR, não a tela.** Pela interface
+os dois são indistinguíveis: a pílula lista o que `GET /subgrupos` devolve (já
+escopado) e os filtros daqui não vêm da URL -- então não existe caminho pela
+tela que peça um subgrupo alheio. A distinção vale porque a rota é uma
+superfície própria, alcançável por qualquer cliente autenticado, e lá o
+parâmetro se SOMA ao alcance em vez de defini-lo.
+
 A pílula some para quem tem UM subgrupo: ali ela não filtraria nada, e
 controle sem efeito é pior que controle nenhum.
 
