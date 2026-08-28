@@ -1,5 +1,5 @@
 import { Flex, Heading, Input } from "@chakra-ui/react";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import {
@@ -11,6 +11,7 @@ import {
   useToast,
 } from "../../../../components";
 import { atualizarProcesso } from "../../../../services";
+import { camposAlterados } from "../../../../utils/processos";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../../../ProcessosPage/components/CamposProcesso";
@@ -43,8 +44,16 @@ export default function FormularioProcesso({
   onRemover,
 }: FormularioProcessoProps) {
   const [apelido, setApelido] = useState(processo.apelido || "");
+  /** O estado do formulário nasce do processo GRAVADO -- e `responsaveis`
+   * tem que estar aqui.
+   *
+   * 🔴 Ele faltava, e o efeito não era só cosmético: o campo abria vazio num
+   * processo que TEM responsável (escondendo quem responde), e o salvamento
+   * mandava `responsaveis: []`. Quem escolhesse alguém só para passar do
+   * erro SUBSTITUÍA quem estava lá, sem aviso. */
   const [campos, setCampos] = useState<CamposOpcionaisProcesso>({
     clienteIds: processo.cliente_ids || [],
+    responsaveis: processo.responsaveis || [],
     objetoAssunto: processo.objeto_assunto || "",
     proximaProvidencia: processo.proxima_providencia || "",
     dataVerificar: processo.data_verificar || "",
@@ -53,11 +62,22 @@ export default function FormularioProcesso({
     faseId: processo.fase_id || "",
     situacaoId: processo.situacao_id || "",
   });
+  /** O retrato de como o processo estava ao abrir -- a régua do que mudou.
+   * `useRef` e não `useState`: ele não é para renderizar, e não pode se
+   * refazer quando o processo é rebuscado no meio da edição. */
+  const originais = useRef<CamposOpcionaisProcesso>(campos).current;
   const toast = useToast();
 
   const salvarMutation = useMutation({
     mutationFn: () =>
-      atualizarProcesso(processo.subgrupo_id, processo.numero_processo, apelido.trim(), campos),
+      atualizarProcesso(
+        processo.subgrupo_id,
+        processo.numero_processo,
+        apelido.trim(),
+        /* ⚠️ Só o que MUDOU. Reenviar o resto devolveria por cima o que outra
+           pessoa alterou enquanto esta tela estava aberta. */
+        camposAlterados(originais, campos),
+      ),
     onSuccess: onSalvo,
     onError: (err) => toastErroMutation(toast, err, "Não foi possível atualizar o processo."),
   });

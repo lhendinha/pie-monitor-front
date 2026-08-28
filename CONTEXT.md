@@ -2375,3 +2375,48 @@ avisos vão para o subgrupo inteiro pelo fallback, e a coluna mostra
 `SetaPagina` põe "Página anterior" no `title`, mas o conteúdo do botão é o glifo
 "‹" — e é ELE que vira o nome acessível. Um leitor de tela anuncia "‹". Vale
 para todas as listas do sistema.
+
+## Salvar processo não pode reenviar o que ninguém tocou (28/08/2026)
+
+Um relato de produção -- *"ao atualizar, perdeu o vínculo"* -- levou a uma
+causa de fundo que valia para qualquer campo da tela.
+
+### O corpo do salvamento era completo, sempre
+
+`corpoDosCamposDeProcesso` montava os nove campos com `|| []` e `|| ""`. O
+"PATCH" era sobrescrita total: **campo que o formulário não carregasse era
+apagado ao salvar.**
+
+E havia um campo assim. `FormularioProcesso` semeava oito e esquecia
+`responsaveis`, então:
+
+- o campo abria **vazio** num processo que TEM responsável, escondendo quem
+  responde;
+- o salvamento mandava `responsaveis: []` -- que o servidor recusava com 400,
+  tornando **impossível salvar** qualquer edição sem mexer no campo;
+- quem escolhesse alguém só para passar do erro **substituía** quem estava lá.
+
+🔴 A correção tem duas camadas de propósito. `corpoDosCamposDeProcesso` agora
+**omite** o que é `undefined` -- rede de segurança que transforma "esqueci de
+carregar" em nada, em vez de em apagamento. E `camposAlterados` manda só o que
+mudou, que ataca a causa: sem ela, salvar o apelido devolvia por cima a
+situação que outra pessoa tinha mudado enquanto a tela estava aberta.
+
+⚠️ **`useRef` para o retrato do original**, não `useState`: ele não é para
+renderizar, e não pode se refazer quando o processo é rebuscado no meio da
+edição -- se refizesse, o "que mudou" passaria a comparar com o estado novo e
+a edição em curso sumiria.
+
+⚠️ Provado no Chrome, no cenário exato do relato: o corpo que sai agora é
+`{"apelido":"Inventário","responsaveis":[]}` -- só o que mudou -- e volta 200.
+
+### Renomear cliente rebusca processos e atendimentos
+
+O nome do cliente naquelas telas é campo **derivado**: não vem do cache de
+clientes, vem de `cliente_nomes`, resolvido pelo servidor DENTRO da resposta
+delas. Invalidar só `["clientes"]` deixava as duas mostrando o nome velho até
+o polling de 60s -- e em conexão lenta, mais.
+
+➡️ **A regra geral**: ao invalidar depois de escrever, perguntar *quais outras
+respostas carregam este dado derivado?*. Aqui são `["processos"]` e
+`["atendimentos"]`; `responsaveis_nomes` e `subgrupo_nome` têm a mesma forma.

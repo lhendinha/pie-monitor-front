@@ -130,6 +130,18 @@ export default function ClienteDetalhePage() {
           onSalvo={() => {
             queryClient.invalidateQueries({ queryKey: qk.detalheCliente(clienteId) });
             queryClient.invalidateQueries({ queryKey: ["clientes"] });
+            /* 🔴 Processos e atendimentos também, e o motivo é o campo
+               DERIVADO: o nome do cliente que essas telas mostram não vem do
+               cache de clientes -- vem de `cliente_nomes`, resolvido pelo
+               servidor DENTRO da resposta deles. Sem invalidar, renomear um
+               cliente deixava as duas telas mostrando o nome velho até o
+               polling de 60s ou uma revisita, e em conexão lenta a janela é
+               maior ainda.
+
+               Prefixo, não a chave exata: pega qualquer combinação de filtro
+               e página, como no `removerProcesso`. */
+            queryClient.invalidateQueries({ queryKey: ["processos"] });
+            queryClient.invalidateQueries({ queryKey: ["atendimentos"] });
             toast.sucesso("Cliente atualizado.");
           }}
           onRemover={() => {

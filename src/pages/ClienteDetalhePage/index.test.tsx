@@ -148,6 +148,34 @@ describe("ClienteDetalhePage", () => {
     );
   });
 
+  it("🔴 renomear o cliente REBUSCA processos e atendimentos", async () => {
+    /* O nome do cliente naquelas telas é campo DERIVADO: não vem do cache de
+       clientes, vem de `cliente_nomes`, resolvido pelo servidor dentro da
+       resposta delas. Sem invalidar, renomear deixava as duas mostrando o
+       nome velho até o polling de 60s -- e em conexão lenta, mais.
+
+       ⚠️ A asserção é sobre a REBUSCA, não sobre `invalidateQueries`: o que
+       importa é o efeito observável, e espionar o método do cliente
+       amarraria o teste à forma de chamar. */
+    mocks.atualizarCliente.mockResolvedValue({});
+    const user = userEvent.setup();
+    montar();
+
+    await irParaProcessos();
+    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+    const antes = mocks.listarProcessos.mock.calls.length;
+
+    await user.click(await screen.findByRole("tab", { name: /Detalhes|Cadastro/ }));
+    const nome = await screen.findByLabelText(/Nome/);
+    await user.clear(nome);
+    await user.type(nome, "SONIA MARIA ALVES");
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos.mock.calls.length).toBeGreaterThan(antes),
+    );
+  });
+
   it("e-mail malformado bloqueia o salvar", async () => {
     const user = userEvent.setup();
     montar();
