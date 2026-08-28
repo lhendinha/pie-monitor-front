@@ -149,8 +149,9 @@ export interface ProcessoEncontrado {
   apelido: string;
   /** A sigla do tribunal (`TJRS`, `TRF4`). Vazia quando o PJe não mandou.
    *
-   * ⚠️ Vale a coluna própria porque uma OAB cruza justiças: quatro tribunais
-   * numa inscrição só, na amostra real. */
+   * ⚠️ Vale a coluna própria porque uma OAB cruza justiças: medido em
+   * produção, SEIS tribunais numa inscrição só (TJMG, TJRJ, TJSP, TRF2, TRF6,
+   * SEEU) em 23 processos. */
   tribunal: string;
   comunicacoes: number;
   /** 🔴 Neste SUBGRUPO, e é o único dos três que impede importar -- só aqui o
