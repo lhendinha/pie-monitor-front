@@ -2479,5 +2479,28 @@ negar, a mesma régua de `podeRemoverResponsavel`.
 É a mesma necessidade, e uma segunda cópia divergiria no primeiro ajuste.
 
 ⚠️ Ele importa `papelAtende` de `services`, e isso quebrou TRÊS arquivos de
-teste que mockam esse módulo sem o export. Componente compartilhado que passa a
-ler a sessão cobra esse preço -- os mocks foram completados.
+teste que mockam esse módulo sem o export. Os mocks foram completados.
+
+### 🔴 Componente de `components/` PODE ler a sessão -- decidido em 28/08/2026
+
+A pergunta foi levantada e respondida com número: **33 arquivos de teste mockam
+`services`, e 18 já listam `papelAtende`**. O preço não nasceu aqui -- é o
+padrão da casa desde `podeRemoverResponsavel`, que lê `papelAtende` e
+`getEmail` dentro de `components/`.
+
+**A alternativa foi recusada.** Passar `podeCadastrar` por prop tiraria a
+dependência do componente, mas moveria a régua para CADA chamador -- hoje três
+(novo processo, editar processo, atendimentos), e cada tela nova repetiria. É a
+duplicação que o próprio `podeRemoverResponsavel` argumenta contra: *"um helper
+comum precisaria de parâmetro pra cada diferença e esconderia justamente o que
+cada tela decide"*. Trocaria incômodo de teste por regra espalhada em produção.
+
+⚠️ E o modo de falha é barulhento: o vitest diz o export que faltou, e uma
+linha resolve.
+
+➡️ **O gatilho para reabrir**: um QUARTO componente compartilhado lendo a
+sessão. Aí vale um `test/mockDeServices.ts` com os padrões -- e não a prop.
+
+⚠️ O que esse helper custaria, e por isso ele não vem antes do gatilho: hoje a
+lista de mocks de cada teste MOSTRA de quais serviços aquela tela depende, e
+isso já pegou defeito nesta sessão.
