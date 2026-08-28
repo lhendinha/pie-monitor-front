@@ -435,8 +435,8 @@ O fluxo tem três etapas, com uma decisão humana no meio:
 1. **Buscar** — inscrição, UF e subgrupo de destino. O período é opcional e
    fica escondido atrás de um link: só é preciso quando a OAB tem processos
    demais para uma busca só.
-2. **Conferir** — quatro cartões (encontrados, seriam cadastrados, já estão
-   neste subgrupo, também em outros) e a tabela com uma **Situação** por linha.
+2. **Conferir** — quatro cartões (encontrados, seriam cadastrados nesse
+   subgrupo, já estão neste subgrupo, também em outros) e a tabela com uma **Situação** por linha.
    A lista é **paginada**, como as outras do sistema.
 3. **Importar** — grava os selecionados com o histórico que a busca já trouxe,
    e a barra de progresso anda pelo canal em tempo real.
