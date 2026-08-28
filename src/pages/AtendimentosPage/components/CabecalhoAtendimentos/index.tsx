@@ -6,7 +6,9 @@ import {
   CampoDeBusca,
   IconePlus,
   PilulaDeMenu,
+  Select,
 } from "../../../../components";
+import type { OpcaoDeSelect } from "../../../../types";
 import { contar } from "../../../../utils";
 import { OPCOES_DE_STATUS, STATUS_TODOS } from "../../constants";
 
@@ -23,6 +25,16 @@ interface CabecalhoAtendimentosProps {
   buscando?: boolean;
   status: string;
   onMudarStatus: (status: string) => void;
+  /** 🔴 `primeiraPagina` de `useSubgruposBuscaveis`, NUNCA `opcoes`.
+   *
+   * `opcoes` encolhe conforme alguém digita na pílula, e o docstring de
+   * `OpcoesBuscaveis` registra três defeitos que vieram exatamente disso --
+   * inclusive um controle sumindo da tela porque a busca não achou nada.
+   * Aqui isso faria o filtro de subgrupo desaparecer enquanto o modal de
+   * criação estivesse sendo usado. */
+  subgrupos: OpcaoDeSelect[];
+  subgrupoId: string;
+  onMudarSubgrupo: (subgrupoId: string) => void;
   onNovo: () => void;
 }
 
@@ -35,6 +47,9 @@ export default function CabecalhoAtendimentos({
   buscando,
   status,
   onMudarStatus,
+  subgrupos,
+  subgrupoId,
+  onMudarSubgrupo,
   onNovo,
 }: CabecalhoAtendimentosProps) {
   return (
@@ -67,6 +82,19 @@ export default function CabecalhoAtendimentos({
           ativo={status !== STATUS_TODOS}
           onEscolher={onMudarStatus}
         />
+        {/* ⚠️ Some para quem tem UM subgrupo: ali ele não filtra nada, e um
+            controle sem efeito é pior que controle nenhum. Mesma régua da
+            pílula de subgrupo em Processos. */}
+        {subgrupos.length > 1 && (
+          <Select
+            variante="chip"
+            placeholder="Todos os subgrupos"
+            opcoes={subgrupos}
+            valor={subgrupoId}
+            onMudar={onMudarSubgrupo}
+            permitirLimpar
+          />
+        )}
       </Flex>
 
       {/* A contagem só aparece quando há número de verdade. Durante a

@@ -8,13 +8,15 @@ import type { CamposDeDocumento, Documento, EnvioPreparado, FiltrosDeDocumentos 
  * aba teria que paginar a lista inteira do grupo e peneirar no navegador.
  */
 export function listarDocumentos(filtros: FiltrosDeDocumentos = {}) {
-  const { busca, processoNumero, atendimentoId, clienteId, pagina, tamanhoPagina } = filtros;
+  const { busca, processoNumero, atendimentoId, clienteId, subgrupoId, pagina, tamanhoPagina } =
+    filtros;
   return chamar("/documentos", {
     query: {
       busca,
       processo_numero: processoNumero,
       atendimento_id: atendimentoId,
       cliente_id: clienteId,
+      subgrupo_id: subgrupoId,
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
     },

@@ -299,3 +299,41 @@ describe("fidelidade ao artifact", () => {
     expect(linha?.querySelector("svg")).toBeTruthy();
   });
 });
+
+describe("filtro por subgrupo", () => {
+  /* 🔴 Mesma régua de Processos e Documentos: com UM subgrupo o controle não
+     filtra nada, e controle sem efeito é pior que controle nenhum.
+
+     ⚠️ E aqui o filtro não é só conveniência -- `atendimentos_repository`
+     faz uma Query POR SUBGRUPO, então escolher um troca N idas ao banco por
+     uma. Ver o guarda `test_escolher_subgrupo_faz_UMA_query...` na API. */
+  const DOIS = [
+    { subgrupo_id: "s1", nome: "Cível" },
+    { subgrupo_id: "s2", nome: "Trabalhista" },
+  ];
+
+  it("aparece quando a pessoa vê mais de um subgrupo", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: DOIS });
+    await montar();
+    expect(await screen.findByText("Todos os subgrupos")).toBeInTheDocument();
+  });
+
+  it("NÃO aparece com um subgrupo só", async () => {
+    /* O par negativo. O `beforeEach` já deixa um subgrupo só, então este
+       teste também prova que o padrão da suíte não mascara o de cima. */
+    await montar();
+    expect(screen.queryByText("Todos os subgrupos")).not.toBeInTheDocument();
+  });
+
+  it("escolher um subgrupo manda `subgrupoId` para a API", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: DOIS });
+    await montar();
+    await userEvent.click(await screen.findByText("Todos os subgrupos"));
+    await userEvent.click(await screen.findByText("Trabalhista"));
+    await waitFor(() =>
+      expect(mocks.listarAtendimentos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ subgrupoId: "s2" }),
+      ),
+    );
+  });
+});

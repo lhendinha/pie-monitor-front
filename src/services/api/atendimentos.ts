@@ -8,11 +8,12 @@ import type { OpcoesListarAtendimentos, ResumoDeAtendimento } from "../../types"
  * está na página seguinte.
  */
 export function listarAtendimentos(opcoes: OpcoesListarAtendimentos = {}) {
-  const { busca, status, pagina, tamanhoPagina } = opcoes;
+  const { busca, status, subgrupoId, pagina, tamanhoPagina } = opcoes;
   return chamar("/atendimentos", {
     query: {
       busca,
       status,
+      subgrupo_id: subgrupoId,
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
     },

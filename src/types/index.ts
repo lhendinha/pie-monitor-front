@@ -948,6 +948,9 @@ export type AlvoDeNotificacao = (typeof ALVOS_DE_NOTIFICACAO)[number];
 export interface OpcoesListarAtendimentos {
   busca?: string;
   status?: string;
+  /** Filtro de ESCOLHA, não de permissão: estreita o que a pessoa já vê.
+   * Subgrupo fora do alcance devolve lista vazia, nunca o conteúdo dele. */
+  subgrupoId?: string;
   pagina?: number;
   tamanhoPagina?: number;
 }
@@ -1028,6 +1031,9 @@ export interface FiltrosDeDocumentos {
   processoNumero?: string;
   atendimentoId?: string;
   clienteId?: string;
+  /** Filtro de ESCOLHA, não de permissão: estreita o que a pessoa já vê.
+   * Subgrupo fora do alcance devolve lista vazia, nunca o conteúdo dele. */
+  subgrupoId?: string;
   pagina?: number;
   tamanhoPagina?: number;
 }

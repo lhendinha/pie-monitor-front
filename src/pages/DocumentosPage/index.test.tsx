@@ -170,3 +170,40 @@ describe("tipo desconhecido", () => {
     expect(screen.getByText("modelo")).toBeInTheDocument();
   });
 });
+
+describe("filtro por subgrupo", () => {
+  /* 🔴 A régua é a mesma de Processos e Atendimentos: com UM subgrupo o
+     controle não filtra nada, e controle sem efeito é pior que controle
+     nenhum. */
+  const DOIS = [
+    { subgrupo_id: "s1", nome: "Cível" },
+    { subgrupo_id: "s2", nome: "Trabalhista" },
+  ];
+
+  it("aparece quando a pessoa vê mais de um subgrupo", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: DOIS });
+    montar();
+    expect(await screen.findByText("Todos os subgrupos")).toBeInTheDocument();
+  });
+
+  it("NÃO aparece com um subgrupo só", async () => {
+    /* O par negativo: sem ele, um filtro sempre-visível passaria no teste
+       acima e ninguém notaria a pílula inútil. */
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [DOIS[0]] });
+    montar();
+    expect(await screen.findByText(ARQUIVO.titulo)).toBeInTheDocument();
+    expect(screen.queryByText("Todos os subgrupos")).not.toBeInTheDocument();
+  });
+
+  it("escolher um subgrupo manda `subgrupoId` para a API", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: DOIS });
+    montar();
+    await userEvent.click(await screen.findByText("Todos os subgrupos"));
+    await userEvent.click(await screen.findByText("Trabalhista"));
+    await waitFor(() =>
+      expect(mocks.listarDocumentos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ subgrupoId: "s2" }),
+      ),
+    );
+  });
+});

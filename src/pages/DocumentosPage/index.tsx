@@ -18,8 +18,10 @@ import {
   IconePlus,
   ModalDeDocumento,
   Pagination,
+  Select,
   Tabela,
 } from "../../components";
+import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { listarDocumentos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -49,7 +51,20 @@ export default function DocumentosPage() {
    * requisição -- digitar "contrato" seriam oito. */
   const busca = useValorComEspera(buscaInput);
 
-  const parametros = { busca: busca || undefined, pagina, tamanhoPagina };
+  const [subgrupoId, setSubgrupoId] = useEstadoNaUrl("subgrupo", "", {
+    tambemApaga: ["pagina"],
+  });
+  /* 🔴 `sempreLigada`: a tela precisa da lista para decidir se MOSTRA o
+     filtro, e uma pílula preguiçosa só carregaria quando alguém a abrisse --
+     ou seja, o filtro nunca apareceria. */
+  const subgrupos = useSubgruposBuscaveis(true);
+
+  const parametros = {
+    busca: busca || undefined,
+    subgrupoId: subgrupoId || undefined,
+    pagina,
+    tamanhoPagina,
+  };
 
   const query = useQuery<RespostaDeDocumentosPaginada>({
     queryKey: qk.documentos(parametros),
@@ -94,6 +109,24 @@ export default function DocumentosPage() {
                concluir que não tem nenhum. */
             placeholder="Buscar por título ou descrição"
           />
+          {/* ⚠️ Some para quem tem UM subgrupo: ali não filtra nada, e um
+              controle sem efeito é pior que controle nenhum. Mesma régua de
+              Processos e Atendimentos.
+
+              🔴 `primeiraPagina`, não `opcoes`: `opcoes` encolhe conforme
+              alguém digita na pílula, e o docstring de `OpcoesBuscaveis`
+              registra três defeitos vindos disso -- um deles é justamente um
+              controle sumir da tela porque a busca não achou nada. */}
+          {subgrupos.primeiraPagina.length > 1 && (
+            <Select
+              variante="chip"
+              placeholder="Todos os subgrupos"
+              opcoes={subgrupos.primeiraPagina}
+              valor={subgrupoId}
+              onMudar={(v) => setSubgrupoId(v)}
+              permitirLimpar
+            />
+          )}
         </Flex>
 
         {/* A contagem só aparece quando há número de verdade. Durante a

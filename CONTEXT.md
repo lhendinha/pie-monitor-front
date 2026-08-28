@@ -2470,6 +2470,49 @@ filtro chega ao servidor é o nível de `services/api` -- daí
 ➡️ **A régua**: teste de tela prova que a tela pediu; só o teste do cliente
 HTTP prova o que saiu no fio. Filtro novo precisa dos dois.
 
+## O mesmo filtro em Atendimentos e Documentos (28/08/2026)
+
+Mesma pílula, mesma régua: some para quem tem UM subgrupo, e a escolha vai
+para a URL (`?subgrupo=`), como todo estado de lista.
+
+🔴 **`primeiraPagina`, nunca `opcoes`.** As duas telas usam
+`useSubgruposBuscaveis(true)`, e o docstring de `OpcoesBuscaveis` registra três
+defeitos que vieram de a página ler `opcoes`: ela **encolhe conforme alguém
+digita** na pílula. Aqui isso faria o filtro **sumir da tela** enquanto o modal
+de criação estivesse sendo usado -- controle desaparecendo sozinho, sem erro.
+
+⚠️ **E o ganho é diferente entre as duas**, o que não se vê pela tela:
+`atendimentos_repository` faz **uma Query por subgrupo**, então escolher um
+troca N idas ao banco por uma. Documentos lê a partição do grupo e peneira --
+ali o filtro não economiza leitura. Está registrado no `CONTEXT.md` da API.
+
+### 🔴 Repeti o erro que a régua acima já descrevia
+
+A régua de *"Filtro por subgrupo, e a mutação que passou"* diz, com todas as
+letras: *"filtro novo precisa dos dois testes"*. Escrevi os dois filtros só com
+teste de tela, e a mutação que apaga `subgrupo_id: subgrupoId` do corpo da
+query **passou de novo** -- porque o teste dubla `listarDocumentos` inteiro.
+
+Daí nasceram `services/api/atendimentos.test.ts` e `documentos.test.ts`, irmãos
+do de processos.
+
+➡️ **O que isso ensina não é "prestar mais atenção".** A régra estava escrita e
+foi lida -- eu inclusive tinha aberto o arquivo. Regra escrita que falha duas
+vezes pede **guarda mecânico**: um teste que cobre que toda chave enviada no
+`query` de `services/api/*.ts` apareça numa asserção de `*.test.ts`. Fica
+registrado como frente, com o gatilho óbvio: a terceira vez.
+
+### A verificação em Chrome, e o falso ✅ que ela quase deu
+
+`scripts/verificar-filtro-de-subgrupo.mjs`. A primeira versão contava
+`tbody tr` -- e Atendimentos renderiza **cartões, não linhas de tabela**. O
+contador devolvia `0 -> 0`, e "a lista não cresceu" passava sem provar nada.
+
+⚠️ Agora ela lê **"Mostrando X de Y"**, a frase que a própria tela declara, e
+cobra as **duas pontas**: depois de filtrar por um subgrupo com conteúdo, o
+total precisa ser **maior que zero** (mostra os dele) **e menor que antes**
+(esconde os outros). Só uma das duas passaria com o filtro quebrado.
+
 ## Cadastrar cliente sem sair do formulário (28/08/2026)
 
 Digitou um nome que não está no cadastro, aparece `+ Novo cliente “nome”` no

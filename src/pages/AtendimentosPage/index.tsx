@@ -59,6 +59,9 @@ export default function AtendimentosPage() {
   const [status, setStatus] = useEstadoNaUrl("status", statusPadrao, {
     tambemApaga: ["pagina"],
   });
+  const [subgrupoId, setSubgrupoId] = useEstadoNaUrl("subgrupo", "", {
+    tambemApaga: ["pagina"],
+  });
   const [modalAberto, setModalAberto] = useState(false);
   const { atualizar } = useParametrosDaUrl();
   const navigate = useNavigate();
@@ -71,6 +74,7 @@ export default function AtendimentosPage() {
   const parametros = {
     busca: busca || undefined,
     status: statusParaApi(status),
+    subgrupoId: subgrupoId || undefined,
     pagina,
     tamanhoPagina,
   };
@@ -123,6 +127,11 @@ export default function AtendimentosPage() {
         status={status}
         onMudarStatus={(novo) => {
           setStatus(novo);
+        }}
+        subgrupos={subgrupos.primeiraPagina}
+        subgrupoId={subgrupoId}
+        onMudarSubgrupo={(novo) => {
+          setSubgrupoId(novo);
         }}
         onNovo={() => setModalAberto(true)}
       />
