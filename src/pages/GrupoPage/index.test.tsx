@@ -85,7 +85,7 @@ describe("GrupoPage", () => {
 
   it("papel 'admin' vê Fases e Situações -- o piso desceu de super_admin", async () => {
     // Este caso não existia, e era exatamente o que estava quebrado: as rotas
-    // de Fase/Situação passaram a exigir `admin`, o `SUB_ABAS` continuou em
+    // de Fase/Situação passaram a exigir `admin`, o `ABAS_DO_GRUPO` continuou em
     // `super_admin`, e o admin ficou com a permissão no servidor sem ver as
     // abas. Ninguém tomava 403 -- a funcionalidade simplesmente sumia.
     mocks.papelAtende.mockImplementation(

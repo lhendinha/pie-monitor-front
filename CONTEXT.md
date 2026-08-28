@@ -763,18 +763,24 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
 ### Decisões de UX específicas
 
 - Cadastro de processo é um **modal** (botão "+ Novo Processo" abre), não
-  formulário inline. Edição de processo (`DetalheEditarProcesso.tsx`) é
-  outro modal, mas aberto ao **clicar na linha inteira** do processo (não
-  um ícone ✎ dedicado -- esse botão foi descontinuado, apelido virou só
-  mais um campo junto com Cliente/Objeto-Assunto/datas/Observações/Fase/
-  Situação, todos editados juntos). Os 2 ícones que sobram na linha
-  (histórico, remover) chamam `event.stopPropagation()` no próprio
-  `onClick`, senão o clique neles também abriria o modal de edição junto.
-  `EditarMembroForm.tsx` (`MembrosPage`) segue o padrão de modal por ícone
+  formulário inline. **Edição não é mais modal**: clicar na linha inteira
+  NAVEGA para `/processos/{subgrupo}/{numero}` (`ProcessoDetalhePage`), e a
+  edição acontece lá, em `FormularioProcesso`. Não há ícone ✎ dedicado --
+  esse botão foi descontinuado, e apelido virou só mais um campo junto com
+  Cliente/Objeto-Assunto/datas/Observações/Fase/Situação, todos editados
+  juntos. Os ícones que sobram na linha chamam `event.stopPropagation()` no
+  próprio `onClick`, senão o clique neles abriria o detalhe junto.
+  ⚠️ Até 28/08/2026 este bullet dizia "outro modal
+  (`DetalheEditarProcesso.tsx`)". O componente não existe desde que o
+  detalhe virou página, e o mesmo vale para Cliente e Atendimento: os três seguem
+  uma página de detalhe com um formulário dentro -- `ProcessoDetalhePage` +
+  `FormularioProcesso`, `ClienteDetalhePage` + `FormularioCliente`,
+  `AtendimentoDetalhePage`.
+  `EditarMembroForm` (`MembrosPage`) segue o padrão de modal por ícone
   ✎ ainda, mas visível só pra `super_admin` na lista "Pessoas do grupo".
 - Campos opcionais compartilhados entre cadastro e edição de processo
   (Cliente, Objeto/Assunto, Próxima providência, datas, Observações, Fase,
-  Situação) ficam num componente único, `CamposProcesso.tsx`, controlado
+  Situação) ficam num componente único, `CamposProcesso`, controlado
   por props e reaproveitado nos dois formulários -- inclusive é quem chama
   `GET /clientes`/`/fases`/`/situacoes` (cache do React Query evita
   refetch duplicado mesmo montando 2x). Dropdown de Fase/Situação mostra só
@@ -800,20 +806,24 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   números de página clicáveis direto (não só anterior/próximo), porque o
   backend pagina por intervalo de sequência real, não cursor -- dá pra pular
   pra qualquer página sem visitar as anteriores.
-- Texto de comunicação processual (`DetalheProcesso.tsx`, `DetalheHistorico.tsx`)
-  vem em HTML da API do PJe e é renderizado via `dangerouslySetInnerHTML`
-  depois de passar por `DOMPurify.sanitize()` -- fonte externa, nunca
-  confiar sem sanitizar.
+- Texto de comunicação processual vem em HTML da API do PJe e é renderizado
+  via `dangerouslySetInnerHTML` depois de passar por `DOMPurify.sanitize()`
+  -- fonte externa, nunca confiar sem sanitizar.
+  ⚠️ A sanitização mora em **um** componente, `components/TextoDaComunicacao`,
+  usado por `ModalDeMovimentacao` e `DetalheHistorico`. Antes de `974a98d`
+  ela estava em dois (`ComunicacaoCard` e `ItemDeMovimentacao`) -- e
+  duplicar sanitização é como duplicar qualquer regra: um dos lados diverge,
+  e aqui o lado que diverge injeta HTML de fonte externa. Este bullet citava
+  dois arquivos que não existem mais, até 28/08/2026.
 - Barra de abas do topo reduzida de até 7 pra 4 (`Processos`, `Clientes`,
   `Histórico`, `Grupo`) -- `Grupo` (`GrupoPage`) agrupa Subgrupos, Membros,
   Convidar, Fases e Situações como **sub-navegação própria**
-  (`<nav className="tabs tabs--sub">`, variante menor de `.tabs` em
-  `index.css`), cada sub-aba com seu próprio piso de papel (`SubAbaConfig[]`
-  filtrado por `papelAtende`, mesmo mecanismo de `TODAS_AS_ABAS`). Fases e
+  (componente `Abas`), cada sub-aba com seu próprio piso de papel (`SubAbaConfig[]`
+  filtrado por `papelAtende`, mesmo mecanismo de `ABAS_DO_GRUPO`). Fases e
   Situações são **2 sub-abas separadas** (não uma tela com as 2 listas lado
   a lado), cada uma renderizando `OpcoesLista` com um `tipo` diferente.
 - `ClientesPage` cria cliente por **modal** ("+ Novo Cliente" abre
-  `NovoClienteForm.tsx`), não mais formulário inline -- mesmo padrão de
+  `NovoClienteForm`), não mais formulário inline -- mesmo padrão de
   `NovoProcessoForm`. Lista usa paginação real (`components/Pagination`),
   igual Processos/Histórico.
 - Paginação real foi estendida também pra **Subgrupos** e **Clientes** --
@@ -826,13 +836,13 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   paginação real (fica pra depois). Fases/Situações **não** usam
   `Pagination` (ver bullet abaixo).
 - **Ordem de Fase/Situação por drag and drop**, não mais um campo numérico
-  "Ordem" editável no formulário -- `EditarOpcaoForm.tsx` agora só edita o
-  rótulo. `OpcoesLista.tsx` busca a lista inteira de uma vez
-  (`TAMANHO_PAGINA_PICKER`, teto de 100, mesmo usado pelo dropdown de
+  "Ordem" editável no formulário -- o rótulo é editado na própria linha
+  (`LinhaDeOpcao`, prop `onRenomear`). `OpcoesLista` busca a lista inteira
+  (`TETO_POR_PAGINA`, teto de 100, mesmo usado pelo dropdown de
   Fase/Situação em `CamposProcesso`) em vez de paginar -- não dá pra
   arrastar um item de uma página pra outra sem carregar tudo. Implementado
   com `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`
-  (`OpcaoRow.tsx`, handle `IconeArrastar` de `components/Icons`).
+  (`LinhaDeOpcao`, handle `IconeArrastar` de `components/Icons`).
   **Resolvido (achado 14, revisão pós-deploy): `ordem` virou fracionário**
   no backend (`float`, era `int`) -- ao soltar um item, o front calcula a
   nova `ordem` como o **ponto médio entre os vizinhos na posição de
@@ -884,8 +894,8 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   `opcoes_processo_repository.listar_pagina_por_tipo`, sem ganho real em
   paginar por request), mas foi adiado por ora -- 100 fases/situações é
   uma lista grande pra uma taxonomia curada por poucos `super_admin`.
-- **Editar nome de Subgrupo** (`SubgruposPage/EditarSubgrupoForm.tsx`,
-  padrão Modal igual `EditarClienteForm`/`EditarOpcaoForm`): ícone ✎ por
+- **Editar nome de Subgrupo** (em `SubgruposPage`, via `atualizarSubgrupo`):
+  ícone ✎ por
   linha, visível só pra `admin`/`super_admin` (`papelAtende("admin")`,
   mesmo piso do ✕ Remover que já existia). `atualizarSubgrupo`
   (`services/api/subgrupos.ts`) chama `PATCH /subgrupos/{id}` -- endpoint
@@ -959,8 +969,7 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   409...) nunca é retentado (determinístico); erro de rede (não `ApiError`)
   ou 5xx continua até 3x.
 - **Resolvido (achado 18): destaque de campo com erro (`field-error`/
-  `campoInvalido`) removido** de `NovoClienteForm`, `EditarClienteForm`,
-  `NovoProcessoForm` e `DetalheEditarProcesso` -- o toast com a mensagem
+  `campoInvalido`) removido** dos formulários de Cliente e de Processo -- o toast com a mensagem
   específica do backend já é o único sinal de erro; não valia o custo do
   backend passar a apontar qual campo falhou só pra isso. A classe CSS
   `.field-error` continua existindo (usada por outros pontos), só a
@@ -974,7 +983,7 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   lançar `ApiError` (com `.status`) em vez de `Error` puro.
 - **Resolvido (achado 20): `EditarMembroForm` explica o Salvar
   desabilitado** -- texto de apoio ("Selecione ao menos 1 subgrupo para
-  salvar", classe nova `.field-hint` em `index.css`) aparece quando
+  salvar", o texto de apoio de `Campo`) aparece quando
   `subgruposSelecionados.length === 0` -- baseado na mensagem de
   `SubgruposObrigatorios` no backend ("Selecione ao menos 1 subgrupo"), com
   "para salvar" adicionado pelo contexto do botão.
@@ -2419,7 +2428,7 @@ o polling de 60s -- e em conexão lenta, mais.
 
 ➡️ **A regra geral**: ao invalidar depois de escrever, perguntar *quais outras
 respostas carregam este dado derivado?*. Aqui são `["processos"]` e
-`["atendimentos"]`; `responsaveis_nomes` e `subgrupo_nome` têm a mesma forma.
+`["atendimentos"]`; `responsaveis_nomes` e `subgrupo_nomes` têm a mesma forma.
 
 ## Digitar para filtrar virou o padrão dos seletores (28/08/2026)
 

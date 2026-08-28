@@ -14,7 +14,7 @@ import { describe, expect, it } from "vitest";
  * marcar, tribunal, comunicações e situação. Defeito que reaparece vira
  * guarda.
  *
- * ⚠️ **Guarda de FORMA**, no molde do `test_a_reserva_e_UMA_escrita_atomica`
+ * ⚠️ **Guarda de FORMA**, no molde do `test_a_reserva_e_UMA_escrita_atomica_relativa`
  * da API: o que ele checa é o texto do código, porque o efeito é de CSS e o
  * jsdom não calcula estilo -- `getComputedStyle` devolveria vazio e o teste
  * passaria com a tabela torta. Quem vê o desalinhamento é o Chrome; o que

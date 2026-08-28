@@ -495,7 +495,7 @@ export interface Tarefa {
   prioridade: string;
   responsavel_id?: string | null;
   /** Apelido de quem é responsável -- derivado, o servidor resolve pra
-   * página pedida (`tarefas_router._com_nome_do_responsavel`).
+   * página pedida (`tarefas_router._serializar_tarefas`).
    *
    * 🔴 Vem junto porque a alternativa era o cartão baixar TODAS as pessoas
    * do grupo só pra traduzir e-mail em apelido -- e essa lista só chegava
@@ -836,7 +836,7 @@ export interface FiltrosBuscaProcessos {
 export interface CamposOpcionaisProcesso {
   clienteIds?: string[];
   /** Quem responde pelo processo. Vai como `responsaveis` no corpo -- ver
-   * `paraCorpoDeProcesso`. */
+   * `corpoDosCamposDeProcesso`. */
   responsaveis?: string[];
   objetoAssunto?: string;
   proximaProvidencia?: string;

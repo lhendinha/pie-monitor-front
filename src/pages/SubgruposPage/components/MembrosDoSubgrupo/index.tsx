@@ -234,9 +234,12 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
         </Stack>
       )}
     </Modal>
-      {/* 🔴 Tirar alguém de um subgrupo SOLTA as tarefas dela lá dentro --
-          `membros_service.remover` chama `desvincular_responsavel`. A
-          lixeira executava direto, e o toast só dizia "fulano saiu do X".
+      {/* 🔴 Tirar alguém de um subgrupo PASSA ADIANTE tudo que ela responde lá
+          dentro -- `membros_service.remover` chama `reatribuir_ao_sair`, que
+          entrega tarefa, processo, atendimento e documento ao primeiro
+          manager/admin/super_admin que sobrar (e a ninguém, se não sobrar),
+          notificando quem herdou. A lixeira executava direto, e o toast só
+          dizia "fulano saiu do X".
           A própria página declara a convenção oposta: "Excluir é a exceção:
           é irreversível, então passa pelo diálogo de confirmação como toda
           exclusão do sistema" -- e excluir o SUBGRUPO, que é bem menos

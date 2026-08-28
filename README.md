@@ -237,7 +237,7 @@ Erros e confirmações usam um sistema de toast (`components/Toast`, `useToast()
 
 ## Super_admin: editar pessoa de outro grupo
 
-Na aba Membros, `super_admin` vê um ícone ✎ em cada pessoa de "Pessoas do grupo" (`MembrosPage/EditarMembroForm.tsx`). O modal deixa trocar apelido, papel (inclusive promover a `super_admin` ou rebaixar/mover um `super_admin` existente, mesmo a própria conta) e mover a pessoa pra outro grupo, sempre escolhendo também os subgrupos de destino (obrigatório, já que subgrupo pertence a exatamente 1 grupo — os vínculos antigos não fazem sentido no grupo novo).
+Na aba Membros, `super_admin` vê um ícone ✎ em cada pessoa de "Pessoas do grupo" (`MembrosPage/EditarMembroForm`). O modal deixa trocar apelido, papel (inclusive promover a `super_admin` ou rebaixar/mover um `super_admin` existente, mesmo a própria conta) e mover a pessoa pra outro grupo, sempre escolhendo também os subgrupos de destino (obrigatório, já que subgrupo pertence a exatamente 1 grupo — os vínculos antigos não fazem sentido no grupo novo).
 
 ## Rodando os testes
 
