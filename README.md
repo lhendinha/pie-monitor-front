@@ -435,11 +435,33 @@ O fluxo tem três etapas, com uma decisão humana no meio:
 1. **Buscar** — inscrição, UF e subgrupo de destino. O período é opcional e
    fica escondido atrás de um link: só é preciso quando a OAB tem processos
    demais para uma busca só.
-2. **Conferir** — a lista com quantos vieram, quantos já estão no subgrupo e
-   quantos são novos. Os já cadastrados vêm travados: importar nunca
-   sobrescreve. "Marcar todos" age em **todos**, não só na página visível.
+2. **Conferir** — quatro cartões (encontrados, seriam cadastrados, já estão
+   neste subgrupo, também em outros) e a tabela com uma **Situação** por linha.
+   A lista é **paginada**, como as outras do sistema.
 3. **Importar** — grava os selecionados com o histórico que a busca já trouxe,
    e a barra de progresso anda pelo canal em tempo real.
+
+### Os quatro estados da coluna "Situação"
+
+| estado | etiqueta | dá para marcar? |
+|---|---|---|
+| em lugar nenhum | `NOVO` (verde) | ✅ |
+| **neste subgrupo** | `JÁ CADASTRADO AQUI` (âmbar) | ❌ o servidor recusa |
+| **em outro que você vê** | `JÁ ESTÁ EM CÍVEL` (cinza) | ✅ **sim** |
+| **em outro que você não vê** | `JÁ ACOMPANHADO POR OUTRO SUBGRUPO` (cinza) | ✅ **sim** |
+
+🔴 **Só o do próprio subgrupo trava** — importar nunca sobrescreve, e uma caixa
+que não faz nada é pior que caixa nenhuma. Os outros dois são informação: o
+mesmo processo acompanhado por duas equipes é caso real, e travar
+transformaria informação em parede.
+
+⚠️ Os estados **não são exclusivos no dado** (um processo pode estar no destino
+*e* em Cível *e* num subgrupo invisível). A linha mostra UMA etiqueta, pela
+precedência acima; o cartão "também em outros subgrupos" conta os dois últimos
+casos, sem contar ninguém duas vezes.
+
+⚠️ **"Marcar todos" age em todos**, não só na página visível: a marca é por
+número de processo, não por posição, e sobrevive à virada de página.
 
 ⚠️ **A busca não cadastra nada.** É o único ponto em que ainda é barato
 desfazer — 200 processos cadastrados por engano são 200 que alguém apaga um a

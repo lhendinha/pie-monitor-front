@@ -2247,3 +2247,109 @@ bastava: foi preciso capturar os **quadros do WebSocket** com
 `pg.on("websocket", …)`.
 
 É o tipo de coisa que jsdom nunca veria, e que "abrir e olhar" também não.
+
+## A prévia da importação, conferida contra o desenho (27/08/2026)
+
+A tela subiu de manhã e o usuário achou o defeito na primeira busca real: três
+processos que já existiam **em outros subgrupos** apareceram como novos. A
+correção trouxe os quatro estados — e conferir a tela pronta contra o desenho,
+no Chrome, trouxe o resto. Fica escrito o que só se vê olhando.
+
+### Célula de tabela crua desalinha a coluna INTEIRA
+
+`Tabela` põe `p="0 14px 10px"` no cabeçalho. Uma `Table.Cell` sem os
+`13px 14px` de `.tbl td` fica com o padding padrão do Chakra, e o valor **não
+nasce embaixo do próprio título** — sem `borderBottom`, a divisória também some
+naquela coluna.
+
+🔴 **É a SEGUNDA vez.** `LinhaProcesso` já registrava a primeira, na coluna de
+prazo. Defeito que reaparece vira guarda:
+`components/CelulaComSub/celulaDeTabela.test.ts` cobra a medida de toda
+`Table.Cell` do repositório.
+
+⚠️ **Guarda de FORMA, e o motivo importa**: o efeito é de CSS e o jsdom não
+calcula estilo — `getComputedStyle` devolve vazio e o teste passaria com a
+tabela torta. Quem VÊ é o Chrome; o guarda impede a regressão chegar lá.
+
+### `Checkbox.Root` é um `<label>` — e sem `onCheckedChange` a caixa é inerte
+
+O clique na caixa mexia só no estado interno do Chakra e **nunca chegava no
+`alternar`**. O alvo mais óbvio da tela não fazia nada; só o resto da linha
+respondia.
+
+⚠️ **O jsdom não distingue esse caso**: ele clica no input escondido, e o mouse
+acerta o quadrado visível (`data-part="control"`), que é filho do label. A prova
+é do Chrome — 22 → 21 clicando na caixa, 21 → 20 clicando na linha.
+
+⚠️ Com o handler, aparece o risco oposto: o clique no label sobe para a linha e
+alterna de novo, anulando-se. Daí a guarda `closest("label")` no `onClick` da
+linha.
+
+### Célula vazia numa coluna "Situação" se lê como dado que faltou
+
+🔴 **Reverti a decisão de não etiquetar o "novo".** O plano dizia que a ausência
+bastava e que uma etiqueta em toda linha seria ruído. Na tela, a coluna em
+branco parece falha de carregamento — a pessoa precisa ver que o sistema
+**olhou** para aquela linha. São quatro pílulas.
+
+### Os tokens de cor do Chakra NÃO são os nossos
+
+`bg.warning`, `border.warning`, `fg.warning` e `fg.success` **existem** — no
+tema padrão da lib, em laranja e verde da paleta dela. O semáforo do projeto é
+`status.*`, e `theme/index.ts` documenta que só as variantes `.text` passam em
+4,5:1.
+
+⚠️ **Por isso o erro é silencioso**: o token resolve, a cor aparece, e só lado a
+lado com o resto da tela se percebe que é de outra paleta. Ao pintar status,
+conferir se o token é nosso.
+
+### A paginação da prévia é só de EXIBIÇÃO
+
+A busca inteira já está em memória. Quem decide o que será gravado é `marcados`,
+que guarda **número de processo, não posição** — por isso "Marcar todos" alcança
+as outras páginas e a marca sobrevive à virada.
+
+🔴 É a armadilha clássica da lista paginada: o botão diz "todos" e marca só o
+que está renderizado. Tem teste com esse nome.
+
+### Um controle absoluto no canto disputa o clique com os rótulos
+
+O X que fecha o cartão de período, posicionado com `position: absolute`, caía
+por cima dos `<label>` de "De" e "Até" — `Campo` é `position: relative`, e são
+várias caixas sobrepostas, então `zIndex` não resolveu. Ele foi para uma **faixa
+própria** acima dos campos.
+
+⚠️ **E a primeira medição do alvo estava errada**: amostrei os cantos da caixa,
+que num botão `borderRadius: full` ficam **fora do círculo** — o hit-test
+respeita o arredondamento. Medir botão redondo se faz por dentro da forma.
+
+⚠️ Fechar **limpa as duas datas**, não só esconde a caixa: um período preenchido
+atrás de um cartão fechado filtraria a busca sem nada na tela dizendo isso.
+
+### `BotaoNu` herda a `line-height` do tema
+
+O link do desenho tem 17px de altura; na tela dava 18,125px — 12,5px × 1,45 do
+corpo, contra o `normal` que um `<button>` usa quando ninguém manda. `lineHeight:
+"normal"` fecha a diferença.
+
+⚠️ **E o desenho só se mede com o elemento VISÍVEL**: o botão vive numa tela
+escondida da demo e media zero, o que faria a comparação "passar" por igualdade
+com nada. A medida saiu de um clone posto no `body` da própria demo.
+
+### Onde cada coisa mora, nesta tela
+
+| o quê | onde |
+|---|---|
+| `EstadoDoAchado` | `types/index.ts` — vocabulário de mais de um dono |
+| `estadoDoAchado`, `etiquetaDoAchado`, `concordar` | `utils/importacao.ts` |
+| `ESTILO_DE_LINK`, `TONS_DO_CARTAO_DE_RESUMO`, `CORES_DA_ETIQUETA_DE_SITUACAO`, `COLUNAS_DA_PREVIA` | `pages/ProcessosPage/constants.ts` |
+| `AvisoDaImportacao`, `CartaoDeResumo`, `EtiquetaDeSituacao` | pasta própria em `components/` da página |
+
+⚠️ **Ao mudar de casa, o NOME muda junto**: fora do arquivo de origem, `Aviso`,
+`Resumo`, `TONS` e `CORES` não dizem de que tela são.
+
+### ➡️ Frente registrada: o nome acessível das setas de página
+
+`SetaPagina` põe "Página anterior" no `title`, mas o conteúdo do botão é o glifo
+"‹" — e é ELE que vira o nome acessível. Um leitor de tela anuncia "‹". Vale
+para todas as listas do sistema.
