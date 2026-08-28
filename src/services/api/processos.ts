@@ -9,6 +9,7 @@ export function temFiltroAtivo(f: FiltrosBuscaProcessos): boolean {
   return Boolean(
     f.busca ||
       f.clienteId ||
+      f.subgrupoId ||
       f.faseIds?.length ||
       f.situacaoIds?.length ||
       f.dataVerificarAte ||
@@ -31,13 +32,14 @@ export function temFiltroAtivo(f: FiltrosBuscaProcessos): boolean {
  */
 export function listarProcessos(opcoes: OpcoesListarProcessos = {}) {
   const {
-    pagina, tamanhoPagina, busca, clienteId, faseIds, situacaoIds,
+    pagina, tamanhoPagina, busca, clienteId, subgrupoId, faseIds, situacaoIds,
     dataVerificarAte, prazoFinalAte, responsavelId, semResponsavel,
   } = opcoes;
   return chamar("/processos", {
     query: {
       busca,
       cliente_id: clienteId,
+      subgrupo_id: subgrupoId,
       // Repetidos: `?fase_id=a&fase_id=b`. Ver `montarQuery`.
       fase_id: faseIds,
       situacao_id: situacaoIds,

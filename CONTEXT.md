@@ -2420,3 +2420,57 @@ o polling de 60s -- e em conexão lenta, mais.
 ➡️ **A regra geral**: ao invalidar depois de escrever, perguntar *quais outras
 respostas carregam este dado derivado?*. Aqui são `["processos"]` e
 `["atendimentos"]`; `responsaveis_nomes` e `subgrupo_nome` têm a mesma forma.
+
+## Digitar para filtrar virou o padrão dos seletores (28/08/2026)
+
+Requerimento do usuário: *"selects por padrão no sistema deve ser possível
+digitar para pesquisar"*. `permitirBusca` era opcional e treze dos vinte e seis
+usos ficavam sem. Agora o padrão é `true` nos dois componentes.
+
+🔴 **Ligar isso apagou um contrato de acessibilidade, e só o teste mostrou.**
+Com busca E desabilitado ao mesmo tempo, o `react-select` não renderiza input
+nenhum -- some o `role="combobox"` de que teclado e leitor de tela dependem
+para saber que existe um controle ali, esperando a lista. Daí
+`isSearchable={buscaNoControle && !travado}`.
+
+⚠️ Não se perde nada com isso: não há o que filtrar numa lista que ainda não
+chegou.
+
+⚠️ E o guarda que pegou já existia -- o teste "fica TRAVADO enquanto carrega",
+cujo comentário dizia exatamente por que a asserção é o `combobox` desabilitado
+e não "o menu não abre".
+
+## Filtro por subgrupo, e a mutação que passou (28/08/2026)
+
+A pílula some para quem tem UM subgrupo: ali ela não filtraria nada, e
+controle sem efeito é pior que controle nenhum.
+
+🔴 **O primeiro teste que escrevi para ele NÃO servia**, e a mutação provou:
+ele afirmava sobre o que `listarProcessos` RECEBE, então apagar
+`subgrupo_id: subgrupoId` do corpo da query passava batido. Quem prova que o
+filtro chega ao servidor é o nível de `services/api` -- daí
+`services/api/processos.test.ts`.
+
+➡️ **A régua**: teste de tela prova que a tela pediu; só o teste do cliente
+HTTP prova o que saiu no fio. Filtro novo precisa dos dois.
+
+## Cadastrar cliente sem sair do formulário (28/08/2026)
+
+Digitou um nome que não está no cadastro, aparece `+ Novo cliente “nome”` no
+fim da lista. Só o NOME -- documento, telefone e endereço ficam para a tela do
+cliente: pedi-los ali seria trocar um formulário por outro no meio do primeiro.
+
+⚠️ **"Novo cliente", e não "Cadastrar"**: o modal de processo tem o próprio
+botão "Cadastrar" (o que grava o processo), e dois controles com o mesmo nome
+na mesma tela é ambiguidade. Foi a verificação em Chrome que pegou -- o seletor
+do roteiro bateu em dois botões.
+
+⚠️ Só para `manager`+, que é o piso da rota: não oferecer o que a API vai
+negar, a mesma régua de `podeRemoverResponsavel`.
+
+⚠️ **O campo vive em `components/`**, então Atendimentos ganhou o atalho junto.
+É a mesma necessidade, e uma segunda cópia divergiria no primeiro ajuste.
+
+⚠️ Ele importa `papelAtende` de `services`, e isso quebrou TRÊS arquivos de
+teste que mockam esse módulo sem o export. Componente compartilhado que passa a
+ler a sessão cobra esse preço -- os mocks foram completados.

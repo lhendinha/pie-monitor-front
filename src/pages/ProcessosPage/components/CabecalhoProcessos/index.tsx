@@ -6,7 +6,7 @@ import FiltroDatas from "../FiltroDatas";
 import { comOpcaoEscolhida } from "../../../../hooks/useOpcoesBuscaveis";
 import { contar } from "../../../../utils";
 import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
-import type { FiltrosProcessos, OpcaoProcesso } from "../../../../types";
+import type { FiltrosProcessos, OpcaoProcesso, Subgrupo } from "../../../../types";
 
 interface CabecalhoProcessosProps {
   carregando: boolean;
@@ -34,6 +34,10 @@ interface CabecalhoProcessosProps {
   mostrarPessoas: boolean;
   fases: OpcaoProcesso[];
   situacoes: OpcaoProcesso[];
+  /** Os subgrupos que esta pessoa VÊ -- a mesma lista que a tabela usa para
+   * escrever o nome na coluna. Um grupo tem poucos (8 em produção), então
+   * ela vem inteira e a pílula não precisa pedir nada. */
+  subgrupos: Subgrupo[];
   /** Fase e situação vieram com a tela; se a busca delas falhou, o painel
    * precisa dizer isso em vez de oferecer "Nenhuma". */
   erroNasFases?: boolean;
@@ -70,6 +74,7 @@ export default function CabecalhoProcessos({
   clientes,
   fases,
   situacoes,
+  subgrupos,
   erroNasFases,
   erroNasSituacoes,
   onRecarregarFases,
@@ -152,6 +157,22 @@ export default function CabecalhoProcessos({
           erro={erroNasFases}
           onTentarDeNovo={onRecarregarFases}
         />
+        {/* ⚠️ Uma escolha só, como a de cliente: "Cível OU Trabalhista" é
+            pergunta que ninguém faz -- quem quer ver dois olha a lista
+            inteira, que é o estado padrão da tela.
+
+            A pílula some para quem tem UM subgrupo: ali ela não filtra
+            nada, e um controle sem efeito é pior que controle nenhum. */}
+        {subgrupos.length > 1 && (
+          <Select
+            variante="chip"
+            placeholder="Todos os subgrupos"
+            opcoes={subgrupos.map((sg) => ({ value: sg.subgrupo_id, label: sg.nome }))}
+            valor={filtros.subgrupoId ?? ""}
+            onMudar={(v) => onMudarFiltro({ subgrupoId: v })}
+            permitirLimpar
+          />
+        )}
         <Select
           variante="chip"
           placeholder="Todos os clientes"

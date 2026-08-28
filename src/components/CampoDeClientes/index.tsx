@@ -1,5 +1,6 @@
 import { Box, Flex, Input, Text } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { BotaoNu } from "../BotaoNu";
 import { IconeX } from "../Icons";
@@ -8,6 +9,9 @@ import { Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import { OPCAO_LINHA } from "../../theme/painelFiltro";
+import { criarCliente, papelAtende } from "../../services";
+import { useToast } from "../Toast";
+import { toastErroMutation } from "../../services/queryClient";
 
 interface CampoDeClientesProps {
   id: string;
@@ -44,6 +48,27 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
 
   const clientes = useClientesBuscaveis();
   const { buscar } = clientes;
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  /* 🔴 Cadastrar cliente é piso `manager` na API. Oferecer o atalho a quem a
+     rota vai negar é o defeito que `podeRemoverResponsavel` já documenta: um
+     controle que existe e devolve 400 é pior que um ausente. */
+  const podeCadastrar = papelAtende("manager");
+
+  const criar = useMutation({
+    mutationFn: (nome: string) => criarCliente({ nome }),
+    onSuccess: (novo: { cliente_id: string; nome: string }) => {
+      /* Já entra escolhido: quem cadastrou dali estava escolhendo, e obrigar
+         a procurar de novo o que acabou de criar é trabalho à toa. */
+      escolher({ value: novo.cliente_id, label: novo.nome });
+      /* A lista de clientes mudou -- a tela de Clientes e os outros campos
+         que a leem precisam saber. */
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      toast.sucesso("Cliente cadastrado.");
+    },
+    onError: (err) => toastErroMutation(toast, err, "Não foi possível cadastrar o cliente."),
+  });
 
   /* Nada é pedido antes de a pessoa mexer no campo -- a primeira chamada
      acontece no foco, e as seguintes acompanham o que ela digita. */
@@ -63,6 +88,18 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
 
   /* Escolher duas vezes o mesmo cliente não significa nada. */
   const achados = clientes.opcoes.filter((o) => !valor.includes(o.value));
+
+  /** O nome digitado, quando ele ainda não existe no cadastro.
+   *
+   * ⚠️ Compara com TODAS as opções que voltaram, não só com as que sobraram
+   * de `achados`: um cliente já escolhido some daquela lista, e sem esta
+   * distinção o atalho ofereceria cadastrar de novo quem está ali na frente,
+   * como etiqueta. */
+  const termoNovo =
+    texto.trim() &&
+    !clientes.opcoes.some((o) => o.label.trim().toLowerCase() === texto.trim().toLowerCase())
+      ? texto.trim()
+      : "";
 
   function escolher(opcao: { value: string; label: string }) {
     const novos = new Map(nomes);
@@ -135,7 +172,7 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
             <Text p={OPCAO_LINHA.padding} fontSize={OPCAO_LINHA.fonte} color="fg.subtle">
               Carregando…
             </Text>
-          ) : achados.length === 0 ? (
+          ) : achados.length === 0 && !termoNovo ? (
             <Text p={OPCAO_LINHA.padding} fontSize={OPCAO_LINHA.fonte} color="fg.subtle">
               Nada encontrado
             </Text>
@@ -158,6 +195,40 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
                 </BotaoNu>
               ))}
             </Box>
+          )}
+
+          {/* 🔴 Cadastrar sem sair do formulário. O caso é o de todo dia: a
+              pessoa digita o nome, ele não está lá, e sair para a tela de
+              Clientes significaria perder o processo que está preenchendo.
+
+              ⚠️ "Novo cliente", e não "Cadastrar": o modal de processo tem o
+              próprio botão "Cadastrar" (o que grava o processo), e dois
+              controles com o mesmo nome na mesma tela é ambiguidade -- foi o
+              que a verificação em Chrome pegou. "+ Novo …" é o idioma do
+              sistema ("+ Novo processo", "+ Novo cliente").
+
+              ⚠️ Só o NOME. Os demais campos do cliente (documento, telefone,
+              endereço) ficam para a tela dele -- pedi-los aqui seria trocar
+              um formulário por outro no meio do primeiro. */}
+          {podeCadastrar && termoNovo && !clientes.erro && (
+            <BotaoNu
+              type="button"
+              onClick={() => criar.mutate(termoNovo)}
+              disabled={criar.isPending}
+              display="block"
+              w="100%"
+              textAlign="left"
+              p={OPCAO_LINHA.padding}
+              fontSize={OPCAO_LINHA.fonte}
+              fontWeight="700"
+              color="fg.brand"
+              borderTopWidth={achados.length > 0 ? "1px" : 0}
+              borderTopStyle="solid"
+              borderTopColor="border.subtle"
+              _hover={{ bg: "bg.canvas" }}
+            >
+              {criar.isPending ? "Cadastrando…" : `+ Novo cliente “${termoNovo}”`}
+            </BotaoNu>
           )}
         </Box>
       )}

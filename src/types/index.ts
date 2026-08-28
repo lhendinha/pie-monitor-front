@@ -300,6 +300,10 @@ export interface FiltrosProcessos {
    * (`useFiltrosProcessos`), senão a mesma busca viraria duas entradas de
    * cache -- e `temFiltroAtivo` contaria um filtro que não filtra nada. */
   clienteNome: string;
+  /** O subgrupo escolhido. Não precisa de nome guardado ao lado como o
+   * cliente: a lista de subgrupos vem INTEIRA para a tela (são poucos), e o
+   * rótulo se resolve nela. */
+  subgrupoId: string;
   faseIds: string[];
   situacaoIds: string[];
   dataVerificarAte: string;
@@ -797,6 +801,10 @@ export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
 export interface FiltrosBuscaProcessos {
   busca?: string;
   clienteId?: string;
+  /** Um subgrupo só, e é ESCOLHA -- não permissão. O alcance de quem pede já
+   * é aplicado pelo servidor; isto recorta dentro dele. Pedir um subgrupo
+   * fora do alcance devolve lista vazia. */
+  subgrupoId?: string;
   faseIds?: string[];
   situacaoIds?: string[];
   dataVerificarAte?: string;

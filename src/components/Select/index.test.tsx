@@ -17,6 +17,30 @@ function temTexto(texto: string) {
   return screen.queryByText(texto) !== null;
 }
 
+describe("digitar para pesquisar é o PADRÃO", () => {
+  it("🔴 sem pedir nada, o controle aceita digitação", async () => {
+    /* Requerimento do usuário (28/08/2026): todo seletor do sistema deve
+       filtrar por digitação. Antes era `permitirBusca` opcional, e treze dos
+       vinte e seis usos ficavam sem. */
+    const user = userEvent.setup();
+    renderComProviders(<Select opcoes={OPCOES} valor="" onMudar={vi.fn()} />);
+
+    await user.click(screen.getByRole("combobox"));
+    await user.type(screen.getByRole("combobox"), "trab");
+
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Trabalhista"]);
+  });
+
+  it("dá para desligar onde digitar não ajuda", () => {
+    renderComProviders(
+      <Select opcoes={OPCOES} valor="" onMudar={vi.fn()} permitirBusca={false} />,
+    );
+    /* ⚠️ Sem busca o `react-select` põe um input FALSO (`aria-readonly`), que
+       existe só para o teclado -- é por ele que se distingue um do outro. */
+    expect(screen.getByRole("combobox")).toHaveAttribute("aria-readonly", "true");
+  });
+});
+
 describe("Select — estado de carregando", () => {
   it("diz 'Carregando…' no lugar do placeholder", () => {
     renderComProviders(

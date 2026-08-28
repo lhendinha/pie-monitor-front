@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
+  /* `CampoDeClientes` passou a oferecer "cadastrar" só a `manager`+ -- ele lê
+     o papel da sessão, e sem este mock o módulo inteiro falha ao carregar. */
+  papelAtende: vi.fn(() => true),
   detalhesProcesso: vi.fn(),
   listarTarefas: vi.fn(),
   atualizarProcesso: vi.fn(),

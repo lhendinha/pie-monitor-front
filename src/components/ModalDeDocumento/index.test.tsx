@@ -7,6 +7,9 @@ import { renderComProviders } from "../../test/queryTestUtils";
 import { DOCUMENTO_ARQUIVO, DOCUMENTO_LINK } from "../../constants/documento";
 
 const mocks = vi.hoisted(() => ({
+  /* `CampoDeClientes` passou a oferecer "cadastrar" só a `manager`+ -- ele lê
+     o papel da sessão, e sem este mock o módulo inteiro falha ao carregar. */
+  papelAtende: vi.fn(() => true),
   criarDocumento: vi.fn(),
   prepararEnvio: vi.fn(),
   enviarArquivo: vi.fn(),

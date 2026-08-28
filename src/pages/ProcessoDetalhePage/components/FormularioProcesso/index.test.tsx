@@ -6,6 +6,9 @@ import { renderComProviders } from "../../../../test/queryTestUtils";
 import type { Processo } from "../../../../types";
 
 const mocks = vi.hoisted(() => ({
+  /* `CampoDeClientes` passou a oferecer "cadastrar" só a `manager`+ -- ele lê
+     o papel da sessão, e sem este mock o módulo inteiro falha ao carregar. */
+  papelAtende: vi.fn(() => true),
   /* A assinatura vai explícita: `vi.fn(async () => …)` infere ZERO
      parâmetros, e aí `mock.calls[0][3]` não compila. */
   atualizarProcesso: vi.fn(

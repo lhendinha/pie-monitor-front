@@ -62,6 +62,7 @@ export function useFiltrosProcessos(
   const filtros = {
     busca,
     clienteId: aplicados.clienteId,
+    subgrupoId: aplicados.subgrupoId,
     faseIds: aplicados.faseIds,
     situacaoIds: aplicados.situacaoIds,
     dataVerificarAte: aplicados.dataVerificarAte,

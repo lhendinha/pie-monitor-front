@@ -36,8 +36,7 @@ interface MultiSelectProps {
    * ⚠️ Com `onBuscar` o controle NÃO é travado: ali é ABRIR que dispara a
    * busca, e uma pílula travada enquanto carrega nunca sairia do lugar. */
   carregando?: boolean;
-  /** Ver `Select`: caixa de digitar no topo do painel, filtrando a lista
-   * que já está aqui (fase, situação). */
+  /** Ver `Select`: digitar para filtrar, **ligado por padrão**. */
   permitirBusca?: boolean;
   /** Ver `Select`: idem, mas quem filtra é o SERVIDOR -- pra lista que pode
    * crescer sem limite (cliente, subgrupo, pessoa). */
@@ -64,7 +63,7 @@ export function MultiSelect({
   placeholder = "Selecione",
   variante = "padrao",
   carregando,
-  permitirBusca = false,
+  permitirBusca = true,
   onBuscar,
   placeholderBusca = "Buscar",
   erro = false,
@@ -150,6 +149,8 @@ export function MultiSelect({
      ocupariam a mesma célula do controle. */
   const buscaNoPainel = chip && (permitirBusca || remoto);
   const buscaNoControle = !chip && (permitirBusca || remoto);
+  /** Não dá para mexer: esperando a lista chegar. */
+  const travado = carregando && !remoto;
 
   return (
     <ReactSelect<OpcaoDeSelect, true>
@@ -178,11 +179,13 @@ export function MultiSelect({
          nova que a tela ganhar exige reescrever a frase, e quem esquecer
          deixa uma mentira parcial na tela. */
       placeholder={carregando && !remoto ? "Carregando…" : placeholder}
-      isDisabled={carregando && !remoto}
+      isDisabled={travado}
       isLoading={remoto && carregando && !erro}
       /* No chip a caixa é nossa e mora no painel (`CampoDeBuscaDoPainel`): a
          da lib nasceria dentro da pílula, por cima do rótulo. */
-      isSearchable={buscaNoControle}
+      /* Ver a nota em `Select`: travado e pesquisável ao mesmo tempo
+         apaga o `combobox` do react-select. */
+      isSearchable={buscaNoControle && !travado}
       /* Filtro PRÓPRIO: o da lib compara texto cru, e "civel" não acharia
          "Cível". Com `onBuscar` quem filtrou foi o servidor. */
       filterOption={

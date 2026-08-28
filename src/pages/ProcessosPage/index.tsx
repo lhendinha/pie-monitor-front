@@ -173,6 +173,7 @@ export default function ProcessosPage() {
         mostrarPessoas={podeListarPessoas()}
         fases={apoio.fases}
         situacoes={apoio.situacoes}
+        subgrupos={apoio.subgrupos}
         erroNasFases={apoio.erroNasFases}
         erroNasSituacoes={apoio.erroNasSituacoes}
         onRecarregarFases={apoio.recarregarFases}

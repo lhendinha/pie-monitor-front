@@ -425,6 +425,31 @@ AgendaPage/
   components/VisaoPorMes/index.tsx  components/BarraDeDatas/index.tsx …
 ```
 
+## Três coisas que valem para a tela inteira (28/08/2026)
+
+**Todo seletor filtra por digitação.** `permitirBusca` passou a ser `true` por
+padrão em `Select` e `MultiSelect` -- listas curtas hoje crescem amanhã (fase,
+situação, subgrupo e pessoa são cadastráveis). Desligue com
+`permitirBusca={false}` só onde digitar não puder ajudar, e escreva o porquê.
+
+⚠️ Um seletor TRAVADO (esperando a lista) não é pesquisável: o `react-select`
+só renderiza o input quando `isSearchable`, e desabilitado ele não renderiza
+nada -- sumiria o `combobox` de que teclado e leitor de tela dependem.
+
+**Processos tem filtro por subgrupo.** Uma escolha só, ao lado das outras
+pílulas. Ela SOME para quem tem um subgrupo: ali não filtraria nada.
+
+⚠️ É escolha, não permissão -- o alcance de quem pede já é aplicado pelo
+servidor, e pedir subgrupo fora dele devolve lista vazia.
+
+**Dá para cadastrar cliente sem sair do formulário.** Digitou um nome que não
+está no cadastro, aparece "+ Novo cliente «nome»" no fim da lista. Só o nome:
+documento, telefone e endereço ficam para a tela do cliente -- pedi-los ali
+seria trocar um formulário por outro no meio do primeiro.
+
+⚠️ O atalho só aparece para `manager`+, que é o piso da rota. E vale para
+Atendimentos também, que usa o mesmo campo.
+
 ## Importar processos por OAB
 
 Em **Processos**, o botão "Importar por OAB" (só para `manager`+) abre a tela

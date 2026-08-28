@@ -49,8 +49,17 @@ interface SelectProps {
    * ⚠️ Com `onBuscar` o controle NÃO é travado: ali é ABRIR que dispara a
    * busca, e uma pílula travada enquanto carrega nunca sairia do lugar. */
   carregando?: boolean;
-  /** Caixa de digitar no topo do painel, filtrando a lista que já está
-   * aqui. Pra listas curtas e fechadas (fase, situação). */
+  /** Digitar para filtrar. **Ligado por padrão** (28/08/2026): é o
+   * comportamento esperado de qualquer seletor do sistema, e listas curtas
+   * hoje crescem amanhã -- fase e situação são cadastráveis, subgrupo e
+   * pessoa também.
+   *
+   * ⚠️ Onde a lista é FECHADA e minúscula (papel, tamanho de página,
+   * prioridade), a caixa de digitar não atrapalha: ela filtra o que já está
+   * ali e não cobra nada de quem prefere clicar.
+   *
+   * ⚠️ Desligue com `permitirBusca={false}` só quando digitar não puder
+   * ajudar -- e escreva o porquê no lugar. */
   permitirBusca?: boolean;
   /** Idem, mas quem filtra é o SERVIDOR -- pra lista que pode crescer sem
    * limite (cliente, subgrupo, pessoa). Recebe o termo já com espera entre
@@ -81,7 +90,7 @@ export function Select({
   variante = "padrao",
   desabilitado = false,
   carregando = false,
-  permitirBusca = false,
+  permitirBusca = true,
   onBuscar,
   placeholderBusca = "Buscar",
   erro = false,
@@ -157,6 +166,8 @@ export function Select({
    * se espera digitar. Aí quem cuida é o `isSearchable` da própria lib. */
   const buscaNoPainel = chip && (permitirBusca || remoto);
   const buscaNoControle = !chip && (permitirBusca || remoto);
+  /** Não dá para mexer: desabilitado de fora, ou esperando a lista. */
+  const travado = desabilitado || (carregando && !remoto);
 
   return (
     <ReactSelect<OpcaoDeSelect, false>
@@ -172,7 +183,16 @@ export function Select({
       placeholder={carregando && !remoto ? "Carregando…" : placeholder}
       /* A caixa de digitar é nossa e mora no painel (`CampoDeBuscaDoPainel`);
          a da lib nasceria dentro da pílula. */
-      isSearchable={buscaNoControle}
+      /* 🔴 Travado NÃO pode ser pesquisável ao mesmo tempo: o `react-select`
+         só renderiza o input quando `isSearchable`, e com ele desabilitado
+         não renderiza nada -- some o `combobox` de que teclado e leitor de
+         tela dependem para saber que existe um controle ali, esperando.
+         Achado ao ligar a busca por padrão (28/08/2026); o teste
+         "fica TRAVADO enquanto carrega" é quem cobra.
+
+         ⚠️ E não se perde nada: não há o que filtrar numa lista que ainda
+         não chegou. */
+      isSearchable={buscaNoControle && !travado}
       /* ⚠️ Filtro PRÓPRIO, não o da lib: o dela compara texto cru, então
          "angela" não acharia "Ângela" -- e quem digita sem acento concluiria
          que o cliente não está cadastrado. Com `onBuscar` quem filtrou foi o
@@ -206,7 +226,7 @@ export function Select({
       }
       inputValue={buscaNoControle && remoto ? busca : undefined}
       isClearable={permitirLimpar}
-      isDisabled={desabilitado || (carregando && !remoto)}
+      isDisabled={travado}
       isLoading={remoto && carregando && !erro}
       openMenuOnFocus
       menuPlacement="auto"

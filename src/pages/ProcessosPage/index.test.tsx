@@ -40,7 +40,14 @@ const PROCESSO = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [{ subgrupo_id: "sg1", nome: "Cível" }] });
+  /* DOIS subgrupos: a pílula de filtro só existe quando há o que escolher,
+     e o cenário de um só tem teste próprio. */
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [
+      { subgrupo_id: "sg1", nome: "Cível" },
+      { subgrupo_id: "s2", nome: "Trabalhista" },
+    ],
+  });
   mocks.listarProcessos.mockResolvedValue({ processos: [PROCESSO], total: 1, total_paginas: 1 });
   mocks.listarClientes.mockResolvedValue({ clientes: [] });
   // Fases e situações reais no padrão: os chips de filtro precisam de
@@ -598,5 +605,36 @@ describe("coluna de cliente", () => {
         ),
       );
     });
+  });
+});
+
+describe("filtro por subgrupo", () => {
+  it("🔴 filtra pelo subgrupo escolhido", async () => {
+    /* Requerimento do usuário (28/08/2026). O parâmetro vai como
+       `subgrupo_id`, e é ESCOLHA: o alcance de quem pede já foi aplicado
+       pelo servidor. */
+    const usuario = userEvent.setup();
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+
+    await usuario.click(await screen.findByText("Todos os subgrupos"));
+    await usuario.click(await screen.findByText("Trabalhista"));
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ subgrupoId: "s2" }),
+      ),
+    );
+  });
+
+  it("⚠️ com UM subgrupo a pílula não aparece -- ela não filtraria nada", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+      total: 1,
+    });
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+
+    expect(screen.queryByText("Todos os subgrupos")).not.toBeInTheDocument();
   });
 });

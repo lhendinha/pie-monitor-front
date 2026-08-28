@@ -9,6 +9,7 @@ export const INTERVALO_POLLING_PROCESSOS_MS = 60_000;
 export const FILTROS_PROCESSOS_VAZIOS: FiltrosProcessos = {
   clienteId: "",
   clienteNome: "",
+  subgrupoId: "",
   faseIds: [],
   situacaoIds: [],
   dataVerificarAte: "",
