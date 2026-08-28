@@ -1,5 +1,7 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 import { useState } from "react";
+
+import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
 import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -37,9 +39,9 @@ import type { RespostaDeDocumentosPaginada } from "../../types/respostas";
  * arranjo de Processos e Clientes.
  */
 export default function DocumentosPage() {
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
-  const [buscaInput, setBuscaInput] = useState("");
+  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
+  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   const [modalAberto, setModalAberto] = useState(false);
   const navegar = useNavigate();
   const queryClient = useQueryClient();
@@ -84,8 +86,6 @@ export default function DocumentosPage() {
             valor={buscaInput}
             onMudar={(valor) => {
               setBuscaInput(valor);
-              // Buscar da página 3 deixaria a lista vazia sem motivo aparente.
-              setPagina(1);
             }}
             /* 🔴 Só título e descrição: `documentos_service.listar_pagina`
                compara esses dois campos, nunca o nome do cliente nem o número
@@ -138,7 +138,6 @@ export default function DocumentosPage() {
                           variante="ghost"
                           onClick={() => {
                             setBuscaInput("");
-                            setPagina(1);
                           }}
                         >
                           Limpar busca
@@ -165,10 +164,7 @@ export default function DocumentosPage() {
                 tamanhoPagina={tamanhoPagina}
                 total={total}
                 onMudarPagina={setPagina}
-                onMudarTamanho={(novo) => {
-                  setTamanhoPagina(novo);
-                  setPagina(1);
-                }}
+                onMudarTamanho={setTamanhoPagina}
               />
             )}
           </CartaoDeTabela>

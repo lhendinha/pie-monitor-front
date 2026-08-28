@@ -425,6 +425,35 @@ AgendaPage/
   components/VisaoPorMes/index.tsx  components/BarraDeDatas/index.tsx …
 ```
 
+## O estado das listagens mora na URL (28/08/2026)
+
+Página, tamanho de página, busca e filtros vão na query string:
+`/processos?busca=posse&situacao=a&situacao=b&tamanho=30&pagina=2`.
+
+Com isso, **voltar de um detalhe devolve a lista como ela estava** -- que era o
+pedido -- e de quebra o F5 mantém, o botão do navegador funciona, e o endereço
+pode ser mandado para alguém.
+
+| chave | o que é |
+|---|---|
+| `pagina`, `tamanho` | paginação; ausentes valem 1 e 10 |
+| `busca` | o termo digitado |
+| `cliente`, `cliente_nome`, `subgrupo`, `responsavel` | filtros de valor único |
+| `fase`, `situacao` | repetíveis (`?fase=a&fase=b`) |
+| `verificar_ate`, `prazo_ate` | os filtros de data |
+| `tipo`, `falha`, `dias` | os do Histórico |
+
+⚠️ **O padrão não vai na URL**: `pagina=1` some, e voltar ao padrão APAGA a
+chave em vez de escrevê-la. Endereço limpo é endereço legível.
+
+⚠️ **Mudar filtro volta para a página 1**, na MESMA escrita -- pedir a página 2
+do conjunto novo dá lista vazia sem motivo aparente.
+
+⚠️ **As chaves são iguais em todas as telas**, e é de propósito: cada tela é um
+endereço, então `?pagina=2` em Processos e em Clientes nunca se encontram. A
+exceção é a tela de **Grupo**, cujas sub-abas dividem um endereço -- lá, trocar
+de aba limpa o estado da lista.
+
 ## Três coisas que valem para a tela inteira (28/08/2026)
 
 **Todo seletor filtra por digitação.** `permitirBusca` passou a ser `true` por

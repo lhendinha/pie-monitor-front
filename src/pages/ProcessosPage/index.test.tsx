@@ -638,3 +638,56 @@ describe("filtro por subgrupo", () => {
     expect(screen.queryByText("Todos os subgrupos")).not.toBeInTheDocument();
   });
 });
+
+describe("o estado da lista mora na URL", () => {
+  /** 🔴 Este bloco nasce de um defeito que passou pela suíte inteira verde:
+   * trocar o tamanho de página parou de funcionar, e nenhum teste percebeu.
+   * A causa foi `setTamanhoPagina(t); setPagina(1);` -- duas escritas na
+   * mesma URL, e a segunda apagou a primeira. */
+
+  it("🔴 trocar o tamanho de página CHEGA na requisição", async () => {
+    /* ⚠️ Total grande de propósito: a barra de páginas SOME quando a lista
+       cabe no menor tamanho -- e sem ela não há seletor para clicar. */
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO], total: 90, total_paginas: 9,
+    });
+    const usuario = userEvent.setup();
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await waitFor(() => expect(mocks.listarProcessos).toHaveBeenCalled());
+
+    /* O `Select` do projeto é `react-select`: o id fica num input auxiliar
+       fora da viewport, então foco e teclado -- é como os outros testes
+       desta suíte fazem. */
+    /* ⚠️ Espera a BARRA aparecer, não só a requisição sair: `toHaveBeenCalled`
+       prova que o pedido foi feito, e a paginação só existe depois de os
+       dados chegarem. */
+    await waitFor(() => expect(document.getElementById("tamanho-pagina")).not.toBeNull());
+    (document.getElementById("tamanho-pagina") as HTMLElement).focus();
+    await usuario.keyboard("30{Enter}");
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenLastCalledWith(
+        expect.objectContaining({ tamanhoPagina: 30, pagina: 1 }),
+      ),
+    );
+  });
+
+  it("monta JÁ na página e no tamanho que a URL diz", async () => {
+    /* É o que faz voltar do detalhe cair na lista como ela estava: a entrada
+       do histórico carrega a query, e a tela a lê na montagem. */
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [PROCESSO], total: 90, total_paginas: 3,
+    });
+    renderComProviders(
+      <MemoryRouter initialEntries={["/processos?pagina=2&tamanho=30"]}>
+        <ProcessosPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(mocks.listarProcessos).toHaveBeenCalledWith(
+        expect.objectContaining({ pagina: 2, tamanhoPagina: 30 }),
+      ),
+    );
+  });
+})

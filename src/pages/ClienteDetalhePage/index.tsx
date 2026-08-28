@@ -1,7 +1,7 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 import {
   Abas,
@@ -25,6 +25,7 @@ import ProcessosDoCliente from "./components/ProcessosDoCliente";
 import { ABAS_DO_CLIENTE, GRUPO_DE_ABAS } from "./constants";
 import type { AbaDoCliente } from "./types";
 import type { Cliente } from "../../types";
+import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 
 /** Página de detalhe de um cliente.
  *
@@ -34,7 +35,6 @@ import type { Cliente } from "../../types";
  */
 export default function ClienteDetalhePage() {
   const { clienteId = "" } = useParams();
-  const navegar = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
 
@@ -66,9 +66,8 @@ export default function ClienteDetalhePage() {
     queryFn: () => detalheCliente(clienteId),
   });
 
-  function voltar() {
-    navegar("/clientes");
-  }
+  /* ⚠️ Volta no HISTÓRICO -- ver `useVoltarParaLista`. */
+  const voltar = useVoltarParaLista("/clientes");
 
   const removerMutation = useMutation({
     mutationFn: () => removerCliente(clienteId),

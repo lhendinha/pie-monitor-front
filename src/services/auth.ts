@@ -1,4 +1,5 @@
-import type { JwtPayload, Papel, TokensResponse } from "../types";
+import type {
+  JwtPayload, Papel, TokensResponse } from "../types";
 import { API_URL, HIERARQUIA_PAPEIS } from "../constants";
 import { ApiError } from "./api/client";
 import { dispararAutenticacaoInvalida, dispararGrupoTrocado } from "./authBridge";

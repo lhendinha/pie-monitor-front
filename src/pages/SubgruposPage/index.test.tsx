@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderComProviders } from "../../test/queryTestUtils";
+import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   listarSubgrupos: vi.fn(),
@@ -45,7 +45,7 @@ describe("SubgruposPage", () => {
     mocks.listarSubgrupos.mockResolvedValue({
       subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
     });
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
     expect(await screen.findByText("Cível")).toBeInTheDocument();
     expect(mocks.listarSubgrupos).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
   });
@@ -56,7 +56,7 @@ describe("SubgruposPage", () => {
       .mockResolvedValueOnce({ subgrupos: [{ subgrupo_id: "2", nome: "Trabalhista" }], total: 1, total_paginas: 1 });
     mocks.criarSubgrupo.mockResolvedValue({});
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Nenhum subgrupo ainda.");
     await user.type(screen.getByLabelText("Nome do novo subgrupo"), "Trabalhista");
@@ -73,7 +73,7 @@ describe("SubgruposPage", () => {
       .mockResolvedValueOnce({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.removerSubgrupo.mockResolvedValue({});
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Cível");
     // O rótulo carrega o nome ("Remover Cível"): com cinco linhas, cinco
@@ -98,7 +98,7 @@ describe("SubgruposPage", () => {
       ...VAZIO, membros: 6, processos: 6, tarefas: 11, atendimentos: 8,
     });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Cível");
     await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -119,7 +119,7 @@ describe("SubgruposPage", () => {
     });
     mocks.conteudoDoSubgrupo.mockResolvedValue({ ...VAZIO, membros: 1 });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Cível");
     await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -146,7 +146,7 @@ describe("SubgruposPage", () => {
         total: 2,
         total_paginas: 1,
       });
-      renderComProviders(<SubgruposPage />);
+      renderComRota(<SubgruposPage />);
 
       await screen.findByText("Cível");
       expect(screen.getByRole("button", { name: /Remover Cível/ })).toBeInTheDocument();
@@ -165,7 +165,7 @@ describe("SubgruposPage", () => {
       });
       mocks.removerSubgrupo.mockResolvedValue({});
       const user = userEvent.setup();
-      renderComProviders(<SubgruposPage />);
+      renderComRota(<SubgruposPage />);
 
       await screen.findByText("Cível");
       await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -186,7 +186,7 @@ describe("SubgruposPage", () => {
     // Promessa que nunca assenta = a espera congelada.
     mocks.conteudoDoSubgrupo.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Cível");
     await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -226,7 +226,7 @@ describe("SubgruposPage", () => {
       });
       mocks.conteudoDoSubgrupo.mockResolvedValue({ ...VAZIO, ficaria_sem_subgrupo: true });
       const user = userEvent.setup();
-      renderComProviders(<SubgruposPage />);
+      renderComRota(<SubgruposPage />);
 
       await screen.findByText("Cível");
       await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -252,7 +252,7 @@ describe("SubgruposPage", () => {
       });
       mocks.removerSubgrupo.mockResolvedValue({});
       const user = userEvent.setup();
-      renderComProviders(<SubgruposPage />);
+      renderComRota(<SubgruposPage />);
 
       await screen.findByText("Cível");
       await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -273,7 +273,7 @@ describe("SubgruposPage", () => {
         ...VAZIO, processos: 6, ficaria_sem_subgrupo: true,
       });
       const user = userEvent.setup();
-      renderComProviders(<SubgruposPage />);
+      renderComRota(<SubgruposPage />);
 
       await screen.findByText("Cível");
       await user.click(screen.getByRole("button", { name: /Remover Cível/ }));
@@ -291,7 +291,7 @@ describe("SubgruposPage", () => {
     });
     mocks.atualizarSubgrupo.mockResolvedValue({});
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByText("Cível"));
 
@@ -307,7 +307,7 @@ describe("SubgruposPage", () => {
       subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
     });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByText("Cível"));
     await user.type(await screen.findByLabelText("Novo nome de Cível"), "outro{Escape}");
@@ -324,7 +324,7 @@ describe("SubgruposPage", () => {
       subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
     });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByText("Cível"));
     await user.clear(await screen.findByLabelText("Novo nome de Cível"));
@@ -341,7 +341,7 @@ describe("SubgruposPage", () => {
       subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
       total: 1, total_paginas: 1,
     });
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     expect(await screen.findByRole("button", { name: "Ver membros de Cível" })).toHaveTextContent(
       "1 membro",
@@ -358,7 +358,7 @@ describe("SubgruposPage", () => {
       total: 1, total_paginas: 1,
     });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
 
@@ -377,7 +377,7 @@ describe("SubgruposPage", () => {
     });
     mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
 
@@ -391,7 +391,7 @@ describe("SubgruposPage", () => {
     });
     mocks.adicionarMembro.mockResolvedValue({ mensagem: "adicionado", email: "novo@x.com" });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await user.type(await screen.findByLabelText("Adicionar alguém a Cível"), "novo@x.com");
@@ -408,7 +408,7 @@ describe("SubgruposPage", () => {
       total: 1, total_paginas: 1,
     });
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await user.type(await screen.findByLabelText("Adicionar alguém a Cível"), "isso-nao-e-email");
@@ -425,7 +425,7 @@ describe("SubgruposPage", () => {
     });
     mocks.removerMembro.mockResolvedValue({});
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await user.click(await screen.findByRole("button", { name: "Remover Ana Paula de Cível" }));
@@ -453,7 +453,7 @@ describe("SubgruposPage", () => {
     });
     mocks.listarTodosOsMembrosDoGrupo.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await screen.findByText("Membros do Cível");
@@ -484,7 +484,7 @@ describe("SubgruposPage", () => {
     });
     mocks.removerMembro.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
     await user.click(await screen.findByRole("button", { name: "Remover Ana Paula de Cível" }));
@@ -502,7 +502,7 @@ describe("SubgruposPage", () => {
     mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [], total: 0, total_paginas: 0 });
     mocks.criarSubgrupo.mockRejectedValue(new ApiError("Já existe um subgrupo com esse nome", 400));
     const user = userEvent.setup();
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Nenhum subgrupo ainda.");
     await user.type(screen.getByLabelText("Nome do novo subgrupo"), "Cível");
@@ -516,7 +516,7 @@ describe("SubgruposPage", () => {
     mocks.listarSubgrupos.mockResolvedValue({
       subgrupos: [{ subgrupo_id: "1", nome: "Cível" }], total: 1, total_paginas: 1,
     });
-    renderComProviders(<SubgruposPage />);
+    renderComRota(<SubgruposPage />);
 
     await screen.findByText("Cível");
     expect(screen.queryByLabelText("Nome do novo subgrupo")).not.toBeInTheDocument();

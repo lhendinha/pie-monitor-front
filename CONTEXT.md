@@ -2504,3 +2504,72 @@ sessão. Aí vale um `test/mockDeServices.ts` com os padrões -- e não a prop.
 ⚠️ O que esse helper custaria, e por isso ele não vem antes do gatilho: hoje a
 lista de mocks de cada teste MOSTRA de quais serviços aquela tela depende, e
 isso já pegou defeito nesta sessão.
+
+## O estado da listagem foi para a URL (28/08/2026)
+
+Pedido: abrir um processo da página 2, com 30 por página, e VOLTAR caindo no
+mesmo lugar. O estado vivia em `useState` da tela, e entrar no detalhe a
+desmonta.
+
+🔴 **A primeira implementação foi memória em módulo, e foi descartada.** Ela
+atendia ao pedido em ~70 linhas. A pergunta *"o que o mercado usa?"* mudou a
+decisão: a URL é o padrão do ecossistema (`useSearchParams`, search params do
+TanStack Router, `searchParams` do Next), responde de graça a quatro perguntas
+em vez de uma -- voltar, recarregar, compartilhar, enxergar o estado -- e já era
+o idioma DESTE projeto, no detalhe do processo que guarda a aba aberta assim.
+
+⚠️ **E eu tinha esticado um argumento contra.** Disse que "o projeto decidiu não
+pôr filtros na URL"; relendo, o comentário justifica o ATALHO da Área de
+trabalho passar filtros por `state` (*"é um atalho interno: não é URL pra
+compartilhar"*), não a URL como lugar do estado de lista.
+
+### 🔴 A regra que organiza tudo: `setSearchParams` NAVEGA na hora
+
+Não é `useState`. Duas chamadas no mesmo manipulador partem da MESMA URL, e a
+segunda apaga a primeira. Três defeitos desta migração são o mesmo defeito:
+
+1. `setBusca(v); setPagina(1)` -- a busca sumia ao digitar;
+2. `setTamanhoPagina(t); setPagina(1)` -- **a troca de tamanho parou de
+   funcionar**, e a suíte estava VERDE: nenhum teste cobria isso numa tela real;
+3. escolher cliente grava o id E o nome do rótulo -- a pílula ficava acesa sem
+   filtrar nada.
+
+➡️ Por isso existem duas peças: `useParametrosDaUrl` escreve VÁRIAS chaves numa
+vez (é o mecanismo), e `useEstadoNaUrl` é a casca de um valor só. E por isso o
+reset de página é propriedade do FILTRO (`tambemApaga`), não da tela.
+
+### Quem decide o que some da URL é quem declarou o estado
+
+⚠️ Houve uma versão com uma opção `padroes` no escritor múltiplo, e ela foi
+**removida**: obrigava quem limpa os filtros a repetir os padrões já declarados,
+e falhou duas vezes (Histórico e Atendimentos abriam com o filtro de volta).
+
+Agora `useEstadoNaUrl` -- o único que conhece o padrão da sua chave -- escolhe
+entre escrever e APAGAR; o escritor múltiplo só escreve o que recebe.
+
+⚠️ Consequência aceita: "limpar filtros" escreve os valores neutros
+(`?tipo=&falha=0`) em vez de apagar as chaves. Apagar devolveria o padrão -- e
+nessas telas o padrão pode ser o filtro que veio da Área de trabalho.
+
+### Dois defeitos de codec que só o teste mostrou
+
+- **booleano só sabia escrever `true`.** Um filtro que ABRE ligado (o link "só
+  com falha") não desligava: `false` sumia da URL, e o que some volta como o
+  padrão -- que ali era `true`;
+- **omitir "quando é vazio"** quebrava o filtro cujo padrão não é vazio: em
+  Histórico a tela abre em "Movimentações", e escolher "Todos" voltava sozinho
+  para "Movimentações".
+
+### ⚠️ Chaves iguais em todas as telas, e a exceção
+
+`?pagina=2` em Processos e em Clientes nunca colidem: cada tela é um endereço.
+A tela de **Grupo** é a exceção -- suas sub-abas dividem UM endereço, então
+trocar de aba limpa `pagina`, `tamanho` e `busca`. Sem isso, ir para a página 3
+de Subgrupos e clicar em Membros abria Membros na página 3, vazia.
+
+### ⚠️ Testes de tela agora precisam de `<Router>`
+
+Medido: o React Router 7 **estoura** com dois `<Router>` aninhados, e dezesseis
+arquivos já trazem o seu. Por isso não dá para pôr o roteador dentro de
+`renderComProviders` -- nasceu `renderComRota(ui, rota)`, que também aceita a
+rota inicial: `"/processos?pagina=2"` é como se testa que a URL manda na lista.

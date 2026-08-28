@@ -9,6 +9,7 @@ import MembrosPage from "../MembrosPage";
 import SubgruposPage from "../SubgruposPage";
 import OpcoesLista from "./components/OpcoesLista";
 import type { SubAbaId } from "../../types";
+import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 
 /** Agrupa Subgrupos/Membros/Convidar/Fases/Situações -- itens de gestão do
  * grupo (menos usados no dia a dia que Processos/Clientes/Histórico) --
@@ -17,6 +18,22 @@ import type { SubAbaId } from "../../types";
 export default function GrupoPage() {
   const abas = ABAS_DO_GRUPO.filter((a) => papelAtende(a.minimo));
   const [abaAtiva, setAbaAtiva] = useState<SubAbaId>(abas[0]?.id || "subgrupos");
+  const { atualizar } = useParametrosDaUrl();
+
+  /** 🔴 Trocar de aba LIMPA o estado da lista.
+   *
+   * As listagens guardam página, tamanho e busca na URL, com as mesmas
+   * chaves em toda tela -- e isso é de propósito: cada tela é um endereço,
+   * então `?pagina=2` em Processos e em Clientes nunca se encontram.
+   *
+   * ⚠️ Aqui elas se encontrariam: as sub-abas dividem UM endereço. Sem esta
+   * limpeza, ir para a página 3 de Subgrupos e trocar para Membros abriria
+   * Membros na página 3 -- provavelmente vazia, sem nada na tela explicando
+   * por quê. */
+  function mudarAba(id: SubAbaId) {
+    setAbaAtiva(id);
+    atualizar({}, { tambemApaga: ["pagina", "tamanho", "busca"] });
+  }
 
   return (
     <>
@@ -26,7 +43,7 @@ export default function GrupoPage() {
         grupo="grupo"
         abas={abas.map((a) => ({ id: a.id, rotulo: a.label }))}
         ativa={abaAtiva}
-        onMudar={setAbaAtiva}
+        onMudar={mudarAba}
       />
 
       {/* ⚠️ O conteúdo continua CONDICIONAL aqui, ao contrário das telas de

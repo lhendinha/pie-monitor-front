@@ -37,6 +37,7 @@ import { ABAS_DO_ATENDIMENTO, GRUPO_DE_ABAS } from "./constants";
 import FormularioAtendimento from "./components/FormularioAtendimento";
 import type { AbaDoAtendimento } from "./types";
 import type { Atendimento } from "../../types";
+import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 
 /** Detalhe de um atendimento: cabeçalho, linha do tempo e o campo de
  * escrever.
@@ -126,7 +127,8 @@ export default function AtendimentoDetalhePage() {
     onError: (err) => toastErroMutation(toast, err, "Não foi possível excluir o atendimento."),
   });
 
-  const voltar = () => navigate("/atendimentos");
+  /* ⚠️ Volta no HISTÓRICO -- ver `useVoltarParaLista`. */
+  const voltar = useVoltarParaLista("/atendimentos");
 
   if (query.isPending) {
     return (

@@ -1,4 +1,7 @@
 import { Flex, Stack, Text } from "@chakra-ui/react";
+
+import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
@@ -71,13 +74,36 @@ export default function HistoricoPage({
   diasInicial,
   onDeepLinkConsumido,
 }: HistoricoPageProps) {
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
-  const [tipoEnvio, setTipoEnvio] = useState<string>(
-    tipoEnvioInicial ?? TIPO_DE_ENVIO_PADRAO,
-  );
-  const [apenasComFalha, setApenasComFalha] = useState<boolean>(apenasComFalhaInicial ?? false);
-  const [dias, setDias] = useState<number>(diasInicial ?? 0);
+  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
+  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  /* ⚠️ Os filtros vão para a URL JUNTO com a página: restaurar a página sem
+     o filtro que a produziu mostraria uma página diferente.
+
+     ⚠️ O valor que vem por PROP (o link da Área de trabalho) é o padrão do
+     parâmetro -- é assim que a tela abre já filtrada sem sujar a URL. E
+     "limpar filtros" continua exprimível porque o codec escreve tudo que
+     DIFERE do padrão, inclusive `falha=0`. */
+  /* 🔴 Os padrões num lugar SÓ. Eles aparecem duas vezes -- ao declarar cada
+     filtro e ao limpar todos -- e o que some da URL é justamente o que
+     coincide com eles. Repetidos à mão, "limpar" grava o que ele acha que é
+     o padrão, o parâmetro é omitido, e a leitura devolve o filtro de volta:
+     o botão parece não funcionar. */
+  const PADROES = {
+    tipo: tipoEnvioInicial ?? TIPO_DE_ENVIO_PADRAO,
+    falha: apenasComFalhaInicial ?? false,
+    dias: diasInicial ?? 0,
+  };
+  const [tipoEnvio, setTipoEnvio] = useEstadoNaUrl("tipo", PADROES.tipo, {
+    tambemApaga: ["pagina"],
+  });
+  const [apenasComFalha, setApenasComFalha] = useEstadoNaUrl("falha", PADROES.falha, {
+    tambemApaga: ["pagina"],
+  });
+  const [dias, setDias] = useEstadoNaUrl("dias", PADROES.dias, {
+    tambemApaga: ["pagina"],
+  });
+  const { atualizar } = useParametrosDaUrl();
+
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const [criandoTarefa, setCriandoTarefa] = useState(false);
 
@@ -153,21 +179,11 @@ export default function HistoricoPage({
   }, [deepLink]);
 
   /* Voltar pra página 1 a cada filtro: estar na página 4 de um conjunto que
-     acabou de encolher pra 2 páginas mostraria vazio sem motivo. */
-  function handleMudarTipo(novo: string) {
-    setTipoEnvio(novo);
-    setPagina(1);
-  }
+     acabou de encolher pra 2 páginas mostraria vazio sem motivo.
 
-  function handleMudarFalha(nova: boolean) {
-    setApenasComFalha(nova);
-    setPagina(1);
-  }
-
-  function handleMudarDias(novo: number) {
-    setDias(novo);
-    setPagina(1);
-  }
+     ⚠️ Quem faz isso agora é o `tambemApaga` de cada filtro, numa escrita
+     só -- chamar `setPagina(1)` em seguida partiria da mesma URL e apagaria
+     o filtro que acabou de ser escrito. */
 
   /** O caminho de volta do estado vazio: derruba TODOS os filtros de uma vez.
    *
@@ -175,10 +191,10 @@ export default function HistoricoPage({
    * "Movimentações", mas "ver todos" tem que ver todos. Voltar pro padrão
    * deixaria os lembretes de fora e a lista poderia seguir vazia. */
   function limparFiltros() {
-    setTipoEnvio("");
-    setApenasComFalha(false);
-    setDias(0);
-    setPagina(1);
+    /* ⚠️ Escreve os valores neutros em vez de APAGAR as chaves: apagar
+       devolveria o padrão, e aqui o padrão pode ser o filtro que veio da
+       Área de trabalho -- "limpar" traria ele de volta. */
+    atualizar({ tipo: "", falha: false, dias: 0 }, { tambemApaga: ["pagina"] });
   }
 
   return (
@@ -189,9 +205,9 @@ export default function HistoricoPage({
       />
 
       <Flex align="center" gap="8px" wrap="wrap" mb="18px">
-        <FiltroDeMenu opcoes={TIPOS_DE_ENVIO} valor={tipoEnvio} onMudar={handleMudarTipo} />
-        <FiltroDeMenu opcoes={FILTROS_DE_FALHA} valor={apenasComFalha} onMudar={handleMudarFalha} />
-        <FiltroDeMenu opcoes={FILTROS_DE_PERIODO} valor={dias} onMudar={handleMudarDias} />
+        <FiltroDeMenu opcoes={TIPOS_DE_ENVIO} valor={tipoEnvio} onMudar={setTipoEnvio} />
+        <FiltroDeMenu opcoes={FILTROS_DE_FALHA} valor={apenasComFalha} onMudar={setApenasComFalha} />
+        <FiltroDeMenu opcoes={FILTROS_DE_PERIODO} valor={dias} onMudar={setDias} />
       </Flex>
 
       {/* Some enquanto carrega, em vez de dizer "carregando…": o esqueleto
@@ -261,10 +277,7 @@ export default function HistoricoPage({
                 total={total}
                 tamanhoPagina={tamanhoPagina}
                 onMudarPagina={setPagina}
-                onMudarTamanho={(t) => {
-                  setTamanhoPagina(t);
-                  setPagina(1);
-                }}
+                onMudarTamanho={setTamanhoPagina}
               />
             </>
           )}

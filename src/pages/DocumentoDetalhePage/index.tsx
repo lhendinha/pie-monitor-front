@@ -18,6 +18,7 @@ import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import FormularioDocumento from "./components/FormularioDocumento";
 import type { Documento } from "../../types";
+import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 
 /** A tela de um documento: onde ele se descreve, se baixa, se substitui e
  * se exclui.
@@ -85,7 +86,8 @@ export default function DocumentoDetalhePage() {
     onError: (err) => toastErroMutation(toast, err, "Não foi possível excluir o documento."),
   });
 
-  const voltar = () => navegar("/documentos");
+  /* ⚠️ Volta no HISTÓRICO -- ver `useVoltarParaLista`. */
+  const voltar = useVoltarParaLista("/documentos");
 
   const cabecalho = (
     <Box mb="14px">

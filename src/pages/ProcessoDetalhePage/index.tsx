@@ -1,7 +1,7 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 
 import {
   Abas,
@@ -32,6 +32,7 @@ import Movimentacoes from "./components/Movimentacoes";
 import TarefasVinculadas from "./components/TarefasVinculadas";
 import { ABAS_DO_PROCESSO, GRUPO_DE_ABAS, PARAM_DA_COMUNICACAO } from "./constants";
 import type { AbaDoProcesso } from "./types";
+import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 import type {
   RespostaDeDetalhesDoProcesso,
 } from "../../types/respostas";
@@ -48,7 +49,6 @@ import type {
  */
 export default function ProcessoDetalhePage() {
   const { subgrupoId = "", numero = "" } = useParams();
-  const navegar = useNavigate();
   const queryClient = useQueryClient();
   const apoio = useCatalogosDeProcesso();
   const toast = useToast();
@@ -108,9 +108,10 @@ export default function ProcessoDetalhePage() {
     onError: (err) => toastErroMutation(toast, err, "Não foi possível excluir o processo."),
   });
 
-  function voltar() {
-    navegar("/processos");
-  }
+  /* ⚠️ Volta no HISTÓRICO, não para o caminho fixo: a listagem guarda
+     página, tamanho e filtros na URL, e `navegar("/processos")` os jogaria
+     fora. Ver `useVoltarParaLista`. */
+  const voltar = useVoltarParaLista("/processos");
 
   if (query.isPending) return <Esqueleto linhas={4} />;
   if (query.isError) {

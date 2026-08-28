@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderComProviders } from "../../test/queryTestUtils";
+import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   listarHistorico: vi.fn(),
@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("HistoricoPage", () => {
   it("abre filtrado em Movimentações -- lembrete é diário e dominaria a lista", async () => {
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
 
     expect(await screen.findByText("Intimação", { exact: false })).toBeInTheDocument();
     expect(mocks.listarHistorico).toHaveBeenCalledWith({
@@ -48,7 +48,7 @@ describe("HistoricoPage", () => {
 
   it("trocar o filtro refaz a busca e volta pra primeira página", async () => {
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
     await screen.findByText("Intimação", { exact: false });
 
     await user.click(screen.getByRole("button", { name: /Movimentações/ }));
@@ -71,7 +71,7 @@ describe("HistoricoPage", () => {
     // selecionava. Os outros dois funcionavam, então o teste precisa ser
     // dela.
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
     await screen.findByText("Intimação", { exact: false });
 
     await user.click(screen.getByRole("button", { name: /Movimentações/ }));
@@ -96,7 +96,7 @@ describe("HistoricoPage", () => {
       total: 1,
       total_paginas: 1,
     });
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
 
     expect(await screen.findByText("Falha")).toBeInTheDocument();
   });
@@ -114,7 +114,7 @@ describe("HistoricoPage", () => {
        `apenasComFalha: false` e `dias: 0`, então o assert lá embaixo passava
        mesmo que o botão limpasse SÓ o tipo -- que era exatamente o defeito.
        Um teste que não pode falhar não guarda nada. */
-    renderComProviders(
+    renderComRota(
       <HistoricoPage tipoEnvioInicial="lembrete" apenasComFalhaInicial diasInicial={7} />,
     );
 
@@ -149,7 +149,7 @@ describe("HistoricoPage", () => {
       total_paginas: 1,
     });
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
 
     await user.click(await screen.findByText("Intimação", { exact: false }));
 
@@ -161,7 +161,7 @@ describe("HistoricoPage", () => {
 
   it("vazio de verdade diz outra coisa, sem botão", async () => {
     mocks.listarHistorico.mockResolvedValue({ historico: [], total: 0, total_paginas: 0 });
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
 
     expect(
       await screen.findByText(
@@ -178,7 +178,7 @@ describe("HistoricoPage", () => {
         : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
     );
     const onDeepLinkConsumido = vi.fn();
-    renderComProviders(
+    renderComRota(
       <HistoricoPage
         deepLink={{ processo: ITEM.numero_processo, comunicacaoId: String(ITEM.comunicacao_id) }}
         onDeepLinkConsumido={onDeepLinkConsumido}
@@ -204,7 +204,7 @@ describe("HistoricoPage", () => {
         ? new Promise(() => {})
         : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
     );
-    renderComProviders(
+    renderComRota(
       <HistoricoPage
         deepLink={{ processo: ITEM.numero_processo, comunicacaoId: String(ITEM.comunicacao_id) }}
         onDeepLinkConsumido={vi.fn()}
@@ -225,7 +225,7 @@ describe("HistoricoPage", () => {
         : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
     );
     const onDeepLinkConsumido = vi.fn();
-    renderComProviders(
+    renderComRota(
       <HistoricoPage
         deepLink={{ processo: "outro-numero", comunicacaoId: "999" }}
         onDeepLinkConsumido={onDeepLinkConsumido}
@@ -240,7 +240,7 @@ describe("HistoricoPage", () => {
   });
 
   it("sem deepLink, não dispara a busca por numeroProcesso", async () => {
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
     await screen.findByText("Intimação", { exact: false });
     expect(mocks.listarHistorico).not.toHaveBeenCalledWith(
       expect.objectContaining({ numeroProcesso: expect.anything() })
@@ -258,7 +258,7 @@ describe("os filtros que a Área de trabalho aciona", () => {
      link: a pessoa deixa de confiar nos dois. */
 
   it("abre já filtrado em SÓ COM FALHA quando a home manda", async () => {
-    renderComProviders(<HistoricoPage tipoEnvioInicial="" apenasComFalhaInicial />);
+    renderComRota(<HistoricoPage tipoEnvioInicial="" apenasComFalhaInicial />);
 
     await waitFor(() =>
       expect(mocks.listarHistorico).toHaveBeenCalledWith({
@@ -278,7 +278,7 @@ describe("os filtros que a Área de trabalho aciona", () => {
   });
 
   it("abre já recortado nos últimos dias quando a home manda", async () => {
-    renderComProviders(<HistoricoPage tipoEnvioInicial="movimentacao" diasInicial={7} />);
+    renderComRota(<HistoricoPage tipoEnvioInicial="movimentacao" diasInicial={7} />);
 
     await waitFor(() =>
       expect(mocks.listarHistorico).toHaveBeenCalledWith({
@@ -299,7 +299,7 @@ describe("os filtros que a Área de trabalho aciona", () => {
        montá-la, e um filtro que ignora o outro mostra lista errada em
        silêncio. */
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
     await screen.findByText("Intimação", { exact: false });
 
     await user.click(screen.getByRole("button", { name: "Todos os envios" }));
@@ -323,7 +323,7 @@ describe("os filtros que a Área de trabalho aciona", () => {
        errada, sem erro nenhum. O jeito de provar é ver que a consulta é
        REFEITA -- se a chave não mudasse, o React Query serviria o cache. */
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
     await screen.findByText("Intimação", { exact: false });
     const antes = mocks.listarHistorico.mock.calls.length;
 
@@ -345,7 +345,7 @@ describe("botão 'Adicionar tarefa' nos Detalhes do envio", () => {
       total_paginas: 1,
     });
     const user = userEvent.setup();
-    renderComProviders(<HistoricoPage />);
+    renderComRota(<HistoricoPage />);
     await user.click(await screen.findByText("Intimação", { exact: false }));
     await screen.findByText("Detalhes do envio");
     return user;

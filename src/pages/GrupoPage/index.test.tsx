@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { renderComProviders } from "../../test/queryTestUtils";
+import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   papelAtende: vi.fn(),
@@ -54,7 +54,7 @@ beforeEach(() => {
 describe("GrupoPage", () => {
   it("tem título e subtítulo próprios, como toda tela", async () => {
     mocks.papelAtende.mockReturnValue(true);
-    renderComProviders(<GrupoPage />);
+    renderComRota(<GrupoPage />);
 
     expect(screen.getByRole("heading", { name: "Grupo" })).toBeInTheDocument();
     expect(screen.getByText("Gestão de definições do grupo.")).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("GrupoPage", () => {
 
   it("papel 'user' (só Subgrupos habilitado) mostra Subgrupos direto, sem sub-nav de outras abas", async () => {
     mocks.papelAtende.mockImplementation((minimo: string) => minimo === "user");
-    renderComProviders(<GrupoPage />);
+    renderComRota(<GrupoPage />);
 
     await screen.findByText("Nenhum subgrupo ainda.");
     expect(screen.queryByRole("tab", { name: "Membros" })).not.toBeInTheDocument();
@@ -72,7 +72,7 @@ describe("GrupoPage", () => {
   it("papel 'manager' vê Subgrupos e Membros, clicar em Membros troca o conteúdo", async () => {
     mocks.papelAtende.mockImplementation((minimo: string) => minimo === "user" || minimo === "manager");
     const user = userEvent.setup();
-    renderComProviders(<GrupoPage />);
+    renderComRota(<GrupoPage />);
 
     await screen.findByRole("tab", { name: "Subgrupos" });
     expect(screen.getByRole("tab", { name: "Membros" })).toBeInTheDocument();
@@ -91,7 +91,7 @@ describe("GrupoPage", () => {
     mocks.papelAtende.mockImplementation(
       (minimo: string) => minimo !== "super_admin",
     );
-    renderComProviders(<GrupoPage />);
+    renderComRota(<GrupoPage />);
 
     await screen.findByRole("tab", { name: "Subgrupos" });
     for (const nome of ["Membros", "Convidar", "Fases", "Situações"]) {
@@ -101,7 +101,7 @@ describe("GrupoPage", () => {
 
   it("papel 'super_admin' vê as 5 sub-abas, incluindo Fases/Situações", async () => {
     mocks.papelAtende.mockReturnValue(true);
-    renderComProviders(<GrupoPage />);
+    renderComRota(<GrupoPage />);
 
     await screen.findByRole("tab", { name: "Subgrupos" });
     for (const nome of ["Membros", "Convidar", "Fases", "Situações"]) {
@@ -126,7 +126,7 @@ describe("GrupoPage", () => {
     });
     mocks.reativarOpcaoProcesso.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
-    renderComProviders(<GrupoPage />);
+    renderComRota(<GrupoPage />);
 
     await user.click(await screen.findByRole("tab", { name: "Fases" }));
     await user.click(await screen.findByRole("button", { name: "Reativar Inicial" }));
@@ -139,7 +139,7 @@ describe("GrupoPage", () => {
   describe("aba Configurações", () => {
     async function abrirConfiguracoes(user: ReturnType<typeof userEvent.setup>) {
       mocks.papelAtende.mockReturnValue(true);
-      renderComProviders(<GrupoPage />);
+      renderComRota(<GrupoPage />);
       await user.click(await screen.findByRole("tab", { name: "Configurações" }));
     }
 

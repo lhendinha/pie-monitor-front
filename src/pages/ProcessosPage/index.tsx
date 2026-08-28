@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
 import { Box } from "@chakra-ui/react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -60,8 +62,8 @@ export default function ProcessosPage() {
     | null;
   const filtrosIniciais = navegacao?.filtros;
 
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
+  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
+  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
 
   const f = useFiltrosProcessos(filtrosIniciais, navegacao?.processoEmDestaque);
   const apoio = useCatalogosDeProcesso();
@@ -83,38 +85,18 @@ export default function ProcessosPage() {
    * uma situação com 40 processos mostrava 10, a contagem dizia 40, e não
    * havia barra de páginas nem seletor de "Por página" -- os outros 30 não
    * tinham como ser vistos. */
-  /** 🔴 Trocar o filtro volta pra página 1.
+  /* ⚠️ Não há mais reset de página AQUI.
    *
-   * Enquanto a paginação era descartada com filtro ativo, `pagina` parada em
-   * 3 era inofensiva. Agora que ela vai sempre, filtrar estando na página 3
-   * pede a página 3 do conjunto FILTRADO -- que costuma não existir. O
-   * servidor devolve lista vazia, e como a barra de páginas só aparece com
-   * `processos.length > 0`, ela some junto: não sobra nem o botão "1" pra
-   * clicar. A pessoa fica presa até limpar o filtro.
+   * 🔴 Ele existia porque página e filtros viviam em estados separados, e o
+   * ajuste tinha de acontecer durante a renderização para não sair uma
+   * requisição com os filtros novos e a página velha. Com os dois na URL, o
+   * reset é propriedade do FILTRO (`tambemApaga: ["pagina"]`) e acontece na
+   * MESMA escrita -- não há instante intermediário para pedir errado.
    *
-   * A assinatura é comparada como string porque `f.filtros` é um objeto
-   * novo a cada render. */
-  const assinaturaDosFiltros = JSON.stringify(f.filtros);
-
-  /* 🔴 Ajuste DURANTE a renderização, não num efeito.
-   *
-   * Com `useEffect`, o `setPagina(1)` roda DEPOIS da renderização que já
-   * carregava os filtros novos -- então saía um
-   * `GET /processos?...&pagina=3` com os filtros novos e a página velha,
-   * imediatamente descartado pelo pedido correto com `pagina=1`. Duas
-   * requisições por mudança de filtro, e a primeira só existia pra ser
-   * jogada fora. O teste desta tela tinha sido trocado pra
-   * `toHaveBeenLastCalledWith` justamente pra conviver com isso.
-   *
-   * É o padrão que o React documenta pra estado derivado: comparar com o
-   * valor anterior e ajustar no corpo do componente. O React descarta a
-   * renderização em andamento e refaz com o valor novo, sem chegar a pedir
-   * nada. */
-  const [assinaturaAnterior, setAssinaturaAnterior] = useState(assinaturaDosFiltros);
-  if (assinaturaAnterior !== assinaturaDosFiltros) {
-    setAssinaturaAnterior(assinaturaDosFiltros);
-    setPagina(1);
-  }
+   * ⚠️ E tentar manter os dois seria pior que redundante: `setSearchParams`
+   * navega na hora, então um `setPagina(1)` depois do filtro partiria da
+   * mesma URL e APAGARIA o filtro que acabou de ser escrito. Foi o que
+   * aconteceu com a troca do tamanho de página, que parou de funcionar. */
 
   const parametrosBusca = { ...f.filtros, pagina, tamanhoPagina };
 
@@ -144,11 +126,6 @@ export default function ProcessosPage() {
   const total = processosQuery.data?.total ?? 0;
   const totalPaginas = processosQuery.data?.total_paginas ?? 0;
   const carregando = processosQuery.isPending;
-
-  function handleMudarTamanho(novoTamanho: number) {
-    setTamanhoPagina(novoTamanho);
-    setPagina(1);
-  }
 
   function invalidarProcessos() {
     queryClient.invalidateQueries({ queryKey: ["processos"] });
@@ -243,7 +220,7 @@ export default function ProcessosPage() {
               total={total}
               tamanhoPagina={tamanhoPagina}
               onMudarPagina={setPagina}
-              onMudarTamanho={handleMudarTamanho}
+              onMudarTamanho={setTamanhoPagina}
             />
           )}
         </CartaoDeTabela>

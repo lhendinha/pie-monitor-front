@@ -1,5 +1,7 @@
 import { Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
+
+import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CartaoDeTabela, EstadoDeErro, Esqueleto, Pagination } from "../../components";
@@ -24,8 +26,8 @@ import type {
  */
 export default function MembrosPage() {
   const [membroEmEdicao, setMembroEmEdicao] = useState<Membro | null>(null);
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
+  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
+  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
   const queryClient = useQueryClient();
 
   const podeEditar = ehSuperAdmin();
@@ -114,10 +116,7 @@ export default function MembrosPage() {
             total={total}
             tamanhoPagina={tamanhoPagina}
             onMudarPagina={setPagina}
-            onMudarTamanho={(t) => {
-              setTamanhoPagina(t);
-              setPagina(1);
-            }}
+            onMudarTamanho={setTamanhoPagina}
           />
         </CartaoDeTabela>
       )}

@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -27,10 +29,10 @@ import type {
  * justamente pra isso.
  */
 export default function ClientesPage() {
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
+  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
+  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
   const [modalAberto, setModalAberto] = useState(false);
-  const [buscaInput, setBuscaInput] = useState("");
+  const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   /** ⚠️ Debounce de verdade, não `useDeferredValue`. Aquele não tem
    * componente de TEMPO: só pula valores intermediários quando o render é
    * lento o bastante, e nesta tabela ele é rápido -- então cada tecla virava
@@ -102,10 +104,7 @@ export default function ClientesPage() {
               total={total}
               tamanhoPagina={tamanhoPagina}
               onMudarPagina={setPagina}
-              onMudarTamanho={(t) => {
-                setTamanhoPagina(t);
-                setPagina(1);
-              }}
+              onMudarTamanho={setTamanhoPagina}
             />
           )}
         </CartaoDeTabela>

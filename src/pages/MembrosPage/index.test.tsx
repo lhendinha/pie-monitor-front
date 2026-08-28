@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { renderComProviders } from "../../test/queryTestUtils";
+import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   listarMembrosDoGrupo: vi.fn(),
@@ -47,7 +47,7 @@ beforeEach(() => {
 
 describe("MembrosPage", () => {
   it("lista as pessoas do grupo com papel e subgrupos", async () => {
-    renderComProviders(<MembrosPage />);
+    renderComRota(<MembrosPage />);
 
     expect(await screen.findByText("Ana Paula")).toBeInTheDocument();
     expect(screen.getByText("Admin")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("MembrosPage", () => {
     mocks.listarMembrosDoGrupo.mockResolvedValue({
       membros: [{ ...PESSOA, apelido: undefined }],
     });
-    renderComProviders(<MembrosPage />);
+    renderComRota(<MembrosPage />);
 
     const linha = (await screen.findAllByRole("row")).find((r) =>
       r.textContent?.includes("ana@argos.local"),
@@ -71,7 +71,7 @@ describe("MembrosPage", () => {
 
   it("clicar na linha abre a edição -- super admin", async () => {
     const user = userEvent.setup();
-    renderComProviders(<MembrosPage />);
+    renderComRota(<MembrosPage />);
 
     await user.click(await screen.findByText("Ana Paula"));
 
@@ -84,7 +84,7 @@ describe("MembrosPage", () => {
     // simplesmente não reage ao clique parece quebrada.
     mocks.ehSuperAdmin.mockReturnValue(false);
     const user = userEvent.setup();
-    renderComProviders(<MembrosPage />);
+    renderComRota(<MembrosPage />);
 
     await user.click(await screen.findByText("Ana Paula"));
 
@@ -95,7 +95,7 @@ describe("MembrosPage", () => {
 
   it("o e-mail no modal não é editável -- é a identidade da pessoa", async () => {
     const user = userEvent.setup();
-    renderComProviders(<MembrosPage />);
+    renderComRota(<MembrosPage />);
 
     await user.click(await screen.findByText("Ana Paula"));
 
@@ -118,7 +118,7 @@ describe("paginação", () => {
       total: 14,
       total_paginas: 2,
     });
-    renderComProviders(<MembrosPage />);
+    renderComRota(<MembrosPage />);
 
     await waitFor(() => expect(mocks.listarMembrosDoGrupo).toHaveBeenCalled());
     const argumentos = mocks.listarMembrosDoGrupo.mock.calls[0][0];

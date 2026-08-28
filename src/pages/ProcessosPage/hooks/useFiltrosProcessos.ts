@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEstadoNaUrl } from "../../../hooks/useEstadoNaUrl";
+import { useParametrosDaUrl } from "../../../hooks/useParametrosDaUrl";
+import { lerParametroDaUrl } from "../../../utils/parametrosDaUrl";
 
 import { useValorComEspera } from "../../../hooks/useValorComEspera";
 import { FILTROS_PROCESSOS_VAZIOS, RESPONSAVEL_EU, SEM_RESPONSAVEL } from "../constants";
@@ -27,16 +29,56 @@ export function useFiltrosProcessos(
    * clicava naquele link esperava o carregamento e chegava numa listagem
    * genérica, sem filtro e sem destaque, sem entender por que estava ali --
    * o número do processo ia junto na navegação e ninguém lia. */
-  const [buscaInput, setBuscaInput] = useState(buscaInicial ?? "");
+  const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", buscaInicial ?? "", { tambemApaga: ["pagina"] });
   const busca = useValorComEspera(buscaInput);
   /** Os iniciais só valem na PRIMEIRA montagem, de propósito: eles vêm da
    * Área de trabalho, onde clicar num número abre esta tela já filtrada. Se
    * reagissem a mudanças da prop, limpar o filtro aqui seria desfeito no
    * render seguinte. */
-  const [aplicados, setAplicados] = useState<FiltrosProcessos>({
-    ...FILTROS_PROCESSOS_VAZIOS,
-    ...iniciais,
-  });
+  /* 🔴 UM parâmetro de URL por filtro, e não o objeto inteiro serializado.
+     A URL é endereço: `?situacao=a&situacao=b&pagina=2` se lê, se edita e se
+     manda para alguém. Um JSON espremido ali seria estado escondido à vista.
+
+     ⚠️ Os filtros vão para a URL JUNTO com a página, e não é capricho:
+     restaurar "página 2" sem o filtro que a produziu mostraria uma página 2
+     diferente -- pior do que não restaurar nada.
+
+     🔴 Lidos aqui, escritos NUMA VEZ SÓ em `aplicar`. Um setter por campo não
+     serve: escolher um cliente muda DOIS parâmetros (o id e o nome do
+     rótulo), e duas escritas seguidas partem da mesma URL -- a segunda apaga
+     a primeira. Foi assim que a pílula de cliente ficou acesa sem filtrar. */
+  const { params, atualizar } = useParametrosDaUrl();
+
+  const aplicados: FiltrosProcessos = {
+    clienteId: lerParametroDaUrl(params, "cliente", iniciais?.clienteId ?? ""),
+    /* ⚠️ O NOME do cliente vai na URL, e é a única coisa aqui que não filtra
+       nada. Sem ele, voltar do detalhe (ou abrir um link) deixaria a pílula
+       acesa e sem rótulo: a lista de clientes é paginada, e o escolhido quase
+       nunca está na primeira página. Ele continua FORA do objeto `filtros`,
+       que é o que vira `queryKey` -- essa era a razão original de separá-lo. */
+    clienteNome: lerParametroDaUrl(params, "cliente_nome", iniciais?.clienteNome ?? ""),
+    subgrupoId: lerParametroDaUrl(params, "subgrupo", iniciais?.subgrupoId ?? ""),
+    faseIds: lerParametroDaUrl(params, "fase", iniciais?.faseIds ?? []),
+    situacaoIds: lerParametroDaUrl(params, "situacao", iniciais?.situacaoIds ?? []),
+    dataVerificarAte: lerParametroDaUrl(params, "verificar_ate", iniciais?.dataVerificarAte ?? ""),
+    prazoFinalAte: lerParametroDaUrl(params, "prazo_ate", iniciais?.prazoFinalAte ?? ""),
+    responsavelId: lerParametroDaUrl(params, "responsavel", iniciais?.responsavelId ?? ""),
+  };
+
+  /** Mudar filtro SEMPRE volta para a página 1 -- pedir a página 2 do
+   * conjunto novo dá lista vazia sem motivo aparente. */
+  function aplicar(parcial: Partial<FiltrosProcessos>) {
+    const mudancas: Record<string, string | string[]> = {};
+    if (parcial.clienteId !== undefined) mudancas.cliente = parcial.clienteId;
+    if (parcial.clienteNome !== undefined) mudancas.cliente_nome = parcial.clienteNome;
+    if (parcial.subgrupoId !== undefined) mudancas.subgrupo = parcial.subgrupoId;
+    if (parcial.faseIds !== undefined) mudancas.fase = parcial.faseIds;
+    if (parcial.situacaoIds !== undefined) mudancas.situacao = parcial.situacaoIds;
+    if (parcial.dataVerificarAte !== undefined) mudancas.verificar_ate = parcial.dataVerificarAte;
+    if (parcial.prazoFinalAte !== undefined) mudancas.prazo_ate = parcial.prazoFinalAte;
+    if (parcial.responsavelId !== undefined) mudancas.responsavel = parcial.responsavelId;
+    atualizar(mudancas, { tambemApaga: ["pagina"] });
+  }
 
   /* ⚠️ `clienteNome` fica DE FORA: este objeto vira `queryKey` e query
      string. O nome é rótulo de tela, não critério de busca -- deixá-lo aqui
@@ -51,13 +93,14 @@ export function useFiltrosProcessos(
 
      E "eu" é resolvido AQUI, no front: o servidor não precisa saber o que
      "eu" significa. */
-  const escolhido = aplicados.responsavelId;
-  const semResponsavel = escolhido === SEM_RESPONSAVEL;
-  const responsavelId = semResponsavel
+  const semResponsavel = aplicados.responsavelId === SEM_RESPONSAVEL;
+  /** O que VAI para o servidor -- `responsavelId` acima é o que a pílula
+     escolheu, e os dois não são a mesma coisa (ver o 🔴 logo acima). */
+  const responsavelNaConsulta = semResponsavel
     ? ""
-    : escolhido === RESPONSAVEL_EU
+    : aplicados.responsavelId === RESPONSAVEL_EU
       ? getEmail() ?? ""
-      : escolhido;
+      : aplicados.responsavelId;
 
   const filtros = {
     busca,
@@ -67,7 +110,7 @@ export function useFiltrosProcessos(
     situacaoIds: aplicados.situacaoIds,
     dataVerificarAte: aplicados.dataVerificarAte,
     prazoFinalAte: aplicados.prazoFinalAte,
-    responsavelId,
+    responsavelId: responsavelNaConsulta,
     semResponsavel,
   };
 
@@ -79,10 +122,9 @@ export function useFiltrosProcessos(
     clienteNome: aplicados.clienteNome,
     filtroAtivo: temFiltroAtivo(filtros),
     aplicados,
-    mudar: (parcial: Partial<FiltrosProcessos>) =>
-      setAplicados((f) => ({ ...f, ...parcial })),
+    mudar: aplicar,
     limpar: () => {
-      setAplicados(FILTROS_PROCESSOS_VAZIOS);
+      aplicar(FILTROS_PROCESSOS_VAZIOS);
       setBuscaInput("");
     },
   };

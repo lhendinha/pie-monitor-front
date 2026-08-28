@@ -1,5 +1,8 @@
 import { Box } from "@chakra-ui/react";
 import { useState } from "react";
+
+import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -39,9 +42,9 @@ import type {
  * atendimento não é endereçável só pelo id.
  */
 export default function AtendimentosPage() {
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
-  const [buscaInput, setBuscaInput] = useState("");
+  const [pagina, setPagina] = useEstadoNaUrl("pagina", 1);
+  const [tamanhoPagina, setTamanhoPagina] = useEstadoNaUrl("tamanho", TAMANHO_PAGINA_PADRAO, { tambemApaga: ["pagina"] });
+  const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   /** A Área de trabalho abre esta tela já filtrada: clicar em "Atendimentos
    * em andamento" tem que mostrar exatamente os que geraram aquele número.
    *
@@ -52,8 +55,13 @@ export default function AtendimentosPage() {
    */
   const { state } = useLocation();
   const navegacao = state as { status?: string } | null;
-  const [status, setStatus] = useState<string>(navegacao?.status ?? STATUS_TODOS);
+  /* O padrão do parâmetro num lugar só -- ver a nota gêmea em Histórico. */
+  const statusPadrao = navegacao?.status ?? STATUS_TODOS;
+  const [status, setStatus] = useEstadoNaUrl("status", statusPadrao, {
+    tambemApaga: ["pagina"],
+  });
   const [modalAberto, setModalAberto] = useState(false);
+  const { atualizar } = useParametrosDaUrl();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -94,10 +102,11 @@ export default function AtendimentosPage() {
   const total = query.data?.total ?? 0;
   const temFiltro = Boolean(busca) || status !== STATUS_TODOS;
 
+  /* 🔴 UMA escrita para os dois filtros. Chamados em sequência, cada
+     `setSearchParams` parte da mesma URL e o segundo apaga o primeiro. */
   function limparFiltros() {
-    setBuscaInput("");
-    setStatus(STATUS_TODOS);
-    setPagina(1);
+    atualizar(
+      { busca: "", status: STATUS_TODOS }, { tambemApaga: ["pagina"] });
   }
 
   return (
@@ -110,13 +119,10 @@ export default function AtendimentosPage() {
         busca={buscaInput}
         onBuscar={(valor) => {
           setBuscaInput(valor);
-          // Buscar da página 3 deixaria a lista vazia sem motivo aparente.
-          setPagina(1);
         }}
         status={status}
         onMudarStatus={(novo) => {
           setStatus(novo);
-          setPagina(1);
         }}
         onNovo={() => setModalAberto(true)}
       />
@@ -170,10 +176,7 @@ export default function AtendimentosPage() {
                   tamanhoPagina={tamanhoPagina}
                   total={total}
                   onMudarPagina={setPagina}
-                  onMudarTamanho={(novo) => {
-                    setTamanhoPagina(novo);
-                    setPagina(1);
-                  }}
+                  onMudarTamanho={setTamanhoPagina}
                 />
               </>
             )}
