@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { TIPO_PROCESSOS_ATRIBUIDOS, TIPO_SESSAO_ALTERADA } from "../constants";
+import {
+  TIPO_ITENS_REATRIBUIDOS,
+  TIPO_PROCESSOS_ATRIBUIDOS,
+  TIPO_SESSAO_ALTERADA,
+} from "../constants";
 import { destinoDaNotificacao, detalheSecundario, frasePrincipal } from "./notificacao";
 import type { Notificacao } from "../types";
 
@@ -143,13 +147,55 @@ describe("atribuição em massa", () => {
     );
   });
 
-  it("não é clicável enquanto o destino filtrado não existir", () => {
-    /* ⚠️ Pendência conhecida, e o teste a fixa em vez de deixá-la implícita:
-       o destino certo é a listagem filtrada por responsável, que hoje só se
-       alcança por `state` de navegação -- e esta função devolve string.
+  it("✅ leva à listagem filtrada -- a pendência foi fechada em 28/08/2026", () => {
+    /* 🔴 Este teste dizia o contrário: "não é clicável enquanto o destino
+       filtrado não existir", com o aviso de que cairia quando alguém
+       resolvesse. Caiu -- e o que o destravou foi o estado das listagens ter
+       ido para a URL, que transformou o filtro num endereço.
 
-       🔴 Se alguém resolver isso, ESTE teste cai -- e é assim que ele avisa
-       que a pendência foi fechada, em vez de sobreviver mentindo. */
-    expect(destinoDaNotificacao(EM_MASSA)).toBeNull();
+       É o teste fazendo o que se esperava dele: avisar que a pendência
+       acabou, em vez de sobreviver mentindo. */
+    expect(destinoDaNotificacao(EM_MASSA)).toContain("/processos?responsavel=");
+  });
+});
+
+describe("para onde a atribuição em massa leva (28/08/2026)", () => {
+  const EM_MASSA = {
+    ...BASE,
+    tipo: TIPO_PROCESSOS_ATRIBUIDOS,
+    titulo: "201 processos atribuídos a você",
+    subgrupo_id: "sg-civel",
+  };
+
+  it("🔴 abre a listagem FILTRADA por quem recebeu", () => {
+    /* Esteve pendente por um obstáculo concreto: esta função devolve uma
+       string de rota, e os filtros de Processos viajavam por `state` de
+       navegação. Com o estado das listagens na URL, `?responsavel=` virou
+       endereço. */
+    expect(destinoDaNotificacao(EM_MASSA)).toBe(
+      "/processos?responsavel=eu%40x.com&subgrupo=sg-civel",
+    );
+  });
+
+  it("⚠️ sem subgrupo, filtra só por responsável", () => {
+    /* Sem ele a lista traria os processos da pessoa em TODOS os subgrupos --
+       mais do que o aviso prometeu --, mas é melhor que não levar a lugar
+       nenhum. */
+    expect(destinoDaNotificacao({ ...EM_MASSA, subgrupo_id: "" })).toBe(
+      "/processos?responsavel=eu%40x.com",
+    );
+  });
+
+  it("🔴 `itens_reatribuidos` continua SEM destino", () => {
+    /* Não é esquecimento: ali são quatro listas (tarefas, atendimentos,
+       processos, documentos), e nenhum endereço isolado cobre as quatro. */
+    expect(
+      destinoDaNotificacao({
+        ...BASE,
+        tipo: TIPO_ITENS_REATRIBUIDOS,
+        titulo: "Você assumiu itens de Ana",
+        subgrupo_id: "sg-civel",
+      }),
+    ).toBeNull();
   });
 });

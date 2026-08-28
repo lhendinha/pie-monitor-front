@@ -2610,3 +2610,44 @@ onde a pessoa ficava presa sem botão.
 1})` casava com a consulta do TOTAL, que sempre pede a página 1 -- a mutação
 que desligava a correção não o derrubava. O desempate é `tamanhoPagina` na
 asserção.
+
+## O sino ganhou um aviso, e a atribuição em massa virou clicável (28/08/2026)
+
+### `itens_reatribuidos`
+
+Quem herda o acervo de alguém que saiu do subgrupo recebe UMA linha, com a
+conta do que recebeu. Título e detalhe vêm PRONTOS do servidor -- só ele sabe
+o que foi transferido.
+
+⚠️ **Chega sem `alvo_id` E sem `alvo_tipo`**, então não é clicável. Não é
+esquecimento: são QUATRO listas (tarefas, atendimentos, processos,
+documentos), e nenhum endereço isolado cobre as quatro. Mesmo tratamento de
+`sessao_alterada`.
+
+### ✅ A pendência da atribuição em massa foi fechada
+
+`destinoDaNotificacao` tinha uma pendência escrita: *"201 processos atribuídos
+a você"* deveria abrir a listagem filtrada por responsável, e não abria porque
+esta função devolve uma STRING de rota e os filtros viajavam por `state` de
+navegação.
+
+🔴 **O obstáculo caiu quando o estado das listagens foi para a URL**, no mesmo
+dia: `?responsavel=…` virou endereço. Agora a linha leva a
+`/processos?responsavel=<quem recebeu>&subgrupo=<onde>`.
+
+⚠️ O subgrupo entra junto: sem ele a lista traria os processos da pessoa em
+TODOS os subgrupos -- mais do que o aviso prometeu.
+
+⚠️ **`usuario_id` é o destinatário**, e é por ele que se filtra. Ler a sessão
+dentro da função a tornaria dependente de estado global sem precisar.
+
+⚠️ Medido em Chrome, entrando como quem recebeu: o clique leva a
+`?responsavel=user%40local.test&subgrupo=sub-g-alfa` e a tabela mostra os 3
+processos, de 42 do grupo. E funciona para quem é `user`, embora a pílula de
+responsáveis não liste gente abaixo de `manager` -- o filtro vem da URL, não
+da pílula.
+
+➡️ **O teste que fixava a pendência caiu, e era para cair**: ele dizia "não é
+clicável ENQUANTO o destino filtrado não existir", com o aviso de que quem
+resolvesse o derrubaria. Foi assim que a pendência se anunciou fechada, em vez
+de sobreviver mentindo.

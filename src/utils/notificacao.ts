@@ -9,6 +9,7 @@ import {
   TIPO_DOCUMENTO_ATRIBUIDO,
   TIPO_DOCUMENTO_VINCULADO,
   TIPO_PROCESSO_ATRIBUIDO,
+  TIPO_ITENS_REATRIBUIDOS,
   TIPO_PROCESSOS_ATRIBUIDOS,
   TIPO_PROCESSO_DESATRIBUIDO,
   TIPO_LEMBRETE,
@@ -65,6 +66,12 @@ export function frasePrincipal(n: Notificacao): string {
      * porque só ele sabe quantos foram. Aqui só se acrescenta quem fez. */
     case TIPO_PROCESSOS_ATRIBUIDOS:
       return autor ? `${autor}: ${n.titulo}` : n.titulo;
+    /* Título e detalhe vêm PRONTOS do servidor ("Você assumiu itens de Ana"
+     * / "Ana saiu de Cível. 3 tarefas e 2 processos passaram para você"),
+     * porque só ele sabe o que foi transferido. E o autor não entra na
+     * frase: ele já é o nome dentro do título. */
+    case TIPO_ITENS_REATRIBUIDOS:
+      return n.titulo;
     case TIPO_ATENDIMENTO_ATRIBUIDO:
       return autor
         ? `${autor} colocou você como responsável por um atendimento`
@@ -143,18 +150,33 @@ export function detalheSecundario(n: Notificacao): string {
 /** Pra onde o clique leva. `null` quando não há destino -- e aí a linha não
  * é clicável, em vez de levar a lugar nenhum. */
 export function destinoDaNotificacao(n: Notificacao): string | null {
-  /* ⚠️ **PENDENTE, e conhecido**: a atribuição em massa deveria abrir a
-   * listagem filtrada por responsável -- o que `ResumoRapido.irParaProcessos`
-   * faz com `navegar("/processos", { state: { filtros } })`.
+  /* 🔴 A atribuição em massa abre a listagem FILTRADA, e não um processo.
    *
-   * 🔴 Não dá para fazer aqui: esta função devolve uma STRING de rota, e a
-   * tela de Processos lê os filtros de `state`, não de query string -- com a
-   * razão escrita lá ("é um atalho interno, não é URL pra compartilhar").
-   * Carregar o filtro exigiria mudar o contrato desta função e de quem a
-   * consome.
+   * "201 processos atribuídos a você" não tem um alvo -- por isso chega sem
+   * `alvo_id`. O destino certo sempre foi a lista filtrada por responsável, e
+   * isto ficou PENDENTE por um obstáculo concreto: esta função devolve uma
+   * STRING de rota, e os filtros de Processos viajavam por `state` de
+   * navegação, que não cabe numa string.
    *
-   * Até lá a linha aparece com o texto e NÃO é clicável, que é o mesmo
-   * tratamento de `sessao_alterada`. Entra junto com a tela da importação. */
+   * ✅ O obstáculo caiu em 28/08/2026, quando o estado das listagens foi para
+   * a URL: `?responsavel=…` passou a ser endereço.
+   *
+   * ⚠️ O subgrupo entra junto quando existe: a atribuição aconteceu DENTRO de
+   * um, e sem ele a lista traria os processos da pessoa em todos os
+   * subgrupos -- mais do que o aviso prometeu.
+   *
+   * ⚠️ `usuario_id` é o DESTINATÁRIO do aviso, e é por ele que se filtra:
+   * "os que passaram a ser seus". Ler a sessão aqui tornaria esta função
+   * dependente de estado global sem precisar. */
+  if (n.tipo === TIPO_PROCESSOS_ATRIBUIDOS && n.usuario_id) {
+    const filtros = new URLSearchParams({ responsavel: n.usuario_id });
+    if (n.subgrupo_id) filtros.set("subgrupo", n.subgrupo_id);
+    return `/processos?${filtros.toString()}`;
+  }
+
+  /* ⚠️ `itens_reatribuidos` continua SEM destino, e não é esquecimento: ali
+     são quatro listas (tarefas, atendimentos, processos, documentos), e
+     nenhum endereço isolado cobre as quatro. */
   if (!n.alvo_id) return null;
   switch (n.alvo_tipo) {
     case ALVO_TAREFA:

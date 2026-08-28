@@ -38,6 +38,18 @@ export const TIPO_PROCESSO_ATRIBUIDO = "processo_atribuido";
  * ir. O destino é a lista filtrada por responsável -- ver a ressalva em
  * `destinoDaNotificacao`. */
 export const TIPO_PROCESSOS_ATRIBUIDOS = "processos_atribuidos";
+
+/** Alguém saiu de um subgrupo e o acervo dele passou para mim.
+ *
+ * 🔴 UMA linha por saída, não uma por item: herdar o que era de um colega são
+ * dezenas de itens de uma vez, e um aviso por item enterraria tudo que já
+ * estava no sino.
+ *
+ * ⚠️ **Chega sem `alvo_id` E sem `alvo_tipo`**: são QUATRO listas diferentes
+ * (tarefas, atendimentos, processos, documentos), e não há um item para onde
+ * ir. A linha aparece com o texto e não é clicável -- mesmo tratamento de
+ * `sessao_alterada`. */
+export const TIPO_ITENS_REATRIBUIDOS = "itens_reatribuidos";
 export const TIPO_ATENDIMENTO_ATRIBUIDO = "atendimento_atribuido";
 export const TIPO_DOCUMENTO_ATRIBUIDO = "documento_atribuido";
 
@@ -93,6 +105,7 @@ export const TIPOS_DE_NOTIFICACAO = [
   TIPO_PROCESSO_DESATRIBUIDO,
   TIPO_ATENDIMENTO_DESATRIBUIDO,
   TIPO_DOCUMENTO_VINCULADO,
+  TIPO_ITENS_REATRIBUIDOS,
 ] as const;
 
 /** Todos os alvos, para derivar a união em `types/`. */
