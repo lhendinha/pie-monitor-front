@@ -75,6 +75,11 @@ export const ESTILO_DE_LINK = {
   color: "fg.brand",
   fontSize: "12.5px",
   fontWeight: 700,
+  /* ⚠️ `normal`, não a do corpo: `BotaoNu` herda a `line-height` 1,45 do
+     tema e o link fica 18,1px de altura contra os 17px do desenho. Medido
+     nos dois lados, com o botão do desenho clonado para o `body` dele --
+     escondido ele mede zero, e a comparação passaria por igual. */
+  lineHeight: "normal",
   _hover: { color: "brand.dark" },
 } as const;
 

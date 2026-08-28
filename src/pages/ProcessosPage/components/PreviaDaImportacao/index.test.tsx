@@ -81,6 +81,40 @@ function muitos(quantos = 23): ProcessoEncontrado[] {
   return Array.from({ length: quantos }, (_, i) => achado(String(i + 1)));
 }
 
+describe("a fileira de cartões", () => {
+  it("o quarto cartão APARECE com zero", () => {
+    /* 🔴 "0 também em outro subgrupo" é a resposta "nenhum". Escondê-lo faria
+       a fileira mudar de tamanho conforme o resultado -- e quem viu quatro
+       cartões numa busca procuraria o que sumiu na seguinte. */
+    montar([achado("1")]);
+
+    /* ⚠️ No PLURAL: zero não é um, e "0 também em outro subgrupo" seria o
+       mesmo erro de concordância pelo outro lado. */
+    expect(screen.getByText("também em outros subgrupos")).toBeInTheDocument();
+    expect(screen.getAllByText("0")).toHaveLength(2);
+  });
+
+  it("⚠️ concorda no singular -- a tela dizia `1 encontrados`", () => {
+    /* Os rótulos eram fixos, então com um processo a fileira errava a
+       concordância enquanto o botão logo abaixo acertava ("Importar 1
+       processo"). Errar em metade da tela parece descuido justamente onde
+       ela pede confiança. */
+    montar([achado("1")]);
+
+    expect(screen.getByText("encontrado")).toBeInTheDocument();
+    expect(screen.getByText("seria cadastrado")).toBeInTheDocument();
+    expect(screen.getByText("já estão neste subgrupo")).toBeInTheDocument();
+    expect(screen.queryByText("encontrados")).not.toBeInTheDocument();
+  });
+
+  it("e no plural com muitos", () => {
+    montar(muitos(23));
+
+    expect(screen.getByText("encontrados")).toBeInTheDocument();
+    expect(screen.getByText("seriam cadastrados")).toBeInTheDocument();
+  });
+});
+
 describe("a tabela da prévia", () => {
   it("tem as colunas de Processos, na ordem", () => {
     montar();

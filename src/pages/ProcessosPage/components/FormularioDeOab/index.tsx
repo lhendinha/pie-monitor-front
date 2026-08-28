@@ -196,6 +196,9 @@ export default function FormularioDeOab({
             color="fg.brand"
             fontSize="12.5px"
             fontWeight={700}
+            /* 17px de altura, como no desenho -- ver a nota em
+               `ESTILO_DE_LINK`. */
+            lineHeight="normal"
             textDecoration="underline"
             textUnderlineOffset="2px"
             _hover={{ color: "brand.dark" }}
