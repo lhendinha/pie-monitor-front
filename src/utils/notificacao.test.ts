@@ -160,7 +160,11 @@ describe("atribuição em massa", () => {
 });
 
 describe("para onde a atribuição em massa leva (28/08/2026)", () => {
-  const EM_MASSA = {
+  /* ⚠️ Anotado como `Notificacao`: sem o tipo, o literal do `tipo` ALARGA
+     para `string` e o `tsc -b` do `yarn build` recusa com TS2345 -- verde no
+     vitest, vermelho no CI. É a mesma armadilha que `ProcessosPage` já
+     registra num comentário. */
+  const EM_MASSA: Notificacao = {
     ...BASE,
     tipo: TIPO_PROCESSOS_ATRIBUIDOS,
     titulo: "201 processos atribuídos a você",
@@ -195,7 +199,7 @@ describe("para onde a atribuição em massa leva (28/08/2026)", () => {
         tipo: TIPO_ITENS_REATRIBUIDOS,
         titulo: "Você assumiu itens de Ana",
         subgrupo_id: "sg-civel",
-      }),
+      } satisfies Notificacao),
     ).toBeNull();
   });
 });
