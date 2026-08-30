@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   TIPO_ITENS_REATRIBUIDOS,
   TIPO_PROCESSOS_ATRIBUIDOS,
+  TIPO_PROCESSOS_IMPORTADOS,
   TIPO_SESSAO_ALTERADA,
+  TIPOS_DE_NOTIFICACAO,
 } from "../constants";
 import { destinoDaNotificacao, detalheSecundario, frasePrincipal } from "./notificacao";
 import type { Notificacao } from "../types";
@@ -201,5 +203,77 @@ describe("para onde a atribuição em massa leva (28/08/2026)", () => {
         subgrupo_id: "sg-civel",
       } satisfies Notificacao),
     ).toBeNull();
+  });
+});
+
+describe("🔴 a importação automática (30/08/2026)", () => {
+  /* ⚠️ Anotado como `Notificacao` pela mesma razão do bloco acima: sem o
+     tipo, o literal ALARGA para `string` e o `tsc -b` recusa. */
+  const IMPORTADOS: Notificacao = {
+    ...BASE,
+    tipo: TIPO_PROCESSOS_IMPORTADOS,
+    titulo: "12 processos novos, sem responsável",
+    detalhe: "OAB 206876/MG · Cível",
+    subgrupo_id: "sg-civel",
+    alvo_tipo: "processo",
+    alvo_id: "",
+  };
+
+  it("mostra o título que veio do servidor", () => {
+    /* Só ele sabe quantos foram, de qual inscrição e para qual subgrupo. */
+    expect(frasePrincipal(IMPORTADOS)).toBe("12 processos novos, sem responsável");
+  });
+
+  it("🔴 NUNCA põe autor na frase -- ninguém agiu", () => {
+    /* É a diferença para `processos_atribuidos`, que mostra "Chefe: 201
+       processos...". Aqui a varredura encontrou e o sistema criou; pôr um
+       sujeito atribuiria a uma pessoa uma decisão que foi da máquina.
+
+       ⚠️ O par testa com autor PREENCHIDO -- sem isso, um `${autor}: ` no
+       código passaria despercebido, porque o `BASE` tem autor vazio. */
+    expect(frasePrincipal({ ...IMPORTADOS, autor: "Chefe", autor_nome: "Chefe" })).toBe(
+      "12 processos novos, sem responsável",
+    );
+  });
+
+  it("⚠️ o detalhe traz a inscrição, e não repete o título", () => {
+    /* 🔴 São até 50 inscrições no escritório, e elas NÃO são de quem recebe
+       o aviso: sem a inscrição, o gestor não sabe de quem é o acervo que
+       chegou.
+
+       E é o `detalhe`, não o `titulo`: o `default` da função devolveria o
+       título, e a mesma frase apareceria duas vezes na linha do sino. */
+    expect(detalheSecundario(IMPORTADOS)).toBe("OAB 206876/MG · Cível");
+    expect(detalheSecundario(IMPORTADOS)).not.toBe(frasePrincipal(IMPORTADOS));
+  });
+
+  it("🔴 leva à listagem do SUBGRUPO, não filtrada por responsável", () => {
+    /* Estes processos entram SEM responsável de propósito -- filtrar por
+       quem recebeu o aviso devolveria lista vazia, o oposto do que o aviso
+       promete. É a diferença para `processos_atribuidos`, que filtra por
+       `responsavel`. */
+    expect(destinoDaNotificacao(IMPORTADOS)).toBe("/processos?subgrupo=sg-civel");
+    expect(destinoDaNotificacao(IMPORTADOS)).not.toContain("responsavel");
+  });
+
+  it("⚠️ sem subgrupo, não é clicável", () => {
+    /* Melhor não levar a lugar nenhum do que abrir a lista inteira dizendo
+       que são "os que acabaram de entrar". */
+    expect(destinoDaNotificacao({ ...IMPORTADOS, subgrupo_id: "" })).toBeNull();
+  });
+});
+
+describe("🔴 o guarda do conjunto: nenhum tipo fica sem frase", () => {
+  it("todos os tipos declarados produzem texto", () => {
+    /* 🔴 O `never` do `default` cobra em tempo de COMPILAÇÃO, e é o guarda
+       principal. Este aqui cobre o que ele não alcança: um `case` que
+       exista mas devolva string vazia compila, e viraria uma linha em branco
+       no sino -- exatamente o defeito que a união fechada foi criada para
+       impedir. */
+    const vazios = TIPOS_DE_NOTIFICACAO.filter(
+      (tipo) => !frasePrincipal({ ...BASE, tipo, titulo: "t", detalhe: "d" }),
+    );
+
+    expect(vazios).toEqual([]);
   });
 });

@@ -39,6 +39,29 @@ export const TIPO_PROCESSO_ATRIBUIDO = "processo_atribuido";
  * `destinoDaNotificacao`. */
 export const TIPO_PROCESSOS_ATRIBUIDOS = "processos_atribuidos";
 
+/** A importação automática trouxe processos novos por uma inscrição do
+ * ESCRITÓRIO.
+ *
+ * 🔴 **Tipo próprio, e não `processos_atribuidos`.** Ali o processo já
+ * existia e alguém colocou a pessoa como responsável; aqui o sistema
+ * **criou** o processo, sem ninguém pedir. Reusar o outro faria o aviso
+ * dizer que alguém agiu quando ninguém agiu.
+ *
+ * 🔴 **Vai para `manager`+, não para o subgrupo inteiro** -- e é a única
+ * notificação do sistema com esse recorte. A razão é a AÇÃO disponível:
+ * processos que chegam sem responsável precisam ser distribuídos, e um
+ * `user` não pode fazer isso. As MOVIMENTAÇÕES desses mesmos processos
+ * seguem avisando o subgrupo inteiro, pela régua de `destinatarios`.
+ *
+ * ⚠️ **Chega sem `alvo_id`**: não há UM processo para onde ir. O destino é a
+ * listagem filtrada pelo subgrupo que os recebeu.
+ *
+ * ⚠️ **`titulo` e `detalhe` vêm PRONTOS do servidor** -- só ele sabe quantos
+ * foram, de qual inscrição e para qual subgrupo. O detalhe cita a inscrição
+ * porque são até 50 e elas **não são de quem recebe o aviso**: sem ela, o
+ * gestor não sabe de quem é o acervo que acabou de chegar. */
+export const TIPO_PROCESSOS_IMPORTADOS = "processos_importados";
+
 /** Alguém saiu de um subgrupo e o acervo dele passou para mim.
  *
  * 🔴 UMA linha por saída, não uma por item: herdar o que era de um colega são
@@ -100,6 +123,7 @@ export const TIPOS_DE_NOTIFICACAO = [
   TIPO_SESSAO_ALTERADA,
   TIPO_PROCESSO_ATRIBUIDO,
   TIPO_PROCESSOS_ATRIBUIDOS,
+  TIPO_PROCESSOS_IMPORTADOS,
   TIPO_ATENDIMENTO_ATRIBUIDO,
   TIPO_DOCUMENTO_ATRIBUIDO,
   TIPO_PROCESSO_DESATRIBUIDO,
