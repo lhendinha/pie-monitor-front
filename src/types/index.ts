@@ -216,6 +216,32 @@ export type ErroDaBuscaPorOab =
   | { campo: "numeroOab" | "ufOab" | "periodo"; mensagem: string }
   | null;
 
+/** O erro da INSCRIÇÃO sozinha -- sem o período, que só a busca tem.
+ *
+ * ⚠️ Tipo próprio, e não `ErroDaBuscaPorOab` reaproveitado: aquele admite
+ * `campo: "periodo"`, e quem trata o retorno de `erroDaInscricao` teria de
+ * lidar com um caso que nunca acontece. Um `switch` exaustivo passaria a
+ * exigir um ramo morto. */
+export type ErroDeInscricao =
+  | { campo: "numeroOab" | "ufOab"; mensagem: string }
+  | null;
+
+/** O que `GET /me` devolve.
+ *
+ * 🔴 A lista de campos é FECHADA do lado do servidor (`CAMPOS_DO_MEU_PERFIL`),
+ * e é ela que impede material de credencial de sair. Acrescentar aqui sem
+ * acrescentar lá dá `undefined` em silêncio.
+ *
+ * ⚠️ `numero_oab`/`uf_oab` vêm `null` -- nunca ausentes -- quando não há
+ * inscrição: a tela pergunta "tem OAB?", não "o campo veio?". */
+export interface MeuPerfil {
+  email: string;
+  apelido: string | null;
+  papel: Papel;
+  numero_oab: string | null;
+  uf_oab: string | null;
+}
+
 /** O que `POST /subgrupos/{id}/processos/importar` devolve.
  *
  * 🔴 **`ja_existiam` NÃO é falha**: alguém cadastrou pela tela entre a prévia

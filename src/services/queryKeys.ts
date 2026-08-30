@@ -8,6 +8,12 @@
  * `subgrupo` passados pra cada <SubgrupoMembros>, o que já refaz o fetch de
  * cada um deles por causa da troca de referência nas deps do useCallback. */
 export const qk = {
+  /** `GET /me` -- o próprio registro.
+   *
+   * ⚠️ Sem parâmetro: o alvo vem do token, então só existe UMA resposta por
+   * sessão. Uma chave com o e-mail dentro daria a impressão de que dá para
+   * pedir o de outra pessoa. */
+  meuPerfil: () => ["meu-perfil"] as const,
   subgrupos: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) =>
     ["subgrupos", params] as const,
   subgruposDoGrupo: (grupoId: string) => ["subgrupos", "grupo", grupoId] as const,
