@@ -31,14 +31,40 @@ export function erroDaBusca(
   return null;
 }
 
-/** Quais processos podem ser marcados: os que ainda não estão no subgrupo.
+/** Quais processos PODEM ser marcados: os que ainda não estão no subgrupo.
  *
  * ⚠️ Importar nunca sobrescreve, então marcar um já existente não teria
  * efeito nenhum -- e uma caixa que não faz nada é pior que uma caixa
  * ausente.
+ *
+ * 🔴 **Poder marcar e vir marcado são coisas DIFERENTES** -- ver
+ * `preSelecionados`. Esta responde "a caixa está habilitada?", e por isso
+ * alimenta também o "Marcar todos" e o total do "N de M marcados". Um
+ * processo removido antes continua aqui: a pessoa pode trazê-lo de volta.
  */
 export function selecionaveis(processos: ProcessoEncontrado[]): string[] {
   return processos.filter((p) => !p.ja_existe).map((p) => p.numero_processo);
+}
+
+/** Quais processos já vêm MARCADOS quando a prévia abre.
+ *
+ * 🔴 **Tudo que dá para importar, MENOS o que este subgrupo já apagou de
+ * propósito** -- decidido em 30/08/2026.
+ *
+ * A diferença entre esta e `selecionaveis` é a diferença entre *poder* e
+ * *querer*: quem apagou um processo tomou uma decisão, e o padrão da tela
+ * tem de respeitá-la. Vindo pré-marcado, bastaria não reparar na etiqueta
+ * para desfazer a própria exclusão -- e numa lista de 500 ninguém repara em
+ * uma linha.
+ *
+ * ⚠️ **Não é trava**: a caixa segue habilitada e o "Marcar todos" alcança o
+ * processo. O que muda é só o estado INICIAL -- desmarcar é um clique, e
+ * reimportar sem perceber não tem desfazer.
+ */
+export function preSelecionados(processos: ProcessoEncontrado[]): string[] {
+  return processos
+    .filter((p) => !p.ja_existe && !p.removido_antes)
+    .map((p) => p.numero_processo);
 }
 
 /** A frase do botão de confirmar.
@@ -101,12 +127,23 @@ export function resumoDaImportacao(r: {
  * 2. o nome de um subgrupo visível, porque entre dizer *onde* e dizer *que
  *    existe*, dizer onde é melhor;
  * 3. "outro subgrupo", o que sobra;
- * 4. "novo".
+ * 4. "removido antes";
+ * 5. "novo".
+ *
+ * 🔴 **O quarto é o único que NÃO é excludente com "novo"** -- e é por isso
+ * que ele fica logo acima dele. Um processo removido antes não está em
+ * subgrupo nenhum, que é exatamente a definição de novo; sem esta posição ele
+ * apareceria como novo e a pessoa o reimportaria sem saber que já o tinha
+ * recusado.
+ *
+ * ⚠️ E fica ABAIXO de todos os outros: se o processo está em algum subgrupo
+ * hoje, isso importa mais do que ter sido apagado antes.
  */
 export function estadoDoAchado(p: ProcessoEncontrado): EstadoDoAchado {
   if (p.ja_existe) return "aqui";
   if (p.noutros_subgrupos.length > 0) return "noutro";
   if (p.em_outro_subgrupo) return "em_outro";
+  if (p.removido_antes) return "removido";
   return "novo";
 }
 
@@ -127,6 +164,12 @@ export function etiquetaDoAchado(p: ProcessoEncontrado): string {
       return `já está em ${p.noutros_subgrupos.join(", ")}`;
     case "em_outro":
       return "já acompanhado por outro subgrupo";
+    case "removido":
+      /* ⚠️ MINÚSCULO aqui, como os outros quatro: quem põe a caixa alta é
+         `EtiquetaDeSituacao`, com `text-transform: uppercase`. Escrevê-lo em
+         caixa alta neste `switch` seria a mesma regra em dois lugares -- e a
+         que divergisse no dia em que o componente mudasse. */
+      return "removido antes";
     default:
       return "novo";
   }

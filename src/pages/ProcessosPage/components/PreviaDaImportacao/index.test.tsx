@@ -40,6 +40,7 @@ function achado(numero: string, extra: Partial<ProcessoEncontrado> = {}): Proces
     ja_existe: false,
     noutros_subgrupos: [],
     em_outro_subgrupo: false,
+    removido_antes: false,
     ...extra,
   };
 }
@@ -49,7 +50,8 @@ const OS_QUATRO = [
   achado("1", { ja_existe: true }),
   achado("2", { noutros_subgrupos: ["Trabalhista"] }),
   achado("3", { em_outro_subgrupo: true }),
-  achado("4"),
+  achado("4", { removido_antes: true }),
+  achado("5"),
 ];
 
 function montar(processos: ProcessoEncontrado[] = OS_QUATRO) {
@@ -160,6 +162,7 @@ describe("a tabela da prévia", () => {
       "já cadastrado aqui",
       "já está em Trabalhista",
       "já acompanhado por outro subgrupo",
+      "removido antes",
       "novo",
     ]);
   });
@@ -259,14 +262,66 @@ describe("a tabela da prévia", () => {
     expect(screen.getByText("Responsável")).toBeInTheDocument();
   });
 
+  it("🔴 o que já foi REMOVIDO abre desmarcado", () => {
+    /* 🔴 Decidido em 30/08/2026, e é o par da cor vermelha: quem apagou o
+       processo tomou uma decisão, e o padrão da tela respeita.
+
+       Vindo pré-marcado, bastaria não reparar na etiqueta para desfazer a
+       própria exclusão -- e numa lista de 500 ninguém repara em uma linha.
+
+       ⚠️ Não é trava: a caixa segue habilitada (ver o teste abaixo) e o
+       "Marcar todos" alcança o processo. O que muda é só o estado inicial. */
+    montar();
+    const marcadas = linhas().map(
+      (l) => (within(l).getByRole("checkbox") as HTMLInputElement).checked,
+    );
+
+    expect(marcadas).toEqual([
+      false,  // já cadastrado aqui -- travado, nunca marcado
+      true,   // já está em Trabalhista
+      true,   // já acompanhado por outro subgrupo
+      false,  // 🔴 removido antes -- marcável, mas NÃO pré-marcado
+      true,   // novo
+    ]);
+  });
+
+  it('⚠️ "Marcar todos" ALCANÇA o removido antes', async () => {
+    /* O par que separa "não vem marcado" de "não pode ser marcado". Se
+       `preSelecionados` tivesse sido usado nos dois lugares, o processo
+       ficaria inalcançável pelo atalho -- e a pessoa teria de caçá-lo
+       na lista para trazê-lo de volta. */
+    const usuario = userEvent.setup();
+    montar();
+    await usuario.click(screen.getByRole("button", { name: "Marcar todos" }));
+
+    const marcadas = linhas().map(
+      (l) => (within(l).getByRole("checkbox") as HTMLInputElement).checked,
+    );
+    /* O primeiro é o travado, que nunca marca; os quatro seguintes marcam --
+       inclusive o removido antes, que é o ponto deste teste. */
+    expect(marcadas).toEqual([false, true, true, true, true]);
+  });
+
   it("só o do PRÓPRIO subgrupo é impedido de marcar", () => {
-    /* 🔴 O par que impede alguém "consertar" travando os outros dois: o
-       processo acompanhado por outra equipe é importável de propósito. */
+    /* 🔴 O par que impede alguém "consertar" travando os outros: o processo
+       acompanhado por outra equipe é importável de propósito.
+
+       🔴 E vale igual para "removido antes", que entrou depois: a marca
+       INFORMA, não impede -- quem ela trava é a importação AUTOMÁTICA, que
+       age sozinha, e não esta tela, onde há uma pessoa decidindo. Bloquear
+       aqui seria parede sem saída, já que não existe tela para apagar a
+       marca. */
     montar();
     const travadas = linhas().map(
       (l) => (within(l).getByRole("checkbox") as HTMLInputElement).disabled,
     );
 
-    expect(travadas).toEqual([true, false, false, false]);
+    expect(travadas).toEqual([
+      true,   // já cadastrado aqui -- o único que o servidor recusa
+      false,  // já está em Trabalhista
+      false,  // já acompanhado por outro subgrupo
+      false,  // 🔴 removido antes
+      false,  // novo
+    ]);
   });
 });

@@ -521,24 +521,41 @@ O fluxo tem três etapas, com uma decisão humana no meio:
 3. **Importar** — grava os selecionados com o histórico que a busca já trouxe,
    e a barra de progresso anda pelo canal em tempo real.
 
-### Os quatro estados da coluna "Situação"
+### Os cinco estados da coluna "Situação"
 
-| estado | etiqueta | dá para marcar? |
-|---|---|---|
-| em lugar nenhum | `NOVO` (verde) | ✅ |
-| **neste subgrupo** | `JÁ CADASTRADO AQUI` (âmbar) | ❌ o servidor recusa |
-| **em outro que você vê** | `JÁ ESTÁ EM CÍVEL` (cinza) | ✅ **sim** |
-| **em outro que você não vê** | `JÁ ACOMPANHADO POR OUTRO SUBGRUPO` (cinza) | ✅ **sim** |
+| estado | etiqueta | vem marcado? | dá para marcar? |
+|---|---|---|---|
+| **neste subgrupo** | `JÁ CADASTRADO AQUI` (âmbar) | — | ❌ o servidor recusa |
+| **em outro que você vê** | `JÁ ESTÁ EM CÍVEL` (cinza) | ✅ | ✅ |
+| **em outro que você não vê** | `JÁ ACOMPANHADO POR OUTRO SUBGRUPO` (cinza) | ✅ | ✅ |
+| **este subgrupo já apagou** | `REMOVIDO ANTES` (vermelho) | ❌ **não** | ✅ **sim** |
+| em lugar nenhum | `NOVO` (verde) | ✅ | ✅ |
 
 🔴 **Só o do próprio subgrupo trava** — importar nunca sobrescreve, e uma caixa
-que não faz nada é pior que caixa nenhuma. Os outros dois são informação: o
-mesmo processo acompanhado por duas equipes é caso real, e travar
-transformaria informação em parede.
+que não faz nada é pior que caixa nenhuma. Os outros são informação: o mesmo
+processo acompanhado por duas equipes é caso real, e travar transformaria
+informação em parede.
+
+🔴 **`REMOVIDO ANTES` é o único que não vem pré-marcado**, e as duas colunas da
+tabela acima são coisas diferentes: quem apagou um processo tomou uma decisão,
+e o padrão da tela respeita. Vindo marcado, bastaria não reparar na etiqueta
+para desfazer a própria exclusão — e numa lista de 500 ninguém repara em uma
+linha. **Não é trava**: a caixa segue habilitada e o "Marcar todos" alcança o
+processo; desmarcar é um clique, reimportar sem perceber não tem desfazer.
+
+⚠️ Por isso o contador diz coisas como **"17 de 21 marcados"** com a lista
+recém-aberta: os removidos contam no total disponível e mesmo assim não vêm
+marcados.
 
 ⚠️ Os estados **não são exclusivos no dado** (um processo pode estar no destino
 *e* em Cível *e* num subgrupo invisível). A linha mostra UMA etiqueta, pela
-precedência acima; o cartão "também em outros subgrupos" conta os dois últimos
-casos, sem contar ninguém duas vezes.
+precedência acima; o cartão "também em outros subgrupos" conta os dois casos de
+outro subgrupo, sem contar ninguém duas vezes.
+
+🔴 **`REMOVIDO ANTES` fica acima de `NOVO` e abaixo de todos os outros** — é o
+único que **não** é excludente com "novo": o processo não está em subgrupo
+nenhum, e é justamente por isso que apareceria como novo sem a etiqueta. Mas se
+ele está em algum subgrupo hoje, isso importa mais do que ter sido apagado.
 
 ⚠️ **"Marcar todos" age em todos**, não só na página visível: a marca é por
 número de processo, não por posição, e sobrevive à virada de página.
