@@ -1,3 +1,4 @@
+import { erroDaInscricao } from "./oab";
 import type { ErroDaBuscaPorOab, EstadoDoAchado, ProcessoEncontrado } from "../types";
 
 /** O que impede a busca de sair.
@@ -16,13 +17,11 @@ export function erroDaBusca(
   de: string,
   ate: string,
 ): ErroDaBuscaPorOab {
-  if (!numeroOab.trim()) {
-    return { campo: "numeroOab", mensagem: "Informe o número da OAB" };
-  }
-  if (!/^\d+$/.test(numeroOab.trim())) {
-    return { campo: "numeroOab", mensagem: "O número da OAB tem só dígitos" };
-  }
-  if (!ufOab) return { campo: "ufOab", mensagem: "Selecione a UF da OAB" };
+  /* A régua da INSCRIÇÃO mora em `utils/oab` desde que o perfil passou a
+     cadastrar a própria -- duas cópias divergiriam no primeiro ajuste. Aqui
+     ela é obrigatória: sem inscrição não há o que buscar. */
+  const daInscricao = erroDaInscricao(numeroOab, ufOab, { obrigatoria: true });
+  if (daInscricao) return daInscricao;
   /* 🔴 A única regra desta tela sem precedente no projeto: nenhum lugar da
    * API compara duas datas. Cada uma está certa -- errada é a ordem, e por
    * isso a frase não fala em "data inválida". */
