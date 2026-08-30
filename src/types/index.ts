@@ -449,6 +449,13 @@ export interface OpcoesRequisicao {
  * Fases/Situações como sub-navegação (ver GrupoPage + SubAbaId). */
 
 
+/** Abas dentro de PerfilPage.
+ *
+ * ⚠️ Aqui e não em `PerfilPage/constants.ts`, onde nasceu: a régua do projeto
+ * é que TIPO mora em `src/types` -- é o mesmo lugar de `SubAbaId`, logo
+ * abaixo, que responde a mesma pergunta para a tela de Grupo. */
+export type AbaDoPerfil = "dados" | "inscricao";
+
 /** Sub-abas dentro de GrupoPage. */
 export type SubAbaId =
   | "subgrupos"

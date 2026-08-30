@@ -89,7 +89,7 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 | **Detalhe do documento** | `/documentos/:subgrupoId/:documentoId` | onde se edita, baixa, substitui e exclui |
 | Histórico | `/historico` | o que o robô enviou |
 | Grupo | `/grupo` | subgrupos, pessoas, convites, fases e situações |
-| Perfil | `/perfil` | a própria conta |
+| Perfil | `/perfil` | **abas** Meus dados \| Inscrição na OAB |
 
 ⚠️ **No atendimento, "Detalhes" é a SEGUNDA aba** -- ao contrário de processo
 e cliente, onde ela abre. A aba padrão é a primeira da lista, e pôr Detalhes
@@ -101,6 +101,30 @@ com as telas irmãs é de _ter_ abas, não de qual vem primeiro.
 alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
 a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 (`/grupo`, `/perfil`) usam estado local de propósito.
+
+### Perfil: duas abas, dois "Salvar"
+
+| aba | o que tem | o que o Salvar dela grava |
+|---|---|---|
+| **Meus dados** | Nome completo, e-mail (travado), Alterar senha | só o nome |
+| **Inscrição na OAB** | Número da OAB, UF | só a inscrição |
+
+🔴 **A divisão torna ESTRUTURAL o que antes era lógica.** `PATCH /me` trata
+campo ausente como "não mexer", então um formulário único tinha de escolher o
+que mandar -- e mandar o nome numa troca de OAB o reescreveria. Separadas, uma
+aba **não conhece os campos da outra**: não há como sobrescrever por engano.
+
+⚠️ **A aba se chama "Meus dados", não "Perfil"**: a página já se chama "Meu
+perfil", e repetir o nome logo abaixo do título não informa nada.
+
+⚠️ **"Nome completo" é só o RÓTULO.** Atrás continua o campo `apelido`, sem
+migração -- mesma régua de `pje-monitor` vs Argos: o nome novo vale onde a
+**pessoa** lê. O "i" ao lado explica por que o nome precisa ser o completo (a
+Fase 1b o compara com o que o tribunal devolve para a inscrição).
+
+⚠️ **Deixar as duas partes da inscrição vazias APAGA a OAB.** É o único jeito
+de remover uma cadastrada por engano, e é por isso que a opção "Nenhuma" existe
+explicitamente no seletor de UF -- o `Select` não é clearable.
 
 ### Documentos
 

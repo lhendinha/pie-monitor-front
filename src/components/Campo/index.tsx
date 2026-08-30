@@ -1,4 +1,4 @@
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import type { ReactNode } from "react";
 
 import { Rotulo } from "../Rotulo";
@@ -20,6 +20,13 @@ interface CampoProps {
    * competiriam pela mesma linha, e o erro é o que importa naquele
    * momento. */
   erro?: string;
+  /** Conteúdo ao LADO do rótulo -- hoje só o "i" de `DicaDeCampo`.
+   *
+   * 🔴 Fora do `<label>`, e não dentro. Clicar num `<label htmlFor>` foca o
+   * controle que ele nomeia; um botão ali dentro herdaria esse gesto, e o
+   * balão abriria e fecharia no mesmo clique. Como irmão, o "i" é só um
+   * botão. */
+  aposORotulo?: ReactNode;
   children: ReactNode;
 }
 
@@ -29,17 +36,22 @@ interface CampoProps {
  * é outra coisa (rótulo de coluna de filtro). O asterisco de obrigatório vai
  * em `bad`, como no artifact.
  */
-export default function Campo({ rotulo, para, obrigatorio, dica, erro, children }: CampoProps) {
+export default function Campo({
+  rotulo, para, obrigatorio, dica, erro, aposORotulo, children,
+}: CampoProps) {
   return (
     <Box mb="16px" position="relative">
-      <Rotulo variante="campo" id={`${para}-rotulo`} htmlFor={para} mb="6px">
-        {rotulo}
-        {obrigatorio && (
-          <Text as="span" color="status.bad" aria-hidden="true">
-            {" *"}
-          </Text>
-        )}
-      </Rotulo>
+      <Flex align="center" mb="6px">
+        <Rotulo variante="campo" id={`${para}-rotulo`} htmlFor={para}>
+          {rotulo}
+          {obrigatorio && (
+            <Text as="span" color="status.bad" aria-hidden="true">
+              {" *"}
+            </Text>
+          )}
+        </Rotulo>
+        {aposORotulo}
+      </Flex>
       {children}
       {erro ? (
         <Text fontSize="11.5px" color="status.bad" mt="5px" role="alert">

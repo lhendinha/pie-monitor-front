@@ -17,6 +17,7 @@ export { OpcaoDeLinha } from "./OpcaoDeLinha";
 export { default as PilulaDeMenu } from "./PilulaDeMenu";
 export { default as Botao } from "./Botao";
 export { default as Campo } from "./Campo";
+export { default as DicaDeCampo } from "./DicaDeCampo";
 export { default as CampoDeLeitura } from "./CampoDeLeitura";
 export { default as LinhaDeCampos } from "./LinhaDeCampos";
 export { default as CamposDeEndereco } from "./CamposDeEndereco";

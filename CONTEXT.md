@@ -2703,3 +2703,130 @@ da pílula.
 clicável ENQUANTO o destino filtrado não existir", com o aviso de que quem
 resolvesse o derrubaria. Foi assim que a pendência se anunciou fechada, em vez
 de sobreviver mentindo.
+
+---
+
+## A inscrição da OAB no perfil, e as duas abas (30/08/2026)
+
+A Fase 1 do plano de escala pôs a varredura por OAB no cron, e não havia tela
+para cadastrar a inscrição. Esta entrega é ela.
+
+### 🔴 O bloqueio que só apareceu ao começar: não havia como LER
+
+`PATCH /me` aceitava `numero_oab`/`uf_oab` desde a manhã do mesmo dia. O login
+devolve só e-mail e apelido, e a sessão não guarda mais nada -- então a tela
+conseguiria **gravar** uma inscrição e não conseguiria mostrar a que já estava
+lá. A pessoa abriria o perfil, veria os campos vazios, e cadastraria de novo.
+
+Nasceu `GET /me`. ⚠️ E **não** alargando `GET /grupos/membros`, que era o
+atalho: aquela rota é `manager`+ com projeção fixa, e publicar a inscrição ali
+a mostraria na tela de Membros, que não pediu por ela.
+
+### As duas abas, e o que a divisão GARANTE
+
+| aba | grava |
+|---|---|
+| Meus dados | só o nome |
+| Inscrição na OAB | só a inscrição |
+
+🔴 `PATCH /me` trata campo ausente como "não mexer". Com um formulário só, o
+front tinha de **escolher** o que mandar -- e mandar o nome numa troca de OAB o
+reescreveria (foi por essa razão que `apelido` virou opcional no schema do
+servidor). Separadas, uma aba não conhece os campos da outra: a garantia
+deixou de depender de lógica e passou a ser da FORMA.
+
+⚠️ **Só a aba da inscrição consulta `GET /me`.** Nome e e-mail já estão na
+sessão; ir à rede buscar o que está em mãos faria a tela piscar sem ganho. A
+OAB não está na sessão e não deveria estar -- seria uma cópia que envelhece.
+
+### O caminho até este layout, porque ele mudou três vezes
+
+Vale registrado para ninguém refazer o percurso:
+
+1. **um cartão, três seções** (Informações pessoais / Inscrição / Conta) -- o
+   "Salvar" parecia governar o e-mail imutável e o link de senha;
+2. **dois cartões** -- resolvia a ambiguidade e pesava mais que ela;
+3. **duas abas** -- resolve a ambiguidade *e* prepara a Fase 1b, quando a aba
+   da inscrição ganha o interruptor de importação automática e o seletor de
+   subgrupos de destino. ⚠️ Hoje ela tem dois campos e parece magra; é o preço
+   de não refazer a tela duas vezes.
+
+⚠️ O e-mail chegou a virar `CampoDeLeitura` (texto puro) e **voltou** a ser
+`Input disabled` com cadeado. O argumento de que um input desabilitado pesa
+como editável valia quando tudo morava num cartão só; com as abas, o Salvar
+governa só o nome, e o campo travado volta a ser a forma que todo mundo
+reconhece para "existe, é seu, e não se mexe aqui".
+
+### `DicaDeCampo`: o "i", e três defeitos reais
+
+Não havia componente de dica (procurei `Tooltip` e `InfoTip`: zero). Nasceu
+sobre `Popover` -- decisão do plano de escala, porque **hover não existe em
+toque**.
+
+- 🔴 **`lazyMount` + `unmountOnExit`, e é o defeito que o `SeletorData` já
+  pagou.** Sem eles o posicionador continua montado depois de fechar, por cima
+  da tela, e **engole cliques**: clicar fora não chegava a contar como "clique
+  fora", e clicar no próprio "i" também não -- o balão parecia não fechar
+  nunca. O docstring do `SeletorData` descreve o mesmo sintoma no calendário;
+- ⚠️ **`positioning={{ placement: "bottom-start", gutter: 6 }}`.** O gatilho
+  tem 16px e o balão 300: centralizado, ele nascia ~142px para cada lado e saía
+  do cartão. Medido depois: balão em x=396..694, cartão em 268..928;
+- 🔴 **Hover foi TENTADO e removido.** Aberto por hover, o balão fica ancorado
+  logo abaixo do "i" e o posicionador **intercepta o ponteiro** -- o segundo
+  clique acertava o balão, não o botão (`positioner subtree intercepts pointer
+  events`, no log do Playwright). Hover que abre um elemento por cima do
+  próprio gatilho briga com o clique por definição;
+- ⚠️ O gatilho é `BotaoNu`, não `Box as="button"`: aquele não aceita `type` na
+  tipagem do Chakra, e botão sem `type="button"` dentro de `<form>` é submit --
+  clicar no "i" salvaria o perfil. O docstring de `BotaoNu` conta que isso foi
+  preciso três vezes antes de virar um lugar só; esta seria a quarta.
+
+### `utils/oab`: uma régua, dois usos
+
+`erroDaBusca` (importação por OAB) misturava a régua da inscrição com a
+comparação de datas do período. Só a primeira é comum, e ela saiu para
+`utils/oab` -- porque as duas telas discordam num ponto que uma cópia perderia:
+
+| tela | as duas partes vazias |
+|---|---|
+| importar por OAB | 🔴 erro -- não há o que buscar |
+| meu perfil | ✅ válido -- é assim que se LIMPA |
+
+Sem esse parâmetro, o perfil não teria como apagar uma OAB cadastrada por
+engano: o formulário recusaria o único estado que significa "não tenho".
+
+### O texto de apoio da inscrição
+
+> Com a inscrição cadastrada, o sistema acompanha as movimentações que o
+> tribunal publicar para ela.
+
+⚠️ A primeira versão explicava que a mesma numeração existe nas 27 seccionais
+-- para um público de **advogados**, que é justamente quem já sabe disso. Quem
+preencher só um campo recebe o erro no campo certo; o único espaço permanente
+de apoio é melhor gasto com o que não é óbvio.
+
+⚠️ **"Movimentações"** é o termo que o produto já usa com o usuário (a aba do
+processo, o cartão, o subtítulo do Histórico). "Publicações" ou "intimações"
+criariam um segundo nome para a mesma coisa.
+
+➡️ **Fica de fora, até a Fase 1b:** a outra frase do protótipo -- *"estar
+cadastrado já faz o sistema VIGIAR os processos desta inscrição; o interruptor
+abaixo é outra coisa"*. Ela aponta para o interruptor de importação automática,
+que ainda não existe. Frase que cita controle ausente é pior que frase nenhuma.
+
+### Verificação
+
+`scripts/verificar-oab-no-perfil.mjs`, 21 checagens em Chrome de verdade. O que
+só ele responde:
+
+- o painel do seletor de UF aparece, cabe na tela e a opção "Nenhuma" é
+  alcançável -- em jsdom ele "abre" sem layout nenhum;
+- o ciclo fecha contra a API real: gravar, **recarregar**, e a inscrição
+  continuar lá. É o defeito que o `GET /me` existe para evitar, e um mock de
+  `lerMeuPerfil` nunca o reproduz.
+
+⚠️ Duas armadilhas do próprio medidor, corrigidas e anotadas nele: seletor por
+TEXTO casa demais (o rótulo carrega o asterisco, e o `aria-label` do "i" contém
+o mesmo nome do campo -- vá de papel), e **os painéis das abas ficam montados**
+(`display:none`), então "não está nesta aba" se verifica por VISIBILIDADE, não
+por presença no DOM.

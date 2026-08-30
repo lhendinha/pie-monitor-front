@@ -43,11 +43,12 @@ await pagina.getByRole("button", { name: /entrar/i }).click();
 await pagina.getByText("Resumo rápido").waitFor();
 console.log("entrou\n");
 
-const numero = () => pagina.getByLabel("Número", { exact: true });
+const numero = () => pagina.getByRole("textbox", { name: /Número da OAB/ });
 const salvar = () => pagina.getByRole("button", { name: "Salvar" });
 
 async function abrirPerfil() {
   await pagina.goto(APP + "/perfil");
+  await pagina.getByRole("tab", { name: "Inscrição na OAB" }).click();
   await numero().waitFor();
 }
 
@@ -65,7 +66,7 @@ async function zerarInscricao() {
   await pagina.getByLabel("UF", { exact: true }).click();
   await pagina.getByRole("option", { name: "Nenhuma" }).click();
   await salvar().click();
-  await pagina.getByText("Perfil atualizado.").waitFor({ timeout: 5000 });
+  await pagina.getByText("Inscrição atualizada.").waitFor({ timeout: 5000 });
 }
 
 await zerarInscricao();
@@ -73,8 +74,62 @@ await zerarInscricao();
 // ─────────────────────────── a tela abre com o que está salvo
 console.log("— abertura —");
 await abrirPerfil();
-conferir(await pagina.getByText("Inscrição na OAB").isVisible(), "a seção da OAB aparece");
-conferir(await salvar().isDisabled(), "Salvar começa desligado");
+conferir(await salvar().isDisabled(), "Salvar da inscrição começa desligado");
+
+/* 🔴 A DIVISÃO POR ABA, e o que ela garante: cada aba só conhece os próprios
+   campos, então não há como uma sobrescrever o que é da outra num PATCH. */
+conferir(
+  (await pagina.getByRole("textbox", { name: /Nome completo/ }).count()) === 0,
+  "🔴 a aba da inscrição NÃO tem o campo do nome",
+);
+/* ⚠️ VISIBILIDADE, não presença. `PainelDaAba` mantém os painéis MONTADOS
+   (`display:none`), de propósito -- o projeto documenta isso em
+   `verificar-abas.mjs`. Uma checagem por `count()` diria que o e-mail está na
+   aba errada quando ele só está escondido. As consultas por PAPEL já ignoram
+   o que está fora da árvore de acessibilidade; as por texto, não. */
+/* ⚠️ VISIBILIDADE, não presença. `PainelDaAba` mantém os painéis MONTADOS
+   (`display:none`), de propósito -- o projeto documenta isso em
+   `verificar-abas.mjs`. Uma checagem por `count()` diria que o e-mail está na
+   aba errada quando ele só está escondido. */
+conferir(
+  !(await pagina.locator("input#email-perfil").isVisible().catch(() => false)),
+  "nem o e-mail (que está montado, porém escondido)",
+);
+
+await pagina.getByRole("tab", { name: "Meus dados" }).click();
+await pagina.getByRole("textbox", { name: /Nome completo/ }).waitFor();
+conferir(
+  (await pagina.getByRole("textbox", { name: /Número da OAB/ }).count()) === 0,
+  "🔴 e a aba de dados NÃO tem os campos da OAB",
+);
+conferir(
+  await pagina.locator("input#email-perfil").isDisabled(),
+  "o e-mail está na aba de dados, num campo travado",
+);
+conferir(
+  (await pagina.locator("input#email-perfil").inputValue()) === CONTA.email,
+  "e mostra o e-mail de quem está logado",
+);
+conferir(
+  await pagina.getByRole("button", { name: /Alterar senha/ }).isVisible(),
+  "a senha está com ele",
+);
+
+/* 🔴 O "i": `Popover`, não `Tooltip` -- hover não existe em toque, então o
+   que importa é o CLIQUE abrir. E o balão não pode enviar o formulário. */
+const i = pagina.getByRole("button", { name: /Por que o nome completo importa/ });
+conferir(await i.isVisible(), 'o "i" aparece ao lado do rótulo');
+await i.click();
+const balao = pagina.getByText(/comparar com o nome que o tribunal devolve/);
+await balao.waitFor({ timeout: 3000 }).catch(() => {});
+conferir(await balao.isVisible(), "clicar no i abre a explicação");
+conferir(
+  await pagina.getByRole("button", { name: "Salvar" }).isDisabled(),
+  "🔴 e NÃO enviou o formulário (o i é type=button)",
+);
+await pagina.keyboard.press("Escape");
+await pagina.getByRole("tab", { name: "Inscrição na OAB" }).click();
+await numero().waitFor();
 
 // ─────────────────────────── 🔴 o painel de UF, que jsdom não desenha
 console.log("\n— o seletor de UF —");
@@ -100,7 +155,7 @@ await pagina.getByLabel("UF", { exact: true }).click();
 await pagina.getByRole("option", { name: "MG" }).click();
 conferir(await salvar().isEnabled(), "Salvar liga quando a inscrição fica completa");
 await salvar().click();
-await pagina.getByText("Perfil atualizado.").waitFor({ timeout: 5000 });
+await pagina.getByText("Inscrição atualizada.").waitFor({ timeout: 5000 });
 
 await abrirPerfil();
 conferir(
@@ -116,7 +171,7 @@ conferir(
    Duas asserções, e a segunda é a que prova: se a UF não tivesse voltado, a
    inscrição estaria pela metade e o campo diria "Selecione a UF da OAB". */
 conferir(
-  (await pagina.locator("form").innerText()).includes("MG"),
+  (await pagina.getByRole("tabpanel").filter({ hasText: "Número da OAB" }).innerText()).includes("MG"),
   "a UF também volta -- o valor aparece no formulário",
 );
 conferir(
@@ -145,7 +200,7 @@ console.log("\n— limpar —");
 await numero().fill("");
 conferir(await salvar().isEnabled(), "as duas vazias LIGAM o Salvar (é assim que se apaga)");
 await salvar().click();
-await pagina.getByText("Perfil atualizado.").waitFor({ timeout: 5000 });
+await pagina.getByText("Inscrição atualizada.").waitFor({ timeout: 5000 });
 await abrirPerfil();
 conferir((await numero().inputValue()) === "", "depois de recarregar, a inscrição sumiu mesmo");
 

@@ -10,22 +10,31 @@ import {
   IconeSeta,
   PainelDaAba,
 } from "../../components";
-import FormularioIdentificacao from "./components/FormularioIdentificacao";
+import FormularioDaInscricao from "./components/FormularioDaInscricao";
+import FormularioDeDados from "./components/FormularioDeDados";
 import ModalDeSenha from "./components/ModalDeSenha";
 import { ABAS_DO_PERFIL } from "./constants";
+import type { AbaDoPerfil } from "../../types";
 
 /** Meu perfil.
  *
- * Chega pelo menu do usuário na topbar, e não pelo menu lateral -- é sobre
- * a conta de quem está usando, não sobre o trabalho. Daí o "Voltar", que a
+ * Chega pelo menu do usuário na topbar, e não pelo menu lateral -- é sobre a
+ * conta de quem está usando, não sobre o trabalho. Daí o "Voltar", que a
  * navegação lateral não oferece.
  *
- * O cartão não tem título: quem nomeia os blocos aqui dentro são os rótulos
- * de seção ("Informações pessoais", "Conta"), como no artifact.
+ * 🔴 **Duas abas desde 30/08/2026**, divididas por ASSUNTO: quem eu sou e como
+ * entro numa; o que o sistema vigia por mim na outra. Cada uma tem o próprio
+ * "Salvar", num cartão só -- e é isso que torna ESTRUTURAL a garantia de PATCH
+ * parcial: uma aba não conhece os campos da outra, então não há como
+ * sobrescrevê-los por engano.
+ *
+ * ⚠️ O cartão não tem título: quem nomeia a área é a ABA logo acima dele.
+ * Repetir o nome nos dois seria eco.
  */
 export default function PerfilPage() {
   const navegar = useNavigate();
   const [trocandoSenha, setTrocandoSenha] = useState(false);
+  const [aba, setAba] = useState<AbaDoPerfil>("dados");
 
   return (
     <Box>
@@ -41,17 +50,23 @@ export default function PerfilPage() {
       <Abas
         grupo="perfil"
         abas={ABAS_DO_PERFIL.map((a) => ({ id: a.id, rotulo: a.rotulo }))}
-        ativa="identificacao"
-        onMudar={() => {}}
+        ativa={aba}
+        onMudar={(id) => setAba(id as AbaDoPerfil)}
       />
 
-      <PainelDaAba grupo="perfil" id="identificacao" ativa="identificacao">
-        <Box maxW="660px">
+      <Box maxW="660px">
+        <PainelDaAba grupo="perfil" id="dados" ativa={aba}>
           <Cartao>
-            <FormularioIdentificacao onAlterarSenha={() => setTrocandoSenha(true)} />
+            <FormularioDeDados onAlterarSenha={() => setTrocandoSenha(true)} />
           </Cartao>
-        </Box>
-      </PainelDaAba>
+        </PainelDaAba>
+
+        <PainelDaAba grupo="perfil" id="inscricao" ativa={aba}>
+          <Cartao>
+            <FormularioDaInscricao />
+          </Cartao>
+        </PainelDaAba>
+      </Box>
 
       {trocandoSenha && <ModalDeSenha onFechar={() => setTrocandoSenha(false)} />}
     </Box>
