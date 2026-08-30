@@ -54,7 +54,7 @@ const OS_QUATRO = [
   achado("5"),
 ];
 
-function montar(processos: ProcessoEncontrado[] = OS_QUATRO) {
+function montar(processos: ProcessoEncontrado[] = OS_QUATRO, souMembro = true) {
   return renderComProviders(
     <PreviaDaImportacao
       previa={{
@@ -65,7 +65,7 @@ function montar(processos: ProcessoEncontrado[] = OS_QUATRO) {
       }}
       subgrupoId="sg-1"
       meuEmail="eu@x.com"
-      souMembro
+      souMembro={souMembro}
       importando={false}
       progresso={null}
       onImportar={vi.fn()}
@@ -323,5 +323,44 @@ describe("a tabela da prévia", () => {
       false,  // 🔴 removido antes
       false,  // novo
     ]);
+  });
+});
+
+describe("a dica do campo de responsável", () => {
+  it("sendo membro, diz para que serve a escolha", () => {
+    montar();
+    expect(
+      screen.getByText(/Quem vai receber os avisos destes \d+ processos/),
+    ).toBeInTheDocument();
+  });
+
+  it("🔴 NÃO sendo membro, diz o subgrupo SELECIONADO -- não 'este'", () => {
+    /* 🔴 Corrigido em 30/08/2026, a partir de um relato de uso.
+
+       O seletor de subgrupo fica na etapa da BUSCA e some quando a prévia
+       aparece: nesta tela não existe nada a que "este subgrupo" se refira.
+       Quem é membro de 6 dos 12 subgrupos lia a frase e não tinha como saber
+       de qual ela falava.
+
+       ⚠️ O teste afirma as DUAS coisas -- que a palavra nova está lá e que a
+       antiga não está. Só a primeira passaria também com o texto antigo,
+       porque "deste subgrupo" contém "subgrupo". */
+    montar(OS_QUATRO, false);
+
+    expect(
+      screen.getByText(/Você não é membro do subgrupo selecionado/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/membro deste subgrupo/)).not.toBeInTheDocument();
+  });
+
+  it("⚠️ e explica POR QUE a pessoa não se acha na lista", () => {
+    /* Sem a segunda metade, quem não é membro tentaria se escolher, não se
+       encontraria entre as opções e não saberia por quê -- o campo só oferece
+       membros do subgrupo. */
+    montar(OS_QUATRO, false);
+
+    expect(
+      screen.getByText(/precisa escolher quem responde entre os membros dele/),
+    ).toBeInTheDocument();
   });
 });
