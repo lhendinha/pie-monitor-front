@@ -2264,6 +2264,9 @@ processos que já existiam **em outros subgrupos** apareceram como novos. A
 correção trouxe os quatro estados — e conferir a tela pronta contra o desenho,
 no Chrome, trouxe o resto. Fica escrito o que só se vê olhando.
 
+➡️ Em 30/08/2026 entrou o **quinto** estado (`REMOVIDO ANTES`), com a decisão
+de não pré-selecioná-lo. Ver a seção própria mais abaixo.
+
 ### Célula de tabela crua desalinha a coluna INTEIRA
 
 `Tabela` põe `p="0 14px 10px"` no cabeçalho. Uma `Table.Cell` sem os
@@ -2350,12 +2353,74 @@ com nada. A medida saiu de um clone posto no `body` da própria demo.
 | o quê | onde |
 |---|---|
 | `EstadoDoAchado` | `types/index.ts` — vocabulário de mais de um dono |
-| `estadoDoAchado`, `etiquetaDoAchado`, `concordar` | `utils/importacao.ts` |
+| `estadoDoAchado`, `etiquetaDoAchado`, `selecionaveis`, `preSelecionados`, `concordar` | `utils/importacao.ts` |
 | `ESTILO_DE_LINK`, `TONS_DO_CARTAO_DE_RESUMO`, `CORES_DA_ETIQUETA_DE_SITUACAO`, `COLUNAS_DA_PREVIA` | `pages/ProcessosPage/constants.ts` |
 | `AvisoDaImportacao`, `CartaoDeResumo`, `EtiquetaDeSituacao` | pasta própria em `components/` da página |
 
 ⚠️ **Ao mudar de casa, o NOME muda junto**: fora do arquivo de origem, `Aviso`,
 `Resumo`, `TONS` e `CORES` não dizem de que tela são.
+
+### 🔴 O quinto estado: "removido antes" (30/08/2026)
+
+A importação automática precisa saber o que o escritório apagou **de
+propósito** — senão ela recadastra no dia seguinte o que alguém removeu. O
+servidor passou a devolver `removido_antes` na prévia (ver `api/CONTEXT.md`
+para a marca em si); aqui ficam as decisões de tela.
+
+**Ele entra na precedência acima de `novo` e abaixo de todos os outros.** É o
+único estado que **não é excludente com "novo"**: o processo não está em
+subgrupo nenhum, que é exatamente a definição de novo, e é por isso que
+apareceria como novo sem a etiqueta. Mas estar em algum subgrupo hoje importa
+mais do que ter sido apagado antes.
+
+#### 🔴 Poder marcar ≠ vir marcado — e foi preciso separar as duas funções
+
+A decisão foi: **os removidos não vêm pré-selecionados**. Quem apagou tomou uma
+decisão, e o padrão da tela respeita — vindo marcado, bastaria não reparar na
+etiqueta para desfazer a própria exclusão, e numa lista de 500 ninguém repara
+em uma linha.
+
+⚠️ **Mas não podia virar uma função só.** `selecionaveis` alimentava TRÊS
+coisas: o estado inicial, o "Marcar todos" e o total do `N de M marcados`.
+Tirar os removidos dali faria o atalho deixar de alcançá-los — e a pessoa
+teria de caçá-los na lista para trazê-los de volta. Então são duas:
+
+| função | responde | serve a |
+|---|---|---|
+| `selecionaveis` | a caixa está habilitada? | `disabled`, "Marcar todos", o total do contador |
+| `preSelecionados` | já vem marcado? | **só** o estado inicial |
+
+➡️ Por isso o contador abre em algo como **"17 de 21 marcados"**: os quatro
+removidos contam no disponível e mesmo assim não vêm marcados. O par de testes
+fixa a diferença nas duas direções — um processo está FORA da pré-seleção e
+DENTRO dos selecionáveis.
+
+#### A cor vermelha, e a objeção que caiu com a decisão irmã
+
+`status.bad.bg` (#fbe9ea) com `status.bad.text` (#b93a44). Nenhuma das outras
+servia: o verde de "novo" apagaria o próprio aviso, o cinza é dos dois "está em
+outro subgrupo" (fato sobre ONDE, não uma decisão) e o âmbar é do único que
+trava.
+
+🔴 **Eu havia argumentado contra o vermelho** — sugere impedimento num estado
+que continua marcável. O argumento valia enquanto o processo vinha
+pré-marcado; com a decisão de não pré-selecionar, o vermelho passou a dizer
+exatamente o que a tela faz: o padrão é não trazer de volta. **As duas decisões
+se sustentam mutuamente** — mexer numa sem a outra devolve a incoerência.
+
+⚠️ **Contraste MEDIDO: 4,78:1** — passa AA (4,5) e é o mais apertado das cinco
+etiquetas. O tema avisa que só as variantes `.text` passam em 4,5:1, e escurecer
+o fundo ou clarear o texto reprova. Quem quiser mexer, mede antes.
+
+⚠️ **O texto é minúsculo no `switch`** (`"removido antes"`): a caixa alta vem do
+`text-transform` de `EtiquetaDeSituacao`. Escrevê-la nos dois lugares é a mesma
+regra duplicada, e a que diverge no primeiro ajuste.
+
+#### ⚠️ E o `yarn build` pegou o que o vitest não pega
+
+`ProcessoEncontrado` ganhou um campo obrigatório, e os helpers `achado()` dos
+testes montavam o objeto sem ele. `vitest` não faz type-check; `tsc -b` sim —
+é a razão de a régua do projeto ser conferir com `yarn build`.
 
 ### O responsável é OPCIONAL na importação — e o desenho diverge
 
