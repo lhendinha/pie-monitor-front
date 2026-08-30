@@ -82,6 +82,12 @@ juntos** -- e o build quebra se algum ficar para trás:
    **e** a entrada em `TIPOS_DE_NOTIFICACAO` / `ALVOS_DE_NOTIFICACAO`;
 3. `front/src/utils/notificacao.ts` -- o `case` no `switch`.
 
+🔴 **E é por isso que o FRONT sobe antes da API neste caso** — invertendo a
+régua normal do projeto. Com a API primeiro, existe um intervalo em que ela
+emite um tipo que o front não conhece, e a pessoa vê uma linha sem frase no
+sino. Com o front primeiro, o intervalo é inofensivo: o tipo simplesmente não
+chega ainda. Foi o que se fez com `processos_importados` em 30/08/2026.
+
 🔴 **`Notificacao.tipo` e `alvo_tipo` são uniões FECHADAS, não `string`.** O
 `default` dos dois `switch` atribui a `const naoTratado: never`, então um
 tipo declarado e não tratado **não compila**. Antes disso, `tipo` era
@@ -1366,6 +1372,60 @@ defeito.
 ("`manager`+ ou é seu") e regras diferentes -- uma compara `criado_por`, outra
 exige `admin` como atalho, a terceira compara a sessão. Um helper precisaria
 de um parâmetro por diferença e esconderia justamente o que cada tela decide.
+
+### 🔴 `processos_importados`: o aviso que vai só para `manager`+ (30/08/2026)
+
+A importação automática cria processos sem ninguém pedir. O aviso disso é o
+**único do sistema que não segue a régua de `destinatarios`** — ele vai para
+`manager`+ do subgrupo, não para o subgrupo inteiro.
+
+A razão é a **ação disponível**: esses processos entram *sem responsável*, e
+distribuí-los é trabalho de gestão. Um `user` que recebesse o aviso não teria
+o que fazer com ele.
+
+⚠️ **As movimentações desses mesmos processos continuam avisando todo mundo.**
+`destinatarios(responsaveis, membros)` devolve *"os válidos; e, se não houver
+nenhum, o subgrupo inteiro"* — então processo sem dono não fica sem vigilância.
+São duas perguntas diferentes: *quem precisa AGIR sobre a chegada* e *quem
+precisa SABER da movimentação*.
+
+#### Por que tipo próprio, e não `processos_atribuidos`
+
+Ali o processo **já existia** e alguém colocou a pessoa como responsável; aqui
+o sistema **criou** o processo. Reusar o outro faria o aviso dizer que alguém
+agiu quando ninguém agiu — e por isso a frase nunca leva autor, com teste que
+passa o autor PREENCHIDO para pegar uma regressão.
+
+#### O texto, e o que cada parte responde
+
+```
+● 12 processos novos, sem responsável     ← título, pronto do servidor
+  OAB 206876/MG · Cível                   ← detalhe, pronto do servidor
+```
+
+- **"novos"** diz que o acervo cresceu sozinho — é o que separa este aviso do
+  "atribuídos a você";
+- **"sem responsável"** é a parte acionável, e o motivo de o aviso ir para
+  `manager`+. Sem ela, um gestor pode supor que estão cuidados;
+- **a inscrição** precisa aparecer porque são até 50 no escritório e elas **não
+  são de quem recebe o aviso** — sem ela, ele não sabe de quem é o acervo.
+
+⚠️ O detalhe usa `n.detalhe`, não `n.titulo`: o `default` de
+`detalheSecundario` devolve o título, e a mesma frase apareceria duas vezes na
+linha — o defeito que `sessao_alterada` já registra.
+
+⚠️ **Medido em Chrome**: no painel de 360px a frase cabe em uma linha e o
+detalhe não trunca (ele corta com reticências, então isso era risco real).
+
+#### O destino: o SUBGRUPO, não o responsável
+
+`processos_atribuidos` abre `/processos?responsavel=…`. Aqui não dá: os
+processos entram **sem responsável**, e esse filtro devolveria lista vazia —
+o oposto do que o aviso promete. Vai para `/processos?subgrupo=…`.
+
+⚠️ Mostra o subgrupo inteiro, não só os que acabaram de chegar. Um filtro de
+"entraram agora" seria campo novo, e a decisão foi não inventá-lo por causa
+deste aviso.
 
 ### Os seis avisos novos no sino, e o alvo `documento`
 
