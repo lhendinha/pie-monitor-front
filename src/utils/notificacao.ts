@@ -11,6 +11,7 @@ import {
   TIPO_PROCESSO_ATRIBUIDO,
   TIPO_ITENS_REATRIBUIDOS,
   TIPO_PROCESSOS_ATRIBUIDOS,
+  TIPO_PROCESSOS_IMPORTADOS,
   TIPO_PROCESSO_DESATRIBUIDO,
   TIPO_LEMBRETE,
   TIPO_SESSAO_ALTERADA,
@@ -66,6 +67,17 @@ export function frasePrincipal(n: Notificacao): string {
      * porque só ele sabe quantos foram. Aqui só se acrescenta quem fez. */
     case TIPO_PROCESSOS_ATRIBUIDOS:
       return autor ? `${autor}: ${n.titulo}` : n.titulo;
+    /* 🔴 SEM autor, e não é o mesmo caso do `processos_atribuidos` acima.
+     *
+     * Ali existe alguém que agiu, e o nome dele explica de onde veio a
+     * atribuição. Aqui **ninguém agiu**: a varredura encontrou processos no
+     * tribunal e o sistema os criou. Pôr um sujeito nesta frase seria
+     * atribuir a uma pessoa uma decisão que foi da máquina.
+     *
+     * O título vem pronto do servidor ("12 processos novos, sem
+     * responsável") porque só ele sabe quantos foram. */
+    case TIPO_PROCESSOS_IMPORTADOS:
+      return n.titulo;
     /* Título e detalhe vêm PRONTOS do servidor ("Você assumiu itens de Ana"
      * / "Ana saiu de Cível. 3 tarefas e 2 processos passaram para você"),
      * porque só ele sabe o que foi transferido. E o autor não entra na
@@ -142,6 +154,14 @@ export function detalheSecundario(n: Notificacao): string {
      na linha do sino, como principal e como secundária. */
   if (n.tipo === TIPO_SESSAO_ALTERADA) return "";
   if (n.tipo === TIPO_LEMBRETE) return n.titulo;
+  /* ⚠️ O DETALHE, e não o título -- o título já é a frase principal aqui.
+     Sem esta linha o `default` devolveria `n.titulo` e a MESMA frase
+     apareceria duas vezes na linha, como acontecia com `sessao_alterada`.
+
+     O detalhe traz a inscrição e o subgrupo ("OAB 206876/MG · Cível"),
+     montados no servidor: ele é quem sabe o NOME do subgrupo -- por aqui só
+     chega o `subgrupo_id`. */
+  if (n.tipo === TIPO_PROCESSOS_IMPORTADOS) return n.detalhe;
   if (n.tipo === TIPO_TAREFA_MOVIDA && n.detalhe) return `${n.titulo} → ${n.detalhe}`;
   if (n.tipo === TIPO_ATENDIMENTO_STATUS && n.detalhe) return `${n.titulo} · ${n.detalhe}`;
   return n.titulo;
@@ -172,6 +192,21 @@ export function destinoDaNotificacao(n: Notificacao): string | null {
     const filtros = new URLSearchParams({ responsavel: n.usuario_id });
     if (n.subgrupo_id) filtros.set("subgrupo", n.subgrupo_id);
     return `/processos?${filtros.toString()}`;
+  }
+
+  /* 🔴 A importação automática abre a listagem do SUBGRUPO que recebeu.
+   *
+   * Não há um processo para onde ir -- por isso ela chega sem `alvo_id`. E o
+   * filtro é por subgrupo, não por responsável como em `processos_atribuidos`:
+   * estes processos entram **sem responsável** de propósito, então filtrar por
+   * quem recebeu o aviso devolveria uma lista vazia -- justamente o oposto do
+   * que o aviso promete.
+   *
+   * ⚠️ Mostra o subgrupo INTEIRO, não só os que acabaram de entrar. É o mais
+   * próximo que a listagem alcança hoje; um filtro de "chegaram agora" seria
+   * campo novo, e a decisão foi não inventá-lo por causa deste aviso. */
+  if (n.tipo === TIPO_PROCESSOS_IMPORTADOS && n.subgrupo_id) {
+    return `/processos?subgrupo=${encodeURIComponent(n.subgrupo_id)}`;
   }
 
   /* ⚠️ `itens_reatribuidos` continua SEM destino, e não é esquecimento: ali
