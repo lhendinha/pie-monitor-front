@@ -40,6 +40,7 @@ function achado(numero: string, extra: Partial<ProcessoEncontrado> = {}): Proces
     ja_existe: false,
     noutros_subgrupos: [],
     em_outro_subgrupo: false,
+    removido_antes: false,
     ...extra,
   };
 }
@@ -49,7 +50,8 @@ const OS_QUATRO = [
   achado("1", { ja_existe: true }),
   achado("2", { noutros_subgrupos: ["Trabalhista"] }),
   achado("3", { em_outro_subgrupo: true }),
-  achado("4"),
+  achado("4", { removido_antes: true }),
+  achado("5"),
 ];
 
 function montar(processos: ProcessoEncontrado[] = OS_QUATRO) {
@@ -160,6 +162,7 @@ describe("a tabela da prévia", () => {
       "já cadastrado aqui",
       "já está em Trabalhista",
       "já acompanhado por outro subgrupo",
+      "removido antes",
       "novo",
     ]);
   });
@@ -260,13 +263,25 @@ describe("a tabela da prévia", () => {
   });
 
   it("só o do PRÓPRIO subgrupo é impedido de marcar", () => {
-    /* 🔴 O par que impede alguém "consertar" travando os outros dois: o
-       processo acompanhado por outra equipe é importável de propósito. */
+    /* 🔴 O par que impede alguém "consertar" travando os outros: o processo
+       acompanhado por outra equipe é importável de propósito.
+
+       🔴 E vale igual para "removido antes", que entrou depois: a marca
+       INFORMA, não impede -- quem ela trava é a importação AUTOMÁTICA, que
+       age sozinha, e não esta tela, onde há uma pessoa decidindo. Bloquear
+       aqui seria parede sem saída, já que não existe tela para apagar a
+       marca. */
     montar();
     const travadas = linhas().map(
       (l) => (within(l).getByRole("checkbox") as HTMLInputElement).disabled,
     );
 
-    expect(travadas).toEqual([true, false, false, false]);
+    expect(travadas).toEqual([
+      true,   // já cadastrado aqui -- o único que o servidor recusa
+      false,  // já está em Trabalhista
+      false,  // já acompanhado por outro subgrupo
+      false,  // 🔴 removido antes
+      false,  // novo
+    ]);
   });
 });

@@ -116,5 +116,18 @@ export const CORES_DA_ETIQUETA_DE_SITUACAO: Record<
   aqui: { bg: "status.warn.bg", color: "status.warn.text" },
   noutro: { bg: "bg.muted", color: "fg.muted" },
   em_outro: { bg: "bg.muted", color: "fg.muted" },
+  /* 🔴 Cor PRÓPRIA, e nenhuma das outras servia:
+     - o verde de "novo" apagaria justamente o aviso que a etiqueta existe
+       para dar (o processo é novo, e é esse o problema);
+     - o cinza é dos dois "está em outro subgrupo", que são fato sobre ONDE o
+       processo está -- este é sobre uma DECISÃO que alguém tomou;
+     - o âmbar é do único que TRAVA, e este não trava;
+     - o vermelho sugeriria impedimento, e o processo continua marcável.
+
+     ⚠️ Contraste MEDIDO, não presumido -- o tema avisa que só as variantes
+     `.text` passam em 4,5:1, e este par não é uma delas: `brand.darker`
+     (#004f7a) sobre `brand.tint` (#e8f5fc) dá **7,88:1**, que passa AA e
+     ainda AAA. */
+  removido: { bg: "brand.tint", color: "brand.darker" },
   novo: { bg: "status.good.bg", color: "status.good.text" },
 };

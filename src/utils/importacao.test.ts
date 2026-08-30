@@ -24,6 +24,7 @@ function achado(
     ja_existe: false,
     noutros_subgrupos: [],
     em_outro_subgrupo: false,
+    removido_antes: false,
     ...extra,
   };
 }
@@ -90,6 +91,28 @@ describe("o que dá para marcar", () => {
   it("lista sem nada novo devolve vazio", () => {
     expect(selecionaveis([achado("1", { ja_existe: true })])).toEqual([]);
   });
+
+  it('🔴 "removido antes" CONTINUA marcável', () => {
+    /* 🔴 A marca INFORMA, não impede -- e este é o par que impede alguém
+       "consertar" travando. Quem ela trava é a importação AUTOMÁTICA, que age
+       sozinha; aqui há uma pessoa olhando a tela e decidindo.
+
+       Bloquear seria parede sem saída: não existe tela para apagar a marca,
+       então o processo ficaria fora do alcance para sempre, e a pessoa não
+       entenderia por que o sistema esconde algo que o tribunal devolveu. */
+    expect(selecionaveis([achado("1", { removido_antes: true })])).toEqual(["1"]);
+  });
+
+  it("⚠️ e os dois de outro subgrupo também", () => {
+    /* O mesmo princípio, e já valia antes: só o do destino trava, porque só
+       ali o servidor recusa. */
+    const lista = [
+      achado("1", { noutros_subgrupos: ["Civil"] }),
+      achado("2", { em_outro_subgrupo: true }),
+    ];
+
+    expect(selecionaveis(lista)).toEqual(["1", "2"]);
+  });
 });
 
 describe("o rótulo do botão", () => {
@@ -155,7 +178,8 @@ describe("qual etiqueta a linha mostra", () => {
       achado("1", { ja_existe: true }),
       achado("2", { noutros_subgrupos: ["Civil"] }),
       achado("3", { em_outro_subgrupo: true }),
-      achado("4"),
+      achado("4", { removido_antes: true }),
+      achado("5"),
     ];
 
     expect(todos.map(etiquetaDoAchado).filter((t) => !t)).toEqual([]);
@@ -197,6 +221,36 @@ describe("qual etiqueta a linha mostra", () => {
     expect(estadoDoAchado(p)).toBe("em_outro");
     expect(etiquetaDoAchado(p)).toBe("já acompanhado por outro subgrupo");
     expect(etiquetaDoAchado(p)).not.toContain("Criminal");
+  });
+
+  it('🔴 "removido antes" ganha de "novo"', () => {
+    /* 🔴 O único estado que NÃO é excludente com "novo": o processo não está
+       em subgrupo nenhum, que é exatamente a definição de novo. Sem esta
+       precedência ele apareceria como novo e a pessoa o reimportaria sem
+       saber que já o tinha recusado -- que é a razão de o campo existir. */
+    const p = achado("1", { removido_antes: true });
+
+    expect(estadoDoAchado(p)).toBe("removido");
+    expect(etiquetaDoAchado(p)).toBe("removido antes");
+  });
+
+  it("mas perde para TODOS os outros", () => {
+    /* ⚠️ O par negativo da posição: se o processo está em algum subgrupo
+       hoje, isso importa mais do que ter sido apagado antes. Três casos,
+       porque a precedência tem três degraus acima dele. */
+    expect(estadoDoAchado(achado("1", { removido_antes: true, ja_existe: true }))).toBe("aqui");
+    expect(
+      estadoDoAchado(achado("2", { removido_antes: true, noutros_subgrupos: ["Civil"] })),
+    ).toBe("noutro");
+    expect(
+      estadoDoAchado(achado("3", { removido_antes: true, em_outro_subgrupo: true })),
+    ).toBe("em_outro");
+  });
+
+  it("⚠️ o texto é minúsculo -- a caixa alta é do componente", () => {
+    /* Escrever "REMOVIDO ANTES" aqui seria a mesma regra em dois lugares:
+       `EtiquetaDeSituacao` aplica `text-transform: uppercase`. */
+    expect(etiquetaDoAchado(achado("1", { removido_antes: true }))).toBe("removido antes");
   });
 });
 

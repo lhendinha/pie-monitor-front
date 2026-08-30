@@ -101,12 +101,23 @@ export function resumoDaImportacao(r: {
  * 2. o nome de um subgrupo visível, porque entre dizer *onde* e dizer *que
  *    existe*, dizer onde é melhor;
  * 3. "outro subgrupo", o que sobra;
- * 4. "novo".
+ * 4. "removido antes";
+ * 5. "novo".
+ *
+ * 🔴 **O quarto é o único que NÃO é excludente com "novo"** -- e é por isso
+ * que ele fica logo acima dele. Um processo removido antes não está em
+ * subgrupo nenhum, que é exatamente a definição de novo; sem esta posição ele
+ * apareceria como novo e a pessoa o reimportaria sem saber que já o tinha
+ * recusado.
+ *
+ * ⚠️ E fica ABAIXO de todos os outros: se o processo está em algum subgrupo
+ * hoje, isso importa mais do que ter sido apagado antes.
  */
 export function estadoDoAchado(p: ProcessoEncontrado): EstadoDoAchado {
   if (p.ja_existe) return "aqui";
   if (p.noutros_subgrupos.length > 0) return "noutro";
   if (p.em_outro_subgrupo) return "em_outro";
+  if (p.removido_antes) return "removido";
   return "novo";
 }
 
@@ -127,6 +138,12 @@ export function etiquetaDoAchado(p: ProcessoEncontrado): string {
       return `já está em ${p.noutros_subgrupos.join(", ")}`;
     case "em_outro":
       return "já acompanhado por outro subgrupo";
+    case "removido":
+      /* ⚠️ MINÚSCULO aqui, como os outros quatro: quem põe a caixa alta é
+         `EtiquetaDeSituacao`, com `text-transform: uppercase`. Escrevê-lo em
+         caixa alta neste `switch` seria a mesma regra em dois lugares -- e a
+         que divergisse no dia em que o componente mudasse. */
+      return "removido antes";
     default:
       return "novo";
   }

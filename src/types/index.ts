@@ -174,6 +174,21 @@ export interface ProcessoEncontrado {
    *
    * ⚠️ Sempre `false` para `admin`+, que enxerga todos os subgrupos do grupo. */
   em_outro_subgrupo: boolean;
+  /** Este subgrupo já apagou este processo **de propósito**.
+   *
+   * 🔴 Existe porque, sem ele, o processo apareceria como **novo** -- ele não
+   * está em subgrupo nenhum agora, que é exatamente a definição de novo. A
+   * pessoa o reimportaria sem saber que já o tinha recusado.
+   *
+   * ⚠️ **Informa, não impede.** Quem a marca trava é a importação
+   * AUTOMÁTICA, que age sozinha. Aqui há alguém olhando a tela, e o processo
+   * continua marcável -- bloquear seria parede sem saída, já que não existe
+   * tela para apagar a marca.
+   *
+   * ⚠️ **Só do subgrupo de DESTINO.** O que outro subgrupo recusou não diz
+   * nada sobre importar para este, e contá-lo revelaria a decisão de uma
+   * equipe que esta pessoa talvez nem enxergue. */
+  removido_antes: boolean;
 }
 
 /** O que `POST /subgrupos/{id}/processos/buscar-por-oab` devolve. */
@@ -199,7 +214,7 @@ export interface PreviaDaImportacao {
  * etiqueta e os testes compartilham. Tipo com mais de um dono vai para
  * `types` -- a função que o produz é que fica no util.
  */
-export type EstadoDoAchado = "aqui" | "noutro" | "em_outro" | "novo";
+export type EstadoDoAchado = "aqui" | "noutro" | "em_outro" | "removido" | "novo";
 
 /** O que impede a busca por OAB de sair, e onde pintar o erro.
  *
