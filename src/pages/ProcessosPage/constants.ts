@@ -121,13 +121,21 @@ export const CORES_DA_ETIQUETA_DE_SITUACAO: Record<
        para dar (o processo é novo, e é esse o problema);
      - o cinza é dos dois "está em outro subgrupo", que são fato sobre ONDE o
        processo está -- este é sobre uma DECISÃO que alguém tomou;
-     - o âmbar é do único que TRAVA, e este não trava;
-     - o vermelho sugeriria impedimento, e o processo continua marcável.
+     - o âmbar é do único que TRAVA.
 
-     ⚠️ Contraste MEDIDO, não presumido -- o tema avisa que só as variantes
-     `.text` passam em 4,5:1, e este par não é uma delas: `brand.darker`
-     (#004f7a) sobre `brand.tint` (#e8f5fc) dá **7,88:1**, que passa AA e
-     ainda AAA. */
-  removido: { bg: "brand.tint", color: "brand.darker" },
+     🔴 **Vermelho, escolhido em 30/08/2026 -- e a objeção contra ele CAIU
+     junto com a decisão irmã.** Eu havia argumentado que vermelho sugere
+     impedimento num estado que continua marcável. Isso valia enquanto o
+     processo vinha PRÉ-MARCADO; na mesma conversa ficou decidido que os
+     removidos não vêm marcados (ver `preSelecionados`), e aí o vermelho
+     passa a dizer exatamente o que a tela faz: o padrão é não trazer de
+     volta. As duas decisões se sustentam mutuamente -- mexer numa sem a
+     outra devolve a incoerência.
+
+     ⚠️ Contraste MEDIDO, não presumido: `bad.dark` (#b93a44) sobre
+     `bad.tint` (#fbe9ea) dá **4,78:1** -- passa AA (4,5), e é o mais
+     APERTADO das cinco etiquetas. Escurecer o fundo ou clarear o texto
+     reprova; se alguém quiser mexer, mede antes. */
+  removido: { bg: "status.bad.bg", color: "status.bad.text" },
   novo: { bg: "status.good.bg", color: "status.good.text" },
 };

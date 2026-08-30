@@ -13,6 +13,7 @@ import {
 import { mascararNumeroProcesso } from "../../../../utils";
 import {
   concordar,
+  preSelecionados,
   quantosNoutroSubgrupo,
   rotuloDeImportar,
   rotuloDeResponsavel,
@@ -60,7 +61,18 @@ export default function PreviaDaImportacao({
   onVoltar,
 }: PreviaDaImportacaoProps) {
   const disponiveis = useMemo(() => selecionaveis(previa.processos), [previa.processos]);
-  const [marcados, setMarcados] = useState<Set<string>>(() => new Set(disponiveis));
+  /* 🔴 Abre marcando tudo que dá para importar, MENOS o que este subgrupo já
+     apagou de propósito. Quem apagou tomou uma decisão, e o padrão da tela
+     respeita: vindo pré-marcado, bastaria não reparar na etiqueta para
+     desfazer a própria exclusão -- e numa lista de 500 ninguém repara em uma
+     linha.
+
+     ⚠️ `disponiveis` continua sendo o que PODE ser marcado, e é ele que
+     alimenta o "Marcar todos" e o total do "N de M". A marca não trava
+     nada: só muda o estado inicial. */
+  const [marcados, setMarcados] = useState<Set<string>>(
+    () => new Set(preSelecionados(previa.processos)),
+  );
   const [responsaveis, setResponsaveis] = useState<string[]>(souMembro ? [meuEmail] : []);
 
   const [pagina, setPagina] = useState(1);

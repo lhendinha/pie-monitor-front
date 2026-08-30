@@ -31,14 +31,40 @@ export function erroDaBusca(
   return null;
 }
 
-/** Quais processos podem ser marcados: os que ainda não estão no subgrupo.
+/** Quais processos PODEM ser marcados: os que ainda não estão no subgrupo.
  *
  * ⚠️ Importar nunca sobrescreve, então marcar um já existente não teria
  * efeito nenhum -- e uma caixa que não faz nada é pior que uma caixa
  * ausente.
+ *
+ * 🔴 **Poder marcar e vir marcado são coisas DIFERENTES** -- ver
+ * `preSelecionados`. Esta responde "a caixa está habilitada?", e por isso
+ * alimenta também o "Marcar todos" e o total do "N de M marcados". Um
+ * processo removido antes continua aqui: a pessoa pode trazê-lo de volta.
  */
 export function selecionaveis(processos: ProcessoEncontrado[]): string[] {
   return processos.filter((p) => !p.ja_existe).map((p) => p.numero_processo);
+}
+
+/** Quais processos já vêm MARCADOS quando a prévia abre.
+ *
+ * 🔴 **Tudo que dá para importar, MENOS o que este subgrupo já apagou de
+ * propósito** -- decidido em 30/08/2026.
+ *
+ * A diferença entre esta e `selecionaveis` é a diferença entre *poder* e
+ * *querer*: quem apagou um processo tomou uma decisão, e o padrão da tela
+ * tem de respeitá-la. Vindo pré-marcado, bastaria não reparar na etiqueta
+ * para desfazer a própria exclusão -- e numa lista de 500 ninguém repara em
+ * uma linha.
+ *
+ * ⚠️ **Não é trava**: a caixa segue habilitada e o "Marcar todos" alcança o
+ * processo. O que muda é só o estado INICIAL -- desmarcar é um clique, e
+ * reimportar sem perceber não tem desfazer.
+ */
+export function preSelecionados(processos: ProcessoEncontrado[]): string[] {
+  return processos
+    .filter((p) => !p.ja_existe && !p.removido_antes)
+    .map((p) => p.numero_processo);
 }
 
 /** A frase do botão de confirmar.

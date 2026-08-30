@@ -5,6 +5,7 @@ import {
   erroDaBusca,
   estadoDoAchado,
   etiquetaDoAchado,
+  preSelecionados,
   quantosNoutroSubgrupo,
   resumoDaImportacao,
   rotuloDeImportar,
@@ -90,6 +91,29 @@ describe("o que dá para marcar", () => {
 
   it("lista sem nada novo devolve vazio", () => {
     expect(selecionaveis([achado("1", { ja_existe: true })])).toEqual([]);
+  });
+
+  it("🔴 e o que já foi removido NÃO vem pré-marcado", () => {
+    /* 🔴 Poder marcar e vir marcado são coisas diferentes, e esta é a que
+       respeita a decisão de quem apagou. Vindo pré-marcado, bastaria não
+       reparar na etiqueta para desfazer a própria exclusão -- e numa lista de
+       500 ninguém repara em uma linha.
+
+       ⚠️ O par com o teste abaixo é o que fixa a diferença: o mesmo processo
+       está FORA da pré-seleção e DENTRO dos selecionáveis. */
+    const lista = [achado("1"), achado("2", { removido_antes: true }), achado("3")];
+
+    expect(preSelecionados(lista)).toEqual(["1", "3"]);
+    expect(selecionaveis(lista)).toEqual(["1", "2", "3"]);
+  });
+
+  it("⚠️ o já cadastrado fica fora das DUAS listas", () => {
+    /* Aquele o servidor recusa de verdade -- não é escolha de padrão, é
+       impossibilidade. */
+    const lista = [achado("1", { ja_existe: true }), achado("2")];
+
+    expect(preSelecionados(lista)).toEqual(["2"]);
+    expect(selecionaveis(lista)).toEqual(["2"]);
   });
 
   it('🔴 "removido antes" CONTINUA marcável', () => {
