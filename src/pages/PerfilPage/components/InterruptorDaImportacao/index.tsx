@@ -17,6 +17,23 @@ interface InterruptorDaImportacaoProps {
    * a inscrição estar gravada obrigaria a salvar duas vezes sem motivo. */
   temInscricao: boolean;
   desabilitado?: boolean;
+  /** O registro é de OUTRA pessoa (modal de membro), não de quem está olhando.
+   *
+   * 🔴 Muda as palavras, não a regra: "sua inscrição" está certo no perfil e
+   * errado quando um `admin` edita o registro de um colega. É a mesma
+   * correção que as cinco mensagens do servidor receberam. */
+  deTerceiro?: boolean;
+  /** Encosta a divisória no espaçamento que o PAI já dá.
+   *
+   * 🔴 **A régua fica nos dois casos** -- ela separa a inscrição do que o
+   * sistema faz com ela, e isso vale em qualquer tela. O que muda é o
+   * RESPIRO: no perfil o componente precisa criar o dele (`mt`); no modal o
+   * `Stack` já dá `gap="16px"` entre as linhas, e somar `mt` em cima disso
+   * abriu um vão que destoava de todas as outras fronteiras do formulário.
+   *
+   * ⚠️ Prop, e não `deTerceiro` fazendo dois trabalhos: espaçamento é do
+   * contexto, não de quem é o dono do registro. */
+  compacto?: boolean;
 }
 
 /** O interruptor da importação automática, com o destino dos processos.
@@ -44,6 +61,8 @@ export default function InterruptorDaImportacao({
   aoMudarDestino,
   temInscricao,
   desabilitado = false,
+  deTerceiro = false,
+  compacto = false,
 }: InterruptorDaImportacaoProps) {
   const semSubgrupo = subgrupos.length === 0;
   const travado = desabilitado || !temInscricao || semSubgrupo;
@@ -52,13 +71,22 @@ export default function InterruptorDaImportacao({
      porque é o que a pessoa resolve ali mesmo, dois campos acima. Não
      participar de subgrupo nenhum ela não resolve sozinha. */
   const motivo = !temInscricao
-    ? "Cadastre sua inscrição acima para poder ligar."
+    ? deTerceiro
+      ? "Cadastre a inscrição acima para poder ligar."
+      : "Cadastre sua inscrição acima para poder ligar."
     : semSubgrupo
-      ? "Você ainda não participa de nenhum subgrupo. Fale com um administrador."
+      ? deTerceiro
+        ? "Escolha ao menos um subgrupo acima para poder ligar."
+        : "Você ainda não participa de nenhum subgrupo. Fale com um administrador."
       : null;
 
   return (
-    <Box mt="20px" pt="16px" borderTopWidth="1px" borderTopColor="border.subtle">
+    <Box
+      mt={compacto ? undefined : "20px"}
+      pt="16px"
+      borderTopWidth="1px"
+      borderTopColor="border.subtle"
+    >
       <Switch.Root
         checked={ligada}
         onCheckedChange={(e) => aoMudarLigada(e.checked)}
@@ -93,7 +121,8 @@ export default function InterruptorDaImportacao({
           interruptor já afirma no próprio rótulo não se repete aqui. */}
       <Box mt="6px" fontSize="11.5px" color="fg.subtle">
         Sem isto, o sistema apenas acompanha a inscrição. Ligado, ele cadastra
-        os processos que o tribunal devolver para você.
+        os processos que o tribunal devolver
+        {deTerceiro ? " para esta pessoa." : " para você."}
       </Box>
 
       {motivo && (

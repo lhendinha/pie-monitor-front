@@ -402,6 +402,27 @@ export interface FiltrosProcessos {
   responsavelId: string;
 }
 
+/** O registro editável de UMA pessoa -- `GET /grupos/membros/{email}`.
+ *
+ * 🔴 **Não é o `Membro` da listagem, e a diferença é deliberada.** A listagem
+ * é `manager`+ e a projeção dela é fixa de propósito: publicar a inscrição
+ * ali a mostraria na tela de Membros, que não pediu por ela. Este é `admin`+,
+ * o mesmo piso de quem pode editar -- quem enxerga é quem pode mudar. */
+export interface MembroEditavel {
+  email: string;
+  apelido: string | null;
+  papel: Papel;
+  grupo_id: string | null;
+  numero_oab: string | null;
+  uf_oab: string | null;
+  importacao_automatica: boolean;
+  subgrupos_destino: string[];
+  /** Derivado, para o seletor de destino -- a MESMA lista que o campo de
+   * Subgrupos usa. Pedi-la duas vezes faria a tela abrir com dois estados
+   * possíveis do mesmo dado. */
+  subgrupos: string[];
+}
+
 export interface Membro {
   email: string;
   apelido?: string;

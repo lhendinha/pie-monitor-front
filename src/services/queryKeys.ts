@@ -13,6 +13,7 @@ export const qk = {
    * ⚠️ Sem parâmetro: o alvo vem do token, então só existe UMA resposta por
    * sessão. Uma chave com o e-mail dentro daria a impressão de que dá para
    * pedir o de outra pessoa. */
+  membroEditavel: (email: string) => ["membro-editavel", email] as const,
   meuPerfil: () => ["meu-perfil"] as const,
   subgrupos: (params: { pagina?: number; tamanhoPagina?: number; busca?: string } = {}) =>
     ["subgrupos", params] as const,

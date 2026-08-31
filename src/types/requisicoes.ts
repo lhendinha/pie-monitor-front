@@ -17,6 +17,15 @@ export type DadosDoMembro = {
   grupo_id: string;
   papel: string;
   subgrupos: string[];
+  /** A inscrição da OAB da pessoa, editável por `admin`+ (Fase 1b).
+   *
+   * 🔴 **`undefined` = não mexer**, como no perfil. Mandar `""` APAGA a
+   * inscrição -- é o único jeito de removê-la, e a diferença entre as duas
+   * coisas é o que o tipo guarda. */
+  numero_oab?: string;
+  uf_oab?: string;
+  importacao_automatica?: boolean;
+  subgrupos_destino?: string[];
 };
 
 /** PATCH parcial da coluna do quadro: campo omitido não é tocado. */

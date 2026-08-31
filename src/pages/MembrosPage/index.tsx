@@ -5,7 +5,7 @@ import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { CartaoDeTabela, EstadoDeErro, Esqueleto, Pagination } from "../../components";
-import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo } from "../../services";
+import { ehSuperAdmin, listarGrupos, listarMembrosDoGrupo, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import EditarMembroForm from "./components/EditarMembroForm";
@@ -28,7 +28,15 @@ export default function MembrosPage() {
   const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const queryClient = useQueryClient();
 
-  const podeEditar = ehSuperAdmin();
+  /* 🔴 `admin`+, e não mais `super_admin` (31/08/2026): a inscrição da OAB
+     entrou no modal, e com o piso antigo o admin do escritório não teria como
+     corrigir a de um colega -- dependeria do operador da plataforma. O
+     servidor tem três travas para o que continua sendo só dele. */
+  const podeEditar = papelAtende("admin");
+  /* ⚠️ Trocar GRUPO e criar `super_admin` seguem só do operador. O seletor de
+     Grupo usa `GET /grupos`, que é `super_admin`-only -- pedi-la como admin
+     daria 403 numa tela que abriu certo. */
+  const podeMoverEntreGrupos = ehSuperAdmin();
 
   // 🔴 A rota É paginada no servidor. Esta tela agora pede a página que está
   // vendo, em vez de receber as 10 primeiras e fatiar por cima delas.
@@ -43,7 +51,7 @@ export default function MembrosPage() {
   const gruposQuery = useQuery<RespostaDeGrupos>({
     queryKey: qk.grupos(),
     queryFn: listarGrupos,
-    enabled: podeEditar,
+    enabled: podeMoverEntreGrupos,
   });
   useToastOnQueryError(gruposQuery.error, "Não foi possível carregar os grupos.");
 
@@ -79,7 +87,7 @@ export default function MembrosPage() {
        ao navegar. É o mesmo defeito que este bloco já existia pra evitar,
        agora por outro caminho. */
     queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
-    if (podeEditar) queryClient.invalidateQueries({ queryKey: qk.grupos() });
+    if (podeMoverEntreGrupos) queryClient.invalidateQueries({ queryKey: qk.grupos() });
   }
 
   return (
@@ -88,7 +96,7 @@ export default function MembrosPage() {
         /* Dizer por que a linha não abre é melhor que uma tabela que
            simplesmente não reage ao clique. */
         <Text fontSize="11.5px" color="fg.subtle">
-          Só super admin pode editar membros.
+          Só admin pode editar membros.
         </Text>
       )}
 
@@ -122,6 +130,7 @@ export default function MembrosPage() {
 
       {membroEmEdicao && (
         <EditarMembroForm
+          podeMoverEntreGrupos={podeMoverEntreGrupos}
           membro={membroEmEdicao}
           grupos={grupos}
           onAtualizado={recarregarTudo}

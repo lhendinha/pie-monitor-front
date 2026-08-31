@@ -2923,6 +2923,50 @@ deixa de reconhecer o elemento marcado. Um checkbox que anuncia
 Pintado com `brand` -- e cor aqui é contrato: `theme/tokens.ts` registra que
 trocá-la obriga a alinhar o e-mail.
 
+### O modal de membro edita a inscrição (31/08/2026)
+
+🔴 **Nasceu de um beco.** A titularidade passou a ser conferida também quando
+o NOME muda, e nenhuma rota deixava limpar a OAB de outra pessoa: o admin
+travaria ao corrigir um nome, sem saída que não fosse pedir à própria pessoa.
+
+🔴 **A inscrição NÃO vem na listagem, e não pode vir.** `GET /grupos/membros`
+é `manager`+ e a projeção dela é fixa de propósito -- publicá-la ali a
+mostraria na tela de Membros, que não pediu por ela. Por isso nasceu
+`GET /grupos/membros/{email}`, `admin`+: **quem enxerga é quem pode editar**.
+
+⚠️ **O portão do botão passou de `ehSuperAdmin()` para `papelAtende("admin")`.**
+Com o piso antigo, "destravar o admin" seria falso -- `super_admin` é o
+operador da PLATAFORMA, e o admin do escritório continuaria dependente dele.
+
+⚠️ **Mas trocar de GRUPO e criar `super_admin` seguem só do operador**, e isso
+tem consequência de tela: o seletor de Grupo usa `GET /grupos`, que é
+`super_admin`-only. Para `admin` ela **nem é chamada** (403 numa tela que abriu
+certo seria pior que o campo travado), e o próprio grupo é oferecido como única
+opção -- um select vazio não diria onde a pessoa está.
+
+🔴 **O destino sai dos subgrupos MARCADOS AGORA**, não dos salvos. A mesma tela
+edita os dois, e o servidor valida contra este mesmo PATCH: assim não dá para
+escolher um destino que o salvamento invalidaria, em vez de deixar o cron
+desligar no ciclo seguinte.
+
+⚠️ **Tudo em terceira pessoa**: o "i" do nome, o apoio do interruptor, o motivo
+do travamento. O texto do perfil diz "sua inscrição… que ela é sua", e repeti-lo
+aqui poria o admin no lugar do titular -- a mesma correção que as cinco
+mensagens do servidor receberam.
+
+⚠️ **E o "i" importa MAIS aqui**: o admin não sabe, ao digitar, que o nome vai
+ser conferido contra o tribunal. Sem ele, a recusa chegaria sem aviso prévio.
+
+⚠️ **`compacto` no `InterruptorDaImportacao`**: a régua de separação fica nos
+dois casos, o que muda é o respiro. No perfil o componente cria o dele; no
+modal o `Stack` já dá `gap="16px"`, e somar `mt` em cima abriu um vão que
+destoava de todas as outras fronteiras. Espaçamento é do CONTEXTO, e por isso
+é prop própria -- não um `deTerceiro` fazendo dois trabalhos.
+
+⚠️ **A coluna da tabela virou "Nome completo" junto.** Ela dizia "Apelido"
+enquanto o modal que ela abre já dizia outra coisa -- mesma coisa com dois
+nomes na mesma tela é o defeito que a troca do perfil existia para evitar.
+
 ### As recusas de titularidade chegam do servidor, e a tela não as reescreve
 
 🔴 Desde 31/08/2026 a API confere se a inscrição é SUA, e **cada recusa tem um

@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
   listarTodosOsMembrosDoGrupo: vi.fn(),
   listarSubgruposDoGrupo: vi.fn(),
   atualizarMembro: vi.fn(),
+  lerMembro: vi.fn(),
   getGrupoId: vi.fn(),
+  papelAtende: vi.fn(),
+  ehSuperAdmin: vi.fn(),
 }));
 
 vi.mock("../../../../services", () => mocks);
@@ -30,6 +33,14 @@ function montarMembro(overrides: Partial<Membro> = {}): Membro {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getGrupoId.mockReturnValue("g1");
+  /* ⚠️ O modal LÊ o registro editável -- a inscrição não vem na listagem, e
+     não pode vir: `GET /grupos/membros` é `manager`+ e a projeção dela é fixa
+     de propósito. */
+  mocks.lerMembro.mockResolvedValue({
+    email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+    numero_oab: null, uf_oab: null,
+    importacao_automatica: false, subgrupos_destino: [], subgrupos: ["s1"],
+  });
   mocks.listarSubgruposDoGrupo.mockResolvedValue({ subgrupos });
 });
 
@@ -41,7 +52,7 @@ describe("EditarMembroForm", () => {
     const membro = montarMembro({ subgrupos: [] });
     mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     renderComProviders(
-      <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
+      <EditarMembroForm membro={membro} grupos={grupos} podeMoverEntreGrupos onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Escolha pelo menos um subgrupo.");
@@ -53,7 +64,7 @@ describe("EditarMembroForm", () => {
     const membro = montarMembro({ subgrupos: ["s1"] });
     mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [membro] });
     renderComProviders(
-      <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
+      <EditarMembroForm membro={membro} grupos={grupos} podeMoverEntreGrupos onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).not.toBeDisabled());
@@ -69,18 +80,26 @@ describe("EditarMembroForm", () => {
     const onFechar = vi.fn();
     const user = userEvent.setup();
     renderComProviders(
-      <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={onAtualizado} onFechar={onFechar} />
+      <EditarMembroForm membro={membro} grupos={grupos} podeMoverEntreGrupos onAtualizado={onAtualizado} onFechar={onFechar} />
     );
 
     await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).not.toBeDisabled());
     await user.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() =>
+      /* ⚠️ Igualdade EXATA, e é ela que prova a garantia: um
+         `objectContaining` deixaria passar campo que a aba não deveria mandar.
+         Os quatro da inscrição viajam junto desde a Fase 1b -- o modal salva
+         tudo num "Salvar" só. */
       expect(mocks.atualizarMembro).toHaveBeenCalledWith("fulano@x.com", {
         apelido: "Fulano",
         grupo_id: "g1",
         papel: "user",
         subgrupos: ["s1"],
+        numero_oab: "",
+        uf_oab: "",
+        importacao_automatica: false,
+        subgrupos_destino: [],
       })
     );
     expect(onAtualizado).toHaveBeenCalled();
@@ -102,7 +121,7 @@ describe("conferência dos subgrupos atuais", () => {
     const membro = montarMembro({ subgrupos: ["s1"] });
     mocks.listarTodosOsMembrosDoGrupo.mockRejectedValue(new Error("rede caiu"));
     renderComProviders(
-      <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
+      <EditarMembroForm membro={membro} grupos={grupos} podeMoverEntreGrupos onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
     expect(
@@ -126,7 +145,7 @@ describe("conferência dos subgrupos atuais", () => {
     mocks.listarTodosOsMembrosDoGrupo.mockRejectedValue(new Error("rede"));
     const user = userEvent.setup();
     renderComProviders(
-      <EditarMembroForm membro={membro} grupos={grupos} onAtualizado={vi.fn()} onFechar={vi.fn()} />
+      <EditarMembroForm membro={membro} grupos={grupos} podeMoverEntreGrupos onAtualizado={vi.fn()} onFechar={vi.fn()} />
     );
 
     /* O aviso de "não consegui conferir" é o que o flag controla -- e é
@@ -146,4 +165,132 @@ describe("conferência dos subgrupos atuais", () => {
       expect(screen.queryByText(FALHOU_AO_CONFERIR_SUBGRUPOS)).not.toBeInTheDocument(),
     );
   });
+});
+
+// ── 🔴 a inscrição da OAB no modal (Fase 1b) ─────────────────────────────
+
+describe("a inscrição da pessoa", () => {
+  beforeEach(() => {
+    /* ⚠️ A recarga fresca dos subgrupos roda em TODA montagem -- o `beforeEach`
+       externo não a prepara porque os testes de cima a controlam caso a caso. */
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "fulano@x.com", subgrupos: ["s1"] }],
+    });
+  });
+
+  it("abre com a inscrição JÁ cadastrada, e não vazia", async () => {
+    /* 🔴 A inscrição NÃO vem na listagem -- `GET /grupos/membros` é `manager`+
+       e a projeção dela é fixa de propósito. Sem a leitura própria, o modal
+       abriria vazio para quem já tem OAB, e um "Salvar" a apagaria. */
+    mocks.lerMembro.mockResolvedValue({
+      email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+      numero_oab: "263", uf_oab: "MG",
+      importacao_automatica: true, subgrupos_destino: ["s1"], subgrupos: ["s1"],
+    });
+    renderComProviders(
+      <EditarMembroForm membro={montarMembro()} grupos={grupos} podeMoverEntreGrupos
+        onAtualizado={vi.fn()} onFechar={vi.fn()} />
+    );
+
+    /* ⚠️ `waitFor`, e não asserção direta: o valor salvo chega por `useEffect`,
+       DEPOIS do primeiro render -- `findByLabelText` resolve assim que o campo
+       aparece, que pode ser antes. Sem isto o teste é intermitente. */
+    const campo = await screen.findByLabelText(/Número da OAB/);
+    await waitFor(() => expect(campo).toHaveValue("263"));
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: /Cadastrar automaticamente/ }))
+        .toBeChecked()
+    );
+  });
+
+  it("manda a inscrição e o destino no MESMO Salvar", async () => {
+    const user = userEvent.setup();
+    mocks.lerMembro.mockResolvedValue({
+      email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+      numero_oab: "263", uf_oab: "MG",
+      importacao_automatica: false, subgrupos_destino: [], subgrupos: ["s1"],
+    });
+    mocks.atualizarMembro.mockResolvedValue({});
+    renderComProviders(
+      <EditarMembroForm membro={montarMembro()} grupos={grupos} podeMoverEntreGrupos
+        onAtualizado={vi.fn()} onFechar={vi.fn()} />
+    );
+    await screen.findByLabelText(/Número da OAB/);
+
+    /* ⚠️ Com UM subgrupo marcado não há seletor de destino -- e o destino vai
+       preenchido mesmo assim, senão "ligar" voltaria recusado do servidor. */
+    await user.click(screen.getByText(/Cadastrar automaticamente/));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).not.toBeDisabled());
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() =>
+      expect(mocks.atualizarMembro).toHaveBeenCalledWith("fulano@x.com",
+        expect.objectContaining({
+          numero_oab: "263", uf_oab: "MG",
+          importacao_automatica: true, subgrupos_destino: ["s1"],
+        }))
+    );
+  });
+
+  it("SEM inscrição o interruptor trava, e o texto é de TERCEIRO", async () => {
+    /* ⚠️ "Cadastre a inscrição", não "Cadastre SUA inscrição": quem edita é
+       outra pessoa. Mesma correção que as cinco mensagens do servidor. */
+    renderComProviders(
+      <EditarMembroForm membro={montarMembro()} grupos={grupos} podeMoverEntreGrupos
+        onAtualizado={vi.fn()} onFechar={vi.fn()} />
+    );
+
+    const sw = await screen.findByRole("checkbox", { name: /Cadastrar automaticamente/ });
+    expect(sw).toBeDisabled();
+    expect(screen.getByText("Cadastre a inscrição acima para poder ligar.")).toBeInTheDocument();
+    expect(screen.queryByText(/Cadastre sua inscrição/)).not.toBeInTheDocument();
+  });
+
+  it("🔴 sem poder mover de grupo, o campo Grupo fica travado", async () => {
+    /* O `admin` não move ninguém entre grupos -- e `GET /grupos` é
+       `super_admin`-only, então a lista chega vazia. Oferecer o próprio grupo
+       como única opção diz ONDE a pessoa está; um select vazio não diria. */
+    renderComProviders(
+      <EditarMembroForm membro={montarMembro()} grupos={[]} podeMoverEntreGrupos={false}
+        onAtualizado={vi.fn()} onFechar={vi.fn()} />
+    );
+    await screen.findByLabelText(/Número da OAB/);
+
+    expect(screen.getByText("Meu grupo")).toBeInTheDocument();
+  });
+
+  it("🔴 sem poder mover de grupo, o seletor de papel NÃO oferece super admin", async () => {
+    /* O servidor recusa "papel acima do seu" -- oferecer a opção seria
+       convidar para um erro que ele já barra. */
+    const user = userEvent.setup();
+    renderComProviders(
+      <EditarMembroForm membro={montarMembro()} grupos={[]} podeMoverEntreGrupos={false}
+        onAtualizado={vi.fn()} onFechar={vi.fn()} />
+    );
+    await screen.findByLabelText(/Número da OAB/);
+
+    await user.click(screen.getByLabelText("Papel"));
+
+    expect(await screen.findByRole("option", { name: "Admin" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Super/i })).not.toBeInTheDocument();
+  });
+});
+
+it("o 'i' do nome completo fala na TERCEIRA pessoa", async () => {
+  /* 🔴 O texto do perfil diz "sua inscrição… que ela é sua". Aqui quem edita
+     é outro, e repetir aquele texto poria o admin no lugar do titular.
+
+     ⚠️ E o "i" importa MAIS aqui: o admin não sabe, ao digitar, que o nome vai
+     ser conferido contra o tribunal -- sem ele a recusa chegaria sem aviso. */
+  const user = userEvent.setup();
+  renderComProviders(
+    <EditarMembroForm membro={montarMembro()} grupos={grupos} podeMoverEntreGrupos
+      onAtualizado={vi.fn()} onFechar={vi.fn()} />
+  );
+  await screen.findByLabelText(/Número da OAB/);
+
+  await user.click(screen.getByRole("button", { name: /Por que o nome completo importa/ }));
+
+  expect(await screen.findByText(/inscrição na OAB desta pessoa/)).toBeInTheDocument();
+  expect(screen.queryByText(/que ela é sua/)).not.toBeInTheDocument();
 });

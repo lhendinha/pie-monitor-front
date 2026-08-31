@@ -1,6 +1,7 @@
 import { chamar } from "./client";
 import { todasAsPaginas } from "../../utils/paginacao";
 import type { DadosDoMembro } from "../../types/requisicoes";
+import type { MembroEditavel } from "../../types";
 import type { Membro, OpcoesListarMembros } from "../../types";
 
 /** Uma página de `GET /grupos/membros`.
@@ -71,4 +72,17 @@ export function atualizarMembro(
   dados: DadosDoMembro
 ) {
   return chamar(`/grupos/membros/${encodeURIComponent(email)}`, { method: "PATCH", body: dados });
+}
+
+/** GET /grupos/membros/{email} -- o registro editável de UMA pessoa.
+ *
+ * 🔴 Existe porque `GET /grupos/membros` não pode crescer: a projeção dela é
+ * fixa de propósito, e ela é `manager`+. Sem esta rota o modal não teria como
+ * LER a inscrição da pessoa para preencher os campos.
+ *
+ * ⚠️ `admin`+, e o servidor recorta pelo próprio grupo: o e-mail vai na URL,
+ * não no contexto.
+ */
+export function lerMembro(email: string) {
+  return chamar(`/grupos/membros/${encodeURIComponent(email)}`) as Promise<MembroEditavel>;
 }
