@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
+  papelAtende: vi.fn(),
+  lerMembro: vi.fn(),
   listarMembrosDoGrupo: vi.fn(),
   listarTodosOsMembrosDoGrupo: vi.fn(),
   listarSubgrupos: vi.fn(),
@@ -33,7 +35,18 @@ const PESSOA = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.ehSuperAdmin.mockReturnValue(true);
+  /* ⚠️ O portão do botão de editar passou de `ehSuperAdmin` para
+     `papelAtende("admin")` em 31/08/2026 -- a inscrição da OAB entrou no
+     modal, e com o piso antigo o admin do escritório não teria como corrigir
+     a de um colega. Os dois mocks convivem: `ehSuperAdmin` continua sendo o
+     que libera TROCAR DE GRUPO. */
+  mocks.papelAtende.mockReturnValue(true);
   mocks.getGrupoId.mockReturnValue("g1");
+  mocks.lerMembro.mockResolvedValue({
+    email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+    numero_oab: null, uf_oab: null,
+    importacao_automatica: false, subgrupos_destino: [], subgrupos: ["s1"],
+  });
   mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [PESSOA], total: 1, total_paginas: 1 });
   mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [PESSOA] });
   mocks.listarSubgrupos.mockResolvedValue({
@@ -69,27 +82,28 @@ describe("MembrosPage", () => {
     expect(within(linha).getAllByText("ana@argos.local").length).toBe(2);
   });
 
-  it("clicar na linha abre a edição -- super admin", async () => {
+  it("clicar na linha abre a edição -- admin+", async () => {
     const user = userEvent.setup();
     renderComRota(<MembrosPage />);
 
     await user.click(await screen.findByText("Ana Paula"));
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByLabelText("Apelido")).toHaveValue("Ana Paula");
+    expect(screen.getByLabelText("Nome completo")).toHaveValue("Ana Paula");
   });
 
-  it("sem ser super admin, a linha não abre e a tela diz por quê", async () => {
+  it("sem ser admin, a linha não abre e a tela diz por quê", async () => {
     // O piso é o do `PATCH /grupos/membros/{email}`. Uma tabela que
     // simplesmente não reage ao clique parece quebrada.
     mocks.ehSuperAdmin.mockReturnValue(false);
+    mocks.papelAtende.mockReturnValue(false);
     const user = userEvent.setup();
     renderComRota(<MembrosPage />);
 
     await user.click(await screen.findByText("Ana Paula"));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByText("Só super admin pode editar membros.")).toBeInTheDocument();
+    expect(screen.getByText("Só admin pode editar membros.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
   });
 

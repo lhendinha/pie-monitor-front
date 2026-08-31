@@ -102,6 +102,21 @@ alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
 a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 (`/grupo`, `/perfil`) usam estado local de propósito.
 
+### Editar membro: quem pode, e o que fica travado
+
+| | `super_admin` | `admin` |
+|---|---|---|
+| Nome completo, Subgrupos | ✅ | ✅ |
+| **OAB, UF, interruptor, destino** | ✅ | ✅ |
+| Papel | até `super_admin` | até `admin` |
+| **Grupo** | qualquer | 🔴 travado no próprio |
+
+🔴 O modal lê `GET /grupos/membros/{email}` (`admin`+) em vez de usar a
+listagem: aquela é `manager`+ e a projeção dela é fixa de propósito -- a
+inscrição não aparece ali. Quem enxerga o detalhe é quem pode editá-lo.
+
+⚠️ Travar campo na tela é conveniência; o servidor recusa igual.
+
 ### Perfil: duas abas, dois "Salvar"
 
 | aba | o que tem | o que o Salvar dela grava |
