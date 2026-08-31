@@ -1979,6 +1979,28 @@ teste fraco, é um teste que mente. Ele passa quando o sistema está quebrado e
 quando está certo, indistinguivelmente. Todas as afirmações de ausência do
 roteiro agora esperam uma linha conhecida aparecer primeiro.
 
+## 🔴 A paleta é contrato com o E-MAIL da API (30/08/2026)
+
+**Trocar uma cor em `theme/tokens.ts` obriga a alinhar o e-mail de notificação.**
+
+O e-mail vive na API (`api/src/shared/email_template.py`) e **copia** esta
+paleta. A cópia não é descuido: cliente de e-mail não entende variável CSS. Os
+tokens semânticos do `theme/index.ts` viram `var(--chakra-...)`, e nada disso
+sobrevive no Gmail, no Outlook ou no Apple Mail -- o que sobrevive é o VALOR,
+escrito inline em cada elemento.
+
+⚠️ **Duas fontes derivam, e esta derivaria CALADA**: ninguém abre o e-mail de
+teste ao mexer numa cor da tela. A divergência só apareceria para quem recebe.
+
+✅ Por isso há guarda mecânico: `api/tests/test_cores_do_email_batem_com_o_front.py`
+lê `tokens.ts` deste repositório e deixa a suíte da API **vermelha** quando os
+dois divergem. Ele tem um par que impede burlá-lo -- escrever o hex direto no
+HTML, em vez da constante, também acusa.
+
+⚠️ **Mas ele PULA quando os dois repositórios não estão lado a lado.** Trocar
+uma cor sem a API clonada não acusa nada. A regra está escrita também no topo
+de `theme/tokens.ts`, que é onde quem troca a cor está olhando.
+
 ## As cores de status, e o defeito que só a cor computada revelou (26/08/2026)
 
 **"Em andamento" passou a ser âmbar e "Fechado", o azul da marca.** O

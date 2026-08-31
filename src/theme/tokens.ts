@@ -7,6 +7,23 @@
  *
  * Os valores vieram do artifact de referência (as variáveis CSS do `:root`),
  * não de estimativa.
+ *
+ * 🔴 **TROCAR UMA COR AQUI OBRIGA A ALINHAR O E-MAIL** (regra de 30/08/2026).
+ *
+ * O e-mail de notificação da API COPIA esta paleta, em
+ * `api/src/shared/email_template.py`. A cópia existe porque cliente de e-mail
+ * não entende variável CSS -- os tokens semânticos do `./index.ts` viram
+ * `var(--chakra-...)`, e nada disso sobrevive no Gmail. O que sobrevive é o
+ * valor, escrito inline.
+ *
+ * ⚠️ Duas fontes derivam, e esta derivaria CALADA: ninguém abre o e-mail de
+ * teste ao mexer numa cor da tela. Por isso há guarda mecânico --
+ * `api/tests/test_cores_do_email_batem_com_o_front.py` lê ESTE arquivo e
+ * deixa a suíte da API vermelha se os dois divergirem.
+ *
+ * ⚠️ Ele pula quando os dois repositórios não estão lado a lado. Então trocar
+ * uma cor sem a API clonada não acusa nada -- e a divergência só aparece para
+ * quem recebe o e-mail.
  */
 
 /** Paleta bruta. Nome = papel na marca, não a cor em si -- `brandDark` segue
