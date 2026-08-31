@@ -142,3 +142,17 @@ it("mostra a mensagem do SERVIDOR quando o nome já existe", async () => {
 
   expect(await screen.findByText("Já existe um grupo com esse nome")).toBeInTheDocument();
 });
+
+it("o campo de dias NÃO repete o número ao lado", async () => {
+  /* 🔴 A tela mostrava "[8] 8 dias": o campo já traz o número, e `contar`
+     escrevia de novo ao lado -- o olho lê o mesmo dado duas vezes.
+
+     ⚠️ O par que impede a "correção" preguiçosa (apagar o texto todo) está em
+     `utils/plural.test.ts`: a palavra continua, concordando -- com 1 é "dia". */
+  await montar();
+  const campo = screen.getByLabelText(/Arquivar concluídas depois de/);
+  const linha = campo.parentElement!;
+
+  expect(linha).toHaveTextContent(/\bdias\b/);
+  expect(linha.textContent?.match(/7/g) ?? []).toHaveLength(0);
+});

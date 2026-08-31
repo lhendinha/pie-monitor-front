@@ -11,3 +11,17 @@
 export function contar(quantidade: number, singular: string, plural: string): string {
   return `${quantidade} ${quantidade === 1 ? singular : plural}`;
 }
+
+
+/** Só a palavra, concordando com a quantidade: "dia", "dias".
+ *
+ * 🔴 Existe para o caso em que o NÚMERO já está na tela e repeti-lo é ruído.
+ * Em "Arquivar concluídas depois de [8] 8 dias" o campo já mostra o 8, e
+ * `contar` o escrevia de novo ao lado -- o olho lê duas vezes o mesmo dado.
+ *
+ * ⚠️ E não é só apagar o número de `contar`: a concordância continua valendo.
+ * Com 1 a frase é "[1] dia", não "[1] dias".
+ */
+export function unidade(quantidade: number, singular: string, plural: string): string {
+  return quantidade === 1 ? singular : plural;
+}
