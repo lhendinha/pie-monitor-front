@@ -16,7 +16,7 @@ import {
 } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import { contar } from "../../../../utils";
+import { contar, unidade } from "../../../../utils";
 import type { ConfiguracoesDoGrupo as Configuracoes } from "../../../../types";
 import type { CamposDasConfiguracoes } from "../../types";
 
@@ -153,8 +153,12 @@ export default function ConfiguracoesDoGrupo() {
               onChange={(e) => setDias(e.target.value)}
               w="110px"
             />
+            {/* ⚠️ `unidade`, e não `contar`: o campo ao lado JÁ mostra o
+                número, e escrevê-lo de novo faz o olho ler o mesmo dado duas
+                vezes ("[8] 8 dias"). A concordância continua -- com 1 é
+                "dia". */}
             <Text fontSize="13.5px" color="fg.muted" flexShrink="0">
-              {contar(Number.isInteger(numero) ? numero : 0, "dia", "dias")}
+              {unidade(Number.isInteger(numero) ? numero : 0, "dia", "dias")}
             </Text>
           </Stack>
         </Campo>

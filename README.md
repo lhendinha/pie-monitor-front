@@ -107,7 +107,27 @@ a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 | aba | o que tem | o que o Salvar dela grava |
 |---|---|---|
 | **Meus dados** | Nome completo, e-mail (travado), Alterar senha | só o nome |
-| **Inscrição na OAB** | Número da OAB, UF | só a inscrição |
+| **Inscrição na OAB** | Número da OAB, UF, **interruptor de importação**, destino | a inscrição **e** o interruptor |
+
+🔴 **Os dois num "Salvar" só, e não em dois botões** (Fase 1b): cadastrar a OAB
+e ligar a importação é UMA intenção -- *"quero que o sistema traga meus
+processos"* --, e o servidor aceita as duas coisas no mesmo PATCH. Separar
+obrigaria a salvar duas vezes para um pedido só.
+
+⚠️ **O interruptor fica travado sem inscrição**, e olha o CAMPO, não o que está
+gravado: quem digita a OAB e liga no mesmo gesto não deve ser obrigado a salvar
+antes. O motivo aparece na tela -- e são dois, com conselhos diferentes:
+*cadastre a inscrição acima* (ela resolve ali) ou *você não participa de nenhum
+subgrupo* (ela não resolve sozinha).
+
+⚠️ **O seletor de destino só aparece com MAIS DE UM subgrupo.** Com um só o
+destino é óbvio e um seletor de uma opção faz a pessoa procurar uma decisão que
+não existe -- mas a regra vale por baixo, e o destino vai preenchido.
+
+⚠️ **O `Switch` do Chakra v3 é um CHECKBOX, e assim fica.** Medido: forçar
+`role="switch"` deixa o estado DESCONHECIDO, porque a ARIA exige `aria-checked`
+junto e o Chakra não o emite. Um checkbox que anuncia "marcado" é usável; um
+interruptor sem estado, não.
 
 🔴 **A divisão torna ESTRUTURAL o que antes era lógica.** `PATCH /me` trata
 campo ausente como "não mexer", então um formulário único tinha de escolher o

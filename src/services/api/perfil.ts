@@ -1,5 +1,5 @@
 import { chamar } from "./client";
-import type { MeuPerfil } from "../../types";
+import type { CamposDoMeuPerfil, MeuPerfil } from "../../types";
 
 /** GET /me -- o próprio registro.
  *
@@ -24,14 +24,16 @@ export function lerMeuPerfil() {
  * ⚠️ **`inscricao` com as duas partes vazias LIMPA** a OAB -- é o único jeito
  * de apagar uma cadastrada por engano. `undefined` é "não mexer"; `{numero:
  * "", uf: ""}` é "apagar". São coisas diferentes e o tipo as separa. */
-export function atualizarMeuPerfil(
-  campos: { apelido?: string; inscricao?: { numero: string; uf: string } },
-) {
-  const body: Record<string, string> = {};
+export function atualizarMeuPerfil(campos: CamposDoMeuPerfil) {
+  const body: Record<string, unknown> = {};
   if (campos.apelido !== undefined) body.apelido = campos.apelido;
   if (campos.inscricao !== undefined) {
     body.numero_oab = campos.inscricao.numero;
     body.uf_oab = campos.inscricao.uf;
+  }
+  if (campos.importacao !== undefined) {
+    body.importacao_automatica = campos.importacao.ligada;
+    body.subgrupos_destino = campos.importacao.subgruposDestino;
   }
   return chamar("/me", { method: "PATCH", body });
 }
