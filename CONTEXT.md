@@ -2886,6 +2886,56 @@ deixou de depender de lógica e passou a ser da FORMA.
 sessão; ir à rede buscar o que está em mãos faria a tela piscar sem ganho. A
 OAB não está na sessão e não deveria estar -- seria uma cópia que envelhece.
 
+### O interruptor da importação (Fase 1b, 31/08/2026)
+
+🔴 **A investigação que trouxe esta peça**: a importação automática estava
+inteira na API, em produção, e **ninguém conseguia ligá-la pela tela**. Para
+testá-la foi preciso chamar a rota de configurações por script.
+
+🔴 **A aba passou a salvar DUAS coisas, e isso não fere a régua acima.** A
+separação existe para uma aba não sobrescrever campo da OUTRA; inscrição e
+interruptor são da MESMA aba, e o servidor aceita os dois no mesmo PATCH --
+conferido em produção. Cadastrar a OAB e ligar a importação é uma intenção só.
+
+⚠️ **O interruptor olha o CAMPO, não o gravado.** `temInscricao` sai do que
+está digitado, então quem preenche a OAB e liga no mesmo gesto não precisa
+salvar antes. Travar até a inscrição estar gravada pediria dois salvamentos
+para um pedido.
+
+⚠️ **O seletor só com MAIS DE UM subgrupo**, e o destino vai preenchido de
+qualquer jeito (`destinoEfetivo`): sem isso "ligar" iria ao servidor sem
+destino e voltaria recusado. Com um subgrupo, o seletor faria a pessoa procurar
+uma decisão que não existe.
+
+⚠️ **Um destino, embora o contrato seja lista.** O campo é `string[]` porque a
+lista de avulsas do grupo permite vários -- lá um `admin` cadastra inscrição de
+terceiro e pode espalhar. Aqui a pessoa escolhe onde os processos DELA nascem,
+e a pergunta tem uma resposta só.
+
+🔴 **O `Switch` do Chakra v3 é um CHECKBOX, e assim fica.** Pôr `role="switch"`
+parecia mais correto e é pior, medido: a ARIA exige `aria-checked` junto, o
+Chakra não o emite, e o estado passa a ser DESCONHECIDO -- `toBeChecked()`
+deixa de reconhecer o elemento marcado. Um checkbox que anuncia
+"marcado/desmarcado" é inteiramente usável. Se o Chakra passar a emitir
+`aria-checked`, isto se revê.
+
+⚠️ **O trilho ligado nasce PRETO** no Chakra v3, e destoava de tudo à volta.
+Pintado com `brand` -- e cor aqui é contrato: `theme/tokens.ts` registra que
+trocá-la obriga a alinhar o e-mail.
+
+### As recusas de titularidade chegam do servidor, e a tela não as reescreve
+
+🔴 Desde 31/08/2026 a API confere se a inscrição é SUA, e **cada recusa tem um
+conselho diferente**: preencher o nome completo, conferir o número/UF, ou
+tentar de novo. Trocá-las por "Não foi possível salvar" apagaria justamente a
+parte que diz o que fazer. `toastErroMutation` já mostra o `detail` do
+servidor; o teste existe para que ninguém "melhore" isso para uma frase fixa.
+
+⚠️ **A primeira delas vai acontecer com todo mundo**: medido em produção, os
+cinco nomes cadastrados têm uma palavra só, e a régua exige o nome completo. É
+por isso que o "i" ao lado de "Nome completo" explica a comparação com o
+tribunal ANTES de a pessoa tentar.
+
 ### O caminho até este layout, porque ele mudou três vezes
 
 Vale registrado para ninguém refazer o percurso:
