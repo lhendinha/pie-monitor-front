@@ -14,11 +14,21 @@ import type { EnderecoDoCliente } from "../types";
  *
  * ⚠️ Em ordem ALFABÉTICA, que é como se procura uma sigla numa lista de 27
  * -- não por região nem por população.
+ *
+ * 🔴 **E ela NÃO estava, apesar de esta linha afirmar que sim.** Doze das 27
+ * posições vinham na ordem do IBGE (por região): `AP` antes de `AM`, `PR`
+ * antes de `PE`, `SP` antes de `SE`. Quase-alfabético é pior que qualquer das
+ * duas ordens -- o olho segue o alfabeto e tropeça exatamente onde ela quebra.
+ * Corrigido em 01/09/2026, com o guarda abaixo para a afirmação parar de
+ * depender de quem lê.
+ *
+ * ⚠️ O gêmeo da API é `frozenset`, então lá a ordem não existe -- só o
+ * conjunto. Reordenar aqui não pode dessincronizar nada.
  */
 export const UFS = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-  "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
-  "SP", "SE", "TO",
+  "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS",
+  "MT", "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC",
+  "SE", "SP", "TO",
 ] as const;
 
 /** Quantos dígitos um CEP tem. É o gatilho da consulta: com menos que isto,
