@@ -126,16 +126,28 @@ export default function AceitarConvitePage({ token, onEntrar }: AceitarConvitePa
       subtitulo="Você foi convidado pro Argos. Defina sua senha pra entrar."
     >
       <form onSubmit={handleSubmit}>
-        {/* Opcional de verdade: sem apelido, o sistema usa o e-mail. Quem
-            está entrando pela primeira vez não deve travar num campo que
-            pode preencher depois, no perfil. */}
-        <Campo rotulo="Apelido (opcional)" para="apelido">
+        {/* 🔴 "Nome completo" é só o RÓTULO -- atrás continua o campo
+            `apelido`, sem migração, mesma régua de `pje-monitor` vs Argos.
+
+            Opcional de verdade: sem nome, o sistema usa o e-mail. Quem está
+            entrando pela primeira vez não deve travar num campo que pode
+            preencher depois, no perfil -- por isso aqui não há `obrigatorio`,
+            ao contrário do perfil.
+
+            ⚠️ E não há o "i" que o perfil e o modal de membro têm: ele fala
+            de comparar o nome com o que o tribunal devolve para a inscrição,
+            e quem está criando a conta ainda não tem inscrição para vincular.
+
+            ⚠️ `autoComplete="name"`, e não `"nickname"`: era o único
+            `nickname` do app, e fazia o navegador oferecer o apelido salvo
+            justamente onde se pede o nome. */}
+        <Campo rotulo="Nome completo" para="apelido">
           <Input
             id="apelido"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            placeholder="Como quer ser chamado"
-            autoComplete="nickname"
+            placeholder="Como você assina nos autos"
+            autoComplete="name"
             autoFocus
           />
         </Campo>

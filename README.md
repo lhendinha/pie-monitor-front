@@ -152,10 +152,18 @@ aba **não conhece os campos da outra**: não há como sobrescrever por engano.
 ⚠️ **A aba se chama "Meus dados", não "Perfil"**: a página já se chama "Meu
 perfil", e repetir o nome logo abaixo do título não informa nada.
 
-⚠️ **"Nome completo" é só o RÓTULO.** Atrás continua o campo `apelido`, sem
-migração -- mesma régua de `pje-monitor` vs Argos: o nome novo vale onde a
+⚠️ **"Nome completo" é só o RÓTULO, nos TRÊS lugares que pedem o nome da
+pessoa**: esta aba, o modal de editar membro (`MembrosPage`) e a criação de
+conta pelo convite (`AceitarConvitePage`). Atrás continua o campo `apelido`,
+sem migração -- mesma régua de `pje-monitor` vs Argos: o nome novo vale onde a
 **pessoa** lê. O "i" ao lado explica por que o nome precisa ser o completo (a
-Fase 1b o compara com o que o tribunal devolve para a inscrição).
+Fase 1b o compara com o que o tribunal devolve para a inscrição); ele está no
+perfil e no modal de membro, e **não** no convite, onde quem cria a conta ainda
+não tem inscrição para vincular.
+
+⚠️ **O apelido de PROCESSO continua "Apelido"** -- é outro conceito (o nome
+curto que identifica o processo na lista, "Execução fiscal -- Rio Verde"), e
+chamá-lo de nome completo seria falso.
 
 ⚠️ **Deixar as duas partes da inscrição vazias APAGA a OAB.** É o único jeito
 de remover uma cadastrada por engano, e é por isso que a opção "Nenhuma" existe
