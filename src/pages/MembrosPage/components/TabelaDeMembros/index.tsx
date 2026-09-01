@@ -30,7 +30,7 @@ export default function TabelaDeMembros({ membros, podeEditar, onEditar }: Tabel
              chegava, a coluna ficava VAZIA (o `.filter(Boolean)` descartava
              os ids não encontrados), sugerindo que a pessoa não está em
              subgrupo nenhum. */
-          subgruposNomes={(m.subgrupo_nomes || []).join(", ")}
+          subgruposNomes={m.subgrupo_nomes || []}
           podeEditar={podeEditar}
           onEditar={onEditar}
         />
