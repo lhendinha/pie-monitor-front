@@ -47,3 +47,34 @@ export function erroDaInscricao(
   if (!uf) return { campo: "ufOab", mensagem: "Selecione a UF da OAB" };
   return null;
 }
+
+/** `("263", "mg")` -> `"263/MG"`. A forma canônica de `api/src/shared/oab.py`.
+ *
+ * 🔴 Existe para COMPARAR, não para mandar: o servidor normaliza de novo na
+ * entrada, e é a versão dele que fica gravada. O que a tela precisa é saber se
+ * a inscrição que a pessoa acabou de digitar já está na lista -- e `"263"/"mg"`
+ * e `"263"/"MG"` são a mesma, então comparar o que foi digitado contra o que
+ * está gravado só funciona pela forma canônica.
+ *
+ * ⚠️ **Não valida.** Quem recusa `"abc"` é `erroDaInscricao`, antes daqui.
+ * Duplicar a régua criaria a segunda que diverge no primeiro ajuste. */
+export function normalizarInscricao(numeroOab: string, ufOab: string): string {
+  return `${numeroOab.trim()}/${ufOab.trim().toUpperCase()}`;
+}
+
+/** `"263/MG"` -> `{ numero: "263", uf: "MG" }`.
+ *
+ * 🔴 O caminho de VOLTA, e ele é necessário porque o `PATCH` pede as duas
+ * partes separadas enquanto o `GET` devolve a inscrição junta. A tela manda a
+ * lista fechada a cada gravação, então toda inscrição já cadastrada passa por
+ * aqui em todo salvamento -- inclusive as que a pessoa nem tocou.
+ *
+ * ⚠️ **`split` com limite de 2 partes**, e não `split("/")` cru: uma barra a
+ * mais viria de escrita direta no banco, e `["263", "M", "G"]` faria a UF
+ * virar `"M"` -- uma inscrição diferente, gravada em silêncio. Com o limite, a
+ * sobra fica na UF e o servidor recusa, que é o desfecho alto. */
+export function partesDaInscricao(inscricao: string): { numero: string; uf: string } {
+  const corte = inscricao.indexOf("/");
+  if (corte < 0) return { numero: inscricao, uf: "" };
+  return { numero: inscricao.slice(0, corte), uf: inscricao.slice(corte + 1) };
+}

@@ -4,6 +4,7 @@ import { Abas, CabecalhoDePagina, PainelDaAba } from "../../components";
 import { ABAS_DO_GRUPO } from "../../constants";
 import { papelAtende } from "../../services";
 import ConfiguracoesDoGrupo from "./components/ConfiguracoesDoGrupo";
+import InscricoesDoGrupo from "./components/InscricoesDoGrupo";
 import ConvidarPage from "../ConvidarPage";
 import MembrosPage from "../MembrosPage";
 import SubgruposPage from "../SubgruposPage";
@@ -11,10 +12,11 @@ import OpcoesLista from "./components/OpcoesLista";
 import type { SubAbaId } from "../../types";
 import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 
-/** Agrupa Subgrupos/Membros/Convidar/Fases/Situações -- itens de gestão do
- * grupo (menos usados no dia a dia que Processos/Clientes/Histórico) --
- * numa tela só, com sub-navegação própria. Cada sub-aba mantém exatamente
- * o mesmo piso de papel que já tinha quando era aba de topo. */
+/** Agrupa Subgrupos/Membros/Convidar/Fases/Situações/Inscrições/Configurações
+ * -- itens de gestão do grupo (menos usados no dia a dia que
+ * Processos/Clientes/Histórico) -- numa tela só, com sub-navegação própria.
+ * Cada sub-aba mantém exatamente o mesmo piso de papel que já tinha quando era
+ * aba de topo. */
 export default function GrupoPage() {
   const abas = ABAS_DO_GRUPO.filter((a) => papelAtende(a.minimo));
   const [abaAtiva, setAbaAtiva] = useState<SubAbaId>(abas[0]?.id || "subgrupos");
@@ -48,7 +50,7 @@ export default function GrupoPage() {
 
       {/* ⚠️ O conteúdo continua CONDICIONAL aqui, ao contrário das telas de
           detalhe: cada aba é uma página inteira com consultas próprias, e
-          montar as seis de uma vez dispararia todas juntas. O painel existe
+          montar as sete de uma vez dispararia todas juntas. O painel existe
           pra o `aria-controls` da aba ter onde apontar -- vazio quando
           inativo, o que é correto. */}
       <PainelDaAba grupo="grupo" id="subgrupos" ativa={abaAtiva}>
@@ -67,6 +69,9 @@ export default function GrupoPage() {
       </PainelDaAba>
       <PainelDaAba grupo="grupo" id="convidar" ativa={abaAtiva}>
         {abaAtiva === "convidar" && <ConvidarPage />}
+      </PainelDaAba>
+      <PainelDaAba grupo="grupo" id="inscricoes" ativa={abaAtiva}>
+        {abaAtiva === "inscricoes" && <InscricoesDoGrupo />}
       </PainelDaAba>
       <PainelDaAba grupo="grupo" id="configuracoes" ativa={abaAtiva}>
         {abaAtiva === "configuracoes" && <ConfiguracoesDoGrupo />}

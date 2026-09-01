@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../services", () => mocks);
 
 import GrupoPage from "./index";
+import { ABAS_DO_GRUPO } from "../../constants";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -47,8 +48,44 @@ beforeEach(() => {
     dias_para_arquivar_minimo: 1,
     dias_para_arquivar_maximo: 365,
     dias_para_arquivar_padrao: 7,
+    oabs_avulsas: [],
+    oabs_avulsas_maximo: 50,
   });
   mocks.atualizarConfiguracoesDoGrupo.mockResolvedValue({});
+});
+
+/** Os fontes crus, pelo `import.meta.glob` do Vite -- ver
+ * `CelulaComSub/celulaDeTabela.test.ts`: o `tsconfig` do front não carrega os
+ * tipos do Node, e um teste que não passa no `tsc` quebra a checagem de tipos
+ * do projeto inteiro. */
+const FONTE_DA_PAGINA = Object.values(
+  import.meta.glob("/src/pages/GrupoPage/index.tsx", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>,
+)[0];
+
+describe("🔴 toda aba declarada tem painel -- guarda de FORMA", () => {
+  /* A aba nasce em `ABAS_DO_GRUPO` e o painel mora em `GrupoPage`, dois
+     arquivos. Acrescentar a primeira e esquecer o segundo dá uma aba que abre
+     para o NADA: sem erro, sem tela em branco reconhecível, só uma área vazia.
+     Nenhum teste de comportamento pega isso, porque a aba sem painel não tem
+     comportamento a testar. */
+
+  it("varre o arquivo de verdade -- senão o guarda passaria vazio", () => {
+    /* O par que impede o falso "passou": um glob errado devolveria `undefined`
+       e as asserções abaixo não teriam o que reprovar. */
+    expect(FONTE_DA_PAGINA).toContain("export default function GrupoPage");
+    expect(ABAS_DO_GRUPO.length).toBeGreaterThan(5);
+  });
+
+  it.each(ABAS_DO_GRUPO.map((a) => a.id))("a aba %s tem painel e conteúdo", (id) => {
+    expect(FONTE_DA_PAGINA).toContain(`<PainelDaAba grupo="grupo" id="${id}"`);
+    /* O painel sozinho não basta: ele existe pra o `aria-controls` da aba ter
+       onde apontar, e um vazio passaria na asserção acima. */
+    expect(FONTE_DA_PAGINA).toContain(`abaAtiva === "${id}" &&`);
+  });
 });
 
 describe("GrupoPage", () => {
@@ -99,13 +136,16 @@ describe("GrupoPage", () => {
     }
   });
 
-  it("papel 'super_admin' vê as 5 sub-abas, incluindo Fases/Situações", async () => {
+  it("papel 'super_admin' vê TODAS as sub-abas declaradas", async () => {
+    /* ⚠️ A lista vem de `ABAS_DO_GRUPO`, e não escrita à mão: o título dizia
+       "as 5 sub-abas" enquanto o laço conferia quatro nomes, e nenhum dos dois
+       acompanhava a constante. Aba nova entrava sem ninguém notar. */
     mocks.papelAtende.mockReturnValue(true);
     renderComRota(<GrupoPage />);
 
     await screen.findByRole("tab", { name: "Subgrupos" });
-    for (const nome of ["Membros", "Convidar", "Fases", "Situações"]) {
-      expect(screen.getByRole("tab", { name: nome })).toBeInTheDocument();
+    for (const aba of ABAS_DO_GRUPO) {
+      expect(screen.getByRole("tab", { name: aba.label })).toBeInTheDocument();
     }
   });
 
@@ -154,6 +194,47 @@ describe("GrupoPage", () => {
       expect(screen.getByLabelText(/Arquivar concluídas depois de/)).toHaveValue(7);
     });
 
+  });
+
+  describe("aba Inscrições na OAB", () => {
+    /* Só o de INTEGRAÇÃO aqui -- que a aba monta e lê a rota certa. O
+       comportamento (releitura antes de gravar, repetida, teto, interruptor)
+       é testado em InscricoesDoGrupo/ e LinhaDaInscricao/, onde ele mora. */
+    it("monta e lista as inscrições do grupo", async () => {
+      mocks.papelAtende.mockReturnValue(true);
+      mocks.lerConfiguracoesDoGrupo.mockResolvedValue({
+        nome: "Silva Advogados",
+        nome_tamanho_maximo: 120,
+        dias_para_arquivar: 7,
+        dias_para_arquivar_minimo: 1,
+        dias_para_arquivar_maximo: 365,
+        dias_para_arquivar_padrao: 7,
+        oabs_avulsas: [
+          { inscricao: "263/MG", importacao_automatica: false, subgrupos_destino: [] },
+        ],
+        oabs_avulsas_maximo: 50,
+      });
+      const user = userEvent.setup();
+      renderComRota(<GrupoPage />);
+
+      await user.click(await screen.findByRole("tab", { name: "Inscrições na OAB" }));
+
+      expect(await screen.findByText("263/MG")).toBeInTheDocument();
+    });
+
+    it("fica FORA para quem não é admin -- o piso espelha o da rota", async () => {
+      /* O par negativo do piso: sem ele, um `manager` veria a aba, clicaria e
+         tomaria 403 numa tela que o sistema ofereceu. */
+      mocks.papelAtende.mockImplementation(
+        (minimo: string) => minimo === "user" || minimo === "manager",
+      );
+      renderComRota(<GrupoPage />);
+
+      await screen.findByRole("tab", { name: "Subgrupos" });
+      expect(
+        screen.queryByRole("tab", { name: "Inscrições na OAB" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });
 

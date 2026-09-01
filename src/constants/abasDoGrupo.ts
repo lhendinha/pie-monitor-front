@@ -20,6 +20,13 @@ export const ABAS_DO_GRUPO: SubAbaConfig[] = [
   { id: "fases", label: "Fases", minimo: "admin" },
   { id: "situacoes", label: "Situações", minimo: "admin" },
   { id: "convidar", label: "Convidar", minimo: "admin" },
-  // `admin`, espelhando o piso de GET/PATCH /grupos/configuracoes.
+  // `admin`, espelhando o piso de GET/PATCH /grupos/configuracoes -- a mesma
+  // rota que "Configurações" usa.
+  //
+  // ⚠️ Aba PRÓPRIA, e não uma seção dentro de Configurações: aquela é um
+  // formulário de dois campos com um "Salvar" só, e esta é uma lista de até 50
+  // linhas em que cada mexida grava sozinha. É a forma de Fases e Situações --
+  // catálogo do escritório é aba.
+  { id: "inscricoes", label: "Inscrições na OAB", minimo: "admin" },
   { id: "configuracoes", label: "Configurações", minimo: "admin" },
 ];
