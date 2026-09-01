@@ -223,6 +223,9 @@ export default function ModalDoQuadro({
           {/* Antes da lista: criar coluna é a ação que se procura ao abrir isto,
               e embaixo de uma lista longa ela ficava fora da vista. */}
           <Box as="form" onSubmit={handleCriar} mb="18px">
+            {/* ⚠️ Sem `obrigatorio`, e de propósito: campo único de uma ação
+                de acrescentar, com o Adicionar já desligado enquanto vazio.
+                Não há dispensável ao lado para o asterisco separar. */}
             <Campo rotulo="Nova coluna" para="nova-coluna">
               <Flex gap="8px">
                 <Input

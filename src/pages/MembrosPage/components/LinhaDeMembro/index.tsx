@@ -4,6 +4,7 @@ import {
   BotaoQuadrado,
   CelulaComSub,
   EtiquetaDePapel,
+  EtiquetasDeSubgrupo,
   IconeLapis,
 } from "../../../../components";
 import type { Membro } from "../../../../types";
@@ -11,8 +12,12 @@ import type { Membro } from "../../../../types";
 interface LinhaDeMembroProps {
   membro: Membro;
   /** Nomes dos subgrupos da pessoa, já resolvidos: `membro.subgrupos` traz
-   * ids, e id não diz nada pra quem lê. */
-  subgruposNomes: string;
+   * ids, e id não diz nada pra quem lê.
+   *
+   * ⚠️ LISTA, e não a string pronta: quem decide como resumir é
+   * `EtiquetasDeSubgrupo`, que precisa saber QUANTOS são. Com a string já
+   * unida, a contagem estaria perdida. */
+  subgruposNomes: string[];
   /** Só `super_admin` edita membro (piso de `PATCH /grupos/membros/{email}`).
    * Sem isso, a linha inteira nem é clicável. */
   podeEditar: boolean;
@@ -46,7 +51,7 @@ export default function LinhaDeMembro({ membro, subgruposNomes, podeEditar, onEd
       <CelulaComSub variante="destaque" principal={membro.apelido || membro.email} />
       <CelulaComSub principal={membro.email} />
       <CelulaComSub principal={<EtiquetaDePapel papel={membro.papel} />} />
-      <CelulaComSub principal={subgruposNomes || "—"} />
+      <CelulaComSub principal={<EtiquetasDeSubgrupo nomes={subgruposNomes} />} />
       {podeEditar && (
         <CelulaComSub
           principal={

@@ -228,6 +228,27 @@ describe("aba Detalhes", () => {
     expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
   });
 
+  it("🔴 assunto VAZIO desabilita o Salvar -- igual à tela de criar", async () => {
+    /* Apagar o assunto CONTAVA como mudança, então o Salvar acendia, a pessoa
+       clicava e a recusa vinha do servidor -- que exige o assunto ao criar e
+       ao editar. Nada se perdia; era uma ida ao servidor para ouvir um "não"
+       que a tela já sabia. `NovoAtendimentoForm` sempre barrou antes. */
+    await abrirDetalhes();
+    await userEvent.clear(screen.getByLabelText(/Assunto/));
+
+    expect(screen.getByRole("button", { name: "Salvar" })).toBeDisabled();
+    expect(mocks.atualizarAtendimento).not.toHaveBeenCalled();
+  });
+
+  it("e o Assunto passa a mostrar o asterisco de obrigatório", async () => {
+    /* O rótulo tinha de contar isso: sem o asterisco, o campo lia como
+       dispensável ao lado de um Salvar que ele desliga. */
+    await abrirDetalhes();
+
+    const rotulo = document.querySelector('label[for="assunto-atendimento"]');
+    expect(rotulo?.textContent).toContain("*");
+  });
+
   it("o campo de status NÃO aparece com a aba Registros aberta", async () => {
     /* O par negativo: sem ele, deixar o `Select` antigo no cabeçalho por
        engano passaria -- e a tela teria dois jeitos de mudar a mesma coisa,

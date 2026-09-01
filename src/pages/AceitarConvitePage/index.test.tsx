@@ -28,6 +28,24 @@ beforeEach(() => {
 });
 
 describe("AceitarConvitePage", () => {
+  it('o campo do nome se chama "Nome completo", e não "Apelido"', async () => {
+    /* 🔴 Só o RÓTULO muda -- atrás continua o campo `apelido`, sem migração.
+       O nome novo vale onde a PESSOA lê, mesma régua de `pje-monitor` vs
+       Argos.
+
+       ⚠️ A negativa é REGEX, e não a string exata que o teste do perfil usa:
+       aqui o rótulo antigo era "Apelido (opcional)", e `queryByLabelText`
+       casa por IGUALDADE -- `queryByLabelText("Apelido")` passaria com o
+       rótulo velho ainda na tela, e o teste não provaria nada.
+
+       ⚠️ E ela vem DEPOIS do `findByLabelText`: a página mostra esqueleto enquanto
+       confere o link, e antes disso "Apelido" está ausente à toa. */
+    renderComProviders(<AceitarConvitePage token="token-valido" onEntrar={vi.fn()} />);
+
+    expect(await screen.findByLabelText(/^Nome completo/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Apelido/)).not.toBeInTheDocument();
+  });
+
   it("em sucesso, mostra a confirmação", async () => {
     mocks.aceitarConvite.mockResolvedValue({});
     const user = userEvent.setup();

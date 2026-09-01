@@ -14,17 +14,6 @@ export const COLUNAS_DAS_INSCRICOES = [
   "",
 ] as const;
 
-/** As cores da etiqueta de subgrupo de destino (`.etq-neutra` do artifact).
- *
- * ⚠️ Constante e não literal no JSX, pela régua que tirou `CORES` de dentro
- * de `EtiquetaDeSituacao`: cor é contrato, e um literal solto no meio da
- * linha é onde a segunda cópia nasce. */
-export const CORES_DA_ETIQUETA_DE_DESTINO = {
-  bg: "border.subtle",
-  color: "fg.muted",
-  borderColor: "border",
-} as const;
-
 /** As cores do contador "N de 50" (`.etq-info` do artifact). */
 export const CORES_DO_CONTADOR_DE_INSCRICOES = {
   bg: "bg.brand.subtle",

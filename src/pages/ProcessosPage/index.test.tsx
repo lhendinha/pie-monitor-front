@@ -122,7 +122,7 @@ describe("ProcessosPage", () => {
 
     // Regex nos rótulos: os obrigatórios carregam um "*" depois do texto.
     await user.type(screen.getByLabelText(/Número do processo/), "00002668720218130559");
-    await user.type(screen.getByLabelText("Apelido (opcional)"), "Novo apelido");
+    await user.type(screen.getByLabelText("Apelido"), "Novo apelido");
     await user.type(screen.getByLabelText("Objeto / assunto"), "Cobrança");
     await user.type(screen.getByLabelText("Próxima providência"), "Aguardar prazo");
     await user.type(screen.getByLabelText("Observações"), "Obs teste");

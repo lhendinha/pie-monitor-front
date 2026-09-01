@@ -159,7 +159,7 @@ export default function NovoProcessoForm({
           />
         </Campo>
 
-        <Campo rotulo="Apelido (opcional)" para="apelido">
+        <Campo rotulo="Apelido" para="apelido">
           <Input
             id="apelido"
             value={apelido}

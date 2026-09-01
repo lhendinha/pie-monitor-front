@@ -63,3 +63,4 @@ export { default as EtiquetaDeVinculo } from "./EtiquetaDeVinculo";
 export { default as CampoDeArquivo } from "./CampoDeArquivo";
 export { default as ModalDeDocumento } from "./ModalDeDocumento";
 export { default as DocumentosVinculados } from "./DocumentosVinculados";
+export { default as EtiquetasDeSubgrupo } from "./EtiquetasDeSubgrupo";

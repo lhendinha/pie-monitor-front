@@ -1,7 +1,6 @@
-import { Flex, Switch, Table, Text } from "@chakra-ui/react";
+import { Switch, Table } from "@chakra-ui/react";
 
-import { BotaoNu, BotaoQuadrado, Etiqueta, IconeLixeira } from "../../../../components";
-import { CORES_DA_ETIQUETA_DE_DESTINO } from "../../constants";
+import { BotaoNu, BotaoQuadrado, EtiquetasDeSubgrupo, IconeLixeira } from "../../../../components";
 import type { InscricaoAvulsa, Subgrupo } from "../../../../types";
 
 interface LinhaDaInscricaoProps {
@@ -121,40 +120,7 @@ export default function LinhaDaInscricao({
       </Table.Cell>
 
       <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
-        {nomes.length === 0 ? (
-          /* O travessão, e não a célula vazia: numa coluna com nome, vazio se
-             lê como dado que faltou, não como "nada a declarar". */
-          <Text as="span" fontSize="12.5px" color="fg.subtle">
-            —
-          </Text>
-        ) : (
-          /* 🔴 **Até DOIS mostra os nomes; de três em diante, a contagem.** É a
-             régua de `utils/select.rotuloResumo`, que o `MultiSelect` do modal
-             já aplica ao mesmo dado -- e é reusada aqui de propósito: duas
-             maneiras de resumir a mesma lista, na mesma tela, divergem no
-             primeiro ajuste.
-
-             ⚠️ O motivo é a ALTURA DA LINHA. Um grupo pode ter 20 subgrupos, e
-             vinte etiquetas quebram em quatro fileiras -- a linha da tabela
-             cresce, as vizinhas não, e a coluna do interruptor descola do que
-             ela descreve. Com o teto, a linha tem sempre uma altura.
-
-             ⚠️ O `title` carrega a lista inteira, então nada se perde: o que a
-             célula resume, o ponteiro devolve. */
-          <Flex gap="6px" wrap="wrap" title={nomes.join(", ")}>
-            {nomes.length <= 2 ? (
-              nomes.map((nome) => (
-                <Etiqueta key={nome} cores={CORES_DA_ETIQUETA_DE_DESTINO}>
-                  {nome}
-                </Etiqueta>
-              ))
-            ) : (
-              <Etiqueta cores={CORES_DA_ETIQUETA_DE_DESTINO}>
-                {`${nomes.length} subgrupos`}
-              </Etiqueta>
-            )}
-          </Flex>
-        )}
+        <EtiquetasDeSubgrupo nomes={nomes} />
       </Table.Cell>
 
       <Table.Cell

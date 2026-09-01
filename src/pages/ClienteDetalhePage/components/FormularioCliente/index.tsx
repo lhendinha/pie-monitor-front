@@ -119,7 +119,7 @@ export default function FormularioCliente({ cliente, podeEditar, podeExcluir, on
           />
         </Campo>
 
-        <Campo rotulo="CPF/CNPJ (opcional)" para="cpf-cnpj-cliente-edicao">
+        <Campo rotulo="CPF/CNPJ" para="cpf-cnpj-cliente-edicao">
           <Input
             id="cpf-cnpj-cliente-edicao"
             readOnly={!podeEditar}
@@ -129,7 +129,7 @@ export default function FormularioCliente({ cliente, podeEditar, podeExcluir, on
           />
         </Campo>
 
-        <Campo rotulo="Telefone (opcional)" para="telefone-cliente-edicao">
+        <Campo rotulo="Telefone" para="telefone-cliente-edicao">
           <Input
             id="telefone-cliente-edicao"
             readOnly={!podeEditar}
@@ -140,7 +140,7 @@ export default function FormularioCliente({ cliente, podeEditar, podeExcluir, on
         </Campo>
 
         <Campo
-          rotulo="E-mail (opcional)"
+          rotulo="E-mail"
           para="email-cliente-edicao"
           erro={emailInvalido ? "E-mail inválido." : undefined}
         >

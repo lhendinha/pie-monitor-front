@@ -29,6 +29,13 @@ interface FormularioAtendimentoProps {
  * intocado manda um PATCH que reenviaria a mesma lista de responsáveis -- e o
  * servidor compara antes de notificar, mas a requisição à toa continua sendo à
  * toa.
+ *
+ * 🔴 **E quando o assunto tem texto.** Até 01/09/2026 só `mesmos` decidia:
+ * apagar o assunto CONTAVA como mudança, então o Salvar acendia, a pessoa
+ * clicava e a recusa vinha do servidor -- que exige o assunto tanto ao criar
+ * quanto ao editar. Nada se perdia; o que havia era uma ida ao servidor para
+ * ouvir um "não" que a tela já sabia. `NovoAtendimentoForm` sempre barrou
+ * antes, e agora as duas telas dizem a mesma coisa.
  */
 export default function FormularioAtendimento({
   atendimento,
@@ -44,15 +51,20 @@ export default function FormularioAtendimento({
     status === atendimento.status &&
     responsaveis.join() === (atendimento.responsaveis ?? []).join();
 
+  const semAssunto = assunto.trim() === "";
+
   return (
     <Cartao titulo="Detalhes">
       <form
         onSubmit={(e) => {
           e.preventDefault();
+          /* Barra aqui também, e não só no `disabled`: é o que
+             `NovoAtendimentoForm` faz, e vale para o envio por Enter. */
+          if (mesmos || semAssunto) return;
           onSalvar({ assunto: assunto.trim(), status, responsaveis });
         }}
       >
-        <Campo rotulo="Assunto" para="assunto-atendimento">
+        <Campo rotulo="Assunto" para="assunto-atendimento" obrigatorio>
           <Input
             id="assunto-atendimento"
             value={assunto}
@@ -85,7 +97,7 @@ export default function FormularioAtendimento({
           </Campo>
         </LinhaDeCampos>
 
-        <Botao type="submit" disabled={mesmos || salvando} loading={salvando}>
+        <Botao type="submit" disabled={mesmos || semAssunto || salvando} loading={salvando}>
           Salvar
         </Botao>
       </form>

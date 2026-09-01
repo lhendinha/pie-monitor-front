@@ -73,12 +73,16 @@ export default function CamposDeEndereco({
 
   return (
     <>
-      {/* 🔴 O "(opcional)" fica AQUI, uma vez, e não em cada rótulo. Só o
-          CEP o trazia, e os outros seis não diziam nada -- do lado dos
-          campos de contato, que dizem um por um, isso lia como se apenas o
-          CEP fosse dispensável. Repetir sete vezes seria pior; o bloco é
-          opcional inteiro, então quem diz isso é o nome do bloco. */}
-      <RotuloDeSecao>Endereço (opcional)</RotuloDeSecao>
+      {/* 🔴 Sem "(opcional)" -- nem aqui, nem nos sete rótulos. O padrão do
+          app é asterisco vermelho no obrigatório e NADA no resto, e o bloco
+          é opcional inteiro.
+
+          ⚠️ Até 01/09/2026 o título dizia "Endereço (opcional)", e a razão
+          era COMPARATIVA: os campos de contato do cliente diziam "(opcional)"
+          um por um, então um bloco calado ao lado deles lia como obrigatório.
+          Esses "(opcional)" saíram no mesmo commit, e a comparação que
+          sustentava a exceção deixou de existir. */}
+      <RotuloDeSecao>Endereço</RotuloDeSecao>
 
       <LinhaDeCampos>
         <Campo

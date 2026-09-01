@@ -42,6 +42,16 @@ it("abre com o que está salvo, não vazio", async () => {
   expect(screen.getByLabelText(/Arquivar concluídas/)).toHaveValue(7);
 });
 
+it("o prazo é obrigatório, e o asterisco diz isso", async () => {
+  /* 🔴 `diasInvalido` inclui o campo VAZIO: sem o prazo o Salvar fica
+     desligado. O asterisco faltava, e a falta MENTIA -- o Nome do grupo, no
+     mesmo cartão, já o trazia, então este campo calado lia como dispensável. */
+  await montar();
+  const rotulo = screen.getByText(/Arquivar concluídas depois de/);
+
+  expect(rotulo.textContent).toContain("*");
+});
+
 it("Salvar começa desligado -- nada mudou ainda", async () => {
   await montar();
   expect(salvarBtn()).toBeDisabled();

@@ -137,6 +137,15 @@ export default function ConfiguracoesDoGrupo() {
         <Campo
           rotulo="Arquivar concluídas depois de"
           para="dias-arquivar"
+          /* 🔴 Exigido de verdade: `diasInvalido` inclui o campo VAZIO, e o
+             Salvar fica desligado assim.
+
+             ⚠️ Aqui a ausência do asterisco não era silêncio, era MENTIRA: o
+             Nome do grupo, no mesmo cartão, já o trazia -- então este campo
+             calado ao lado dele lia como dispensável. É o que separa este
+             caso de LoginPage e EsqueciSenhaPage, onde NENHUM campo é
+             marcado e a ausência não afirma nada. */
+          obrigatorio
           /* Diz o QUE acontece, não só o que o campo aceita: "de 1 a 365" é
              a regra, mas a consequência é o que a pessoa precisa saber. */
           dica={`A tarefa sai da coluna de conclusão e vai pra Arquivado. Ela continua contando como concluída. De ${config.dias_para_arquivar_minimo} a ${config.dias_para_arquivar_maximo} dias.`}
