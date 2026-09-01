@@ -3189,3 +3189,50 @@ TEXTO casa demais (o rótulo carrega o asterisco, e o `aria-label` do "i" conté
 o mesmo nome do campo -- vá de papel), e **os painéis das abas ficam montados**
 (`display:none`), então "não está nesta aba" se verifica por VISIBILIDADE, não
 por presença no DOM.
+
+
+### As UFs estavam quase-alfabéticas (01/09/2026)
+
+🔴 A constante dizia *"Em ordem ALFABÉTICA"* e **doze das 27 posições** vinham
+na ordem do IBGE, por região: `AP` antes de `AM`, `PR` antes de `PE`, `SP`
+antes de `SE`. A afirmação estava ali desde sempre; ninguém conferiu porque
+não havia como conferir sem contar à mão.
+
+⚠️ **Quase-alfabético é pior que qualquer das duas ordens.** Numa lista
+puramente regional o olho não espera alfabeto e procura de outro jeito; numa
+quase-alfabética ele segue o alfabeto e tropeça exatamente onde ela quebra --
+e o tropeço parece erro de quem lê, não da lista.
+
+⚠️ O gêmeo da API é `frozenset`, então lá a ordem não existe -- só o conjunto.
+Conferido antes de mexer: as duas têm as mesmas 27 siglas.
+
+`constants/endereco.test.ts` cobra as três coisas: que são 27 distintas (o par
+que impede o falso "passou" -- lista vazia passaria na asserção de ordem), que
+estão ordenadas, e **onde** quebrava. A terceira nomeia as trocas para quem
+reintroduzir a ordem do IBGE entender o que quebrou.
+
+### 🔴 O resto da ordenação é do SERVIDOR, e é decisão
+
+As quatro listagens grandes são ordenadas na API. O front **não** reordena, e
+não pode: elas são paginadas, então um `sort` aqui ordenaria só a página
+visível.
+
+⚠️ **A exceção é o Kanban**, que reordena as colunas por conta própria
+(`.sort((a,b) => a.ordem - b.ordem)`, em dois lugares). Ali a ordem da API é
+irrelevante -- e isso é o que protege as colunas de qualquer mudança no
+servidor.
+
+➡️ Por isso existe `scripts/verificar-ordenacao.mjs`: a suíte prova o que a
+rota devolve, e entre a rota e a tela há cache do React Query, `select` e
+componentes que reordenam. Um `sort` esquecido aqui desfaria a ordenação do
+servidor sem derrubar teste nenhum da API.
+
+⚠️ **Três tropeços do roteiro, registrados porque custam meia hora cada:**
+
+- esperar por `getByText("Ana")` antes de ler a tabela -- casa em qualquer
+  canto da página e libera antes de a lista renderizar;
+- 🔴 `\bÂ` **nunca casa** em JavaScript: `\b` usa `\w = [A-Za-z0-9_]`, e o
+  acento não é caractere de palavra. "Ângela" desaparecia da leitura, e a
+  falha parecia defeito de ordenação;
+- seletor por `tbody td` funciona em três telas e falha na quarta:
+  Atendimentos não usa `<table>`, as linhas dele são `Flex`.

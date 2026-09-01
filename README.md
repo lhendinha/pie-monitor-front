@@ -344,6 +344,31 @@ continuam para todo papel. Vale em Processos, Kanban e Agenda; ver
 
 A ordem de **Fase**/**Situação** é definida arrastando as linhas (drag and drop, `@dnd-kit`) -- não existe mais um campo "Ordem" editável no formulário.
 
+## Em que ordem as listas aparecem
+
+🔴 **Quem ordena é o SERVIDOR, não a tela.** As listagens são paginadas: um
+`sort` no front ordenaria só a página visível, e a lista passaria a mentir.
+
+Desde 01/09/2026, o que se **procura** vem em ordem alfabética — Processos,
+Clientes, Documentos, Atendimentos, Subgrupos e as duas listas de pessoas.
+O que se **acompanha** mantém a ordem própria:
+
+| lista | ordem |
+|---|---|
+| Histórico | o mais novo primeiro |
+| Fases, Situações, colunas do Kanban | a que você arrasta |
+| Prioridade | Baixa → Alta |
+| Papel | user → super admin |
+| Agenda e Tarefas | por data |
+
+⚠️ **A ordem ignora acento**: "Ângela" aparece entre "Amanda" e "Bruno", não
+no fim da lista. Sem esse cuidado o computador ordena por código, e todo nome
+acentuado é empurrado para depois do "Z".
+
+⚠️ **A busca não muda a ordem.** Digitar filtra a mesma lista, com o mesmo
+critério — em Clientes isso corrigiu uma perda de verdade: a busca mostra no
+máximo 50 resultados, e sem ordenação esses 50 eram sorteados.
+
 ## Sobre a autenticação
 
 Login guarda um **access token JWT** (24h) + **refresh token** (30 dias) no `localStorage` — a `x-api-key` real nunca chega ao navegador. O `papel` e `grupo_id` também ficam decodificados do próprio JWT (client-side, só pra decidir o que mostrar na UI — a autorização de verdade sempre é validada de novo no backend). Quando o access token expira, `services/api/client.ts` renova sozinho via `/refresh` antes de desistir.
