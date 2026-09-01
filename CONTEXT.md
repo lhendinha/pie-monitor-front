@@ -3118,7 +3118,7 @@ toque**.
   clicar no "i" salvaria o perfil. O docstring de `BotaoNu` conta que isso foi
   preciso três vezes antes de virar um lugar só; esta seria a quarta.
 
-### `utils/oab`: uma régua, dois usos
+### `utils/oab`: a régua, e as duas pontas da conversão
 
 `erroDaBusca` (importação por OAB) misturava a régua da inscrição com a
 comparação de datas do período. Só a primeira é comum, e ela saiu para
@@ -3131,6 +3131,28 @@ comparação de datas do período. Só a primeira é comum, e ela saiu para
 
 Sem esse parâmetro, o perfil não teria como apagar uma OAB cadastrada por
 engano: o formulário recusaria o único estado que significa "não tenho".
+
+**Em 01/09/2026 o arquivo ganhou mais duas**, e elas existem porque o servidor
+é **assimétrico**: o `GET` devolve a inscrição JUNTA (`"263/MG"`) e o `PATCH`
+pede as duas partes SEPARADAS.
+
+| função | para quê |
+|---|---|
+| `normalizarInscricao(numero, uf)` | `("263","mg") -> "263/MG"`. Existe para **comparar**, não para mandar: é assim que a tela sabe se a inscrição digitada já está na lista |
+| `partesDaInscricao("263/MG")` | o caminho de volta, que toda gravação da lista percorre -- inclusive nas inscrições que ninguém tocou |
+
+🔴 **`partesDaInscricao` corta na PRIMEIRA barra**, e não em todas. Um
+`split("/")` cru transformaria `"263/M/G"` -- que só entra por escrita direta no
+banco -- em `uf: "M"`: uma inscrição DIFERENTE, gravada em silêncio. Com o
+corte único a sobra vai junto e o servidor recusa, que é o desfecho alto.
+
+⚠️ **`normalizarInscricao` NÃO valida.** Quem recusa `"abc"` é `erroDaInscricao`,
+antes dela. Duplicar a régua criaria a segunda que diverge no primeiro ajuste.
+
+⚠️ **E ela não mexe em zero à esquerda**: `"0263"` e `"263"` são inscrições
+diferentes para o servidor. "Canônica" aqui é só maiúscula e espaço aparado --
+achar que ela normaliza o número faria a tela recusar como repetida uma
+inscrição que o servidor aceita como outra.
 
 ### O texto de apoio da inscrição
 

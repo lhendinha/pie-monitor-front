@@ -88,7 +88,7 @@ O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra ro
 | **Documentos** | `/documentos` | arquivos e links do escritório |
 | **Detalhe do documento** | `/documentos/:subgrupoId/:documentoId` | onde se edita, baixa, substitui e exclui |
 | Histórico | `/historico` | o que o robô enviou |
-| Grupo | `/grupo` | subgrupos, pessoas, convites, fases e situações |
+| Grupo | `/grupo` | **sub-abas** Subgrupos \| Membros \| Fases \| Situações \| Convidar \| Inscrições na OAB \| Configurações |
 | Perfil | `/perfil` | **abas** Meus dados \| Inscrição na OAB |
 
 ⚠️ **No atendimento, "Detalhes" é a SEGUNDA aba** -- ao contrário de processo
@@ -437,6 +437,35 @@ corpo é o próprio front, que já sabe que o campo é `password` e não `senha`
 Uma sessão chegou a queimar três tentativas numa conta `super_admin`
 justamente por montar esse payload por conta própria.
 
+### O outro roteiro de produção: a carga histórica de ponta a ponta
+
+```bash
+cd ../api && .venv/bin/python scripts/e2e_grupo_de_teste.py criar
+node scripts/verificar-carga-ponta-a-ponta.mjs
+cd ../api && .venv/bin/python scripts/e2e_grupo_de_teste.py remover
+```
+
+🔴 **Responde uma pergunta que nenhum outro teste responde**: uma OAB cadastrada
+pela aba "Inscrições na OAB" chega até a carga histórica? Cada elo tem prova
+própria -- a tela em jsdom, a carga em `tests/test_carga_historica.py`, o
+fatiamento contra o PJe --, e é justamente por isso que a EMENDA entre eles não
+tinha nenhuma.
+
+🔴 **Num grupo de teste descartável, e não num de cliente.** Provar isto num
+grupo real criaria processos no sistema de quem paga por ele. O `criar` monta
+grupo, dois subgrupos e um `admin`; o `remover` apaga tudo, **inclusive os
+processos e o histórico de e-mail** que a carga gerou.
+
+🔴 **Zero e-mails, e a garantia é de DESENHO, não de sorte.** O SES está fora do
+sandbox, então endereço inventado quica e derruba a reputação do domínio. O
+subgrupo de destino nasce **sem membros**, e `shared/destinatarios.py` faz
+`responsaveis_validos(...) or list(membros)` -- com a lista vazia, ninguém
+recebe. A afirmação `emails_com_destinatario === 0` está dentro do roteiro.
+
+⚠️ **Este NÃO usa `PJE_TEST_*`.** A conta é a do grupo de teste, criada e
+apagada pelo próprio roteiro -- então ele pode ser rodado quantas vezes for
+preciso sem gastar tentativa de login de ninguém.
+
 ## Verificar contra a API de verdade, sem stub
 
 Os outros scripts stubam a rede. Este não: ele dirige o front contra o
@@ -492,8 +521,8 @@ src/
   theme/                    -- tokens e paletas de design
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
-  components/               -- 55 componentes gerais, cada um em pasta com index.tsx
-  pages/                    -- 19 páginas, cada uma em pasta com index.tsx
+  components/               -- 65 componentes gerais, cada um em pasta com seu index
+  pages/                    -- 21 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
 vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)
