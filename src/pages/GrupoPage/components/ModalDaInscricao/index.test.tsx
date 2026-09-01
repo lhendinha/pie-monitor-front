@@ -150,25 +150,32 @@ describe("editando uma inscrição que já existe", () => {
   it("abre com o que está gravado -- e não vazio", async () => {
     montar(LIGADA);
 
-    expect(screen.getByText("263")).toBeInTheDocument();
-    expect(screen.getByText("MG")).toBeInTheDocument();
+    /* ⚠️ `toHaveValue` nos DOIS: editando, a UF é um `Input` travado, e não o
+       `Select` -- ver o comentário no componente. */
+    expect(screen.getByLabelText(/Número/)).toHaveValue("263");
+    expect(screen.getByLabelText(/^UF/)).toHaveValue("MG");
     expect(interruptor()).toBeChecked();
     expect(screen.getByText("Cível")).toBeInTheDocument();
   });
 
-  it("🔴 número e UF ficam de LEITURA -- trocá-los seria outra inscrição", async () => {
+  it("🔴 número e UF ficam DESABILITADOS -- trocá-los seria outra inscrição", async () => {
     /* A mutação que este teste mata: deixar os campos editáveis. Trocar o
        número não editaria nada -- criaria uma segunda inscrição, e a antiga
-       ficaria na lista sem ninguém ver. */
+       ficaria na lista sem ninguém ver.
+
+       ⚠️ Desabilitados e não ESCONDIDOS: sumir com eles deixaria quem abriu o
+       modal sem saber qual inscrição está editando. */
     montar(LIGADA);
 
-    expect(screen.queryByRole("textbox", { name: /Número/ })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Número/)).toBeDisabled();
+    expect(screen.getByLabelText(/^UF/)).toBeDisabled();
   });
 
   it("e cadastrando, eles são editáveis -- senão não haveria como cadastrar", async () => {
     /* O par negativo do de cima. */
     montar();
-    expect(screen.getByRole("textbox", { name: /Número/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Número/)).toBeEnabled();
+    expect(screen.getByLabelText(/^UF/)).toBeEnabled();
   });
 
   it("desligar pelo modal manda o destino vazio, espelhando o servidor", async () => {

@@ -36,6 +36,19 @@ pagina.on("response", (r) => {
   }
 });
 
+/** Vai até a última página da tabela.
+ *
+ * ⚠️ Existe porque a inscrição nova entra no FIM da lista: num ambiente com
+ * inscrições já cadastradas ela não cai na primeira página, e procurá-la ali
+ * mediria a paginação achando que mede a gravação. */
+async function irParaAUltimaPagina(pagina) {
+  for (;;) {
+    const proxima = pagina.getByRole("button", { name: /Página seguinte|›/ });
+    if (!(await proxima.isVisible().catch(() => false)) || (await proxima.isDisabled())) return;
+    await proxima.click();
+  }
+}
+
 const checagens = [];
 const conferir = (o, nome, detalhe = "") => {
   checagens.push({ ok: o, nome, detalhe });
@@ -128,8 +141,11 @@ if (modalSobreviveu) {
      que continua na tela atrás da cortina. */
   await pagina.getByRole("button", { name: "Adicionar", exact: true }).click();
 
+  /* 🔴 SEM navegar: cadastrar leva a tela para a página onde a nova ficou.
+     Era defeito -- com 20 já cadastradas, a 21ª caía na página 3 e a tela não
+     mudava em nada depois de adicionar. */
   await pagina.getByText(`${OAB.numero}/${OAB.uf}`).waitFor({ timeout: 30_000 });
-  conferir(true, "a inscrição foi cadastrada e apareceu na tabela");
+  conferir(true, "🔴 cadastrar já mostra a nova, sem procurar página");
   await pagina.screenshot({ path: "/tmp/insc-4-cadastrada.png" });
 
   // ── as medidas da linha, contra o artifact ──
@@ -149,8 +165,9 @@ if (modalSobreviveu) {
       pesoDaInscricao: getComputedStyle(botao ?? tds[0]).fontWeight,
       textoDoInterruptor: tds[1]?.textContent?.trim(),
       destinos: tds[2]?.textContent?.trim(),
-      xLargura: rx ? Math.round(rx.width) : null,
-      xAltura: rx ? Math.round(rx.height) : null,
+      removerLargura: rx ? Math.round(rx.width) : null,
+      removerAltura: rx ? Math.round(rx.height) : null,
+      removerTitulo: x?.getAttribute("title"),
     };
   }, `${OAB.numero}/${OAB.uf}`);
   console.log("       linha:", JSON.stringify(linha));
@@ -159,12 +176,23 @@ if (modalSobreviveu) {
     conferir(/Mono/i.test(linha.fonteDaInscricao), "a inscrição é mono", linha.fonteDaInscricao);
     conferir(linha.pesoDaInscricao === "600", "e 600", linha.pesoDaInscricao);
     conferir(linha.textoDoInterruptor === "Ligada", "o interruptor diz o estado", linha.textoDoInterruptor);
-    conferir(linha.xLargura === 22 && linha.xAltura === 22, "o × é 22x22", `${linha.xLargura}x${linha.xAltura}`);
+    /* 🔴 A LIXEIRA de Subgrupos (`BotaoQuadrado`, 34x34), e não o × de 22px do
+       artifact: o sistema já tem um gesto de "tirar da lista", e um segundo
+       desenho para a mesma ação faria a pessoa aprender duas vezes. */
+    conferir(
+      linha.removerTitulo === "Remover inscrição",
+      "o remover é a lixeira do sistema",
+      `${linha.removerLargura}x${linha.removerAltura}, title="${linha.removerTitulo}"`,
+    );
   }
 
   // ── o ciclo fecha: recarregar e a inscrição continua lá ──
   await pagina.reload();
   await pagina.getByRole("tab", { name: "Inscrições na OAB" }).click();
+  await pagina.getByText("Inscrições da OAB").waitFor();
+  /* Depois do RECARREGAR, sim: a página volta para a 1 e a nova continua no
+     fim da lista. */
+  await irParaAUltimaPagina(pagina);
   const sobreviveu = await pagina
     .getByText(`${OAB.numero}/${OAB.uf}`)
     .isVisible()
@@ -173,10 +201,18 @@ if (modalSobreviveu) {
 
   // ── limpa o que este teste criou ──
   if (sobreviveu) {
+    const antes = await pagina.locator("tbody tr").count();
     await pagina.getByRole("button", { name: `Remover ${OAB.numero}/${OAB.uf}` }).click();
     await pagina.getByRole("button", { name: "Remover", exact: true }).click();
-    await pagina.getByText("Nenhuma inscrição cadastrada.").waitFor({ timeout: 20_000 });
-    conferir(true, "removida -- o ambiente volta como estava");
+    /* ⚠️ A LINHA sumir, e não "a lista ficar vazia": num ambiente semeado ela
+       nunca fica.
+
+       ⚠️ E pelo ID da linha, não por texto: o `<strong>` do modal de
+       confirmação repete a inscrição, e `getByText` casa com os dois. */
+    await pagina
+      .locator(`[id="inscricao-${OAB.numero}/${OAB.uf}"]`)
+      .waitFor({ state: "detached", timeout: 20_000 });
+    conferir(true, "removida -- o ambiente volta como estava", `${antes} linhas antes`);
   }
 }
 

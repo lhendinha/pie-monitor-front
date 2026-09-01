@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import {
   Botao,
   Campo,
-  CampoDeLeitura,
+  CampoComCadeado,
   LinhaDeCampos,
   Modal,
   MultiSelect,
@@ -41,9 +41,9 @@ interface ModalDaInscricaoProps {
  * é sempre escolher o destino de novo. Sem este caminho, o interruptor da
  * linha ligaria sem destino e tomaria 400.
  *
- * ⚠️ **Número e UF ficam de LEITURA na edição.** Trocá-los não seria editar --
- * seria outra inscrição, e a antiga continuaria na lista. Quem quer trocar
- * remove e cadastra, que é o que de fato acontece.
+ * ⚠️ **Número e UF ficam DESABILITADOS na edição**, com cadeado. Trocá-los não
+ * seria editar -- seria outra inscrição, e a antiga continuaria na lista. Quem
+ * quer trocar remove e cadastra, que é o que de fato acontece.
  */
 export default function ModalDaInscricao({
   inscricao,
@@ -107,54 +107,68 @@ export default function ModalDaInscricao({
           `Modal` fica fora do `children`, então um `type="submit"` lá dentro
           não pertenceria a este formulário -- e o Enter no campo não salvaria. */}
       <form id="form-da-inscricao" onSubmit={handleSubmit}>
+        {/* 🔴 Editando, os dois campos ficam DESABILITADOS -- e não trocados
+            por texto de leitura. É a régua que o `desabilitado` do `Select` já
+            documenta: *"campo que existe pra ser LIDO, não escolhido -- o
+            subgrupo de uma tarefa já criada, que faz parte da chave e não
+            muda"*. A inscrição é a chave desta linha; trocá-la não seria
+            editar, seria outra inscrição, com a antiga ficando na lista.
+
+            ⚠️ Desabilitado, e não escondido: sumir com os campos deixaria quem
+            abriu sem saber QUAL inscrição está editando. */}
         <LinhaDeCampos>
-          {editando ? (
-            <>
-              <CampoDeLeitura rotulo="Número">{numero}</CampoDeLeitura>
-              <CampoDeLeitura rotulo="UF">{uf}</CampoDeLeitura>
-            </>
-          ) : (
-            <>
-              <Campo
-                rotulo="Número"
-                para="numero-da-inscricao"
-                obrigatorio
-                erro={
-                  tentou && erroDeFormato?.campo === "numeroOab"
-                    ? erroDeFormato.mensagem
-                    : undefined
-                }
-              >
-                <Input
-                  id="numero-da-inscricao"
-                  value={numero}
-                  onChange={(e) => setNumero(e.target.value)}
-                  inputMode="numeric"
-                  placeholder="Ex.: 148502"
-                />
-              </Campo>
-              <Campo
-                rotulo="UF"
-                para="uf-da-inscricao"
-                obrigatorio
-                erro={
-                  tentou && erroDeFormato?.campo === "ufOab"
-                    ? erroDeFormato.mensagem
-                    : undefined
-                }
-              >
-                <Select
-                  id="uf-da-inscricao"
-                  opcoes={UFS.map((sigla) => ({ value: sigla, label: sigla }))}
-                  valor={uf}
-                  onMudar={setUf}
-                  placeholder="UF"
-                  comOpcaoTodas={false}
-                  largura="120px"
-                />
-              </Campo>
-            </>
-          )}
+          <Campo
+            rotulo="Número"
+            para="numero-da-inscricao"
+            obrigatorio={!editando}
+            erro={
+              tentou && erroDeFormato?.campo === "numeroOab"
+                ? erroDeFormato.mensagem
+                : undefined
+            }
+          >
+            {editando ? (
+              <CampoComCadeado>
+                <Input id="numero-da-inscricao" value={numero} disabled pr="38px" />
+              </CampoComCadeado>
+            ) : (
+              <Input
+                id="numero-da-inscricao"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                inputMode="numeric"
+                placeholder="Ex.: 148502"
+              />
+            )}
+          </Campo>
+          <Campo
+            rotulo="UF"
+            para="uf-da-inscricao"
+            obrigatorio={!editando}
+            erro={
+              tentou && erroDeFormato?.campo === "ufOab" ? erroDeFormato.mensagem : undefined
+            }
+          >
+            {/* 🔴 Editando, a UF vira INPUT -- e não o `Select` desabilitado.
+                Travado, o seletor ainda desenha a seta, e ela disputaria o
+                canto com o cadeado. Escolher entre 27 opções é o gesto de
+                cadastrar; aqui não há o que escolher. */
+            editando ? (
+              <CampoComCadeado largura="120px">
+                <Input id="uf-da-inscricao" value={uf} disabled pr="38px" />
+              </CampoComCadeado>
+            ) : (
+              <Select
+                id="uf-da-inscricao"
+                opcoes={UFS.map((sigla) => ({ value: sigla, label: sigla }))}
+                valor={uf}
+                onMudar={setUf}
+                placeholder="UF"
+                comOpcaoTodas={false}
+                largura="120px"
+              />
+            )}
+          </Campo>
         </LinhaDeCampos>
 
         {/* 🔴 A distinção que a tela inteira depende de carregar: estar na

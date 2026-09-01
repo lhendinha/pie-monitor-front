@@ -267,6 +267,84 @@ describe("a lista cheia", () => {
   });
 });
 
+// ── a paginação ───────────────────────────────────────────────────────────
+
+describe("a paginação", () => {
+  const MUITAS = Array.from({ length: 20 }, (_, i) => ({
+    inscricao: `${100000 + i}/MG`,
+    importacao_automatica: false,
+    subgrupos_destino: [],
+  }));
+
+  it("aparece com 20 e mostra só a primeira página", async () => {
+    mocks.lerConfiguracoesDoGrupo.mockResolvedValue(configuracoes(MUITAS));
+    await montar();
+
+    expect(screen.getByText("100000/MG")).toBeInTheDocument();
+    /* A 11ª fica na página 2 -- e não some da lista, some da TELA. */
+    expect(screen.queryByText("100010/MG")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Página seguinte|›/ })).toBeInTheDocument();
+  });
+
+  it("virar a página troca as linhas", async () => {
+    mocks.lerConfiguracoesDoGrupo.mockResolvedValue(configuracoes(MUITAS));
+    const user = userEvent.setup();
+    await montar();
+
+    await user.click(screen.getByRole("button", { name: /Página seguinte|›/ }));
+
+    expect(await screen.findByText("100010/MG")).toBeInTheDocument();
+    expect(screen.queryByText("100000/MG")).not.toBeInTheDocument();
+  });
+
+  it("🔴 cadastrar LEVA para a página onde a nova ficou", async () => {
+    /* Achado em Chrome: `definir_oabs_avulsas` acrescenta no FIM, então a 21ª
+       cai na página 3. Quem estava na 1 adicionava, o modal fechava, e a tela
+       não mudava em nada -- a ação parecia não ter acontecido.
+
+       ⚠️ Com poucas inscrições o defeito não aparece. É o que o faz escapar. */
+    const NOVA = {
+      inscricao: "999/SP",
+      importacao_automatica: false,
+      subgrupos_destino: [],
+    };
+    mocks.lerConfiguracoesDoGrupo.mockResolvedValue(configuracoes(MUITAS));
+    mocks.atualizarConfiguracoesDoGrupo.mockResolvedValue(configuracoes([...MUITAS, NOVA]));
+    const user = userEvent.setup();
+    await montar();
+
+    await cadastrar(user, "999", "SP");
+
+    expect(await screen.findByText("999/SP")).toBeInTheDocument();
+  });
+
+  it("mas REMOVER não muda de página -- mandar pro fim seria gratuito", async () => {
+    /* O par negativo: um `setPagina` incondicional no `onSuccess` levaria a
+       pessoa para o fim da lista toda vez que ela apagasse uma linha. */
+    mocks.lerConfiguracoesDoGrupo.mockResolvedValue(configuracoes(MUITAS));
+    mocks.atualizarConfiguracoesDoGrupo.mockResolvedValue(configuracoes(MUITAS.slice(1)));
+    const user = userEvent.setup();
+    await montar();
+
+    await user.click(screen.getByRole("button", { name: "Remover 100000/MG" }));
+    await user.click(await screen.findByRole("button", { name: "Remover" }));
+
+    /* Continua na página 1: a segunda inscrição da lista original é a primeira
+       linha agora, e a 11ª segue fora da tela. */
+    expect(await screen.findByText("100001/MG")).toBeInTheDocument();
+    expect(screen.queryByText("100011/MG")).not.toBeInTheDocument();
+  });
+
+  it("🔴 e some quando a lista cabe numa página -- não é barra permanente", async () => {
+    /* O par negativo: uma barra sempre visível numa lista de duas linhas seria
+       ruído, e é justamente o que o `total <= menorTamanho` do `Pagination`
+       evita. Sem este teste, trocar a barra por uma condição própria passaria
+       despercebido. */
+    await montar();
+    expect(screen.queryByRole("button", { name: /Página seguinte|›/ })).not.toBeInTheDocument();
+  });
+});
+
 // ── o resto ───────────────────────────────────────────────────────────────
 
 it("mostra o contador do teto, e não só quando ele enche", async () => {

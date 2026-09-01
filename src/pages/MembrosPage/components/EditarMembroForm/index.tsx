@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Botao,
   Campo,
-  IconeCadeado,
+  CampoComCadeado,
   LinhaDeCampos,
   Modal,
   MultiSelect,
@@ -284,19 +284,9 @@ export default function EditarMembroForm({
               outra pessoa. Fica visível pra confirmar quem se está editando,
               com o cadeado dizendo por que não dá pra mexer. */}
           <Campo rotulo="E-mail" para="email-membro">
-            <Box position="relative">
+            <CampoComCadeado>
               <Input id="email-membro" value={membro.email} disabled pr="38px" />
-              <Box
-                position="absolute"
-                right="12px"
-                top="50%"
-                transform="translateY(-50%)"
-                color="fg.subtle"
-                css={{ "& svg": { width: "15px", height: "15px" } }}
-              >
-                <IconeCadeado />
-              </Box>
-            </Box>
+            </CampoComCadeado>
           </Campo>
 
           <LinhaDeCampos>

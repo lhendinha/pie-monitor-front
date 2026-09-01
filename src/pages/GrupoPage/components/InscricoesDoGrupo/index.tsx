@@ -10,9 +10,11 @@ import {
   Esqueleto,
   Etiqueta,
   ModalDeConfirmacao,
+  Pagination,
   Tabela,
   useToast,
 } from "../../../../components";
+import { TAMANHO_PAGINA_PADRAO } from "../../../../constants";
 import { useTodosOsSubgrupos } from "../../../../hooks/useCatalogos";
 import {
   atualizarConfiguracoesDoGrupo,
@@ -58,6 +60,17 @@ type NoModal = InscricaoAvulsa | "nova" | null;
  */
 export default function InscricoesDoGrupo() {
   const [noModal, setNoModal] = useState<NoModal>(null);
+  /* 🔴 Paginação de EXIBIÇÃO, e local: a lista inteira vem num campo só do
+     `GET /grupos/configuracoes` -- não há rota paginada, e não faria sentido
+     ter uma para no máximo 50 itens. O que ela resolve é a tela: cinquenta
+     linhas empurram o rodapé da página para longe, e é a mesma barra das
+     outras listas do sistema.
+
+     ⚠️ A barra some sozinha quando o total cabe no menor tamanho (`Pagination`
+     faz `total <= menorTamanho ? null`), então não há condição a escrever
+     aqui -- e uma condição minha divergiria da régua das outras telas. */
+  const [pagina, setPagina] = useState(1);
+  const [tamanhoPagina, setTamanhoPagina] = useState(TAMANHO_PAGINA_PADRAO);
   const [paraRemover, setParaRemover] = useState<InscricaoAvulsa | null>(null);
   /** A recusa do servidor, mostrada DENTRO do modal.
    *
@@ -99,6 +112,18 @@ export default function InscricoesDoGrupo() {
          manda: o servidor pode ter deduplicado ou reescrito o que foi
          enviado. */
       queryClient.setQueryData(qk.configuracoesDoGrupo(), resposta);
+      /* 🔴 Cadastrou: vai para a página onde a nova FICOU.
+         `definir_oabs_avulsas` acrescenta no fim, então a 21ª cai na página 3
+         -- e quem estava na 1 adicionava, o modal fechava, e a tela não mudava
+         em nada. Achado em Chrome, com a lista de 20 semeada; com poucas
+         inscrições o defeito não aparece, que é o que o faz escapar.
+
+         ⚠️ Só quando a lista CRESCEU: editar e remover não movem a pessoa de
+         página, e mandá-la para o fim depois de remover seria gratuito. */
+      const total = (resposta as ConfiguracoesDoGrupo).oabs_avulsas?.length ?? 0;
+      if (total > (query.data?.oabs_avulsas?.length ?? 0)) {
+        setPagina(Math.max(1, Math.ceil(total / tamanhoPagina)));
+      }
       setNoModal(null);
       setErroDoModal("");
       setParaRemover(null);
@@ -129,6 +154,8 @@ export default function InscricoesDoGrupo() {
   const maximo = query.data!.oabs_avulsas_maximo;
   const subgrupos = subgruposQuery.data || [];
   const cheia = inscricoes.length >= maximo;
+  const totalPaginas = Math.max(1, Math.ceil(inscricoes.length / tamanhoPagina));
+  const daPagina = inscricoes.slice((pagina - 1) * tamanhoPagina, pagina * tamanhoPagina);
   /** Qual linha está em voo -- `""` quando o que grava é o modal. */
   const alvoEmVoo = salvar.isPending ? salvar.variables?.alvo : undefined;
 
@@ -221,7 +248,7 @@ export default function InscricoesDoGrupo() {
             ) : undefined
           }
         >
-          {inscricoes.map((i) => (
+          {daPagina.map((i) => (
             <LinhaDaInscricao
               key={i.inscricao}
               inscricao={i}
@@ -249,6 +276,21 @@ export default function InscricoesDoGrupo() {
             />
           ))}
         </Tabela>
+
+        {/* Dentro do cartão, não embaixo: no artifact o cartão fecha DEPOIS da
+            paginação, e é isso que faz a barra parecer parte da tabela em vez
+            de um bloco solto -- ver `CartaoDeTabela`. */}
+        <Pagination
+          pagina={pagina}
+          totalPaginas={totalPaginas}
+          total={inscricoes.length}
+          tamanhoPagina={tamanhoPagina}
+          onMudarPagina={setPagina}
+          onMudarTamanho={(novo) => {
+            setTamanhoPagina(novo);
+            setPagina(1);
+          }}
+        />
 
         {subgruposQuery.isError && (
           <Text px="14px" pb="10px" fontSize="12px" color="status.bad">

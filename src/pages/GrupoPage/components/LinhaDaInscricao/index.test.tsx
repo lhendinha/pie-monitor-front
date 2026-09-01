@@ -134,6 +134,37 @@ describe("a coluna de destinos", () => {
     expect(screen.getByText("s-sumiu")).toBeInTheDocument();
   });
 
+  it("🔴 de TRÊS em diante vira contagem, e a linha não cresce", async () => {
+    /* Um grupo pode ter 20 subgrupos. Vinte etiquetas quebram em quatro
+       fileiras: a linha cresce, as vizinhas não, e a coluna do interruptor
+       descola do que ela descreve.
+
+       ⚠️ É a régua de `utils/select.rotuloResumo`, que o `MultiSelect` do modal
+       aplica ao MESMO dado -- duas maneiras de resumir a mesma lista na mesma
+       tela divergem no primeiro ajuste. */
+    montar({ ...LIGADA, subgrupos_destino: ["s-civel", "s-trab", "s-terceiro"] });
+
+    expect(screen.getByText("3 subgrupos")).toBeInTheDocument();
+    expect(screen.queryByText("Cível")).not.toBeInTheDocument();
+  });
+
+  it("com DOIS ainda mostra os nomes -- o teto é em três, não em dois", async () => {
+    /* O par que fixa a fronteira: um `< 2` esconderia o caso mais comum, e um
+       `<= 3` deixaria a linha crescer justamente onde ela já aperta. */
+    montar(LIGADA);
+    expect(screen.getByText("Cível")).toBeInTheDocument();
+    expect(screen.queryByText(/subgrupos$/)).not.toBeInTheDocument();
+  });
+
+  it("e o title carrega a lista INTEIRA -- nada se perde no resumo", async () => {
+    montar({ ...LIGADA, subgrupos_destino: ["s-civel", "s-trab", "s-terceiro"] });
+
+    expect(screen.getByText("3 subgrupos").parentElement).toHaveAttribute(
+      "title",
+      "Cível, Trabalhista, s-terceiro",
+    );
+  });
+
   it("sem destino, mostra o travessão -- célula vazia se lê como dado faltando", async () => {
     montar(DESLIGADA);
     expect(screen.getByText("—")).toBeInTheDocument();
@@ -158,6 +189,20 @@ it("remover avisa o pai -- quem confirma é o modal, lá em cima", async () => {
   await user.click(screen.getByRole("button", { name: "Remover 263/MG" }));
 
   expect(remover).toHaveBeenCalledOnce();
+});
+
+it("o remover é a LIXEIRA do sistema, e não o × do artifact", async () => {
+  /* O artifact desenha um × redondo, mas Subgrupos, Clientes e Membros já
+     usam `BotaoQuadrado tom="perigo"` com a lixeira para "tirar da lista". Um
+     segundo desenho para a mesma ação faria a pessoa aprender duas vezes.
+
+     ⚠️ Guarda de FORMA: o jsdom não calcula estilo, então o que dá para cobrar
+     é o título -- "Remover inscrição", o texto que o `BotaoQuadrado` leva. */
+  montar();
+  expect(screen.getByRole("button", { name: "Remover 263/MG" })).toHaveAttribute(
+    "title",
+    "Remover inscrição",
+  );
 });
 
 it("com uma gravação em voo, a linha inteira fica travada", async () => {

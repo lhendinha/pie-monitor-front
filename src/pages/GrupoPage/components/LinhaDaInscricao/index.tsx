@@ -1,6 +1,6 @@
 import { Flex, Switch, Table, Text } from "@chakra-ui/react";
 
-import { BotaoNu, Etiqueta } from "../../../../components";
+import { BotaoNu, BotaoQuadrado, Etiqueta, IconeLixeira } from "../../../../components";
 import { CORES_DA_ETIQUETA_DE_DESTINO } from "../../constants";
 import type { InscricaoAvulsa, Subgrupo } from "../../../../types";
 
@@ -128,12 +128,31 @@ export default function LinhaDaInscricao({
             —
           </Text>
         ) : (
-          <Flex gap="6px" wrap="wrap">
-            {nomes.map((nome) => (
-              <Etiqueta key={nome} cores={CORES_DA_ETIQUETA_DE_DESTINO}>
-                {nome}
+          /* 🔴 **Até DOIS mostra os nomes; de três em diante, a contagem.** É a
+             régua de `utils/select.rotuloResumo`, que o `MultiSelect` do modal
+             já aplica ao mesmo dado -- e é reusada aqui de propósito: duas
+             maneiras de resumir a mesma lista, na mesma tela, divergem no
+             primeiro ajuste.
+
+             ⚠️ O motivo é a ALTURA DA LINHA. Um grupo pode ter 20 subgrupos, e
+             vinte etiquetas quebram em quatro fileiras -- a linha da tabela
+             cresce, as vizinhas não, e a coluna do interruptor descola do que
+             ela descreve. Com o teto, a linha tem sempre uma altura.
+
+             ⚠️ O `title` carrega a lista inteira, então nada se perde: o que a
+             célula resume, o ponteiro devolve. */
+          <Flex gap="6px" wrap="wrap" title={nomes.join(", ")}>
+            {nomes.length <= 2 ? (
+              nomes.map((nome) => (
+                <Etiqueta key={nome} cores={CORES_DA_ETIQUETA_DE_DESTINO}>
+                  {nome}
+                </Etiqueta>
+              ))
+            ) : (
+              <Etiqueta cores={CORES_DA_ETIQUETA_DE_DESTINO}>
+                {`${nomes.length} subgrupos`}
               </Etiqueta>
-            ))}
+            )}
           </Flex>
         )}
       </Table.Cell>
@@ -144,32 +163,21 @@ export default function LinhaDaInscricao({
         borderBottomColor="border.subtle"
         width="56px"
       >
-        {/* O × redondo de 22px do artifact, e não a lixeira quadrada de
-            `LinhaDeOpcao`: ali a ação é desativar (soft delete, com "Reativar"
-            ao lado); aqui é tirar da lista, e o × é o gesto de tirar. */}
-        <BotaoNu
+        {/* 🔴 A LIXEIRA de Subgrupos, e não o × do artifact. O artifact desenha
+            um × redondo, mas o sistema já tem um gesto de "tirar da lista", com
+            uma forma e uma cor -- e Subgrupos, Clientes e Membros usam ele. Um
+            segundo desenho para a mesma ação faria a pessoa aprender duas
+            vezes; o artifact é o desenho da tela, não o do sistema. */}
+        <BotaoQuadrado
           type="button"
-          title="Remover"
+          tom="perigo"
+          title="Remover inscrição"
           aria-label={`Remover ${inscricao.inscricao}`}
           disabled={emAndamento}
-          display="inline-flex"
-          alignItems="center"
-          justifyContent="center"
-          width="22px"
-          height="22px"
-          borderRadius="full"
-          borderWidth="1px"
-          borderColor="border"
-          bg="bg.surface"
-          color="fg.muted"
-          fontSize="12px"
-          fontWeight="800"
-          lineHeight="1"
-          _hover={{ borderColor: "status.bad", color: "status.bad" }}
           onClick={onRemover}
         >
-          ×
-        </BotaoNu>
+          <IconeLixeira />
+        </BotaoQuadrado>
       </Table.Cell>
     </Table.Row>
   );
