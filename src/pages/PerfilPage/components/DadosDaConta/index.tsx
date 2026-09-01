@@ -1,7 +1,7 @@
-import { Box, Input } from "@chakra-ui/react";
+import { Input } from "@chakra-ui/react";
 import { Flex } from "@chakra-ui/react";
 
-import { BotaoDeLink, Campo, IconeCadeado } from "../../../../components";
+import { BotaoDeLink, Campo, CampoComCadeado } from "../../../../components";
 import { getEmail } from "../../../../services";
 
 interface DadosDaContaProps {
@@ -31,19 +31,9 @@ export default function DadosDaConta({ onAlterarSenha }: DadosDaContaProps) {
         para="email-perfil"
         dica="O e-mail é o identificador da sua conta e não pode ser alterado."
       >
-        <Box position="relative">
+        <CampoComCadeado>
           <Input id="email-perfil" value={email} disabled pr="38px" />
-          <Box
-            position="absolute"
-            right="12px"
-            top="50%"
-            transform="translateY(-50%)"
-            color="fg.subtle"
-            css={{ "& svg": { width: "15px", height: "15px" } }}
-          >
-            <IconeCadeado />
-          </Box>
-        </Box>
+        </CampoComCadeado>
       </Campo>
 
       {/* Senha em modal, e não como campo: trocar senha é outra operação, com

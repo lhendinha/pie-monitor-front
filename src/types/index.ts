@@ -542,7 +542,49 @@ export type SubAbaId =
   | "convidar"
   | "fases"
   | "situacoes"
+  | "inscricoes"
   | "configuracoes";
+
+/** Uma inscrição da lista do GRUPO, como o servidor a DEVOLVE.
+ *
+ * 🔴 "Avulsa" quer dizer que ela não é de ninguém com conta aqui -- sócio que
+ * não usa o sistema, advogado que saiu, estagiário sem login. A inscrição de
+ * quem TEM conta mora no perfil da pessoa, e o servidor recusa cadastrá-la
+ * aqui também (`garantir_livres_para_as_avulsas`).
+ *
+ * ⚠️ **`inscricao` vem JUNTA (`"263/MG"`) e o PATCH pede SEPARADA.** A
+ * assimetria é do servidor, não um descuido daqui: ele normaliza na entrada e
+ * guarda a forma canônica. Quem reparte é `partesDaInscricao`, em
+ * `utils/oab`. */
+export interface InscricaoAvulsa {
+  /** Já normalizada pelo servidor: `"263/MG"`. */
+  inscricao: string;
+  /** Ligado, o sistema CADASTRA os processos novos que o tribunal devolver.
+   *
+   * 🔴 Desligado NÃO é "ignorada": estar na lista já faz o sistema acompanhar
+   * as movimentações dos processos que ela tem (`das_avulsas_do_grupo`, sem
+   * filtro). O interruptor decide só a criação. */
+  importacao_automatica: boolean;
+  /** Onde os processos importados por esta inscrição nascem.
+   *
+   * ⚠️ **Lista, e aqui de verdade pode ter vários** -- ao contrário do perfil,
+   * onde a pessoa escolhe onde os processos DELA nascem e a pergunta tem uma
+   * resposta só. Vazia quando o interruptor está desligado: o servidor zera o
+   * destino ao desligar, para não guardar estado que mente. */
+  subgrupos_destino: string[];
+}
+
+/** A mesma inscrição como o `PATCH /grupos/configuracoes` a RECEBE.
+ *
+ * 🔴 Tipo separado, e não `Partial<InscricaoAvulsa>`: o que muda não é
+ * opcionalidade, é a FORMA -- `inscricao: "263/MG"` na saída, `numero`/`uf` na
+ * entrada. Um tipo só faria o compilador aceitar mandar o campo errado. */
+export interface InscricaoAvulsaParaSalvar {
+  numero: string;
+  uf: string;
+  importacao_automatica: boolean;
+  subgrupos_destino: string[];
+}
 
 /** `GET /grupos/configuracoes` -- configurações do próprio grupo.
  *
@@ -555,6 +597,11 @@ export interface ConfiguracoesDoGrupo {
   dias_para_arquivar_maximo: number;
   dias_para_arquivar_padrao: number;
   nome_tamanho_maximo: number;
+  oabs_avulsas: InscricaoAvulsa[];
+  /** Quantas cabem na lista (`MAX_OABS_AVULSAS`, 50 hoje). Vem do servidor
+   * pelo mesmo motivo dos limites acima: número repetido aqui é um segundo
+   * lugar pra manter em acordo. */
+  oabs_avulsas_maximo: number;
 }
 
 export interface SubAbaConfig {

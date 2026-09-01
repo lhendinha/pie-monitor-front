@@ -51,6 +51,16 @@ interface MultiSelectProps {
    * diz "limpar" seria pedir confirmação de um gesto que já é explícito --
    * e ele existe justamente pra não ter que abrir o painel. */
   permitirLimpar?: boolean;
+  /** Não dá para mexer AGORA -- uma gravação desta linha está em voo.
+   *
+   * 🔴 Separado de `carregando`, e não reusando aquele: `carregando` troca o
+   * placeholder por "Carregando…", que seria mentira durante um salvamento.
+   * Dois estados diferentes com a mesma prop é como a tela passa a informar
+   * errado sem nada ficar vermelho.
+   *
+   * ⚠️ Espelha o `desabilitado` que o `Select` de valor único já tem: a
+   * ausência dele aqui era assimetria, não decisão. */
+  desabilitado?: boolean;
 }
 
 /** Dropdown fechado com checkboxes -- mesmo visual do `Select` de valor
@@ -68,6 +78,7 @@ export function MultiSelect({
   placeholderBusca = "Buscar",
   erro = false,
   onTentarDeNovo,
+  desabilitado = false,
   permitirLimpar = false,
 }: MultiSelectProps) {
   const chip = variante === "chip";
@@ -149,8 +160,8 @@ export function MultiSelect({
      ocupariam a mesma célula do controle. */
   const buscaNoPainel = chip && (permitirBusca || remoto);
   const buscaNoControle = !chip && (permitirBusca || remoto);
-  /** Não dá para mexer: esperando a lista chegar. */
-  const travado = carregando && !remoto;
+  /** Não dá para mexer: esperando a lista chegar, ou gravando. */
+  const travado = (carregando && !remoto) || desabilitado;
 
   return (
     <ReactSelect<OpcaoDeSelect, true>
