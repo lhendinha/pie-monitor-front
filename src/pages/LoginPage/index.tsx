@@ -86,6 +86,10 @@ export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: LoginPage
       )}
 
       <form onSubmit={handleSubmit}>
+        {/* ⚠️ Sem `obrigatorio`, e de propósito: os DOIS campos desta tela
+            são exigidos (o Entrar fica desligado sem qualquer um deles). O
+            asterisco existe para separar o exigido do dispensável, e numa
+            tela sem nada dispensável ele marcaria tudo e não diria nada. */}
         <Campo rotulo="E-mail" para="email">
           <Input
             id="email"

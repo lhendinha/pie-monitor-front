@@ -56,6 +56,9 @@ export default function EsqueciSenhaPage({ onVoltar }: EsqueciSenhaPageProps) {
         </Faixa>
       ) : (
         <form onSubmit={handleSubmit}>
+          {/* ⚠️ Sem `obrigatorio`, e de propósito: é o ÚNICO campo da tela e
+              o Enviar já fica desligado sem ele. Não há dispensável ao lado
+              para o asterisco separar. */}
           <Campo
             rotulo="E-mail"
             para="email-recuperacao"

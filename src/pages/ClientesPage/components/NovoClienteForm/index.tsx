@@ -92,7 +92,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
           />
         </Campo>
 
-        <Campo rotulo="CPF/CNPJ (opcional)" para="cpf-cnpj-cliente">
+        <Campo rotulo="CPF/CNPJ" para="cpf-cnpj-cliente">
           <Input
             id="cpf-cnpj-cliente"
             value={cpfCnpj}
@@ -101,7 +101,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
           />
         </Campo>
 
-        <Campo rotulo="Telefone (opcional)" para="telefone-cliente">
+        <Campo rotulo="Telefone" para="telefone-cliente">
           <Input
             id="telefone-cliente"
             value={telefone}
@@ -111,7 +111,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
         </Campo>
 
         <Campo
-          rotulo="E-mail (opcional)"
+          rotulo="E-mail"
           para="email-cliente"
           erro={emailInvalido ? "E-mail inválido." : undefined}
         >
