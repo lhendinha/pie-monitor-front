@@ -2980,6 +2980,102 @@ cinco nomes cadastrados têm uma palavra só, e a régua exige o nome completo. 
 por isso que o "i" ao lado de "Nome completo" explica a comparação com o
 tribunal ANTES de a pessoa tentar.
 
+### A aba "Inscrições na OAB" do grupo (01/09/2026)
+
+A Etapa 4 do plano da carga histórica. Até ela, as inscrições avulsas tinham
+rota e interruptor e **nenhum lugar onde cadastrá-las** -- então a carga só
+alcançava quem ligasse a inscrição pelo PERFIL.
+
+🔴 **Aba própria, e não uma seção dentro de Configurações -- contra o
+artifact.** Ele desenha a lista dentro da aba de Configurações; a decisão foi
+outra, em 01/09. Aquela é um formulário de dois campos com um "Salvar" só, e
+esta é uma lista de até 50 linhas em que cada mexida grava sozinha. É a forma
+de Fases e Situações: catálogo do escritório é aba.
+
+🔴 **O interruptor da linha é ASSIMÉTRICO: desligar grava, ligar abre o
+modal.** O servidor ZERA `subgrupos_destino` ao desligar e RECUSA ligar sem
+destino, então uma inscrição desligada nunca tem destino guardado e "ligar"
+nunca é um gesto de um clique só. Um interruptor que às vezes liga e às vezes
+precisa de mais informação é pior que um que sempre abre onde a informação se
+dá -- e desligar não precisa de nada, então obrigar a abrir um modal para dizer
+"pare" seria atrito puro.
+
+🔴 **Toda gravação RELÊ a lista antes de montar o corpo** (`fetchQuery` com
+`staleTime: 0` explícito). O `PATCH` substitui a lista inteira: quem manda a
+lista sem uma inscrição a está removendo. Montando o corpo do cache, um `admin`
+que abrisse a tela, esperasse um colega cadastrar uma OAB e então mexesse em
+outra apagaria a do colega junto -- **sem erro, sem toast, sem nada na tela
+dizendo**. É perda silenciosa de dado, a pior classe.
+
+⚠️ **A releitura estreita a janela para milissegundos; não a fecha.** Fechar
+exigiria versão no recurso, que o servidor não tem, e o custo de uma escrita
+concorrente dentro desses milissegundos não paga esse desenho.
+
+⚠️ **A repetida é barrada na TELA.** O servidor a ignora em silêncio ("a
+primeira vence"), então mandá-la responderia 200 com a lista do mesmo tamanho e
+a pessoa concluiria que a tela engoliu o cadastro. A comparação é pela forma
+canônica (`normalizarInscricao`): `"263/mg"` e `"263/MG"` são a mesma.
+
+🔴 **A LIXEIRA de Subgrupos, e não o × redondo do artifact.** O sistema já tem
+um gesto de "tirar da lista", com forma e cor, usado por Subgrupos, Clientes e
+Membros. Um segundo desenho para a mesma ação faria a pessoa aprender duas
+vezes -- **o artifact é o desenho da TELA, não o do sistema.**
+
+⚠️ **Editando, número e UF viram `Input` desabilitado com cadeado** -- os dois
+como `Input`, e não o `Select` travado: ele ainda desenha a seta, e ela
+disputaria o canto com o cadeado. Escolher entre 27 opções é o gesto de
+cadastrar; aqui não há o que escolher.
+
+⚠️ **A coluna de destinos resume de TRÊS em diante**, reusando o limiar de
+`utils/select.rotuloResumo` que o `MultiSelect` do modal já aplica ao mesmo
+dado. Duas maneiras de resumir a mesma lista, na mesma tela, divergem no
+primeiro ajuste. O motivo é a altura da linha: com 20 subgrupos, vinte
+etiquetas quebram em quatro fileiras, a linha cresce, as vizinhas não, e a
+coluna do interruptor descola do que ela descreve.
+
+#### Três defeitos que só o teste e o Chrome acharam
+
+⚠️ **A linha mandava os destinos ao DESLIGAR.** Quem gravava certo era o pai,
+que zerava ao montar o corpo -- a gravação estava correta e o CONTRATO da linha
+mentia. Quem lesse aquela chamada concluiria que desligar preserva o destino.
+
+🔴 **`Switch.Label` faz o Chakra emitir `aria-labelledby`, que VENCE o
+`aria-label`.** O nome acessível que eu tinha posto era ignorado em silêncio, e
+as 50 linhas ficavam com interruptores todos chamados "Desligada". O rótulo
+aponta para DOIS ids -- a inscrição e o estado --, e o nome vira `"263/MG
+Ligada"`: identifica a linha e diz o estado, e clicar na palavra ainda alterna.
+
+🔴 **A 21ª inscrição caía numa página fora da tela.** O servidor acrescenta no
+FIM; quem estava na página 1 adicionava, o modal fechava, e nada mudava -- a
+ação parecia não ter acontecido. **Com poucas inscrições o defeito não aparece,
+e é isso que o faz escapar**: só foi visto com 20 semeadas em Chrome. Agora o
+sucesso do cadastro leva para a página onde a nova ficou, e **só quando a lista
+CRESCEU** -- mandar a pessoa para o fim depois de remover seria gratuito.
+
+#### `CampoComCadeado` nasceu de três cópias idênticas
+
+O e-mail do perfil (`DadosDaConta`), o e-mail do membro (`EditarMembroForm`) e
+agora a inscrição repetiam as MESMAS doze linhas de posicionamento absoluto --
+e a terceira foi escrita achando que era a segunda. Os três usos apontam para o
+componente.
+
+⚠️ **A prop `largura` não é conforto: é correção medida.** O cadeado é absoluto
+e ancora na borda direita do ENVELOPE, não na do campo. Sem ela, um `Input` de
+120px dentro de uma coluna larga ganhava o cadeado boiando no vazio à direita,
+longe do campo que ele tranca.
+
+⚠️ **E o cadeado não é enfeite**: ele é a diferença entre "não muda" e "ainda
+não dá para preencher". Cinza sozinho comunica o segundo.
+
+#### O guarda que nasceu junto
+
+`ABAS_DO_GRUPO` declara a aba num arquivo e `GrupoPage` monta o painel em
+outro. Esquecer o segundo dá uma aba que abre **para o nada**: sem erro, sem
+tela em branco reconhecível, só uma área vazia -- e nenhum teste de
+comportamento pega, porque aba sem painel não tem comportamento a testar. O
+guarda cobra painel E conteúdo para cada id declarado, e foi provado removendo
+o painel.
+
 ### O caminho até este layout, porque ele mudou três vezes
 
 Vale registrado para ninguém refazer o percurso:

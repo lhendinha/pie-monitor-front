@@ -161,6 +161,66 @@ Fase 1b o compara com o que o tribunal devolve para a inscrição).
 de remover uma cadastrada por engano, e é por isso que a opção "Nenhuma" existe
 explicitamente no seletor de UF -- o `Select` não é clearable.
 
+### Grupo › Inscrições na OAB: as OABs que não são de ninguém com conta
+
+Piso `admin`, espelhando `GET`/`PATCH /grupos/configuracoes`. É o **único lugar
+do sistema onde se cadastra inscrição de terceiro** -- sócio que não usa o
+sistema, advogado que saiu, estagiário sem login. A inscrição de quem TEM conta
+mora no perfil da pessoa, e o servidor recusa cadastrá-la aqui também.
+
+🔴 **Estar na lista VIGIA; o interruptor é outra coisa.** Uma inscrição
+desligada continua sendo varrida -- o que ela não faz é cadastrar processo novo
+sozinha. Confundir os dois faz alguém desligar a importação achando que
+economiza, e silenciar o monitoramento sem perceber.
+
+| coluna | o que mostra |
+|---|---|
+| Inscrição | `148502/MG`, em mono. **Clicar abre o modal de edição** |
+| Importação automática | o interruptor, com **Ligada / Desligada** escrito ao lado |
+| Subgrupos de destino | as etiquetas, ou `—` quando não há |
+| | a lixeira, que remove da lista |
+
+🔴 **O interruptor da linha é ASSIMÉTRICO, e é de propósito.** Desligar grava
+direto; **ligar abre o modal**. A razão é o servidor: ele ZERA
+`subgrupos_destino` ao desligar e RECUSA ligar sem destino, então uma inscrição
+desligada nunca tem destino guardado e "ligar" nunca é um gesto de um clique
+só. Um interruptor que às vezes liga e às vezes precisa de mais informação é
+pior que um que sempre abre onde a informação se dá.
+
+🔴 **Cada mexida grava sozinha**, como Fases e Situações -- não há "Salvar" da
+lista. A tela nunca mostra estado não salvo, e uma inscrição que o tribunal
+recusa derruba só a própria adição em vez das 50.
+
+🔴 **E toda gravação RELÊ a lista antes de montar o corpo.** O `PATCH`
+substitui a lista inteira: quem manda a lista sem uma inscrição a está
+removendo. Sem a releitura, um `admin` que abrisse a tela, esperasse um colega
+cadastrar uma OAB e então mexesse em outra apagaria a do colega junto -- sem
+erro, sem toast, sem nada na tela dizendo.
+
+⚠️ **A inscrição repetida é barrada na TELA**, e não mandada ao servidor: lá
+ela é ignorada em silêncio ("a primeira vence"), o `PATCH` responderia 200 com
+a lista do mesmo tamanho, e a pessoa concluiria que a tela engoliu o cadastro.
+
+⚠️ **Editando, número e UF ficam desabilitados com cadeado.** Trocá-los não
+seria editar -- seria outra inscrição, com a antiga ficando na lista. Quem quer
+trocar remove e cadastra.
+
+⚠️ **A coluna de destinos resume de TRÊS em diante** ("4 subgrupos", com a
+lista inteira no `title`), reusando o limiar de `utils/select.rotuloResumo` que
+o `MultiSelect` do modal já aplica ao mesmo dado. O motivo é a altura da linha:
+com 20 subgrupos, vinte etiquetas quebram em quatro fileiras e a coluna do
+interruptor descola do que ela descreve.
+
+⚠️ **Cadastrar leva para a página onde a nova ficou.** O servidor acrescenta no
+FIM, então a 21ª cai na página 3 -- e quem estava na 1 adicionava, o modal
+fechava, e a tela não mudava em nada. Só quando a lista CRESCEU: mandar a
+pessoa para o fim depois de remover seria gratuito.
+
+⚠️ **O contador `N de 50` aparece sempre**, e não só quando a lista enche. O
+limite é carga contra um tribunal, não espaço em disco: cinquenta inscrições
+são 150 consultas por dia, e quem descobre o teto só ao esbarrar nele já
+planejou errado.
+
 ### Documentos
 
 Cada documento é um **arquivo enviado** ou um **link**, vinculado a processo,
@@ -260,14 +320,18 @@ certo.
 
 ## Papéis e o que cada um vê
 
-4 abas no topo: Processos, Clientes, Histórico e **Grupo** -- essa última agrupa, como sub-navegação própria, Subgrupos/Membros/Convidar/Fases/Situações (cada sub-aba mantém o piso de papel de antes, só a organização visual mudou).
+4 abas no topo: Processos, Clientes, Histórico e **Grupo** -- essa última agrupa, como sub-navegação própria, Subgrupos, Membros, Fases, Situações, Convidar, Inscrições na OAB e Configurações. Cada sub-aba tem o seu piso de papel, e ele espelha o da rota que ela usa (`ABAS_DO_GRUPO`, em `constants/abasDoGrupo.ts`).
 
 | Papel | Abas / sub-abas visíveis |
 |---|---|
-| `user` | Processos, Clientes, Histórico, Grupo (só a sub-aba Subgrupos) |
-| `manager` | + sub-aba Membros (dentro de Grupo) |
-| `admin` | + sub-aba Convidar (dentro de Grupo) |
-| `super_admin` | Todas as sub-abas do próprio grupo, como um `admin`, mais **Fases** e **Situações** (2 sub-abas separadas) -- CRUD da lista global de opções de fase/situação de processo, valendo pra todos os grupos da plataforma, não só o próprio. Na sub-aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma. |
+| `user` | Processos, Clientes, Histórico. **Não vê Grupo** -- a rota `/grupo` inteira exige `manager` |
+| `manager` | + Grupo, com as sub-abas Subgrupos e Membros |
+| `admin` | + Fases, Situações, Convidar, **Inscrições na OAB** e Configurações |
+| `super_admin` | O mesmo de `admin` no próprio grupo. Na sub-aba Membros, também vê um ícone ✎ pra editar apelido/papel/grupo de qualquer pessoa da plataforma |
+
+⚠️ **Fases e Situações são `admin`, não `super_admin`.** O catálogo passou a ser
+por grupo e o piso das rotas desceu; enquanto esta tabela dizia o contrário,
+ela descrevia uma permissão que não existe mais.
 
 ⚠️ **Filtro de PESSOA some para quem é `user`.** Ele se alimenta de
 `GET /grupos/membros`, que tem piso `manager` -- oferecê-lo a um `user` daria
