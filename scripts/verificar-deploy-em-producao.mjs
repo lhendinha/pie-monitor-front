@@ -62,7 +62,28 @@ conferir(
   'a seção se chama "Endereço", sem sufixo',
 );
 await semOpcional("Novo cliente");
+
+// ── 🔴 a guarda de descarte, que é o que esta entrega subiu ─────────────
+console.log("\n-- Novo cliente > guarda de descarte --");
+/* ⚠️ Continua sem GRAVAR nada: digitar e responder "Continuar preenchendo"
+   não manda requisição nenhuma. */
+await pagina.getByRole("textbox", { name: /^Nome/ }).fill("VERIFICACAO AUTOMATICA");
 await pagina.keyboard.press("Escape");
+conferir(
+  await pagina.getByText("Sair sem salvar?").isVisible().catch(() => false),
+  "🔴 com o formulário mexido, o Escape PERGUNTA",
+);
+await pagina.getByRole("button", { name: "Continuar preenchendo" }).click();
+conferir(
+  (await pagina.getByRole("textbox", { name: /^Nome/ }).inputValue()) === "VERIFICACAO AUTOMATICA",
+  "e voltar preserva o que foi digitado",
+);
+await pagina.getByRole("textbox", { name: /^Nome/ }).fill("");
+await pagina.keyboard.press("Escape");
+conferir(
+  (await pagina.getByRole("textbox", { name: /^Nome/ }).count()) === 0,
+  "⚠️ e com o campo limpo de novo, sai direto -- o par negativo",
+);
 
 // ── Grupo > Membros: a coluna Subgrupo resumida ─────────────────────────
 console.log("\n-- Grupo > Membros --");
