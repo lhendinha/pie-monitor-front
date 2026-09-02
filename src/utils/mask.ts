@@ -45,11 +45,23 @@ export function mascararCpfCnpj(valorComOuSemMascara: string | null | undefined)
  */
 export function mascararTelefone(valorComOuSemMascara: string | null | undefined): string {
   const d = apenasDigitos(valorComOuSemMascara).slice(0, 11);
-  let out = d.slice(0, 2);
-  if (d.length >= 2) out = `(${out})`;
-  if (d.length <= 2) return out;
+  /* 🔴 Até dois dígitos, SEM parênteses -- e isto não é gosto, é o que torna o
+     campo apagável.
+     Fechando o parêntese já no segundo dígito (`"11"` -> `"(11)"`), o
+     backspace apagava o `)`, `apenasDigitos("(11")` devolvia `"11"` e a
+     máscara o recolocava: o campo travava em `(11)` para sempre, e só
+     select-all + delete o limpava. Medido em 01/09/2026.
+
+     ⚠️ É o único separador do sistema que vem DEPOIS do último dígito. CPF,
+     CNPJ, CEP e CNJ põem o separador antes do próximo dígito, então apagar um
+     dígito apaga o separador junto e todos limpam sozinhos -- conferido.
+
+     ⚠️ O custo é cosmético: enquanto se digita, dois dígitos aparecem como
+     `11` em vez de `(11)`. A partir do terceiro a máscara é idêntica à de
+     antes. */
+  if (d.length <= 2) return d;
   const prefixoTamanho = d.length > 10 ? 5 : 4;
-  out += " " + d.slice(2, 2 + prefixoTamanho);
+  let out = `(${d.slice(0, 2)}) ${d.slice(2, 2 + prefixoTamanho)}`;
   if (d.length > 2 + prefixoTamanho) out += "-" + d.slice(2 + prefixoTamanho, 11);
   return out;
 }
