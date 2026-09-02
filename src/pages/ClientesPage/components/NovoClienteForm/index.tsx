@@ -63,6 +63,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
 
   return (
     <Modal
+      descarte="semFormulario"
       titulo="Novo cliente"
       onFechar={onFechar}
       rodape={

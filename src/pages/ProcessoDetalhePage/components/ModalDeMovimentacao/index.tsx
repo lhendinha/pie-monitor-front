@@ -52,6 +52,7 @@ export default function ModalDeMovimentacao({
 }: ModalDeMovimentacaoProps) {
   return (
     <Modal
+      descarte="semFormulario"
       largo
       titulo="Detalhes da movimentação"
       onFechar={onFechar}

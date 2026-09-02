@@ -106,6 +106,7 @@ export default function NovoAtendimentoForm({
 
   return (
     <Modal
+      descarte="semFormulario"
       titulo="Adicionar atendimento"
       onFechar={onFechar}
       rodape={

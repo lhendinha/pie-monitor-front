@@ -171,6 +171,7 @@ export default function ModalDeDocumento({
 
   return (
     <Modal
+      descarte="semFormulario"
       titulo="Adicionar documento"
       onFechar={onFechar}
       rodape={

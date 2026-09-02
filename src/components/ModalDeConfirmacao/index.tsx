@@ -18,6 +18,15 @@ interface ModalDeConfirmacaoProps {
   aviso?: string;
   /** Texto do botão. "Excluir" quando não vem nada. */
   rotulo?: string;
+  /** Texto do botão de desistir. "Cancelar" quando não vem nada.
+   *
+   * 🔴 Existe por causa da guarda de descarte: lá este diálogo abre POR CIMA
+   * de um formulário que continua montado, e o rodapé dele já tem um
+   * "Cancelar". Dois botões com o mesmo nome acessível no mesmo documento
+   * fazem o leitor de tela anunciar a mesma escolha duas vezes e quebram
+   * qualquer busca por nome -- a regra está em `CONTEXT.md`, seção sobre
+   * nome acessível duplicado. */
+  rotuloDeCancelar?: string;
   /** Ação que dá pra desfazer (desativar, arquivar). Some a lixeira e o
    * "não pode ser desfeita": ícone de lixo em ação reversível mente, e o
    * aviso assusta à toa. */
@@ -59,6 +68,7 @@ export default function ModalDeConfirmacao({
   mensagem,
   aviso,
   rotulo,
+  rotuloDeCancelar,
   reversivel,
   confirmando,
   verificando,
@@ -71,10 +81,13 @@ export default function ModalDeConfirmacao({
     <Modal
       titulo={titulo}
       onFechar={onFechar}
+      /* Um diálogo de confirmação não tem formulário: o que se perde ao
+         fechá-lo é a pergunta, não trabalho digitado. */
+      descarte="semFormulario"
       rodape={
         <RodapeDeAcoes>
           <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
+            {rotuloDeCancelar || "Cancelar"}
           </Botao>
           <Botao
             variante="perigo"

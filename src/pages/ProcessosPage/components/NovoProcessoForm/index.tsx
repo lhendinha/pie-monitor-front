@@ -92,7 +92,7 @@ export default function NovoProcessoForm({
 
   if (carregandoSubgrupos) {
     return (
-      <Modal titulo="Novo processo" onFechar={onFechar}>
+      <Modal titulo="Novo processo" onFechar={onFechar} descarte="semFormulario">
         {/* Só o esqueleto: ele já diz que algo está vindo, e a frase em
             cima era a mesma informação escrita duas vezes. */}
         <Stack gap="14px" py="10px">
@@ -104,7 +104,7 @@ export default function NovoProcessoForm({
 
   if (subgrupos.length === 0) {
     return (
-      <Modal titulo="Novo processo" onFechar={onFechar}>
+      <Modal titulo="Novo processo" onFechar={onFechar} descarte="semFormulario">
         <Text py="34px" px="10px" textAlign="center" color="fg.subtle">
           Cria um subgrupo primeiro (aba Subgrupos) antes de cadastrar
           processos.
@@ -119,6 +119,7 @@ export default function NovoProcessoForm({
    * vista em formulário longo) ou o submit para de funcionar. */
   return (
     <Modal
+      descarte="semFormulario"
       titulo="Novo processo"
       onFechar={onFechar}
       rodape={

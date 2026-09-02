@@ -226,6 +226,7 @@ export default function EditarMembroForm({
 
   return (
     <Modal
+      descarte="semFormulario"
       titulo="Editar membro"
       onFechar={onFechar}
       rodape={

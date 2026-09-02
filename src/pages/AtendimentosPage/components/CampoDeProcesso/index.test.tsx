@@ -29,7 +29,7 @@ import Modal from "../../../../components/Modal";
 function montarNoModal() {
   const aoFechar = vi.fn();
   renderComProviders(
-    <Modal titulo="Novo atendimento" onFechar={aoFechar}>
+    <Modal titulo="Novo atendimento" onFechar={aoFechar} descarte="semFormulario">
       <CampoDeProcesso id="processo" valor={null} onMudar={vi.fn()} />
     </Modal>,
   );

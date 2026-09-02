@@ -279,6 +279,7 @@ export default function ModalDeTarefa({
   return (
     <>
       <Modal
+        descarte="semFormulario"
       titulo={editando ? "Editar tarefa" : "Nova tarefa"}
       onFechar={onFechar}
       rodape={

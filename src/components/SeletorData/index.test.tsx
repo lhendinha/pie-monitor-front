@@ -67,7 +67,7 @@ describe("Escape com o calendário aberto não fecha o que está atrás", () => 
     const user = userEvent.setup();
     const aoFechar = vi.fn();
     renderComProviders(
-      <Modal titulo="Formulário" onFechar={aoFechar}>
+      <Modal titulo="Formulário" onFechar={aoFechar} descarte="semFormulario">
         <SeletorData id="d" valor="2026-08-21" onMudar={vi.fn()} />
       </Modal>,
     );

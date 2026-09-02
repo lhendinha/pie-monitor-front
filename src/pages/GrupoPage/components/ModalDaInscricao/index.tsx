@@ -81,6 +81,7 @@ export default function ModalDaInscricao({
 
   return (
     <Modal
+      descarte="semFormulario"
       titulo={editando ? "Editar inscrição" : "Adicionar inscrição"}
       subtitulo="Uma OAB que o escritório acompanha e que não pertence a ninguém com conta."
       onFechar={onFechar}

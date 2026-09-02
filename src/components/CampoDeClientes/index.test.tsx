@@ -140,7 +140,7 @@ describe("o Escape com a lista aberta", () => {
   function montarNoModal() {
     const aoFechar = vi.fn();
     renderComProviders(
-      <Modal titulo="Novo processo" onFechar={aoFechar}>
+      <Modal titulo="Novo processo" onFechar={aoFechar} descarte="semFormulario">
         <CampoDeClientes id="clientes" valor={[]} nomes={new Map()} onMudar={vi.fn()} />
       </Modal>,
     );

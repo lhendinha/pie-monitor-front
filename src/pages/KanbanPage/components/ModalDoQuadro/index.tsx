@@ -211,7 +211,7 @@ export default function ModalDoQuadro({
 
   return (
     <>
-      <Modal titulo={`Editar quadro — ${subgrupoNome}`} onFechar={onFechar}>
+      <Modal titulo={`Editar quadro — ${subgrupoNome}`} onFechar={onFechar} descarte="semFormulario">
         <Stack gap="0">
           <Text fontSize="11.5px" color="fg.subtle" mb="12px" lineHeight="1.5">
             Ao excluir uma coluna, as tarefas dela são movidas para a coluna anterior. A coluna

@@ -121,7 +121,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
   const membros = query.data?.membros || [];
 
   return (
-    /* ⚠️ O diálogo de confirmação é IRMÃO do `<Modal>`, não filho.
+    /* ⚠️ O diálogo de confirmação é IRMÃO do `<Modal descarte="semFormulario">`, não filho.
      *
      * 🔴 `pilhaDeModais` assume "quem registrou por último está por cima",
      * e isso se INVERTE com aninhamento: o React roda os efeitos dos FILHOS
@@ -134,6 +134,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
      * `ClientesPage`). Este era a exceção. */
     <>
     <Modal
+      descarte="semFormulario"
       titulo={`Membros do ${subgrupo.nome}`}
       /* Quantos, no cabeçalho: a lista responde isso enquanto cabe na tela,
          e para de responder assim que ela passa a rolar. */

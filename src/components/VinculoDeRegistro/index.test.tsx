@@ -31,7 +31,7 @@ import Modal from "../Modal";
 function montarNoModal() {
   const aoFechar = vi.fn();
   renderComProviders(
-    <Modal titulo="Nova tarefa" onFechar={aoFechar}>
+    <Modal titulo="Nova tarefa" onFechar={aoFechar} descarte="semFormulario">
       <VinculoDeRegistro
         id="vinculo"
         valor={{ processo: null, atendimento: null }}

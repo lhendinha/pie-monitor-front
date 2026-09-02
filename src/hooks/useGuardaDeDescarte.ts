@@ -46,9 +46,9 @@ export function useGuardaDeDescarte<T extends Record<string, ValorDeFormulario>>
      o formulário estava quando abriu". */
   const [retrato, setRetrato] = useState<T>(() => valores);
 
-  /* ⚠️ Escrita em EFEITO sem deps, não no corpo -- mesma razão do
-     `onFecharRef` do `Modal`: o React Compiler proíbe mexer em ref durante a
-     renderização, porque pode descartar e refazer uma. */
+  /* ⚠️ Escrita em EFEITO sem deps, não no corpo -- mesma razão do `pedirRef`
+     do `Modal`: o React Compiler proíbe mexer em ref durante a renderização,
+     porque pode descartar e refazer uma. */
   const valoresRef = useRef(valores);
   useEffect(() => {
     valoresRef.current = valores;

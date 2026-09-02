@@ -62,6 +62,7 @@ export default function ModalDeSenha({ onFechar }: ModalDeSenhaProps) {
 
   return (
     <Modal
+      descarte="semFormulario"
       titulo="Alterar senha atual"
       onFechar={onFechar}
       rodape={
