@@ -952,6 +952,29 @@ export type FormaDaOpcaoDeSelect = "caixa" | "linha";
 /** As variantes de `.btn` do artifact que o sistema usa de fato. */
 export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
 
+/** Um valor projetado de formulário, para a guarda de descarte comparar.
+ *
+ * 🔴 **A ausência de objeto aninhado é a decisão, não um descuido.** Quem
+ * precisa comparar `endereco` ou `vinculos` inteiros leva erro de compilação e
+ * é obrigado a projetar campo a campo (`...endereco`,
+ * `processoId: vinculos.processo?.id ?? null`). A alternativa seria um
+ * deep-equal, e um deep-equal frágil deixaria o formulário "alterado" para
+ * sempre por desigualdade de referência -- defeito que ninguém percebe até
+ * alguém não conseguir mais fechar um modal.
+ *
+ * ⚠️ `File` entra na lista e é comparado por IDENTIDADE, como qualquer
+ * primitivo: o que se quer saber é "tem arquivo ou não", e escolher o mesmo
+ * arquivo de novo gera instância nova mas dá o mesmo veredito.
+ */
+export type ValorDeFormulario =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | File
+  | readonly (string | number)[];
+
 /** Parâmetros de busca do `GET /processos`.
  *
  * Nome diferente de `FiltrosProcessos` de propósito: aquele é o ESTADO da

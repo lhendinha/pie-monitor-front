@@ -13,6 +13,7 @@ export * from "./periodo";
 export * from "./plural";
 export * from "./prazo";
 export * from "./processos";
+export * from "./iguais";
 export * from "./query";
 export * from "./select";
 export * from "./suporte";
