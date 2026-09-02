@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 
 import {
   Botao,
+  BotaoDeCancelar,
   Campo,
   CampoComCadeado,
   LinhaDeCampos,
@@ -91,9 +92,7 @@ export default function ModalDaInscricao({
            direita. Sem ele, o "Cancelar" nasce colado na borda esquerda do
            cartão e a faixa do artifact não existe. Medido em Chrome. */
         <RodapeDeAcoes>
-          <Botao variante="ghost" onClick={onFechar} disabled={salvando}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar desabilitado={salvando} />
           <Botao
             type="submit"
             form="form-da-inscricao"

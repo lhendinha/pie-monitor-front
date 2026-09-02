@@ -666,7 +666,7 @@ src/
   theme/                    -- tokens e paletas de design
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
-  components/               -- 66 componentes gerais, cada um em pasta com seu index
+  components/               -- 67 componentes gerais, cada um em pasta com seu index
   pages/                    -- 21 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 

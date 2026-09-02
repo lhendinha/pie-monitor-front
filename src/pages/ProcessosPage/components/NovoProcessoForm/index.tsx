@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
+  BotaoDeCancelar,
   Campo,
   Esqueleto,
   Modal,
@@ -124,9 +125,7 @@ export default function NovoProcessoForm({
       onFechar={onFechar}
       rodape={
         <RodapeDeAcoes>
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao
             type="submit"
             form={idFormulario}

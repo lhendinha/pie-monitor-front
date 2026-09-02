@@ -9,6 +9,7 @@ import { BotaoNu } from "../BotaoNu";
    ciclo é inócuo -- os dois são `export default function`, içados, e a
    referência só acontece em tempo de render. */
 import ModalDeConfirmacao from "../ModalDeConfirmacao";
+import { ProvedorDeDescarte } from "../../contexts/DescarteContext";
 import type { Descarte } from "../../types";
 
 interface ModalProps {
@@ -165,7 +166,10 @@ export default function Modal({ titulo, subtitulo, onFechar, descarte, largo, ro
       : null;
 
   return (
-    <>
+    /* O provedor envolve a cortina INTEIRA, rodapé incluído: é a posição na
+       árvore que faz o `BotaoDeCancelar` do chamador alcançar a função
+       guardada, sem o chamador precisar ligar nada. */
+    <ProvedorDeDescarte pedirParaFechar={pedirParaFechar}>
     <Flex
       position="fixed"
       inset="0"
@@ -267,6 +271,6 @@ export default function Modal({ titulo, subtitulo, onFechar, descarte, largo, ro
         onFechar={() => setPerguntando(false)}
       />
     )}
-    </>
+    </ProvedorDeDescarte>
   );
 }

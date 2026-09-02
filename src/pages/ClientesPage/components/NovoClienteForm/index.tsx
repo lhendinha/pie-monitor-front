@@ -2,7 +2,15 @@ import { Input } from "@chakra-ui/react";
 import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { Botao, Campo, CamposDeEndereco, Modal, RodapeDeAcoes, useToast } from "../../../../components";
+import {
+  Botao,
+  BotaoDeCancelar,
+  Campo,
+  CamposDeEndereco,
+  Modal,
+  RodapeDeAcoes,
+  useToast,
+} from "../../../../components";
 import { criarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
@@ -68,9 +76,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
       onFechar={onFechar}
       rodape={
         <RodapeDeAcoes>
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao
             type="submit"
             form={idFormulario}

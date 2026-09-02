@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
    componente É exportado por aquele índice, e importar dele criaria um ciclo
    -- mesmo padrão do `ModalDeTarefa`. */
 import Botao from "../Botao";
+import BotaoDeCancelar from "../BotaoDeCancelar";
 import Campo from "../Campo";
 import CampoDeArquivo from "../CampoDeArquivo";
 import CampoDeClientes from "../CampoDeClientes";
@@ -176,9 +177,7 @@ export default function ModalDeDocumento({
       onFechar={onFechar}
       rodape={
         <RodapeDeAcoes>
-          <Botao variante="ghost" type="button" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao type="submit" form={`${prefixo}-form`} disabled={faltaAlgo || salvar.isPending}>
             {/* "Enviando…" e não "Salvando…" quando há arquivo: a espera é o
                 upload, e ela é sensivelmente mais longa que a de um

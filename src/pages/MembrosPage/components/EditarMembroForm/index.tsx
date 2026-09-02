@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   Botao,
+  BotaoDeCancelar,
   Campo,
   CampoComCadeado,
   LinhaDeCampos,
@@ -231,9 +232,7 @@ export default function EditarMembroForm({
       onFechar={onFechar}
       rodape={
         <RodapeDeAcoes>
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao
             type="submit"
             form={idFormulario}

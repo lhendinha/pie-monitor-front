@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
+  BotaoDeCancelar,
   Campo,
   CampoDeSenha,
   Faixa,
@@ -67,9 +68,7 @@ export default function ModalDeSenha({ onFechar }: ModalDeSenhaProps) {
       onFechar={onFechar}
       rodape={
         <RodapeDeAcoes>
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao type="submit" form={idFormulario} disabled={trocarMutation.isPending || !podeEnviar}>
             {trocarMutation.isPending ? "Salvando…" : "Salvar"}
           </Botao>

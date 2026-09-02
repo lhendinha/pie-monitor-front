@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
+  BotaoDeCancelar,
   Campo,
   CampoDeClientes,
   CampoDeResponsaveis,
@@ -111,9 +112,7 @@ export default function NovoAtendimentoForm({
       onFechar={onFechar}
       rodape={
         <RodapeDeAcoes>
-          <Botao variante="ghost" type="button" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao type="submit" form={`${prefixo}-form`} disabled={faltaAlgo || salvar.isPending}>
             {salvar.isPending ? "Salvando…" : "Salvar"}
           </Botao>

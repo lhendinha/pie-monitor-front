@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
    componente É exportado por aquele índice, e importar dele criaria um ciclo
    -- mesmo padrão do `SeletorDePeriodo`. */
 import Botao from "../Botao";
+import BotaoDeCancelar from "../BotaoDeCancelar";
 import Campo from "../Campo";
 import LinhaDeCampos from "../LinhaDeCampos";
 import Modal from "../Modal";
@@ -298,9 +299,7 @@ export default function ModalDeTarefa({
               {removerMutation.isPending ? "Excluindo…" : "Excluir"}
             </Botao>
           )}
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+          <BotaoDeCancelar />
           <Botao
             type="submit"
             form={idFormulario}
