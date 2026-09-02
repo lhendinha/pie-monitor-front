@@ -555,6 +555,33 @@ Cobre também o Escape com uma camada flutuante aberta (o menu do `Select` é
 portal em `z-index` 210, contra os 100 do diálogo) e o texto sobrevivendo ao
 "Continuar preenchendo".
 
+## `verificar-oab-sem-dado.mjs` — o Enter, que o jsdom não tem
+
+```bash
+yarn dev --port 5174
+node scripts/verificar-oab-sem-dado.mjs
+```
+
+Não precisa do `yarn offline`: a API é stubada (`stubsDaApi.mjs`), com a rota
+da inscrição sequestrada caso a caso — carga presa, carga abortada, carga
+respondida.
+
+🔴 **Existe pelo mesmo motivo do roteiro acima, com outra causa.** O Salvar do
+modal de membro é IRMÃO do `<form>` (ligado por `form={idFormulario}`), e o
+envio implícito — Enter num campo de texto — passa pelo botão padrão do
+formulário. **O jsdom não executa esse caminho**: medido, com o Salvar
+HABILITADO o Enter não chamou `atualizarMembro` nenhuma vez. Um teste de
+teclado lá passa verde com a trava ou sem ela, e foi o que aconteceu — a prova
+por mutação pegou o teste vazio.
+
+Cobre os três estados do bloco de OAB (esqueleto, erro com "tentar de novo",
+campos preenchidos), que o Salvar trava nos dois primeiros, e que o resto do
+formulário continua editável enquanto isso.
+
+⚠️ **O cenário de erro leva ~7s.** O `queryClient` repete erro transitório 3
+vezes (medido: 4 idas à rede, 7,4s), e até lá a tela mostra o esqueleto — ainda
+não se sabe. Timeout curto conclui que o estado de erro não existe.
+
 ## Depois de TODO deploy: conferir produção
 
 ```bash
