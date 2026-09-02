@@ -7,49 +7,23 @@
  * alcançam: o envio real atravessando o CSP e o CORS do bucket, com IAM,
  * SigV4 e a política do S3 todos valendo ao mesmo tempo.
  *
- * As credenciais vêm de `.env.local` (`PJE_TEST_EMAIL` / `PJE_TEST_SENHA`),
- * que é gitignorado. **Nada é impresso** -- nem o e-mail.
- *
- * 🔴 **Se o login falhar, o script PARA na hora e não tenta de novo.**
- * `auth_service` bloqueia a conta em 5 tentativas, e um laço de retry aqui
- * queimaria as cinco em segundos. Uma sessão já chegou a três tentativas
- * queimadas por causa de um payload montado à mão -- é por isso que o login
- * aqui é feito PELA TELA: quem monta o corpo é o próprio front, que já sabe
- * que o campo é `password` e não `senha`.
+ * 🔴 **O login sai de `sessaoDeProducao.mjs`**, que reaproveita a sessão
+ * guardada -- a senha só é digitada quando ela expirou. Até 01/09/2026 este
+ * roteiro logava do zero e queimava uma das 5 tentativas a cada rodada; hoje
+ * o normal é ZERO. As regras que valiam continuam valendo, e agora moram lá:
+ * credenciais do `.env.local`, nada impresso, login PELA TELA, uma tentativa,
+ * e para.
  *
  * ⚠️ O documento criado é apagado no `finally`, inclusive se algo estourar no
  * meio. O que sobrar carrega "VERIFICACAO AUTOMATICA" no título.
  */
-import { chromium } from "playwright";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { abrirProducaoLogado } from "./sessaoDeProducao.mjs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const APP = "https://argos-monitor.vercel.app";
 
-/** Lê `.env.local` sem despejar o conteúdo em lugar nenhum. */
-function credenciais() {
-  let bruto;
-  try {
-    bruto = readFileSync(new URL("../.env.local", import.meta.url), "utf8");
-  } catch {
-    console.error(
-      "Faltou o .env.local com PJE_TEST_EMAIL e PJE_TEST_SENHA " +
-        "(gitignorado -- ver o README).",
-    );
-    process.exit(1);
-  }
-  const pega = (chave) => bruto.match(new RegExp(`^${chave}=(.*)$`, "m"))?.[1]?.trim();
-  const email = pega("PJE_TEST_EMAIL");
-  const senha = pega("PJE_TEST_SENHA");
-  if (!email || !senha) {
-    console.error("O .env.local existe mas não traz PJE_TEST_EMAIL e PJE_TEST_SENHA.");
-    process.exit(1);
-  }
-  return { email, senha };
-}
-
-const CONTA = credenciais();
 const MARCA = "VERIFICACAO AUTOMATICA";
 const TITULO = `${MARCA} -- pode apagar`;
 
@@ -66,48 +40,37 @@ const conferir = (ok, nome, detalhe = "") => {
   console.log(`${ok ? "  ok  " : "FALHA "} ${nome}${detalhe ? ` -- ${detalhe}` : ""}`);
 };
 
-const navegador = await chromium.launch({ channel: "chrome", headless: false, slowMo: 30 });
-const contexto = await navegador.newContext({ viewport: { width: 1440, height: 950 } });
-const pagina = await contexto.newPage();
-
 /** Respostas de erro e violações de CSP -- é onde o envio quebraria. */
 const problemas = [];
-pagina.on("pageerror", (e) => problemas.push(`erro de página: ${e.message.slice(0, 140)}`));
-pagina.on("console", (m) => {
-  const t = m.text();
-  if (/Content Security Policy|CORS|blocked/i.test(t)) problemas.push(`console: ${t.slice(0, 160)}`);
-});
-pagina.on("response", (r) => {
-  if (r.status() >= 400 && !r.url().includes("favicon")) {
-    problemas.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`);
-  }
+
+/* 🔴 O login sai de `sessaoDeProducao.mjs`: ele reaproveita a sessão guardada
+   e a senha só é digitada quando ela expirou. Antes este roteiro logava do
+   zero e queimava uma das 5 tentativas a cada rodada.
+
+   ⚠️ Os ouvintes vão no `aoCriarPagina`, e não depois: eles precisam estar de
+   pé ANTES da primeira navegação, senão uma violação de CSP na carga inicial
+   passaria em branco. */
+const { navegador, pagina } = await abrirProducaoLogado({
+  viewport: { width: 1440, height: 950 },
+  aoCriarPagina: (p) => {
+    p.on("pageerror", (e) => problemas.push(`erro de página: ${e.message.slice(0, 140)}`));
+    p.on("console", (m) => {
+      const t = m.text();
+      if (/Content Security Policy|CORS|blocked/i.test(t)) problemas.push(`console: ${t.slice(0, 160)}`);
+    });
+    p.on("response", (r) => {
+      if (r.status() >= 400 && !r.url().includes("favicon")) {
+        problemas.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname}`);
+      }
+    });
+  },
 });
 
 let criado = false;
 
 try {
-  // ───────────────────────────── login, UMA tentativa
-  await pagina.goto(APP);
-  await pagina.getByLabel(/e-?mail/i).fill(CONTA.email);
-  await pagina.getByRole("textbox", { name: "Senha" }).fill(CONTA.senha);
-  await pagina.getByRole("button", { name: /entrar/i }).click();
-
-  const entrou = await pagina
-    .getByText("Resumo rápido")
-    .waitFor({ timeout: 25_000 })
-    .then(() => true)
-    .catch(() => false);
-
-  if (!entrou) {
-    /* 🔴 PARA aqui. Sem retry, sem laço: são 5 tentativas até o bloqueio. */
-    console.error(
-      "\nO login não passou. O script PARA aqui de propósito -- a conta " +
-        "bloqueia em 5 tentativas.\nConfira PJE_TEST_EMAIL/PJE_TEST_SENHA no " +
-        ".env.local antes de rodar de novo.",
-    );
-    await navegador.close();
-    process.exit(1);
-  }
+  /* O login já aconteceu em `abrirProducaoLogado` -- com sessão guardada,
+     zero tentativas. */
   console.log("entrou\n");
 
   // ───────────────────────────── a tela existe

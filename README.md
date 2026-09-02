@@ -491,6 +491,51 @@ corpo é o próprio front, que já sabe que o campo é `password` e não `senha`
 Uma sessão chegou a queimar três tentativas numa conta `super_admin`
 justamente por montar esse payload por conta própria.
 
+## `npm run test:ordem` — a suíte com a ordem EMBARALHADA
+
+```bash
+npm run test:ordem      # vitest run --sequence.shuffle
+```
+
+🔴 **Existe porque a ordem declarada esconde dependência entre testes.**
+`vi.clearAllMocks()` zera as CHAMADAS, não a IMPLEMENTAÇÃO: um mock definido
+dentro de um teste continua valendo para os seguintes. Enquanto a ordem é
+sempre a mesma, o teste que não define o mock pega carona e passa — e ninguém
+percebe que ele não se sustenta sozinho.
+
+Foi assim que `EditarMembroForm` quebrou em **3 de 4** rodadas embaralhadas em
+01/09/2026: `listarTodosOsMembrosDoGrupo` só era definido dentro de alguns
+testes, e o componente faz `.then()` no retorno em TODA montagem — nos outros
+ele recebia `undefined`. A correção foi um padrão no `beforeEach` do arquivo.
+
+➡️ **Vale rodar antes de fechar uma entrega com testes novos.** A suíte normal
+não pega esta classe.
+
+⚠️ Uma falha aqui **não** é necessariamente do teste que aparece no relatório —
+é da combinação. Ler o erro: `undefined` vindo de mock é a assinatura desta
+classe.
+
+## Os três roteiros de produção, e o que cada um prova
+
+Eles **não se substituem** — cada um alcança o que os outros não alcançam:
+
+| roteiro | escreve? | o que só ele prova |
+|---|---|---|
+| `verificar-deploy-em-producao.mjs` | não | **o que subiu é o que eu escrevi**: rótulo, ausência de rótulo, forma da célula. Roda depois de todo deploy, quantas vezes quiser |
+| `verificar-producao.mjs` | **sim** (e apaga) | o envio real atravessando **CSP, CORS, IAM, SigV4 e a política do S3** ao mesmo tempo. Nenhum deles falha fora de produção |
+| `verificar-carga-ponta-a-ponta.mjs` | **sim**, num grupo descartável | a **emenda** entre a tela de OAB e a carga histórica, contra o tribunal de verdade |
+
+⚠️ **Conferir o deploy não dispensa o `verificar-producao.mjs`.** O primeiro só
+lê: ele diria "tudo certo" com o bucket inacessível, porque nenhuma tela dele
+envia nada. Depois de mexer em documentos, upload, CSP ou IAM, é o segundo que
+responde.
+
+⚠️ **E o da carga usa OUTRA conta**, `e2e-carga@argos.invalid`, de um grupo que
+`api/scripts/e2e_grupo_de_teste.py` cria e apaga a cada rodada. Por isso ele
+**não** usa a sessão guardada: o grupo da rodada anterior não existe mais, e um
+`storageState` velho apontaria para o vazio. As 5 tentativas também não pesam
+lá — a conta nasce nova toda vez.
+
 ## Depois de TODO deploy: conferir produção
 
 ```bash
@@ -533,9 +578,9 @@ com o mesmo estado morto e gastaria outra tentativa.
 ➡️ **Para forçar um login novo** (trocou a senha, quer testar a tela de
 entrada): apague o `.sessao-de-producao.json`. É uma tentativa, e só.
 
-⚠️ Os roteiros antigos (`verificar-producao.mjs`,
-`verificar-carga-ponta-a-ponta.mjs`) ainda logam do zero — cada rodada deles
-custa uma tentativa. Migrá-los para o helper é trabalho pendente.
+✅ **`verificar-producao.mjs` migrou** em 01/09/2026 e agora reaproveita a
+sessão. **`verificar-carga-ponta-a-ponta.mjs` NÃO migra, e é decisão**: ele usa
+outra conta, de um grupo criado e apagado a cada rodada (ver a tabela acima).
 
 ### O outro roteiro de produção: a carga histórica de ponta a ponta
 

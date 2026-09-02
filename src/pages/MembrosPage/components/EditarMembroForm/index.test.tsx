@@ -42,6 +42,20 @@ beforeEach(() => {
     importacao_automatica: false, subgrupos_destino: [], subgrupos: ["s1"],
   });
   mocks.listarSubgruposDoGrupo.mockResolvedValue({ subgrupos });
+  /* 🔴 TODA montagem chama isto -- é a recarga fresca dos subgrupos, num
+     `useEffect` fora do React Query. Sem um padrão AQUI, o teste que não o
+     define herda a implementação deixada pelo anterior: `vi.clearAllMocks()`
+     zera as CHAMADAS, não a implementação.
+
+     ⚠️ Na ordem declarada isso passava despercebido, porque o primeiro teste
+     do arquivo define o mock e os seguintes pegavam carona. Com
+     `--sequence.shuffle` o teste que não define pode rodar primeiro, e aí
+     `listarTodosOsMembrosDoGrupo()` devolve `undefined` -- o componente faz
+     `.then` nisso e a montagem estoura. Medido em 3 de 4 rodadas
+     embaralhadas, 01/09/2026.
+
+     Quem precisa de outra resposta continua sobrescrevendo no próprio teste. */
+  mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({ membros: [montarMembro()] });
 });
 
 describe("EditarMembroForm", () => {

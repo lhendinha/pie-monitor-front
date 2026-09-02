@@ -45,14 +45,23 @@ function credenciais() {
 const jaEntrou = (pagina) =>
   pagina.getByText("Resumo rápido").waitFor({ timeout: 20_000 }).then(() => true).catch(() => false);
 
-/** Devolve `{ navegador, contexto, pagina }` já dentro do sistema. */
-export async function abrirProducaoLogado({ viewport = { width: 1500, height: 1000 } } = {}) {
+/** Devolve `{ navegador, contexto, pagina }` já dentro do sistema.
+ *
+ * `aoCriarPagina` roda com a página recém-criada, ANTES da primeira
+ * navegação: é onde vão os ouvintes de `pageerror`/`console`/`response`, que
+ * de outro modo perderiam o que acontece durante o login.
+ */
+export async function abrirProducaoLogado({
+  viewport = { width: 1500, height: 1000 },
+  aoCriarPagina,
+} = {}) {
   const navegador = await chromium.launch({ channel: "chrome", headless: false, slowMo: 20 });
 
   // ── 1. a sessão guardada, quando existe: custo ZERO de tentativa ──────
   if (existsSync(SESSAO)) {
     const contexto = await navegador.newContext({ viewport, storageState: SESSAO });
     const pagina = await contexto.newPage();
+    aoCriarPagina?.(pagina);
     await pagina.goto(APP);
     if (await jaEntrou(pagina)) {
       console.log("Sessão guardada reaproveitada -- nenhuma tentativa de login gasta.");
@@ -68,6 +77,7 @@ export async function abrirProducaoLogado({ viewport = { width: 1500, height: 10
   // ── 2. login, UMA tentativa, sem laço ─────────────────────────────────
   const contexto = await navegador.newContext({ viewport });
   const pagina = await contexto.newPage();
+  aoCriarPagina?.(pagina);
   const { email, senha } = credenciais();
 
   await pagina.goto(APP);
