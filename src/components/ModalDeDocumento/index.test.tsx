@@ -246,3 +246,101 @@ describe("o que o modal NÃO faz", () => {
     expect(screen.getByText("Adicionar documento")).toBeInTheDocument();
   });
 });
+
+// ── 🔴 a guarda de descarte, e o arquivo escolhido ────────────────────────
+
+describe("guarda de descarte", () => {
+  const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
+  const campoDeArquivo = () => screen.getByLabelText(/escolher ou arraste/i);
+
+  it("intacto, o Escape fecha direto", async () => {
+    const { onFechar } = montar();
+    await comSubgrupoCarregado();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it("🔴 com um ARQUIVO escolhido, pergunta", async () => {
+    /* O caso mais caro do sistema: um PDF escolhido mais a descrição digitada
+       somem num clique fora da caixa. Era isto que abria o requisito. */
+    const { onFechar } = montar();
+    await comSubgrupoCarregado();
+
+    await userEvent.upload(campoDeArquivo(), arquivoDe("peticao-inicial.pdf"));
+    await userEvent.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+
+  it("⚠️ remover o arquivo NÃO basta -- o título que ele preencheu fica", async () => {
+    /* Escolher um arquivo também preenche o título com o nome dele. Remover o
+       arquivo devolve `arquivo` a `null`, mas o título continua lá -- e é
+       trabalho de verdade a perder, então a pergunta é CORRETA.
+
+       ⚠️ Este NÃO é caso de `resemear`: quem preencheu o título foi uma ação
+       da pessoa (escolher o arquivo), não um padrão que o sistema trouxe. A
+       distinção é a que separa "o servidor respondeu" de "eu cliquei". */
+    const { onFechar } = montar();
+    await comSubgrupoCarregado();
+    await userEvent.upload(campoDeArquivo(), arquivoDe("peticao-inicial.pdf"));
+
+    await userEvent.click(screen.getByRole("button", { name: /Remover peticao-inicial.pdf/ }));
+    await userEvent.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+
+  it("🔴 SÓ o arquivo, sem título, já pergunta -- ele está na projeção", async () => {
+    /* O teste que discrimina. Escolher um arquivo também preenche o título,
+       então o teste acima passaria mesmo com o `arquivo` FORA da projeção --
+       o formulário estaria sujo pelo título. Limpando o título, o arquivo
+       fica sendo a única diferença para o retrato.
+
+       Sem ele, um `File` de 20 MB escolhido sumiria num clique fora da caixa,
+       calado -- que é o caso mais caro do sistema e o que abriu o requisito. */
+    const { onFechar } = montar();
+    await comSubgrupoCarregado();
+    await userEvent.upload(campoDeArquivo(), arquivoDe("peticao-inicial.pdf"));
+
+    await userEvent.clear(screen.getByLabelText(/^Título/));
+    await userEvent.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+
+  it("🔴 desfazendo TUDO -- arquivo e título -- volta a fechar direto", async () => {
+    /* O par negativo do `File`, agora completo: ele é comparado por
+       identidade e o retrato tem `null`. Sem este teste, "qualquer File já
+       visto suja para sempre" passaria. */
+    const { onFechar } = montar();
+    await comSubgrupoCarregado();
+    await userEvent.upload(campoDeArquivo(), arquivoDe("peticao-inicial.pdf"));
+    await userEvent.click(screen.getByRole("button", { name: /Remover peticao-inicial.pdf/ }));
+
+    await userEvent.clear(screen.getByLabelText(/^Título/));
+    await userEvent.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it("🔴 durante o ENVIO, o Cancelar fica travado", async () => {
+    /* O defeito que o `RodapeDeFormulario` existe para impedir: clicar
+       "Cancelar" no meio de um upload de 20 MB fechava o modal e a mutation
+       SEGUIA -- o documento nascia mesmo assim, sem ninguém na tela para ver. */
+    mocks.enviarArquivo.mockImplementation(() => new Promise(() => {}));
+    montar();
+    await comSubgrupoCarregado();
+    await userEvent.upload(campoDeArquivo(), arquivoDe("peticao-inicial.pdf"));
+
+    await userEvent.click(salvar());
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled());
+  });
+});

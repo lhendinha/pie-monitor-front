@@ -54,6 +54,8 @@ export default function NovoAtendimentoForm({
   const [responsaveis, setResponsaveis] = useState<string[]>([]);
   const [processo, setProcesso] = useState<ProcessoEscolhido | null>(null);
   const [registro, setRegistro] = useState("");
+  /** O retrato já conhece o subgrupo padrão? Ver o `pronto`. */
+  const [semeado, setSemeado] = useState(false);
 
   /* ⚠️ `primeiraPagina`: `opcoes` encolhe enquanto a pessoa digita NESTE
      mesmo campo, e o padrão passaria a ser o primeiro resultado da busca. */
@@ -82,7 +84,12 @@ export default function NovoAtendimentoForm({
     responsaveis,
     registro: registro.trim(),
     processoNumero: processo?.numero ?? null,
-  });
+  },
+  /* Mesmo gate do `ModalDeDocumento`: entre a chegada do subgrupo padrão e o
+     aviso ao retrato há uma renderização, e um Escape nela abriria a pergunta
+     sem ninguém ter tocado em nada. `semeado` só fica verdadeiro no render
+     SEGUINTE ao `resemear`. */
+  { pronto: semeado || Boolean(subgrupoId) });
 
   /* 🔴 O subgrupo padrão é escolhido pelo SISTEMA, não pela pessoa.
    *
@@ -98,6 +105,7 @@ export default function NovoAtendimentoForm({
   useEffect(() => {
     if (!subgrupoId && subgrupoEscolhido) {
       resemear("subgrupoPadrao", { subgrupoId: subgrupoEscolhido });
+      setSemeado(true);
     }
   }, [subgrupoId, subgrupoEscolhido, resemear]);
 
