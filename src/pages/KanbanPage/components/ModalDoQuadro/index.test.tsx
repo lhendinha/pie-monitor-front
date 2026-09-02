@@ -239,3 +239,68 @@ describe("ModalDoQuadro", () => {
     );
   });
 });
+
+// ── 🔴 a guarda de descarte, num modal que salva NA HORA ──────────────────
+
+describe("guarda de descarte", () => {
+  const campo = () => screen.getByLabelText("Nova coluna");
+  const perguntou = () => screen.queryByText(/Sair sem adicionar/) !== null;
+
+  it("🔴 renomear uma coluna e fechar NÃO pergunta -- aquilo já está salvo", async () => {
+    /* O teste que importa nesta dupla, e o motivo de o texto ser próprio:
+       renomear, reordenar, marcar conclusão e excluir gravam na hora. Se a
+       guarda olhasse "houve atividade no modal", a pessoa seria interrogada
+       sobre trabalho que já está no servidor -- e a frase padrão ("as
+       alterações serão perdidas") seria mentira. */
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+
+    await usuario.click(screen.getByText("A Fazer"));
+    const campoDoNome = screen.getByLabelText("Novo nome de A Fazer");
+    await usuario.clear(campoDoNome);
+    await usuario.type(campoDoNome, "Backlog{Enter}");
+    await waitFor(() => expect(mocks.atualizarColuna).toHaveBeenCalled());
+
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it("com um nome DIGITADO e não adicionado, pergunta", async () => {
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await screen.findByLabelText("Nova coluna");
+
+    await usuario.type(campo(), "Financeiro");
+    await usuario.keyboard("{Escape}");
+
+    expect(screen.getByText("Sair sem adicionar «Financeiro»?")).toBeInTheDocument();
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+
+  it("⚠️ e o texto diz que o resto está SALVO -- senão mentiria", async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByLabelText("Nova coluna");
+
+    await usuario.type(campo(), "Financeiro");
+    await usuario.keyboard("{Escape}");
+
+    expect(screen.getByText(/está salvo/)).toBeInTheDocument();
+  });
+
+  it("só espaço no campo não conta -- é o que o envio descartaria", async () => {
+    /* O par que prova a projeção com `trim`: sem ela, um espaço solto deixaria
+       o "Adicionar" desabilitado e a guarda perguntando ao mesmo tempo. */
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await screen.findByLabelText("Nova coluna");
+
+    await usuario.type(campo(), "   ");
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+});

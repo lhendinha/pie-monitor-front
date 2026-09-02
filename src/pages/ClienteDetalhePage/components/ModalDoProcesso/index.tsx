@@ -34,6 +34,7 @@ export default function ModalDoProcesso({
 }: ModalDoProcessoProps) {
   return (
     <Modal
+      descarte="semFormulario"
       titulo={processo.apelido || "Processo"}
       onFechar={onFechar}
       rodape={

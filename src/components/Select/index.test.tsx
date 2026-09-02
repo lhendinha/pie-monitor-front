@@ -190,7 +190,7 @@ describe("Escape com o menu aberto não fecha o que está atrás", () => {
     const user = userEvent.setup();
     const aoFechar = vi.fn();
     renderComProviders(
-      <Modal titulo="Formulário" onFechar={aoFechar}>
+      <Modal titulo="Formulário" onFechar={aoFechar} descarte="semFormulario">
         <Select opcoes={OPCOES} valor="" onMudar={vi.fn()} placeholder="Selecione" />
       </Modal>,
     );
@@ -209,7 +209,7 @@ describe("Escape com o menu aberto não fecha o que está atrás", () => {
     const user = userEvent.setup();
     const aoFechar = vi.fn();
     renderComProviders(
-      <Modal titulo="Formulário" onFechar={aoFechar}>
+      <Modal titulo="Formulário" onFechar={aoFechar} descarte="semFormulario">
         <Select opcoes={OPCOES} valor="" onMudar={vi.fn()} placeholder="Selecione" />
       </Modal>,
     );

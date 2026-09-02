@@ -123,8 +123,24 @@ export default function VinculoDeRegistro({
   const mostrarPainel = aberto && Boolean(busca);
   const escolhidos = [valor.processo, valor.atendimento].filter(Boolean) as Vinculo[];
 
+  /** 🔴 Escape com o painel aberto fecha O PAINEL, e não o modal atrás.
+   *
+   * Mesma régua do `Select` e do `SeletorData`: a camada de cima consome o
+   * Escape. Este campo ficou de fora daquela correção, e vive dentro do
+   * `ModalDeTarefa` e do `ModalDeDocumento` -- os dois formulários mais longos
+   * do sistema.
+   *
+   * ⚠️ A condição é `mostrarPainel`, e não `aberto`: sem texto de busca não há
+   * painel na tela, e engolir o Escape ali deixaria a pessoa sem saída.
+   */
+  function aoTeclar(evento: React.KeyboardEvent) {
+    if (evento.key !== "Escape" || !mostrarPainel) return;
+    evento.stopPropagation();
+    setAberto(false);
+  }
+
   return (
-    <Box ref={caixa}>
+    <Box ref={caixa} onKeyDown={aoTeclar}>
       <Box position="relative">
         <Input
           id={id}

@@ -2,6 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 /* Irmãos importados um a um, e não pelo índice de `components`: este
    componente É exportado por aquele índice, e importar dele criaria um ciclo
@@ -77,6 +78,8 @@ export default function DocumentosVinculados({
   const documentos = query.data?.documentos || [];
   const totalPaginas = query.data?.total_paginas ?? 1;
 
+  let conteudo: ReactNode;
+
   const botaoAdicionar = (
     <Botao variante="ghost" type="button" onClick={() => setModalAberto(true)}>
       <IconePlus />
@@ -104,14 +107,10 @@ export default function DocumentosVinculados({
     />
   );
 
+  /* 🔴 O `{modal}` NÃO entra em nenhum ramo -- ver o `return` único no fim. */
   if (query.isPending) {
-    return (
-      <>
-        <Esqueleto linhas={2} />
-        {modal}
-      </>
-    );
-  }
+    conteudo = <Esqueleto linhas={2} />;
+  } else
 
   /* 🔴 Erro NÃO é lista vazia.
    *
@@ -120,29 +119,24 @@ export default function DocumentosVinculados({
    * falsa fica na tela. Mesmo raciocínio já escrito em `TarefasVinculadas` e
    * `ProcessosDoCliente`. */
   if (query.isError) {
-    return (
-      <>
-        <Text fontSize="13px" color="status.bad.text">
-          Não foi possível carregar os documentos.
-        </Text>
-        {modal}
-      </>
+    conteudo = (
+      <Text fontSize="13px" color="status.bad.text">
+        Não foi possível carregar os documentos.
+      </Text>
     );
-  }
+  } else
 
   if (documentos.length === 0) {
-    return (
+    conteudo = (
       <Flex direction="column" align="flex-start" gap="10px">
         <Text fontSize="13px" color="fg.subtle">
           {vazio}
         </Text>
         {botaoAdicionar}
-        {modal}
       </Flex>
     );
-  }
-
-  return (
+  } else {
+    conteudo = (
     <Box>
       {documentos.map((d) => (
         <BotaoNu
@@ -194,7 +188,29 @@ export default function DocumentosVinculados({
       )}
 
       <Box mt="10px">{botaoAdicionar}</Box>
-      {modal}
     </Box>
+    );
+  }
+
+  /* 🔴 UM `return` só, com o modal em POSIÇÃO FIXA.
+   *
+   * Antes, cada ramo devolvia sua própria árvore com o `{modal}` dentro -- e
+   * as raízes eram diferentes (`<>`, `<Flex>`, `<Box>`). Quando a lista trocava
+   * de estado com o modal aberto, o React via outro tipo de elemento naquela
+   * posição, desmontava a subárvore e REMONTAVA o modal: ele continuava na
+   * tela e voltava VAZIO, com o arquivo escolhido e o texto digitado perdidos,
+   * sem gesto nenhum e sem pergunta.
+   *
+   * ⚠️ O gatilho é real: `staleTime` é 0 e `refetchOnWindowFocus` está no
+   * padrão (ligado), então sair para outro app e voltar recarrega a lista.
+   * Medido com o `focusManager`: lista vazia -> com documento zerava o campo.
+   *
+   * Com o modal como segundo filho SEMPRE do mesmo fragmento, a troca de ramo
+   * atinge só o `conteudo`. */
+  return (
+    <>
+      {conteudo}
+      {modal}
+    </>
   );
 }

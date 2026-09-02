@@ -501,3 +501,63 @@ describe("subgrupo sem quadro montado", () => {
     expect(await screen.findByRole("option", { name: "Ana" })).toBeInTheDocument();
   });
 });
+
+// ── 🔴 o caso-manchete da guarda de descarte ──────────────────────────────
+
+describe("guarda de descarte na tarefa", () => {
+  const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
+
+  it("🔴 abrir uma tarefa pelo link, olhar e FECHAR não pergunta nada", async () => {
+    /* O caso que o requisito nomeou e o que mais fácil se erra. A tarefa abre
+       com tudo preenchido -- título, data, coluna, prioridade, responsável --,
+       e nada disso é trabalho da pessoa: é o registro que já existe. Se a
+       guarda comparasse com "formulário vazio", ela perguntaria no gesto mais
+       comum de todos: abrir para consultar e sair. */
+    const user = userEvent.setup();
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+    await screen.findByDisplayValue("Protocolar recurso");
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+
+  it("🔴 e a COLUNA que chega do quadro também não conta", async () => {
+    /* O par fino: `colunaEscolhida` é derivada e só encontra a coluna depois
+       que o quadro responde -- até lá é `""`. Sem o `resemear`, essa chegada
+       sozinha marcaria a tarefa como alterada. A espera abaixo garante que o
+       quadro já resolveu antes do Escape. */
+    const user = userEvent.setup();
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+    await screen.findByDisplayValue("Protocolar recurso");
+    await screen.findByLabelText(/Coluna do quadro/);
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+
+  it("mexer no título pergunta, e diz que é EDIÇÃO", async () => {
+    const user = userEvent.setup();
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+    const titulo = await screen.findByDisplayValue("Protocolar recurso");
+
+    await user.type(titulo, " urgente");
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    expect(screen.getByRole("button", { name: "Continuar editando" })).toBeInTheDocument();
+  });
+
+  it("mexer e DESFAZER volta a fechar direto", async () => {
+    const user = userEvent.setup();
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+    const titulo = await screen.findByDisplayValue("Protocolar recurso");
+
+    await user.type(titulo, "X");
+    await user.type(titulo, "{Backspace}");
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+});

@@ -524,3 +524,64 @@ describe("SubgruposPage", () => {
     expect(screen.queryByRole("button", { name: /Remover/ })).not.toBeInTheDocument();
   });
 });
+
+// ── 🔴 a guarda de descarte no modal de membros, que salva NA HORA ────────
+
+describe("guarda de descarte em Membros do subgrupo", () => {
+  async function abrirOModal() {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "1", nome: "Cível", membros: 1, colunas: 3 }],
+      total: 1, total_paginas: 1,
+    });
+    const user = userEvent.setup();
+    renderComRota(<SubgruposPage />);
+    await user.click(await screen.findByRole("button", { name: "Ver membros de Cível" }));
+    await screen.findByText("Membros do Cível");
+    return user;
+  }
+
+  const campo = () => screen.getByLabelText("Adicionar alguém a Cível");
+  const fechou = () => screen.queryByText("Membros do Cível") === null;
+
+  it("🔴 sem nada digitado, o Escape fecha direto", async () => {
+    /* Aqui adicionar e remover gravam na hora. Se a guarda olhasse "houve
+       atividade", a pessoa seria interrogada sobre o que já está no servidor
+       -- e a frase padrão seria mentira. */
+    const user = await abrirOModal();
+
+    await user.keyboard("{Escape}");
+
+    expect(fechou()).toBe(true);
+  });
+
+  it("com um e-mail DIGITADO e não adicionado, pergunta", async () => {
+    const user = await abrirOModal();
+
+    await user.type(campo(), "nova@x.com");
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText("Sair sem adicionar essa pessoa?")).toBeInTheDocument();
+    expect(fechou()).toBe(false);
+  });
+
+  it("⚠️ e o texto diz que quem já entrou está SALVO", async () => {
+    const user = await abrirOModal();
+
+    await user.type(campo(), "nova@x.com");
+    await user.keyboard("{Escape}");
+
+    expect(screen.getByText(/está salvo/)).toBeInTheDocument();
+  });
+
+  it("só a CAIXA do e-mail mudar não conta -- o envio manda minúsculo", async () => {
+    /* O par que prova a projeção: `novoEmail.trim().toLowerCase()` é o que vai
+       para o servidor. Digitar e apagar volta ao retrato. */
+    const user = await abrirOModal();
+
+    await user.type(campo(), "a");
+    await user.type(campo(), "{Backspace}");
+    await user.keyboard("{Escape}");
+
+    expect(fechou()).toBe(true);
+  });
+});

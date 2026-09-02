@@ -1,17 +1,18 @@
 import { Input, Stack, Textarea } from "@chakra-ui/react";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 /* Irmãos importados um a um, e não pelo índice de `components`: este
    componente É exportado por aquele índice, e importar dele criaria um ciclo
    -- mesmo padrão do `ModalDeTarefa`. */
 import Botao from "../Botao";
+import RodapeDeFormulario from "../RodapeDeFormulario";
 import Campo from "../Campo";
 import CampoDeArquivo from "../CampoDeArquivo";
 import CampoDeClientes from "../CampoDeClientes";
 import LinhaDeCampos from "../LinhaDeCampos";
 import Modal from "../Modal";
-import RodapeDeAcoes from "../RodapeDeAcoes";
+import { useGuardaDeDescarte } from "../../hooks/useGuardaDeDescarte";
 import { Select } from "../Select";
 import VinculoDeRegistro from "../VinculoDeRegistro";
 import { useToast } from "../Toast";
@@ -118,6 +119,50 @@ export default function ModalDeDocumento({
 
   const ehArquivo = tipo === DOCUMENTO_ARQUIVO;
 
+  /* A projeção é o corpo do envio. Duas notas:
+
+     🔴 O `arquivo` entra como está e é comparado por IDENTIDADE. É o que se
+     quer saber -- "tem arquivo ou não". Escolher o mesmo arquivo de novo gera
+     instância nova, mas nos dois casos o veredito é o mesmo: saiu de `null`,
+     logo a pessoa mexeu. E remover devolve `null`, logo volta a limpo.
+
+     ⚠️ `nomesDosClientes` fica FORA: é um `Map` de rótulos para a tela, não
+     intenção de quem preenche -- a intenção é a lista `clientes`. Além disso
+     `Map` não cabe em `ValorDeFormulario`, e o tipo recusaria. */
+  const { mudou, resemear } = useGuardaDeDescarte({
+    tipo,
+    titulo: titulo.trim(),
+    descricao: descricao.trim(),
+    arquivo,
+    url: url.trim(),
+    subgrupoId: subgrupoEscolhido,
+    clientes,
+    responsavel: responsavel || "",
+    processoNumero: vinculos.processo?.id ?? null,
+    atendimentoId: vinculos.atendimento?.id ?? null,
+  },
+  /* 🔴 Espera o subgrupo padrão antes de opinar. Há uma fresta de uma
+     renderização entre a resposta chegar (`subgrupoEscolhido` deixa de ser
+     `""`) e o efeito avisar o retrato -- e um Escape nela abriria a pergunta
+     sem ninguém ter tocado em nada. Foi a suíte CHEIA que reprovou: com mais
+     carga, o gesto do teste caía exatamente ali; isolado, passava.
+
+     ⚠️ **Esta linha não tem guarda mecânica, e é honesto dizer.** Tirá-la não
+     derruba teste nenhum hoje: acertar a fresta depende de o gesto do teste
+     cair entre duas renderizações, e isso mudou quando o gate passou a viver
+     em estado. O MECANISMO está guardado no teste do próprio hook
+     (`aguarda`), que é determinístico; o que não consegui foi um teste de
+     componente que force a janela. Quem mexer aqui: a janela existe, o teste
+     não a pega. */
+  { aguarda: ["subgrupoPadrao"] });
+
+  /* Mesmo caso do `NovoAtendimentoForm`: o subgrupo padrão é do SISTEMA. */
+  useEffect(() => {
+    if (!subgrupoId && subgrupoEscolhido) {
+      resemear("subgrupoPadrao", { subgrupoId: subgrupoEscolhido });
+    }
+  }, [subgrupoId, subgrupoEscolhido, resemear]);
+
   const salvar = useMutation({
     mutationFn: async () => {
       const comuns = {
@@ -171,20 +216,18 @@ export default function ModalDeDocumento({
 
   return (
     <Modal
+      descarte={{ mudou, caso: "criacao" }}
       titulo="Adicionar documento"
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          <Botao variante="ghost" type="button" onClick={onFechar}>
-            Cancelar
-          </Botao>
+        <RodapeDeFormulario salvando={salvar.isPending}>
           <Botao type="submit" form={`${prefixo}-form`} disabled={faltaAlgo || salvar.isPending}>
             {/* "Enviando…" e não "Salvando…" quando há arquivo: a espera é o
                 upload, e ela é sensivelmente mais longa que a de um
                 formulário comum. */}
             {salvar.isPending ? (ehArquivo ? "Enviando…" : "Salvando…") : "Salvar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <Stack as="form" id={`${prefixo}-form`} onSubmit={handleSubmit} gap="0">

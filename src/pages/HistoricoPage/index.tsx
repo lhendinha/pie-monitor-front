@@ -306,6 +306,7 @@ export default function HistoricoPage({
              é "não sei", e não se oferece o que não se sabe. */}
       {(itemAberto || deepLinkMutation.isPending) && (
         <Modal
+          descarte="semFormulario"
           titulo="Detalhes do envio"
           onFechar={() => setItemAberto(null)}
           acaoNoCabecalho={

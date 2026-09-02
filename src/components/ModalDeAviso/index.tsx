@@ -29,6 +29,7 @@ interface ModalDeAvisoProps {
 export default function ModalDeAviso({ titulo, mensagem, itens, detalhe, onFechar }: ModalDeAvisoProps) {
   return (
     <Modal
+      descarte="semFormulario"
       titulo={titulo}
       onFechar={onFechar}
       rodape={

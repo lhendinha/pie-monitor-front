@@ -210,3 +210,68 @@ describe("ClientesPage", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+// ── 🔴 a guarda de descarte, e a armadilha da MÁSCARA ─────────────────────
+
+describe("guarda de descarte no Novo cliente", () => {
+  async function abrir() {
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Fulano");
+    await user.click(screen.getByRole("button", { name: "+ Novo cliente" }));
+    await screen.findByLabelText(/^Nome/);
+    return user;
+  }
+
+  const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
+
+  it("intacto, o Escape fecha direto", async () => {
+    const user = await abrir();
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(screen.queryByLabelText(/^Nome/)).not.toBeInTheDocument();
+  });
+
+  it("com o nome começado, pergunta -- e diz que é um CADASTRO", async () => {
+    const user = await abrir();
+
+    await user.type(screen.getByLabelText(/^Nome/), "Construtora");
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    // texto do caso "criacao", não o de edição
+    expect(screen.getByRole("button", { name: "Continuar preenchendo" })).toBeInTheDocument();
+  });
+
+  it("🔴 limpar o telefone volta a fechar direto", async () => {
+    const user = await abrir();
+    const telefone = screen.getByLabelText(/Telefone/);
+
+    await user.type(telefone, "31988887777");
+    await user.clear(telefone);
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+
+  it("🔴 digitar e APAGAR o telefone com backspace volta a fechar direto", async () => {
+    /* Este teste nasceu vermelho e ficou verde consertando `mascararTelefone`.
+       Antes, o parêntese fechava já no segundo dígito e o campo travava em
+       `(31)`: quem digitasse dois dígitos sem querer era perguntado ao sair,
+       para sempre, sem conseguir desfazer. Foi a guarda de descarte que
+       tornou o defeito visível. */
+    const user = await abrir();
+    const telefone = screen.getByLabelText(/Telefone/);
+
+    await user.type(telefone, "31");
+    await user.type(telefone, "{Backspace}{Backspace}");
+    expect(telefone).toHaveValue("");
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+});

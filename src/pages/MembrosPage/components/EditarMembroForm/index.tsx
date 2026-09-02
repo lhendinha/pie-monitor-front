@@ -9,7 +9,7 @@ import {
   LinhaDeCampos,
   Modal,
   MultiSelect,
-  RodapeDeAcoes,
+  RodapeDeFormulario,
   Select,
   useToast,
 } from "../../../../components";
@@ -24,6 +24,7 @@ import {
   listarSubgruposDoGrupo,
 } from "../../../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
+import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { qk } from "../../../../services/queryKeys";
 import type { Grupo, Membro, MembroEditavel, Papel } from "../../../../types";
 import type {
@@ -79,6 +80,35 @@ export default function EditarMembroForm({
   const toast = useToast();
   const queryClient = useQueryClient();
 
+  const temInscricao = Boolean(numeroOab.trim() && ufOab);
+  /* Com um subgrupo marcado só, o destino é ele -- senão "ligar" iria ao
+     servidor sem destino e voltaria recusado. */
+  const destinoEfetivo =
+    subgruposSelecionados.length === 1 ? subgruposSelecionados[0] : destino;
+
+  /* A projeção é o corpo do PATCH. `destinoEfetivo` e não `destino`, e a
+     lista de destino só quando ligada -- é o que o envio manda.
+
+     ⚠️ Ficam FORA `subgruposCarregados` e `falhouAoRecarregar`: sinais de UI. */
+  /* ⚠️ SEM `pronto`, e a razão é específica daqui: as duas semeaduras chamam
+     `resemear` no MESMO lote que os `setState` delas -- dentro do `.then` e
+     dentro do efeito. O React agrupa tudo numa renderização só, então o
+     retrato e os campos mudam juntos e não existe a fresta de um render que o
+     `ModalDeDocumento` tem (lá o efeito reage a um valor DERIVADO, que só
+     muda no render seguinte à resposta).
+     Tentei um gate aqui e ele não era guardado por teste nenhum, nem na suíte
+     cheia -- porque não havia o que guardar. */
+  const { mudou, resemear } = useGuardaDeDescarte({
+      apelido: apelido.trim(),
+      grupo: grupoSelecionado,
+      papel: papelSelecionado,
+      subgrupos: subgruposSelecionados,
+      numeroOab: numeroOab.trim(),
+      ufOab,
+      importacaoLigada,
+      destino: importacaoLigada ? destinoEfetivo : "",
+  });
+
   /** Anti-staleness: `membro.subgrupos` (prop) pode estar desatualizado se
    * alguém mexeu nos subgrupos dessa pessoa pela seção "Membros por
    * subgrupo" sem recarregar -- busca fresco antes de liberar o envio,
@@ -103,6 +133,15 @@ export default function EditarMembroForm({
         if (grupoAlteradoRef.current) return;
         const fresco = d.membros.find((m) => m.email === membro.email);
         if (fresco) setSubgruposSelecionados(fresco.subgrupos || []);
+        /* 🔴 Avisa o retrato com o MESMO literal que acabou de gravar. Um
+           efeito do hook no mesmo commit ainda leria o valor de antes, porque
+           o `setState` acima só se aplica no render seguinte.
+           ⚠️ Semeia mesmo quando a pessoa NÃO foi encontrada, com o conjunto
+           da prop: não achar é caso de sucesso da rede, o retrato certo é o
+           que já estava, e deixar de semear prenderia a chave para sempre. */
+        resemear("subgruposFrescos", {
+          subgrupos: fresco ? fresco.subgrupos || [] : membro.subgrupos || [],
+        });
         // ⚠️ Não achar a pessoa é caso de SUCESSO da rede, e a mensagem de
         // "não consegui conferir / feche e abra de novo" não recupera nada
         // aqui: se ela realmente saiu do grupo, reabrir dá o mesmo. Fica com
@@ -162,15 +201,20 @@ export default function EditarMembroForm({
     setUfOab(d.uf_oab ?? "");
     setImportacaoLigada(d.importacao_automatica);
     setDestino(d.subgrupos_destino[0] ?? "");
+    /* Os mesmos literais, pela mesma razão da outra semeadura.
+       ⚠️ `resemear` deduz por chave, então um refetch -- e `staleTime` é 0 no
+       projeto, sem `refetchOnWindowFocus` desligado -- não re-baseia o
+       retrato no meio da edição. */
+    resemear("inscricaoDaPessoa", {
+      numeroOab: (d.numero_oab ?? "").trim(),
+      ufOab: d.uf_oab ?? "",
+      importacaoLigada: d.importacao_automatica,
+      destino: d.importacao_automatica ? d.subgrupos_destino[0] ?? "" : "",
+    });
   }, [editavelQuery.data]);
 
   /* A inscrição que VALERÁ depois de salvar -- a digitada. Cadastrar a OAB e
      ligar a importação num "Salvar" só é aceito pelo servidor. */
-  const temInscricao = Boolean(numeroOab.trim() && ufOab);
-  /* Com um subgrupo marcado só, o destino é ele -- senão "ligar" iria ao
-     servidor sem destino e voltaria recusado. */
-  const destinoEfetivo =
-    subgruposSelecionados.length === 1 ? subgruposSelecionados[0] : destino;
 
   const atualizarMutation = useMutation({
     mutationFn: () =>
@@ -226,13 +270,11 @@ export default function EditarMembroForm({
 
   return (
     <Modal
+      descarte={{ mudou }}
       titulo="Editar membro"
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+        <RodapeDeFormulario salvando={atualizarMutation.isPending}>
           <Botao
             type="submit"
             form={idFormulario}
@@ -245,7 +287,7 @@ export default function EditarMembroForm({
           >
             {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <form id={idFormulario} onSubmit={handleSubmit}>

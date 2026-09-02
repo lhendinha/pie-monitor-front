@@ -1221,6 +1221,28 @@ normal continua de pé.
 dois casos, e a mutação prova. O defeito passou despercebido porque ninguém
 tinha escrito o teste, não porque o ambiente não alcançava.
 
+#### A regra valia para TRÊS camadas a mais, e ninguém tinha aplicado (01/09/2026)
+
+`CampoDeClientes`, `VinculoDeRegistro` e `CampoDeProcesso` são comboboxes
+caseiros — abrem uma lista sobre o formulário exatamente como o `Select`, e
+**nenhum dos três tinha `onKeyDown`**. Escape com a lista aberta fechava o modal
+inteiro, o defeito que esta ADR descreve, nos três formulários mais longos do
+sistema (processo, tarefa e atendimento).
+
+Passaram despercebidos porque a correção de 25/08 foi feita camada a camada,
+pelos nomes que estavam à mão — e estes três não têm "Select" no nome.
+
+- A interceptação vai no `Box` de FORA, não no `Input`: com o foco numa opção
+  da lista, um handler preso ao campo não veria a tecla.
+- A condição espelha a de renderização da lista (`aberto && busca` em dois
+  deles), e não só `aberto`. Sem termo de busca não há nada na tela, e engolir
+  o Escape ali prenderia a pessoa no modal — é o par negativo dos testes.
+
+🔴 **Isto é pré-requisito da guarda de descarte**: com a guarda ligada, o
+Escape que hoje fecha o modal em silêncio passaria a perguntar "sair sem
+salvar?" para quem só quis dispensar a lista — o falso positivo que ensina a
+clicar sem ler.
+
 ### Auditorias de 24/08/2026 — seis rodadas depois da primeira
 
 Seis rodadas adicionais sobre o mesmo diff, com correção e verificação por

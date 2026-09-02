@@ -211,7 +211,33 @@ export default function ModalDoQuadro({
 
   return (
     <>
-      <Modal titulo={`Editar quadro — ${subgrupoNome}`} onFechar={onFechar}>
+      <Modal
+        titulo={`Editar quadro — ${subgrupoNome}`}
+        onFechar={onFechar}
+        /* 🔴 A ÚNICA coisa em risco aqui é o nome digitado e ainda não
+           adicionado. Renomear, reordenar, marcar conclusão e excluir gravam
+           na hora -- por isso o texto padrão ("as alterações serão perdidas")
+           MENTIRIA, e este modal usa texto próprio.
+
+           ⚠️ Projeta `nova.trim()`, que é o que o envio manda (l. 185). Sem o
+           `trim`, um espaço solto deixaria o "Adicionar" desabilitado e a
+           guarda perguntando ao mesmo tempo.
+
+           ⚠️ `renomeandoId`, `paraExcluir` e `ordemLocal` ficam FORA: os dois
+           primeiros são sinal de UI, e o terceiro é ordem otimista de algo
+           que já foi salvo -- incluí-lo abriria uma janela de falso alarme
+           enquanto o PATCH está em voo. */
+        descarte={{
+          mudou: nova.trim() !== "",
+          textoProprio: {
+            titulo: `Sair sem adicionar «${nova.trim()}»?`,
+            mensagem:
+              "O nome digitado será descartado. O que você já mudou aqui — renomear, reordenar, excluir — está salvo.",
+            sair: "Sair",
+            voltar: "Voltar",
+          },
+        }}
+      >
         <Stack gap="0">
           <Text fontSize="11.5px" color="fg.subtle" mb="12px" lineHeight="1.5">
             Ao excluir uma coluna, as tarefas dela são movidas para a coluna anterior. A coluna

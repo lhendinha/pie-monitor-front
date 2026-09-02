@@ -1,16 +1,17 @@
 import { Stack, Textarea } from "@chakra-ui/react";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 /* Irmãos importados um a um, e não pelo índice de `components`: este
    componente É exportado por aquele índice, e importar dele criaria um ciclo
    -- mesmo padrão do `SeletorDePeriodo`. */
 import Botao from "../Botao";
+import RodapeDeFormulario from "../RodapeDeFormulario";
 import Campo from "../Campo";
 import LinhaDeCampos from "../LinhaDeCampos";
 import Modal from "../Modal";
+import { useGuardaDeDescarte } from "../../hooks/useGuardaDeDescarte";
 import ModalDeConfirmacao from "../ModalDeConfirmacao";
-import RodapeDeAcoes from "../RodapeDeAcoes";
 import { Select } from "../Select";
 import SeletorData from "../SeletorData";
 import { useToast } from "../Toast";
@@ -233,6 +234,36 @@ export default function ModalDeTarefa({
     atendimento_id: vinculos.atendimento?.id ?? null,
   };
 
+  /* A projeção é o corpo do envio. `colunaEscolhida` e não `colunaId`, porque
+     é o derivado que vai para o servidor -- e é justamente por isso que ele
+     precisa do `resemear` logo abaixo.
+
+     ⚠️ `confirmandoRemocao` fica fora: sinal de UI. E os vínculos entram como
+     os DOIS ids -- esquecer o `atendimentoId` descartaria em silêncio
+     exatamente o vínculo que o envio usa. */
+  const { mudou, resemear } = useGuardaDeDescarte({
+    titulo: titulo.trim(),
+    data,
+    subgrupoId,
+    coluna: colunaEscolhida,
+    prioridade,
+    responsavel: responsavel || "",
+    processoNumero: vinculos.processo?.id ?? null,
+    atendimentoId: vinculos.atendimento?.id ?? null,
+
+  });
+
+  /* 🔴 A coluna padrão vem do QUADRO, não da pessoa.
+   *
+   * `colunaEscolhida` só encontra a coluna depois que `colunas` chega: até
+   * lá ela é `""`, mesmo quando o modal foi aberto de uma coluna específica
+   * (`colunaInicial`). Sem avisar o retrato, essa chegada sozinha deixaria a
+   * tarefa "alterada" -- e este é o caso-manchete do requisito: abrir uma
+   * tarefa pelo Kanban, olhar, e fechar não pode perguntar nada. */
+  useEffect(() => {
+    if (colunaEscolhida) resemear("colunaDoQuadro", { coluna: colunaEscolhida });
+  }, [colunaEscolhida, resemear]);
+
   const salvarMutation = useMutation({
     mutationFn: () =>
       editando && tarefa
@@ -279,11 +310,14 @@ export default function ModalDeTarefa({
   return (
     <>
       <Modal
+        descarte={{ mudou, caso: editando ? "edicao" : "criacao" }}
       titulo={editando ? "Editar tarefa" : "Nova tarefa"}
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          {editando && (
+        <RodapeDeFormulario
+          salvando={salvarMutation.isPending}
+          acaoAEsquerda={
+            editando ? (
             <Botao
               variante="perigoContorno"
               mr="auto"
@@ -296,10 +330,9 @@ export default function ModalDeTarefa({
             >
               {removerMutation.isPending ? "Excluindo…" : "Excluir"}
             </Botao>
-          )}
-          <Botao variante="ghost" onClick={onFechar}>
-            Cancelar
-          </Botao>
+            ) : undefined
+          }
+        >
           <Botao
             type="submit"
             form={idFormulario}
@@ -307,7 +340,7 @@ export default function ModalDeTarefa({
           >
             {salvarMutation.isPending ? "Salvando…" : "Salvar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <form id={idFormulario} onSubmit={handleSubmit}>

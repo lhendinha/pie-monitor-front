@@ -116,8 +116,31 @@ export default function CampoDeClientes({ id, valor, nomes, onMudar }: CampoDeCl
     );
   }
 
+  /** 🔴 Escape com a lista aberta fecha A LISTA, e não o modal atrás.
+   *
+   * Mesma régua já aplicada no `Select` e no `SeletorData`: a camada de cima
+   * consome o Escape. Este campo ficou de fora daquela correção, e o efeito
+   * era o descrito lá -- quem só queria dispensar a lista perdia o formulário
+   * inteiro e o texto já digitado.
+   *
+   * ⚠️ O `useEffect` logo acima já registra a mesma razão para o clique fora
+   * ("não dá pra depender do descarte do modal"); faltava o teclado.
+   *
+   * ⚠️ `stopPropagation`, e não `preventDefault`: o listener do `Modal` é de
+   * bolha em `document`, então basta o evento não chegar lá. Prevenir mexeria
+   * no tratamento de quem está no meio do caminho.
+   *
+   * ⚠️ Vai no `Box` de fora, e não no `Input`: com o foco numa opção da
+   * lista, um handler preso ao campo não veria a tecla.
+   */
+  function aoTeclar(evento: React.KeyboardEvent) {
+    if (evento.key !== "Escape" || !aberto) return;
+    evento.stopPropagation();
+    setAberto(false);
+  }
+
   return (
-    <Box ref={caixa} position="relative">
+    <Box ref={caixa} position="relative" onKeyDown={aoTeclar}>
       <Input
         id={id}
         role="combobox"

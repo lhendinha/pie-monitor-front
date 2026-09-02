@@ -308,3 +308,108 @@ it("o 'i' do nome completo fala na TERCEIRA pessoa", async () => {
   expect(await screen.findByText(/inscrição na OAB desta pessoa/)).toBeInTheDocument();
   expect(screen.queryByText(/que ela é sua/)).not.toBeInTheDocument();
 });
+
+// ── 🔴 a guarda de descarte, com DUAS semeaduras assíncronas ──────────────
+
+describe("guarda de descarte", () => {
+  const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
+
+  function montar(membro = montarMembro()) {
+    const onFechar = vi.fn();
+    renderComProviders(
+      <EditarMembroForm
+        membro={membro}
+        grupos={grupos}
+        podeMoverEntreGrupos
+        onAtualizado={vi.fn()}
+        onFechar={onFechar}
+      />,
+    );
+    return onFechar;
+  }
+
+  /** Espera as DUAS semeaduras: a dos subgrupos (promessa solta) e a da
+   * inscrição (`lerMembro`). O campo de OAB só existe depois da segunda. */
+  async function comTudoSemeado() {
+    await screen.findByLabelText(/Número da OAB/);
+    await waitFor(() => expect(mocks.listarTodosOsMembrosDoGrupo).toHaveBeenCalled());
+  }
+
+  it("🔴 abrir, esperar as duas semeaduras e FECHAR não pergunta nada", async () => {
+    /* O caso mais delicado da entrega. Os campos NASCEM de duas respostas de
+       rede independentes, em momentos diferentes. Cada uma delas, sem avisar
+       o retrato, marcaria o formulário como alterado -- e quem só abriu para
+       conferir seria interrogado ao sair. */
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await comTudoSemeado();
+
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it("🔴 a semeadura da INSCRIÇÃO não conta -- mesmo trazendo dado", async () => {
+    /* O par que isola a segunda semeadura: aqui a pessoa TEM OAB, então
+       `lerMembro` devolve valores que caem nos campos. Sem o `resemear`
+       daquele efeito, isso sozinho sujaria o formulário. */
+    mocks.lerMembro.mockResolvedValue({
+      email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+      numero_oab: "206876", uf_oab: "MG",
+      importacao_automatica: true, subgrupos_destino: ["s1"], subgrupos: ["s1"],
+    });
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await comTudoSemeado();
+    await waitFor(() => expect(screen.getByLabelText(/Número da OAB/)).toHaveValue("206876"));
+
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it("🔴 a semeadura dos SUBGRUPOS não conta -- mesmo trazendo conjunto diferente", async () => {
+    /* O par que isola a primeira. A prop diz que a pessoa está em `s1`; a
+       recarga fresca diz que está em `s1` e `s2`. Essa correção vem da rede,
+       não da pessoa -- e sem `resemear` marcaria o formulário como alterado. */
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [montarMembro({ subgrupos: ["s1", "s2"] })],
+    });
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await comTudoSemeado();
+
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+
+  it("editar o nome pergunta", async () => {
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await comTudoSemeado();
+
+    await usuario.type(screen.getByLabelText(/Nome completo/), " Silva");
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    expect(onFechar).not.toHaveBeenCalled();
+  });
+
+  it("editar e DESFAZER volta a fechar direto", async () => {
+    const usuario = userEvent.setup();
+    const onFechar = montar();
+    await comTudoSemeado();
+    const nome = screen.getByLabelText(/Nome completo/);
+
+    await usuario.type(nome, "X");
+    await usuario.type(nome, "{Backspace}");
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(onFechar).toHaveBeenCalled();
+  });
+});

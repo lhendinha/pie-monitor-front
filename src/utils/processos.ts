@@ -1,5 +1,6 @@
 import { CAMPOS_DO_CORPO_DE_PROCESSO } from "../constants/processo";
 import type { CamposOpcionaisProcesso } from "../types";
+import { mesmoValor } from "./iguais";
 
 /* 🔴 Mora em `utils/`, e não em `services/api/processos.ts`: é montagem
    de corpo de requisição, não chamada de API. Gêmeo de `corpoDoEndereco`
@@ -58,10 +59,7 @@ export function camposAlterados(
     const antes = original[chave];
     const depois = atual[chave];
     if (depois === undefined) continue;
-    const igual = Array.isArray(antes) && Array.isArray(depois)
-      ? antes.length === depois.length && antes.every((v, i) => v === depois[i])
-      : antes === depois;
-    if (!igual) (mudou as Record<string, unknown>)[chave] = depois;
+    if (!mesmoValor(antes, depois)) (mudou as Record<string, unknown>)[chave] = depois;
   }
   return mudou;
 }

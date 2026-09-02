@@ -952,6 +952,61 @@ export type FormaDaOpcaoDeSelect = "caixa" | "linha";
 /** As variantes de `.btn` do artifact que o sistema usa de fato. */
 export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
 
+/** O que o `Modal` faz quando alguém tenta fechá-lo.
+ *
+ * 🔴 **Obrigatória de propósito, e não opcional com padrão seguro.** A
+ * assimetria decide: esquecer a guarda perde o trabalho digitado de alguém em
+ * silêncio, sem rastro; esquecer o `"semFormulario"` é erro de compilação
+ * antes do commit. Um `descarte?:` opcional faria o modal criado daqui a seis
+ * meses nascer desprotegido, e ninguém descobriria até o primeiro relato de
+ * "sumiu tudo".
+ *
+ * ⚠️ Ela governa só os GESTOS de fechar (Escape, cortina, X, Cancelar).
+ * Fechamento programático -- o `onFechar()` que o próprio formulário chama
+ * depois de salvar -- passa direto, e tem de passar: perguntar "sair sem
+ * salvar?" logo depois de um "salvo com sucesso" seria absurdo.
+ */
+export type Descarte =
+  | "semFormulario"
+  | {
+      mudou: boolean;
+      /** Muda a frase da perda e o rótulo de voltar. Padrão: `"edicao"`. */
+      caso?: "edicao" | "criacao";
+      /** 🔴 Só para os modais que salvam NA HORA (`ModalDoQuadro`,
+       * `MembrosDoSubgrupo`), onde as frases padrão mentiriam: ali colunas e
+       * membros já foram gravados, e o que se perde é só o texto digitado e
+       * não commitado. */
+      textoProprio?: {
+        titulo: string;
+        mensagem: string;
+        sair: string;
+        voltar: string;
+      };
+    };
+
+/** Um valor projetado de formulário, para a guarda de descarte comparar.
+ *
+ * 🔴 **A ausência de objeto aninhado é a decisão, não um descuido.** Quem
+ * precisa comparar `endereco` ou `vinculos` inteiros leva erro de compilação e
+ * é obrigado a projetar campo a campo (`...endereco`,
+ * `processoId: vinculos.processo?.id ?? null`). A alternativa seria um
+ * deep-equal, e um deep-equal frágil deixaria o formulário "alterado" para
+ * sempre por desigualdade de referência -- defeito que ninguém percebe até
+ * alguém não conseguir mais fechar um modal.
+ *
+ * ⚠️ `File` entra na lista e é comparado por IDENTIDADE, como qualquer
+ * primitivo: o que se quer saber é "tem arquivo ou não", e escolher o mesmo
+ * arquivo de novo gera instância nova mas dá o mesmo veredito.
+ */
+export type ValorDeFormulario =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | File
+  | readonly (string | number)[];
+
 /** Parâmetros de busca do `GET /processos`.
  *
  * Nome diferente de `FiltrosProcessos` de propósito: aquele é o ESTADO da

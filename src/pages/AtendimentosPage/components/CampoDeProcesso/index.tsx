@@ -56,8 +56,24 @@ export default function CampoDeProcesso({ id, valor, onMudar }: CampoDeProcessoP
 
   const achados = query.data?.processos || [];
 
+  /** 🔴 Escape com a lista aberta fecha A LISTA, e não o modal atrás.
+   *
+   * Mesma régua do `Select` e do `SeletorData`: a camada de cima consome o
+   * Escape. Este campo ficou de fora daquela correção, e vive dentro do
+   * `NovoAtendimentoForm`, onde o "1º registro" é um texto longo que não se
+   * edita nem se apaga depois de salvo.
+   *
+   * ⚠️ A condição espelha a da lista (`aberto && busca`): sem termo não há
+   * nada na tela, e engolir o Escape ali deixaria a pessoa sem saída.
+   */
+  function aoTeclar(evento: React.KeyboardEvent) {
+    if (evento.key !== "Escape" || !aberto || !busca) return;
+    evento.stopPropagation();
+    setAberto(false);
+  }
+
   return (
-    <Box ref={caixa} position="relative">
+    <Box ref={caixa} position="relative" onKeyDown={aoTeclar}>
       <Input
         id={id}
         role="combobox"

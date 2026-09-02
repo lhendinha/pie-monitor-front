@@ -83,10 +83,44 @@ describe("mascararTelefone", () => {
 
   it("aplica a máscara progressivamente conforme a pessoa digita, assumindo fixo (prefixo de 4) até o 9º dígito", () => {
     expect(mascararTelefone("1")).toBe("1");
-    expect(mascararTelefone("11")).toBe("(11)");
+    /* 🔴 `"11"` é `"11"`, e NÃO `"(11)"` -- ver o teste do backspace abaixo.
+       Da terceira em diante a máscara é a mesma de sempre. */
+    expect(mascararTelefone("11")).toBe("11");
     expect(mascararTelefone("111987")).toBe("(11) 1987");
     expect(mascararTelefone("1119876")).toBe("(11) 1987-6");
     expect(mascararTelefone("11198765")).toBe("(11) 1987-65");
+  });
+
+  it("🔴 dá pra APAGAR o campo com backspace, dígito a dígito", () => {
+    /* O defeito que isto conserta: com o parêntese fechado já no segundo
+       dígito, apagar o `)` fazia `apenasDigitos("(11")` devolver `"11"` e a
+       máscara o recolocava. O campo travava em `(11)` para sempre -- só
+       select-all + delete o limpava. Achado em 01/09/2026, quando a guarda de
+       descarte tornou o defeito visível: quem digitasse dois dígitos sem
+       querer era perguntado ao sair, sem conseguir desfazer.
+
+       Simula o que o `onChange` faz: apagar o último caractere do texto e
+       remascarar. */
+    const backspace = (valor: string) => mascararTelefone(valor.slice(0, -1));
+
+    let v = mascararTelefone("11987654321");
+    expect(v).toBe("(11) 98765-4321");
+    for (let i = 0; i < 11; i += 1) v = backspace(v);
+
+    expect(v).toBe("");
+  });
+
+  it("⚠️ e as outras máscaras já apagavam -- o separador delas vem ANTES do próximo dígito", () => {
+    /* O par que explica por que só o telefone tinha o defeito: ele era o
+       único a acrescentar um caractere DEPOIS do último dígito. */
+    const apagarTudo = (mascarar: (v: string) => string, inicial: string) => {
+      let v = mascarar(inicial);
+      for (let i = 0; i < inicial.length + 4; i += 1) v = mascarar(v.slice(0, -1));
+      return v;
+    };
+
+    expect(apagarTudo(mascararCpfCnpj, "12345678901")).toBe("");
+    expect(apagarTudo(mascararCep, "30130010")).toBe("");
   });
 
   it("o prefixo vira 5 dígitos assim que o 9º dígito (depois do DDD) é digitado -- reflow de fixo pra celular", () => {
