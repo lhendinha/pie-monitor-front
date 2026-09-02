@@ -73,6 +73,14 @@ interface ModalProps {
  *
  * ⚠️ **Salvou e o modal fica aberto?** Chame `refazerRetrato()`: o que está na
  * tela passou a ser o salvo, e perguntar sobre ele seria mentira.
+ *
+ * 🔴 **E o modal NUNCA mora dentro de um ramo condicional.** Se cada `if` da
+ * tela devolve a própria árvore com o modal dentro, uma troca de ramo com ele
+ * aberto o REMONTA -- ele continua na tela e volta VAZIO, com o arquivo
+ * escolhido e o texto digitado perdidos. Pior que sumir: a pessoa vê a mesma
+ * janela e não percebe. E a guarda não alcança, porque ninguém fechou nada.
+ * O modal vai num `return` único, como irmão fixo do conteúdo -- ver
+ * `DocumentosVinculados`, onde isso foi medido e consertado.
  */
 /** Pilha dos modais abertos. O último a montar é o de cima.
  *
