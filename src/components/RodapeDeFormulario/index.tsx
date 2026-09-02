@@ -7,6 +7,13 @@ interface RodapeDeFormularioProps {
   /** Uma gravação está em voo? Trava os DOIS botões -- é a razão de este
    * componente existir. */
   salvando?: boolean;
+  /** Uma ação que fica ANTES do Cancelar, encostada à esquerda -- hoje só o
+   * "Excluir" do `ModalDeTarefa`.
+   *
+   * ⚠️ Existe porque a ordem importa: sem um lugar próprio, ela cairia depois
+   * do Cancelar. E o `disabled` dela continua com o chamador, que é quem sabe
+   * o que a trava (ali, a mutation de remover). */
+  acaoAEsquerda?: ReactNode;
   /** O botão de enviar, do jeito que cada formulário precisa dele. */
   children: ReactNode;
 }
@@ -31,9 +38,14 @@ interface RodapeDeFormularioProps {
  * também depende de validação (`faltaAlgo`, `podeEnviar`). O que este
  * componente garante é só a parte do `salvando`, que era a esquecida.
  */
-export default function RodapeDeFormulario({ salvando, children }: RodapeDeFormularioProps) {
+export default function RodapeDeFormulario({
+  salvando,
+  acaoAEsquerda,
+  children,
+}: RodapeDeFormularioProps) {
   return (
     <RodapeDeAcoes>
+      {acaoAEsquerda}
       <BotaoDeCancelar desabilitado={salvando} />
       {children}
     </RodapeDeAcoes>

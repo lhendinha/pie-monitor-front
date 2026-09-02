@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -134,5 +135,81 @@ describe("vinculoInicial", () => {
     });
 
     expect(await screen.findByText("Atendimento de Fulano")).toBeInTheDocument();
+  });
+});
+
+// ── 🔴 a guarda de descarte, com o quadro chegando DEPOIS ─────────────────
+
+/** Aqui o modal monta com o cache FRIO -- `listarQuadro` é assíncrono, ao
+ * contrário do que acontece no Kanban, onde a página já buscou o quadro e a
+ * query do modal resolve na primeira renderização. É esta a situação que
+ * separa uma guarda correta de uma que suja sozinha. */
+describe("guarda de descarte", () => {
+  const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
+  const seletorDeColuna = () => screen.getByLabelText(/Coluna do quadro/);
+
+  it("🔴 a coluna que chega do QUADRO não conta como mudança", async () => {
+    /* `colunaEscolhida` é `""` até a query responder, e vira a primeira
+       coluna quando ela chega. Sem avisar o retrato (`resemear`), essa
+       chegada sozinha marcaria a tarefa como alterada -- e quem só abriu para
+       olhar seria interrogado ao sair. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("A fazer"); // o quadro chegou
+
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+
+  it("🔴 re-escolher a coluna que JÁ aparecia marcada não conta", async () => {
+    /* O outro lado do mesmo problema, e a razão de a projeção usar o valor do
+       ENVIO. O estado cru (`colunaId`) nasce `""` enquanto a tela já mostra a
+       primeira coluna; escolhê-la no seletor mudaria `""` -> `"c1"` e
+       perguntaria por uma mudança que ninguém vê. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("A fazer");
+
+    await usuario.click(seletorDeColuna());
+    await usuario.click(await screen.findByRole("option", { name: "A fazer" }));
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+
+  it("🔴 tirar o vínculo de ATENDIMENTO pergunta -- ele entra na projeção", async () => {
+    /* O par que guarda a segunda metade do vínculo. `VinculosDeRegistro` tem
+       DOIS ninhos, e projetar só `processoNumero` deixaria a remoção do
+       atendimento passar em silêncio -- justamente o campo que o envio manda
+       como `null` para DESFAZER o vínculo. */
+    const usuario = userEvent.setup();
+    renderComProviders(
+      <MemoryRouter>
+        <ModalDeTarefa
+          subgrupoAtual="s1"
+          vinculoInicial={{ tipo: "atendimento", id: "at-1", rotulo: "Reunião inicial" }}
+          onSalvo={vi.fn()}
+          onFechar={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText("A fazer");
+
+    await usuario.click(screen.getByRole("button", { name: /Remover Atendimento/ }));
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+  });
+
+  it("digitar o título pergunta", async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("A fazer");
+
+    await usuario.type(screen.getByLabelText(/Descrição da tarefa/), "Peticionar");
+    await usuario.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
   });
 });
