@@ -6,6 +6,8 @@ import {
   Botao,
   Campo,
   CampoComCadeado,
+  Esqueleto,
+  EstadoDeErro,
   LinhaDeCampos,
   Modal,
   MultiSelect,
@@ -263,6 +265,22 @@ export default function EditarMembroForm({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    /* 🔴 A trava não pode viver SÓ no `disabled` do botão, e o motivo é a
+       forma deste modal: o Salvar é IRMÃO do `<form>`, ligado por
+       `form={idFormulario}`. O envio implícito -- Enter num campo de texto --
+       passa pelo botão padrão do formulário, e esse caminho o jsdom nem
+       executa: medido em 02/09/2026, com o botão HABILITADO o Enter não
+       submetia nada aqui. Ou seja, um teste de Enter passaria verde
+       independentemente da trava, provando nada.
+
+       Repetir a condição aqui resolve as duas coisas: vale para QUALQUER
+       caminho de envio, inclusive os que o navegador tem e o jsdom não, e
+       vira uma regra que o teste consegue exercitar de verdade.
+
+       ⚠️ O que ela impede: sem a inscrição carregada `numeroOab` é `""`, e
+       `""` nas duas partes é o gesto de APAGAR (`types/requisicoes.ts`). */
+    
+    if (!editavelQuery.data) return;
     atualizarMutation.mutate();
   }
 
@@ -282,7 +300,18 @@ export default function EditarMembroForm({
               atualizarMutation.isPending ||
               !subgruposCarregados ||
               semSubgrupo ||
-              falhouAoRecarregar
+              falhouAoRecarregar ||
+              /* 🔴 A segunda metade da regra acima: enquanto não sei, também
+                 não deixo salvar. Esconder os campos tira a mentira da TELA,
+                 mas `numeroOab` continua `""` no estado -- e é o estado que
+                 monta o PATCH. Sem esta linha, a tela em erro ainda apagaria
+                 a inscrição num "Salvar" que só queria trocar o nome.
+
+                 É `!data`, e não `isPending`: no erro a carga TERMINA sem
+                 dado nenhum, e `isPending` já é `false` ali. Gêmeo do
+                 `falhouAoRecarregar` logo acima, pelo motivo idêntico --
+                 mandar o que não se conferiu remove o que estava lá. */
+              !editavelQuery.data
             }
           >
             {atualizarMutation.isPending ? "Salvando…" : "Salvar"}
@@ -396,47 +425,73 @@ export default function EditarMembroForm({
               formulário já dá `gap="16px"` entre todas as linhas; uma régua
               aqui faria ESTA fronteira parecer mais importante que as
               outras, e acabou lida como sublinhado do bloco de cima. */}
-          <LinhaDeCampos>
-            <Campo rotulo="Número da OAB" para="numero-oab-membro">
-              <Input
-                id="numero-oab-membro"
-                value={numeroOab}
-                onChange={(e) => setNumeroOab(e.target.value)}
-                inputMode="numeric"
-                placeholder="Só os dígitos"
-              />
-            </Campo>
-            <Campo rotulo="UF" para="uf-oab-membro">
-              <Select
-                id="uf-oab-membro"
-                /* 🔴 A opção vazia é EXPLÍCITA, como no perfil: é o vazio
-                   nas DUAS partes que apaga a inscrição, e sem ela quem
-                   escolhesse uma UF nunca mais voltaria ao vazio. */
-                opcoes={[{ value: "", label: "Nenhuma" },
-                         ...UFS.map((uf) => ({ value: uf, label: uf }))]}
-                valor={ufOab}
-                onMudar={setUfOab}
-                largura="120px"
-              />
-            </Campo>
-          </LinhaDeCampos>
+          {/* 🔴 **Enquanto não sei, não afirmo.** Estes campos não podem
+              nascer vazios à espera da resposta, e a razão é a mesma do
+              seletor de subgrupos acima -- vazio aqui não se lê como
+              "carregando", se lê como "esta pessoa não tem OAB".
 
-          <InterruptorDaImportacao
-            ligada={importacaoLigada}
-            aoMudarLigada={setImportacaoLigada}
-            /* 🔴 Os subgrupos MARCADOS AGORA, não os salvos: é a mesma tela
-               que os edita, e o servidor valida contra este PATCH. Assim não
-               dá para escolher um destino que o salvamento invalidaria. */
-            subgrupos={subgruposDoGrupo
-              .filter((s) => subgruposSelecionados.includes(s.subgrupo_id))
-              .map((s) => ({ id: s.subgrupo_id, nome: s.nome }))}
-            destino={destinoEfetivo}
-            aoMudarDestino={setDestino}
-            temInscricao={temInscricao}
-            desabilitado={atualizarMutation.isPending}
-            deTerceiro
-            compacto
-          />
+              Só que aqui a mentira também GRAVA: `""` nas duas partes é o
+              gesto de APAGAR a inscrição (ver `types/requisicoes.ts`), então
+              um admin que abrisse o modal para corrigir um NOME e salvasse
+              antes da resposta chegar apagaria a OAB de quem tem, junto com
+              a importação automática. Medido em 02/09/2026: o PATCH saía com
+              `numero_oab: ""`, e o servidor obedecia -- corretamente.
+
+              Também é o que fecha a corrida: sem campo na tela, não há texto
+              digitado para a resposta sobrescrever quando ela chega. */}
+          {editavelQuery.isPending ? (
+            <Esqueleto linhas={2} />
+          ) : editavelQuery.isError ? (
+            <EstadoDeErro
+              mensagem="Não foi possível carregar a inscrição desta pessoa."
+              onTentarDeNovo={() => editavelQuery.refetch()}
+              tentando={editavelQuery.isFetching}
+            />
+          ) : (
+            <>
+              <LinhaDeCampos>
+                <Campo rotulo="Número da OAB" para="numero-oab-membro">
+                  <Input
+                    id="numero-oab-membro"
+                    value={numeroOab}
+                    onChange={(e) => setNumeroOab(e.target.value)}
+                    inputMode="numeric"
+                    placeholder="Só os dígitos"
+                  />
+                </Campo>
+                <Campo rotulo="UF" para="uf-oab-membro">
+                  <Select
+                    id="uf-oab-membro"
+                    /* 🔴 A opção vazia é EXPLÍCITA, como no perfil: é o vazio
+                       nas DUAS partes que apaga a inscrição, e sem ela quem
+                       escolhesse uma UF nunca mais voltaria ao vazio. */
+                    opcoes={[{ value: "", label: "Nenhuma" },
+                             ...UFS.map((uf) => ({ value: uf, label: uf }))]}
+                    valor={ufOab}
+                    onMudar={setUfOab}
+                    largura="120px"
+                  />
+                </Campo>
+              </LinhaDeCampos>
+
+              <InterruptorDaImportacao
+                ligada={importacaoLigada}
+                aoMudarLigada={setImportacaoLigada}
+                /* 🔴 Os subgrupos MARCADOS AGORA, não os salvos: é a mesma tela
+                   que os edita, e o servidor valida contra este PATCH. Assim não
+                   dá para escolher um destino que o salvamento invalidaria. */
+                subgrupos={subgruposDoGrupo
+                  .filter((s) => subgruposSelecionados.includes(s.subgrupo_id))
+                  .map((s) => ({ id: s.subgrupo_id, nome: s.nome }))}
+                destino={destinoEfetivo}
+                aoMudarDestino={setDestino}
+                temInscricao={temInscricao}
+                desabilitado={atualizarMutation.isPending}
+                deTerceiro
+                compacto
+              />
+            </>
+          )}
         </Stack>
       </form>
     </Modal>

@@ -2788,6 +2788,34 @@ A tela de **Grupo** é a exceção -- suas sub-abas dividem UM endereço, então
 trocar de aba limpa `pagina`, `tamanho` e `busca`. Sem isso, ir para a página 3
 de Subgrupos e clicar em Membros abria Membros na página 3, vazia.
 
+### 🔴 Cinco telas NÃO têm endereço, e errar isso falha em silêncio
+
+Subgrupos, Membros, Convidar, Fases e Situações são **sub-abas de `/grupo`**
+(`ABAS_DO_GRUPO`), e a aba ativa é `useState` dentro de `GrupoPage` -- não
+está na URL. Não existe `/membros`, `/subgrupos` nem `/fases`.
+
+⚠️ **E o erro não aparece:** `routes/index.tsx` termina com
+`<Route path="*" element={<Navigate to="/" replace />} />`, então um endereço
+inventado não dá 404 nem erro de console -- redireciona para a Área de
+trabalho. Um roteiro do Playwright que faz `goto("/membros")` segue adiante,
+e só quebra dezenas de linhas depois, no `click` de um elemento que "sumiu".
+O rastro aponta para o seletor, e a causa está no `goto`. Custou tempo duas
+vezes; da segunda virou esta seção.
+
+O caminho é ir ao endereço e clicar na aba:
+
+```js
+await pagina.goto(`${APP}/grupo`, { waitUntil: "networkidle" });
+await pagina.getByRole("tab", { name: "Membros" }).click();
+```
+
+⚠️ Vale para `renderComRota` também: `renderComRota(<MembrosPage />, "/membros")`
+monta, mas a rota é ficção -- quem depende de `useSearchParams` ali está
+testando um endereço que o app não serve.
+
+Quando um `goto` levar à tela errada, o primeiro suspeito é este redirecionamento:
+`console.log(pagina.url())` logo depois do `goto` responde na hora.
+
 ### ⚠️ Testes de tela agora precisam de `<Router>`
 
 Medido: o React Router 7 **estoura** com dois `<Router>` aninhados, e dezesseis
@@ -2988,6 +3016,59 @@ destoava de todas as outras fronteiras. Espaçamento é do CONTEXTO, e por isso
 ⚠️ **A coluna da tabela virou "Nome completo" junto.** Ela dizia "Apelido"
 enquanto o modal que ela abre já dizia outra coisa -- mesma coisa com dois
 nomes na mesma tela é o defeito que a troca do perfil existia para evitar.
+
+### 🔴 A tela não afirma a OAB que ela não tem (02/09/2026)
+
+O modal desenhava os campos de OAB **vazios** enquanto `lerMembro` corria, e
+continuava vazio se ela falhasse. Vazio nas duas partes é o gesto de APAGAR a
+inscrição -- está escrito no tipo (`DadosDoMembro`: *"`undefined` = não mexer.
+Mandar `""` APAGA"*) e o servidor honra: `membros_service` faz
+`if not numero_oab and not uf_oab: campos["numero_oab"] = None`.
+
+Então abrir o modal só para corrigir um NOME e salvar antes da resposta chegar
+apagava a OAB de quem tem, e desligava a importação automática junto. Ninguém
+tocou nesses campos. Não é hipótese: com a leitura falhando, o PATCH observado
+saía com `numero_oab: ""`, `uf_oab: ""` e `importacao_automatica: false`. E
+digitar `206876` antes da resposta chegar deixava o campo em `""` -- a guarda
+de descarte então **fechava calada**, porque o retrato voltava a bater.
+
+⚠️ **O defeito é maior que "sobrescreve o que foi digitado"**, que é como ele
+estava registrado no plano da guarda de descarte. Sobrescrever incomoda;
+apagar a inscrição de terceiro perde dado que a tela nem mostrava.
+
+São **duas metades**, e uma sem a outra não resolve:
+
+- **enquanto não sei, não mostro** -- `Esqueleto` na carga, `EstadoDeErro` com
+  "tentar de novo" na falha. É o arranjo que `FormularioDaInscricao` já usava
+  no perfil desde o início; a versão de terceiro não o herdou. Sem campo na
+  tela não há texto digitado para a resposta engolir;
+- **enquanto não sei, não deixo salvar** -- esconder o campo tira a mentira da
+  TELA, mas `numeroOab` continua `""` no estado, e é o estado que monta o
+  PATCH. A condição é `!editavelQuery.data`, e não `isPending`: no erro a
+  carga TERMINA sem dado, e ali `isPending` já é `false`.
+
+⚠️ **A espera cobre o BLOCO, não o modal.** Nome, papel, grupo e subgrupos vêm
+da prop e já estão na mão -- fazer a tela inteira esperar cobraria por quatro
+campos o preço de um. O perfil pode devolver `<Esqueleto/>` no lugar do
+formulário todo porque lá o formulário **é** a inscrição.
+
+⚠️ Gêmeo declarado do `falhouAoRecarregar` e do `corpoDosCamposDeProcesso`
+(*"campo ausente é OMITIDO, não zerado"*, 28/08): três defesas contra a mesma
+armadilha -- mandar o que não se conferiu remove o que estava lá.
+
+🔴 **A trava se repete no `handleSubmit`, e não é redundância.** O Salvar é
+IRMÃO do `<form>` (ligado por `form={idFormulario}`), então o envio implícito
+-- Enter num campo de texto -- passa pelo botão padrão, e esse caminho **o
+jsdom não executa**: medido, com o Salvar HABILITADO o Enter não submetia nada
+lá. Um teste de teclado em jsdom passa verde com a trava ou sem ela. O teste
+que eu tinha escrito era exatamente esse, e a prova por mutação o pegou vazio.
+Virou `fireEvent.submit`, e o Enter de verdade foi para
+`scripts/verificar-oab-sem-dado.mjs`, em Chrome com janela.
+
+⚠️ **O estado de erro demora ~7s para aparecer**, e é correto: `queryClient`
+repete erro transitório 3 vezes (medido: 4 idas à rede, 7,4s). Até lá a tela
+mostra o esqueleto -- ainda não se sabe. Quem esperar pelo erro com timeout
+curto vai concluir que ele não existe.
 
 ### As recusas de titularidade chegam do servidor, e a tela não as reescreve
 
