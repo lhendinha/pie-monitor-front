@@ -1,18 +1,18 @@
 import { Input, Stack, Textarea } from "@chakra-ui/react";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
-  BotaoDeCancelar,
   Campo,
   CampoDeClientes,
   CampoDeResponsaveis,
   Modal,
-  RodapeDeAcoes,
+  RodapeDeFormulario,
   Select,
   useToast,
 } from "../../../../components";
+import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { criarAtendimento } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import CampoDeProcesso from "../CampoDeProcesso";
@@ -73,6 +73,34 @@ export default function NovoAtendimentoForm({
     setResponsaveis([]);
   }
 
+  /* A projeção é o corpo do envio, campo a campo -- com `trim` onde ele
+     apara, e `processo?.numero` em vez do objeto (o tipo recusa aninhado). */
+  const { mudou, resemear } = useGuardaDeDescarte({
+    subgrupoId: subgrupoEscolhido,
+    assunto: assunto.trim(),
+    clientes,
+    responsaveis,
+    registro: registro.trim(),
+    processoNumero: processo?.numero ?? null,
+  });
+
+  /* 🔴 O subgrupo padrão é escolhido pelo SISTEMA, não pela pessoa.
+   *
+   * `subgrupoEscolhido` nasce `""` e vira o primeiro da lista quando a
+   * consulta responde. Como a projeção usa o valor do ENVIO -- e tem de usar,
+   * senão re-escolher no Select a opção que já aparecia marcada contaria como
+   * mudança --, essa chegada sozinha deixaria o modal "alterado" sem ninguém
+   * ter tocado em nada.
+   *
+   * ⚠️ Só quando `subgrupoId` ainda está vazio: se a pessoa já escolheu, o
+   * valor é dela e tem de sujar. E `resemear` deduz por chave, então um
+   * refetch não re-baseia o retrato no meio da edição. */
+  useEffect(() => {
+    if (!subgrupoId && subgrupoEscolhido) {
+      resemear("subgrupoPadrao", { subgrupoId: subgrupoEscolhido });
+    }
+  }, [subgrupoId, subgrupoEscolhido, resemear]);
+
   const salvar = useMutation({
     mutationFn: () =>
       criarAtendimento({
@@ -107,16 +135,15 @@ export default function NovoAtendimentoForm({
 
   return (
     <Modal
-      descarte="semFormulario"
+      descarte={{ mudou, caso: "criacao" }}
       titulo="Adicionar atendimento"
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          <BotaoDeCancelar />
+        <RodapeDeFormulario salvando={salvar.isPending}>
           <Botao type="submit" form={`${prefixo}-form`} disabled={faltaAlgo || salvar.isPending}>
             {salvar.isPending ? "Salvando…" : "Salvar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <Stack as="form" id={`${prefixo}-form`} onSubmit={handleSubmit} gap="0">

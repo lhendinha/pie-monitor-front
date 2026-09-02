@@ -4,16 +4,16 @@ import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
-  BotaoDeCancelar,
   Campo,
   CamposDeEndereco,
   Modal,
-  RodapeDeAcoes,
+  RodapeDeFormulario,
   useToast,
 } from "../../../../components";
 import { criarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
+import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { ENDERECO_VAZIO, TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
 import type { EnderecoDoCliente } from "../../../../types";
 
@@ -41,6 +41,25 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
   // acusar erro em campo vazio é ruído. O servidor recusa do mesmo jeito
   // (`EmailInvalido`) -- isto é pra avisar antes de a pessoa enviar.
   const emailInvalido = email.trim() !== "" && !emailValido(email);
+
+  /* 🔴 A projeção é o CORPO DO ENVIO, campo a campo -- e aqui isso não é
+     elegância, é o que evita um defeito medido.
+     `mascararTelefone` com dois dígitos vira `(12)`, e o backspace nunca
+     devolve `""`: `apenasDigitos("(12")` é `"12"` e a máscara recoloca o
+     parêntese. Projetando o texto formatado, quem digitasse e apagasse ficaria
+     com o modal "alterado" para SEMPRE, sem conseguir mais sair sem pergunta.
+     Projetando `apenasDigitos`, digitar e apagar volta a `""`.
+
+     ⚠️ `endereco` é espalhado, e não passado inteiro: o tipo
+     `ValorDeFormulario` recusa objeto aninhado de propósito, para ninguém
+     comparar por referência sem perceber. Ele é plano (7 strings). */
+  const { mudou } = useGuardaDeDescarte({
+    nome: nome.trim(),
+    cpfCnpj: apenasDigitos(cpfCnpj),
+    telefone: apenasDigitos(telefone),
+    email: email.trim(),
+    ...endereco,
+  });
 
   const criarMutation = useMutation({
     // O backend grava só dígitos -- a máscara é exibição, e é reaplicada a
@@ -71,12 +90,11 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
 
   return (
     <Modal
-      descarte="semFormulario"
+      descarte={{ mudou, caso: "criacao" }}
       titulo="Novo cliente"
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          <BotaoDeCancelar />
+        <RodapeDeFormulario salvando={criarMutation.isPending}>
           <Botao
             type="submit"
             form={idFormulario}
@@ -84,7 +102,7 @@ export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteF
           >
             {criarMutation.isPending ? "Cadastrando…" : "Cadastrar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <form id={idFormulario} onSubmit={handleSubmit}>

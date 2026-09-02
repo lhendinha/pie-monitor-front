@@ -4,16 +4,16 @@ import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
-  BotaoDeCancelar,
   Campo,
   Esqueleto,
   Modal,
-  RodapeDeAcoes,
+  RodapeDeFormulario,
   Select,
   useToast,
 } from "../../../../components";
 import { criarProcesso } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
+import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { apenasDigitos, mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../CamposProcesso";
 import type { Subgrupo } from "../../../../types";
@@ -70,6 +70,36 @@ export default function NovoProcessoForm({
 
   const numeroLimpo = apenasDigitos(numeroMascarado);
 
+  /* 🔴 Os campos opcionais são NORMALIZADOS, e é o que impede o falso
+     "alterado" mais fácil de encontrar aqui.
+
+     `campos` nasce `{}`, e `CamposProcesso` grava a chave assim que alguém
+     digita -- inclusive quando apaga tudo, que grava `""`. Sem normalizar,
+     `mesmoValor(undefined, "")` é DIFERENTE, e digitar e apagar deixaria o
+     modal alterado para sempre. Com `?? ""` e `?? []` dos dois lados, ausente
+     e vazio passam a ser a mesma coisa -- que é o que o servidor entende.
+
+     ⚠️ Vale para os arrays também: `trocarSubgrupo` grava `responsaveis: []`
+     em cima de um `campos` que não tinha a chave. Sem a normalização, trocar
+     de subgrupo e voltar ao original deixaria sujo para sempre.
+
+     ⚠️ `numeroLimpo`, e não `numeroMascarado`: é o que o envio manda, e a
+     máscara do CNJ não é reversível caractere a caractere. */
+  const { mudou } = useGuardaDeDescarte({
+    subgrupoId,
+    numero: numeroLimpo,
+    apelido: apelido.trim(),
+    clienteIds: campos.clienteIds ?? [],
+    responsaveis: campos.responsaveis ?? [],
+    objetoAssunto: campos.objetoAssunto ?? "",
+    proximaProvidencia: campos.proximaProvidencia ?? "",
+    dataVerificar: campos.dataVerificar ?? "",
+    prazoFinal: campos.prazoFinal ?? "",
+    observacoes: campos.observacoes ?? "",
+    faseId: campos.faseId ?? "",
+    situacaoId: campos.situacaoId ?? "",
+  });
+
   const criarMutation = useMutation({
     mutationFn: () =>
       criarProcesso(subgrupoId, numeroLimpo, apelido.trim(), campos),
@@ -93,6 +123,7 @@ export default function NovoProcessoForm({
 
   if (carregandoSubgrupos) {
     return (
+      /* `semFormulario` legítimo: não há campo nenhum aqui para perder. */
       <Modal titulo="Novo processo" onFechar={onFechar} descarte="semFormulario">
         {/* Só o esqueleto: ele já diz que algo está vindo, e a frase em
             cima era a mesma informação escrita duas vezes. */}
@@ -105,6 +136,7 @@ export default function NovoProcessoForm({
 
   if (subgrupos.length === 0) {
     return (
+      /* `semFormulario` legítimo: é um recado, não um formulário. */
       <Modal titulo="Novo processo" onFechar={onFechar} descarte="semFormulario">
         <Text py="34px" px="10px" textAlign="center" color="fg.subtle">
           Cria um subgrupo primeiro (aba Subgrupos) antes de cadastrar
@@ -120,12 +152,11 @@ export default function NovoProcessoForm({
    * vista em formulário longo) ou o submit para de funcionar. */
   return (
     <Modal
-      descarte="semFormulario"
+      descarte={{ mudou, caso: "criacao" }}
       titulo="Novo processo"
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          <BotaoDeCancelar />
+        <RodapeDeFormulario salvando={criarMutation.isPending}>
           <Botao
             type="submit"
             form={idFormulario}
@@ -137,7 +168,7 @@ export default function NovoProcessoForm({
           >
             {criarMutation.isPending ? "Cadastrando…" : "Cadastrar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <form id={idFormulario} onSubmit={handleSubmit}>

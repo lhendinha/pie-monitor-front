@@ -210,3 +210,77 @@ describe("ClientesPage", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+// ── 🔴 a guarda de descarte, e a armadilha da MÁSCARA ─────────────────────
+
+describe("guarda de descarte no Novo cliente", () => {
+  async function abrir() {
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText("Fulano");
+    await user.click(screen.getByRole("button", { name: "+ Novo cliente" }));
+    await screen.findByLabelText(/^Nome/);
+    return user;
+  }
+
+  const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
+
+  it("intacto, o Escape fecha direto", async () => {
+    const user = await abrir();
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+    expect(screen.queryByLabelText(/^Nome/)).not.toBeInTheDocument();
+  });
+
+  it("com o nome começado, pergunta -- e diz que é um CADASTRO", async () => {
+    const user = await abrir();
+
+    await user.type(screen.getByLabelText(/^Nome/), "Construtora");
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+    // texto do caso "criacao", não o de edição
+    expect(screen.getByRole("button", { name: "Continuar preenchendo" })).toBeInTheDocument();
+  });
+
+  it("🔴 limpar o telefone volta a fechar direto", async () => {
+    const user = await abrir();
+    const telefone = screen.getByLabelText(/Telefone/);
+
+    await user.type(telefone, "31988887777");
+    await user.clear(telefone);
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(false);
+  });
+
+  it("⚠️ mas o BACKSPACE não limpa o telefone -- e a pergunta fica", async () => {
+    /* 🔴 Defeito PRÉ-EXISTENTE de `mascararTelefone`, medido aqui:
+       com dois dígitos o valor é `(31)`, e apagar o `)` faz a máscara
+       recolocá-lo -- `apenasDigitos("(31")` é `"31"`. O campo trava em `(31)`
+       por quantos backspaces se dê; só select-all + delete limpa.
+
+       ⚠️ A projeção com `apenasDigitos` NÃO resolve isso, ao contrário do que
+       eu tinha suposto: os dígitos continuam mesmo lá, então o formulário
+       está alterado de verdade. Quem digitar dois dígitos sem querer vai ser
+       perguntado ao sair, para sempre.
+
+       Este teste existe para REGISTRAR o defeito, não para abençoá-lo. Quando
+       a máscara for corrigida, ele vira vermelho -- e aí é só trocar por
+       "backspace limpa e a pergunta some". */
+    const user = await abrir();
+    const telefone = screen.getByLabelText(/Telefone/);
+
+    await user.type(telefone, "31");
+    expect(telefone).toHaveValue("(31)");
+    await user.type(telefone, "{Backspace}{Backspace}{Backspace}{Backspace}");
+    expect(telefone).toHaveValue("(31)"); // o defeito
+
+    await user.keyboard("{Escape}");
+
+    expect(perguntou()).toBe(true);
+  });
+});

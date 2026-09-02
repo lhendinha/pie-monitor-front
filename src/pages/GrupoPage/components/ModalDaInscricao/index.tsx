@@ -3,16 +3,16 @@ import { useState, type FormEvent } from "react";
 
 import {
   Botao,
-  BotaoDeCancelar,
   Campo,
   CampoComCadeado,
   LinhaDeCampos,
   Modal,
   MultiSelect,
-  RodapeDeAcoes,
+  RodapeDeFormulario,
   Select,
 } from "../../../../components";
 import { UFS } from "../../../../constants";
+import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { erroDaInscricao, partesDaInscricao } from "../../../../utils/oab";
 import type { InscricaoAvulsa, Subgrupo } from "../../../../types";
 
@@ -73,6 +73,19 @@ export default function ModalDaInscricao({
      leria como falha do sistema. */
   const faltaDestino = ligada && destinos.length === 0;
 
+  /* A projeção é o que `onSalvar` manda, argumento a argumento: número
+     aparado, UF em maiúsculas e -- o detalhe -- os destinos SÓ quando ligada,
+     porque desligar zera a lista no envio. Sem esse `ligada ?`, desligar e
+     religar o interruptor deixaria o modal "alterado" mesmo com tudo igual.
+
+     ⚠️ `tentou` fica fora: é sinal de UI, não intenção de quem digita. */
+  const { mudou } = useGuardaDeDescarte({
+    numero: numero.trim(),
+    uf: uf.trim().toUpperCase(),
+    ligada,
+    destinos: ligada ? destinos : [],
+  });
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setTentou(true);
@@ -82,17 +95,16 @@ export default function ModalDaInscricao({
 
   return (
     <Modal
-      descarte="semFormulario"
+      descarte={{ mudou, caso: editando ? "edicao" : "criacao" }}
       titulo={editando ? "Editar inscrição" : "Adicionar inscrição"}
       subtitulo="Uma OAB que o escritório acompanha e que não pertence a ninguém com conta."
       onFechar={onFechar}
       rodape={
-        /* 🔴 `RodapeDeAcoes`, e não os botões crus: o `Modal` renderiza a prop
+        /* 🔴 `RodapeDeFormulario` (que embrulha o `RodapeDeAcoes`), e não os botões crus: o `Modal` renderiza a prop
            `rodape` como ela vem -- sem faixa, sem recuo e sem alinhar à
            direita. Sem ele, o "Cancelar" nasce colado na borda esquerda do
            cartão e a faixa do artifact não existe. Medido em Chrome. */
-        <RodapeDeAcoes>
-          <BotaoDeCancelar desabilitado={salvando} />
+        <RodapeDeFormulario salvando={salvando}>
           <Botao
             type="submit"
             form="form-da-inscricao"
@@ -100,7 +112,7 @@ export default function ModalDaInscricao({
           >
             {salvando ? "Salvando…" : editando ? "Salvar" : "Adicionar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       {/* ⚠️ `form` com `id` e o botão do RODAPÉ apontando pra ele: o rodapé do
