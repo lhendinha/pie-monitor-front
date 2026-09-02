@@ -175,13 +175,37 @@ try {
     "e 'Última movimentação' continua lá -- a sétima foi ACRESCENTADA",
   );
 
-  /* 🔴 A prova de que a MIGRAÇÃO pegou: nenhuma linha pode estar marcada como
-     órfã. Foram 10 processos e 1 atendimento preenchidos com `criado_por`. */
+  /* 🔴 A prova de que a MIGRAÇÃO pegou: a coluna traz nome de VERDADE, e não
+     "Sem responsável" em toda linha. Foram 10 processos e 1 atendimento
+     preenchidos com `criado_por` em 26/08/2026.
+
+     ⚠️ **A afirmação era outra e virou MENTIRA**: "NENHUMA linha pode dizer
+     'Sem responsável'". Deixou de valer em 27/08/2026 -- um dia depois da
+     migração. Responsáveis é campo OPCIONAL na criação (sem asterisco na
+     tela, `default_factory=list` no schema), e o sistema tem até um filtro
+     "Sem responsável" para esse estado: `shared/destinatarios.py` manda o
+     aviso ao subgrupo inteiro quando não há ninguém na lista.
+
+     Medido em produção em 01/09/2026: 29 processos, 26 com responsável e 3
+     sem -- os três criados em 27 e 28/08, DEPOIS do corte. A afirmação antiga
+     reprovava o comportamento correto.
+
+     ➡️ O que sobrou é o que a migração garante de fato: se ela não tivesse
+     pegado, os legados apareceriam TODOS órfãos.
+
+     ⚠️ **E este cheque ENFRAQUECE com o tempo**, de propósito e com o custo
+     assumido: quanto mais processos novos com responsável entram, menos ele
+     distingue. Hoje só reprova se a página inteira estiver órfã. A alternativa
+     -- exigir uma proporção -- seria número inventado, e quebraria sozinha na
+     primeira semana movimentada. Quem quiser a prova forte da migração tem
+     `scripts/migrar_responsaveis.py` em modo simulação, que lista o que ainda
+     falta pelo dado, não pela tela. */
   const linhas = await pagina.locator("table tbody tr").allInnerTexts();
+  const orfas = linhas.filter((l) => l.includes("Sem responsável")).length;
   conferir(
-    linhas.length > 0 && !linhas.some((l) => l.includes("Sem responsável")),
-    "🔴 a migração pegou: nenhum processo ficou órfão",
-    `${linhas.length} linha(s)`,
+    linhas.length > 0 && orfas < linhas.length,
+    "🔴 a migração pegou: a coluna traz responsável de verdade",
+    `${linhas.length - orfas} de ${linhas.length} com responsável`,
   );
 
   await pagina.getByText("Todos os responsáveis").click();
