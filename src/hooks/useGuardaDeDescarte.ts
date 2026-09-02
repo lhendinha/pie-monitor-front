@@ -34,13 +34,13 @@ import { mesmoValor } from "../utils";
  */
 export function useGuardaDeDescarte<T extends Record<string, ValorDeFormulario>>(
   valores: T,
-  opcoes: { pronto?: boolean } = {},
+  opcoes: { aguarda?: readonly string[] } = {},
 ): {
   mudou: boolean;
   resemear: (chave: string, parcial: Partial<T>) => void;
   refazerRetrato: () => void;
 } {
-  const { pronto = true } = opcoes;
+  const { aguarda } = opcoes;
 
   /* Inicializador preguiçoso: roda uma vez, na montagem. É literalmente "como
      o formulário estava quando abriu". */
@@ -66,6 +66,14 @@ export function useGuardaDeDescarte<T extends Record<string, ValorDeFormulario>>
    * uma semeadura independente: o `EditarMembroForm` tem duas, e um sinal só
    * deixaria a segunda calada. */
   const jaSemeadas = useRef(new Set<string>());
+  /* 🔴 O mesmo conjunto em ESTADO, e não é duplicação à toa: o `aguarda` é
+     lido durante a renderização, e ref lido no render é o antipadrão que o
+     React Compiler proíbe -- além de não re-renderizar quando muda, que era
+     exatamente o defeito (o gate nunca destravava).
+     O ref continua existindo para a DEDUÇÃO, que roda dentro do callback e
+     precisa enxergar a chave na mesma tarefa: duas chamadas no mesmo lote
+     leriam o estado velho e semeariam duas vezes. */
+  const [semeadas, setSemeadas] = useState<ReadonlySet<string>>(() => new Set());
 
   /** Avisa que quem definiu estes valores foi o SISTEMA, não a pessoa.
    *
@@ -80,6 +88,7 @@ export function useGuardaDeDescarte<T extends Record<string, ValorDeFormulario>>
   const resemear = useCallback((chave: string, parcial: Partial<T>) => {
     if (jaSemeadas.current.has(chave)) return;
     jaSemeadas.current.add(chave);
+    setSemeadas((anteriores) => new Set(anteriores).add(chave));
     setRetrato((anterior) => ({ ...anterior, ...parcial }));
   }, []);
 
@@ -88,14 +97,33 @@ export function useGuardaDeDescarte<T extends Record<string, ValorDeFormulario>>
    * salvo, e perguntar sobre ele seria mentira. */
   const refazerRetrato = useCallback(() => {
     jaSemeadas.current.clear();
+    setSemeadas(new Set());
     setRetrato(valoresRef.current);
   }, []);
 
-  /* Enquanto não está pronto, nada mudou. É o cinto para "abriu, a consulta
-     ainda corre, apertou Esc" -- não é o mecanismo principal, que é o
-     `resemear`. */
+  /* 🔴 Enquanto uma semeadura DECLARADA não chegou, nada mudou.
+   *
+   * Fecha uma fresta de uma renderização: quando o valor semeado é derivado
+   * de uma consulta, ele muda no render em que a resposta chega, e o
+   * `resemear` só avisa o retrato no efeito seguinte. Entre os dois, o
+   * formulário se declararia alterado sem ninguém ter tocado em nada -- e um
+   * Escape ali abriria a pergunta.
+   *
+   * ⚠️ O hook já sabe o que foi semeado (`jaSemeadas`), então quem chama só
+   * declara o que ESPERA. Antes isto era um `useState` avulso em cada
+   * formulário, com um `|| Boolean(...)` para os casos em que a semeadura não
+   * aconteceria -- redundante e fácil de esquecer.
+   *
+   * ⚠️ Declare só chave que VAI chegar. Uma que nunca chega deixa a guarda
+   * muda para sempre, e aí o formulário volta a ser descartado em silêncio.
+   *
+   * ⚠️ Não é o mecanismo principal, que é o `resemear`. Onde a semeadura
+   * chama `resemear` no MESMO lote dos `setState` dela -- dentro de um `.then`
+   * ou do próprio efeito -- não há fresta, e declarar não é preciso. */
+  const esperando = Boolean(aguarda?.some((chave) => !semeadas.has(chave)));
+
   let mudou = false;
-  if (pronto) {
+  if (!esperando) {
     for (const chave of new Set([...Object.keys(retrato), ...Object.keys(valores)])) {
       if (!mesmoValor(retrato[chave], valores[chave])) {
         mudou = true;

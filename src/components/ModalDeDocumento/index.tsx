@@ -117,9 +117,6 @@ export default function ModalDeDocumento({
     setResponsavel("");
   }
 
-  /** O retrato já conhece o subgrupo padrão? Ver o `pronto` abaixo. */
-  const [semeado, setSemeado] = useState(false);
-
   const ehArquivo = tipo === DOCUMENTO_ARQUIVO;
 
   /* A projeção é o corpo do envio. Duas notas:
@@ -144,26 +141,25 @@ export default function ModalDeDocumento({
     processoNumero: vinculos.processo?.id ?? null,
     atendimentoId: vinculos.atendimento?.id ?? null,
   },
-  /* 🔴 Enquanto os subgrupos não chegam, nada mudou -- e isto NÃO é
-     redundante com o `resemear` abaixo.
+  /* 🔴 Espera o subgrupo padrão antes de opinar. Há uma fresta de uma
+     renderização entre a resposta chegar (`subgrupoEscolhido` deixa de ser
+     `""`) e o efeito avisar o retrato -- e um Escape nela abriria a pergunta
+     sem ninguém ter tocado em nada. Foi a suíte CHEIA que reprovou: com mais
+     carga, o gesto do teste caía exatamente ali; isolado, passava.
 
-     Há uma janela de uma renderização entre a resposta chegar
-     (`subgrupoEscolhido` deixa de ser `""`) e o efeito avisar o retrato. Nela
-     o modal se declara alterado sem ninguém ter tocado em nada, e um Escape
-     ali abriria a pergunta. Foi assim que a suíte cheia reprovou -- com mais
-     carga, o gesto do teste caía exatamente nessa fresta; isolado, passava.
-
-     ⚠️ E o gate NÃO pode ser "os subgrupos carregaram": aquele sinal vira
-     falso no MESMO render em que o subgrupo aparece, então a fresta continua
-     aberta. Quem fecha é `semeado`, ligado pelo próprio efeito -- ele só é
-     verdadeiro no render SEGUINTE ao `resemear`. */
-  { pronto: semeado || Boolean(subgrupoId) });
+     ⚠️ **Esta linha não tem guarda mecânica, e é honesto dizer.** Tirá-la não
+     derruba teste nenhum hoje: acertar a fresta depende de o gesto do teste
+     cair entre duas renderizações, e isso mudou quando o gate passou a viver
+     em estado. O MECANISMO está guardado no teste do próprio hook
+     (`aguarda`), que é determinístico; o que não consegui foi um teste de
+     componente que force a janela. Quem mexer aqui: a janela existe, o teste
+     não a pega. */
+  { aguarda: ["subgrupoPadrao"] });
 
   /* Mesmo caso do `NovoAtendimentoForm`: o subgrupo padrão é do SISTEMA. */
   useEffect(() => {
     if (!subgrupoId && subgrupoEscolhido) {
       resemear("subgrupoPadrao", { subgrupoId: subgrupoEscolhido });
-      setSemeado(true);
     }
   }, [subgrupoId, subgrupoEscolhido, resemear]);
 

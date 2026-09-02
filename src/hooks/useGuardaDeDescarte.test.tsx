@@ -11,15 +11,15 @@ import { useGuardaDeDescarte } from "./useGuardaDeDescarte";
 function Harness({
   nomeInicial = "",
   tagsIniciais = [],
-  pronto,
+  aguarda,
 }: {
   nomeInicial?: string;
   tagsIniciais?: string[];
-  pronto?: boolean;
+  aguarda?: readonly string[];
 }) {
   const [nome, setNome] = useState(nomeInicial);
   const [tags, setTags] = useState<string[]>(tagsIniciais);
-  const { mudou, resemear, refazerRetrato } = useGuardaDeDescarte({ nome, tags }, { pronto });
+  const { mudou, resemear, refazerRetrato } = useGuardaDeDescarte({ nome, tags }, { aguarda });
 
   return (
     <div>
@@ -176,13 +176,33 @@ describe("useGuardaDeDescarte", () => {
 
   // ── as duas saídas de emergência ────────────────────────────────────────
 
-  it("`pronto: false` segura a resposta mesmo com o campo mexido", async () => {
+  it("🔴 `aguarda` segura a resposta até a semeadura declarada chegar", async () => {
+    /* Fecha a fresta de uma renderização entre a resposta chegar e o
+       `resemear` avisar o retrato. O hook já sabe o que foi semeado, então
+       quem chama só declara o que espera -- antes isto era um `useState`
+       avulso em cada formulário. */
     const usuario = userEvent.setup();
-    renderComProviders(<Harness pronto={false} />);
+    renderComProviders(<Harness aguarda={["perfil"]} />);
+
+    await usuario.type(campo(), "a");
+    expect(estado()).toBe("intacto"); // o gate segura
+
+    await usuario.click(screen.getByRole("button", { name: "semear perfil" }));
+    await usuario.type(campo(), "!");
+
+    expect(estado()).toBe("mudou"); // e destrava depois dela
+  });
+
+  it("⚠️ sem `aguarda`, digitar conta na hora", async () => {
+    /* O par negativo do gate: sem ele, um `aguarda` que travasse para sempre
+       -- ou um gate ligado por engano em todo formulário -- passaria no teste
+       acima, e a guarda ficaria muda. */
+    const usuario = userEvent.setup();
+    renderComProviders(<Harness />);
 
     await usuario.type(campo(), "a");
 
-    expect(estado()).toBe("intacto");
+    expect(estado()).toBe("mudou");
   });
 
   it("`refazerRetrato` adota o que está na tela como novo marco zero", async () => {
