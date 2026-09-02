@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../services", () => mocks);
 
 import CampoDeClientes from "./index";
+import Modal from "../Modal";
 
 /** O campo de clientes dos formulários de processo e atendimento.
  *
@@ -125,5 +126,48 @@ describe("cadastrar cliente sem sair do formulário", () => {
 
     await waitFor(() => expect(mocks.criarCliente).toHaveBeenCalled());
     expect(Object.keys(mocks.criarCliente.mock.calls[0][0])).toEqual(["nome"]);
+  });
+});
+
+// ── 🔴 o Escape, que a camada de cima consome ─────────────────────────────
+
+/** Mesma régua do `Select` e do `SeletorData`, que este campo não tinha.
+ *
+ * Este campo vive DENTRO do formulário de processo e do de atendimento. Sem a
+ * interceptação, dispensar a lista com Escape fechava o modal inteiro e levava
+ * junto tudo o que já tinha sido digitado. */
+describe("o Escape com a lista aberta", () => {
+  function montarNoModal() {
+    const aoFechar = vi.fn();
+    renderComProviders(
+      <Modal titulo="Novo processo" onFechar={aoFechar}>
+        <CampoDeClientes id="clientes" valor={[]} nomes={new Map()} onMudar={vi.fn()} />
+      </Modal>,
+    );
+    return aoFechar;
+  }
+
+  it("fecha a LISTA, e não o modal atrás", async () => {
+    const usuario = userEvent.setup();
+    const aoFechar = montarNoModal();
+
+    await usuario.click(campo());
+    await screen.findByText("Construtora Alfa"); // lista aberta
+
+    await usuario.keyboard("{Escape}");
+
+    expect(aoFechar).not.toHaveBeenCalled();
+    expect(screen.queryByText("Construtora Alfa")).not.toBeInTheDocument();
+  });
+
+  it("com a lista FECHADA, o Escape continua fechando o modal", async () => {
+    /* O par negativo. Sem ele, um `stopPropagation` incondicional -- que
+       deixaria a pessoa presa no modal -- passaria no teste acima. */
+    const usuario = userEvent.setup();
+    const aoFechar = montarNoModal();
+
+    await usuario.keyboard("{Escape}");
+
+    expect(aoFechar).toHaveBeenCalledTimes(1);
   });
 });
