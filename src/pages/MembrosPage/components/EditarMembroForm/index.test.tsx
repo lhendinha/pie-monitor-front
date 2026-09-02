@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../../../test/queryTestUtils";
@@ -411,5 +411,143 @@ describe("guarda de descarte", () => {
 
     expect(perguntou()).toBe(false);
     expect(onFechar).toHaveBeenCalled();
+  });
+});
+
+/* ── 🔴 a tela não afirma a OAB que ela não tem (02/09/2026) ───────────────
+ *
+ * O defeito que estes testes guardam, medido antes de existir a correção: o
+ * modal desenhava os campos de OAB VAZIOS enquanto `lerMembro` corria, e
+ * continuava vazio se ela falhasse. Vazio nas duas partes é o gesto de
+ * APAGAR a inscrição (`types/requisicoes.ts`), então um admin que abrisse o
+ * modal para corrigir um NOME e salvasse antes da resposta mandava
+ * `numero_oab: ""` -- e o servidor apagava, corretamente, o que ninguém
+ * pediu para apagar. O PATCH observado trazia também
+ * `importacao_automatica: false`.
+ *
+ * São DUAS metades e as duas precisam de teste: esconder o campo tira a
+ * mentira da tela, mas o estado continua `""` e é ele que monta o PATCH.
+ */
+describe("enquanto a inscrição da pessoa não chega", () => {
+  function montar() {
+    const onFechar = vi.fn();
+    renderComProviders(
+      <EditarMembroForm membro={montarMembro()} grupos={grupos} podeMoverEntreGrupos
+        onAtualizado={vi.fn()} onFechar={onFechar} />
+    );
+    return onFechar;
+  }
+
+  it("🔴 CARREGANDO: não há campo de OAB para a resposta sobrescrever", async () => {
+    /* A corrida original: dava para digitar `206876` e ver o campo voltar a
+       `""` sozinho quando a resposta chegava -- e a guarda de descarte
+       deixava fechar CALADO depois, porque o retrato voltava a bater. Sem
+       campo na tela não há texto para engolir. */
+    mocks.lerMembro.mockReturnValue(new Promise(() => {}));
+    montar();
+
+    await screen.findByLabelText(/Nome completo/);
+    expect(screen.queryByLabelText(/Número da OAB/)).not.toBeInTheDocument();
+
+    /* ⚠️ `getAllByText` e `toHaveLength(1)`, não `getByText`: o seletor de subgrupos
+       também diz "Carregando…" enquanto carrega (`Select/MultiSelect.tsx`,
+       no placeholder), e com `getByText` o teste falhava por AMBIGUIDADE --
+       o que esconderia o que ele quer provar. Esperar os subgrupos
+       assentarem deixa exatamente um na tela, e ele é o do esqueleto da
+       OAB: se o esqueleto sumir, sobra zero e este teste cai. */
+    await waitFor(() => expect(screen.getAllByText("Carregando…")).toHaveLength(1));
+  });
+
+  it("🔴 FALHOU: o Salvar trava, e trocar só o nome NÃO apaga a inscrição", async () => {
+    mocks.lerMembro.mockRejectedValue(new Error("500"));
+    mocks.atualizarMembro.mockResolvedValue({});
+    const usuario = userEvent.setup();
+    montar();
+
+    expect(await screen.findByText(/Não foi possível carregar a inscrição desta pessoa/))
+      .toBeInTheDocument();
+    expect(screen.queryByLabelText(/Número da OAB/)).not.toBeInTheDocument();
+
+    const nome = screen.getByLabelText(/Nome completo/);
+    await usuario.clear(nome);
+    await usuario.type(nome, "Fulano de Tal");
+
+    const salvar = screen.getByRole("button", { name: "Salvar" });
+    expect(salvar).toBeDisabled();
+    await usuario.click(salvar);
+
+    expect(mocks.atualizarMembro).not.toHaveBeenCalled();
+  });
+
+  it("🔴 e o envio que NÃO passa pelo botão também não escapa", async () => {
+    /* O `disabled` do Salvar sozinho não fecha a porta: ele é IRMÃO do
+       `<form>` (ligado por `form={id}`), e no navegador o Enter num campo de
+       texto submete pelo botão padrão. Por isso a condição se repete dentro
+       do `handleSubmit`.
+
+       ⚠️ **Aqui vai `fireEvent.submit`, e não `{Enter}`.** Um teste de Enter
+       seria VAZIO neste ambiente: medido em 02/09/2026, o jsdom não executa
+       o envio implícito quando o botão de submit está fora do `<form>` --
+       com o Salvar HABILITADO o Enter não chamou `atualizarMembro` nenhuma
+       vez. Ele passaria verde com a trava ou sem ela. Submeter o formulário
+       direto é o caminho que este ambiente alcança, e prova a trava que
+       vale para todos os caminhos. */
+    mocks.lerMembro.mockRejectedValue(new Error("500"));
+    mocks.atualizarMembro.mockResolvedValue({});
+    const usuario = userEvent.setup();
+    montar();
+
+    await screen.findByText(/Não foi possível carregar a inscrição desta pessoa/);
+    const nome = screen.getByLabelText(/Nome completo/);
+    await usuario.clear(nome);
+    await usuario.type(nome, "Fulano de Tal");
+
+    fireEvent.submit(nome.closest("form")!);
+
+    /* ⚠️ A espera não é enfeite: `mutate()` AGENDA a chamada, não a faz no
+       mesmo tique. Sem ela a asserção rodava antes de a mutation sair, e
+       passava verde mesmo com a trava removida -- medido em 02/09/2026,
+       apagar o `if` do `handleSubmit` não derrubava teste nenhum. */
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(mocks.atualizarMembro).not.toHaveBeenCalled();
+  });
+
+  it("«Tentar de novo» refaz a consulta e os campos voltam", async () => {
+    mocks.lerMembro.mockRejectedValueOnce(new Error("500")).mockResolvedValue({
+      email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+      numero_oab: "206876", uf_oab: "MG",
+      importacao_automatica: false, subgrupos_destino: [], subgrupos: ["s1"],
+    });
+    const usuario = userEvent.setup();
+    montar();
+
+    await usuario.click(await screen.findByRole("button", { name: "Tentar de novo" }));
+
+    expect(await screen.findByLabelText(/Número da OAB/)).toHaveValue("206876");
+  });
+
+  it("⚠️ o par negativo: COM a resposta, salvar leva a inscrição de verdade", async () => {
+    /* Sem este, apagar os campos de vez passaria em tudo acima. */
+    mocks.lerMembro.mockResolvedValue({
+      email: "fulano@x.com", apelido: "Fulano", papel: "user", grupo_id: "g1",
+      numero_oab: "206876", uf_oab: "MG",
+      importacao_automatica: false, subgrupos_destino: [], subgrupos: ["s1"],
+    });
+    mocks.atualizarMembro.mockResolvedValue({});
+    const usuario = userEvent.setup();
+    montar();
+
+    expect(await screen.findByLabelText(/Número da OAB/)).toHaveValue("206876");
+
+    const salvar = screen.getByRole("button", { name: "Salvar" });
+    await waitFor(() => expect(salvar).toBeEnabled());
+    await usuario.click(salvar);
+
+    await waitFor(() => expect(mocks.atualizarMembro).toHaveBeenCalled());
+    expect(mocks.atualizarMembro.mock.calls[0][1]).toMatchObject({
+      numero_oab: "206876",
+      uf_oab: "MG",
+    });
   });
 });

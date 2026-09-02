@@ -2788,6 +2788,34 @@ A tela de **Grupo** é a exceção -- suas sub-abas dividem UM endereço, então
 trocar de aba limpa `pagina`, `tamanho` e `busca`. Sem isso, ir para a página 3
 de Subgrupos e clicar em Membros abria Membros na página 3, vazia.
 
+### 🔴 Cinco telas NÃO têm endereço, e errar isso falha em silêncio
+
+Subgrupos, Membros, Convidar, Fases e Situações são **sub-abas de `/grupo`**
+(`ABAS_DO_GRUPO`), e a aba ativa é `useState` dentro de `GrupoPage` -- não
+está na URL. Não existe `/membros`, `/subgrupos` nem `/fases`.
+
+⚠️ **E o erro não aparece:** `routes/index.tsx` termina com
+`<Route path="*" element={<Navigate to="/" replace />} />`, então um endereço
+inventado não dá 404 nem erro de console -- redireciona para a Área de
+trabalho. Um roteiro do Playwright que faz `goto("/membros")` segue adiante,
+e só quebra dezenas de linhas depois, no `click` de um elemento que "sumiu".
+O rastro aponta para o seletor, e a causa está no `goto`. Custou tempo duas
+vezes; da segunda virou esta seção.
+
+O caminho é ir ao endereço e clicar na aba:
+
+```js
+await pagina.goto(`${APP}/grupo`, { waitUntil: "networkidle" });
+await pagina.getByRole("tab", { name: "Membros" }).click();
+```
+
+⚠️ Vale para `renderComRota` também: `renderComRota(<MembrosPage />, "/membros")`
+monta, mas a rota é ficção -- quem depende de `useSearchParams` ali está
+testando um endereço que o app não serve.
+
+Quando um `goto` levar à tela errada, o primeiro suspeito é este redirecionamento:
+`console.log(pagina.url())` logo depois do `goto` responde na hora.
+
 ### ⚠️ Testes de tela agora precisam de `<Router>`
 
 Medido: o React Router 7 **estoura** com dois `<Router>` aninhados, e dezesseis
