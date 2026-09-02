@@ -582,6 +582,29 @@ formulário continua editável enquanto isso.
 vezes (medido: 4 idas à rede, 7,4s), e até lá a tela mostra o esqueleto — ainda
 não se sabe. Timeout curto conclui que o estado de erro não existe.
 
+### E o gêmeo de produção
+
+```bash
+node scripts/verificar-oab-sem-dado-em-producao.mjs
+```
+
+🔴 **O `verificar-deploy-em-producao.mjs` NÃO cobre esta correção**, e não é
+descuido dele: os três estados são transitórios. Em produção a inscrição
+carrega em milissegundos e não falha sob demanda, então uma conferência que só
+olha a tela em repouso passa sem nunca tocar no que mudou. Este roteiro
+sequestra a rota no navegador, contra o bundle que a Vercel publicou.
+
+🔴 **Não grava nada, por construção.** O cenário do Enter tenta submeter de
+propósito — se a trava tivesse falhado, um PATCH real apagaria a inscrição de
+alguém. Por isso todo PATCH para `/grupos/membros/{email}` é respondido pelo
+próprio roteiro e **nunca chega ao servidor**: ele detecta a tentativa sem
+executá-la, e imprime quantos barrou.
+
+⚠️ Sessão reaproveitada (`sessaoDeProducao.mjs`): zero tentativa de login
+gasta. E um contexto só, com `reload()` entre os cenários — recarregar zera o
+cache do React Query, que de outro modo serviria a resposta do cenário
+anterior e o de erro nunca apareceria.
+
 ## Depois de TODO deploy: conferir produção
 
 ```bash
