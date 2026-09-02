@@ -536,6 +536,25 @@ responde.
 `storageState` velho apontaria para o vazio. As 5 tentativas também não pesam
 lá — a conta nasce nova toda vez.
 
+## `verificar-guarda-de-descarte.mjs` — o que o jsdom não alcança
+
+```bash
+cd ../api && yarn offline
+VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 yarn dev --port 5174
+node scripts/verificar-guarda-de-descarte.mjs
+```
+
+🔴 **Existe por uma mutação que só o navegador pega.** O diálogo de descarte é
+irmão da cortina do modal, não filho — se fosse filho, um clique no fundo dele
+borbulharia até o `onClick` da cortina de fora e fecharia o formulário. **Em
+jsdom essa mutação SOBREVIVE**: o clique só reabriria um diálogo já aberto, e
+`onFechar` seguiria sem ser chamado. Medido: com o diálogo aninhado, a suíte
+passa 60/60 e este roteiro reprova.
+
+Cobre também o Escape com uma camada flutuante aberta (o menu do `Select` é
+portal em `z-index` 210, contra os 100 do diálogo) e o texto sobrevivendo ao
+"Continuar preenchendo".
+
 ## Depois de TODO deploy: conferir produção
 
 ```bash

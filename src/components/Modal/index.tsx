@@ -52,6 +52,27 @@ interface ModalProps {
  * A cortina rola (`overflow-y: auto` com `align-items: flex-start`): modal
  * mais alto que a janela precisa rolar por fora, senão o rodapé com os
  * botões fica inalcançável em tela baixa.
+ *
+ * ## Modal novo: a régua de revisão
+ *
+ * 🔴 **Tem campo que a pessoa preenche? Então `descarte={{ mudou }}`**, com o
+ * `mudou` vindo de `useGuardaDeDescarte`. `"semFormulario"` é só para modal de
+ * LEITURA, de confirmação, de aviso e para os auxiliares que não têm campo
+ * nenhum (carregando, "não há subgrupos"). O compilador obriga a declarar;
+ * ele não sabe qual das duas é a certa.
+ *
+ * 🔴 **O "Cancelar" do rodapé é `BotaoDeCancelar`, nunca um `Botao` com
+ * `onFechar`.** Os três gestos que este componente desenha -- Escape, cortina
+ * e X -- já passam pela guarda; o rodapé é um `ReactNode` do chamador, e o
+ * único jeito de cobri-lo é ele mesmo se ligar ao contexto. Um `Botao` cru ali
+ * fecha direto e leva o que foi digitado.
+ *
+ * ⚠️ **A projeção é o valor que o ENVIO manda**, não o texto do campo nem o
+ * derivado que a tela mostra. Máscara, `trim` e `?? ""` entram na projeção --
+ * a razão de cada um está no docstring de `useGuardaDeDescarte`.
+ *
+ * ⚠️ **Salvou e o modal fica aberto?** Chame `refazerRetrato()`: o que está na
+ * tela passou a ser o salvo, e perguntar sobre ele seria mentira.
  */
 /** Pilha dos modais abertos. O último a montar é o de cima.
  *
@@ -242,12 +263,14 @@ export default function Modal({ titulo, subtitulo, onFechar, descarte, largo, ro
               ✕
             </BotaoNu>
           </Flex>
+
         </Flex>
         <Box p="20px 22px" maxH="70vh" overflowY="auto">
           {children}
         </Box>
         {rodape}
       </Box>
+
     </Flex>
 
     {/* 🔴 IRMÃO da cortina, e não filho. Dentro dela, um clique no fundo do
