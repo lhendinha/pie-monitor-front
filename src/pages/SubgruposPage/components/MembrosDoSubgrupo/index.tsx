@@ -121,7 +121,7 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
   const membros = query.data?.membros || [];
 
   return (
-    /* ⚠️ O diálogo de confirmação é IRMÃO do `<Modal descarte="semFormulario">`, não filho.
+    /* ⚠️ O diálogo de confirmação é IRMÃO do `Modal`, não filho.
      *
      * 🔴 `pilhaDeModais` assume "quem registrou por último está por cima",
      * e isso se INVERTE com aninhamento: o React roda os efeitos dos FILHOS
@@ -134,7 +134,25 @@ export default function MembrosDoSubgrupo({ subgrupo, onFechar }: MembrosDoSubgr
      * `ClientesPage`). Este era a exceção. */
     <>
     <Modal
-      descarte="semFormulario"
+      /* 🔴 Mesma situação do `ModalDoQuadro`: adicionar e remover membro
+         gravam na hora, então o texto padrão MENTIRIA. O que está em risco é
+         só o e-mail digitado e ainda não adicionado.
+
+         ⚠️ Projeta o e-mail como o envio o manda (l. 110): `trim` e
+         minúsculas. Sem isso, trocar a caixa de uma letra contaria como
+         mudança sem mudar nada do que vai para o servidor.
+
+         ⚠️ `aConfirmarSaida` fica fora -- é sinal de UI. */
+      descarte={{
+        mudou: novoEmail.trim().toLowerCase() !== "",
+        textoProprio: {
+          titulo: "Sair sem adicionar essa pessoa?",
+          mensagem:
+            "O e-mail digitado será descartado. Quem você já adicionou ou removeu aqui está salvo.",
+          sair: "Sair",
+          voltar: "Voltar",
+        },
+      }}
       titulo={`Membros do ${subgrupo.nome}`}
       /* Quantos, no cabeçalho: a lista responde isso enquanto cabe na tela,
          e para de responder assim que ela passa a rolar. */
