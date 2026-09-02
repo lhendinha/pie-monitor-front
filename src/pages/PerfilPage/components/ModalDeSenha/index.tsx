@@ -4,15 +4,15 @@ import { useMutation } from "@tanstack/react-query";
 
 import {
   Botao,
-  BotaoDeCancelar,
   Campo,
   CampoDeSenha,
   Faixa,
   Modal,
-  RodapeDeAcoes,
+  RodapeDeFormulario,
   useToast,
 } from "../../../../components";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../../../constants";
+import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { alterarMinhaSenha } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 
@@ -61,18 +61,22 @@ export default function ModalDeSenha({ onFechar }: ModalDeSenhaProps) {
     trocarMutation.mutate();
   }
 
+  /* A projeção: o que o envio mandaria. Aqui são os três campos crus, sem
+     normalização -- senha não se apara nem se acentua. O `erro` fica de fora:
+     é sinal de UI, não intenção de quem digita. */
+  const { mudou } = useGuardaDeDescarte({ atual, nova, confirmacao });
+
   return (
     <Modal
-      descarte="semFormulario"
+      descarte={{ mudou }}
       titulo="Alterar senha atual"
       onFechar={onFechar}
       rodape={
-        <RodapeDeAcoes>
-          <BotaoDeCancelar />
+        <RodapeDeFormulario salvando={trocarMutation.isPending}>
           <Botao type="submit" form={idFormulario} disabled={trocarMutation.isPending || !podeEnviar}>
             {trocarMutation.isPending ? "Salvando…" : "Salvar"}
           </Botao>
-        </RodapeDeAcoes>
+        </RodapeDeFormulario>
       }
     >
       <form id={idFormulario} onSubmit={handleSubmit}>

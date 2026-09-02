@@ -65,3 +65,4 @@ export { default as ModalDeDocumento } from "./ModalDeDocumento";
 export { default as DocumentosVinculados } from "./DocumentosVinculados";
 export { default as EtiquetasDeSubgrupo } from "./EtiquetasDeSubgrupo";
 export { default as BotaoDeCancelar } from "./BotaoDeCancelar";
+export { default as RodapeDeFormulario } from "./RodapeDeFormulario";
