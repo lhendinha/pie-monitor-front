@@ -72,6 +72,27 @@ O Vercel detecta o `yarn.lock` automaticamente e usa Yarn como package manager d
 
 O arquivo `vercel.json` já está configurado com o *rewrite* necessário pra rotas client-side funcionarem (`/convite/{token}` precisa cair no `index.html` mesmo em acesso direto pelo link do e-mail — sem isso, clicar no link do convite daria 404).
 
+### 🔴 Produção sai da `main` — e é uma EXCEÇÃO à régua do projeto
+
+A régua das duas pontas é *"deploy sai da branch, confere em produção, e só
+então a `main` recebe"*. Na `api` ela vale ao pé da letra: o `serverless`
+publica o código **local**, de qualquer branch, então dá para conferir em
+produção antes de tocar na `main`.
+
+**Aqui não dá.** O Vercel publica produção a partir da `main`; um push de
+outra branch gera só um *preview*, num endereço separado. Não existe caminho
+para `argos-monitor.vercel.app` que não passe por um merge.
+
+➡️ Então o front **inverte a ordem**: merge na `main`, o Vercel publica
+sozinho, e a conferência vem **depois** — com
+`scripts/verificar-deploy-em-producao.mjs` (ver adiante). Quem espera conferir
+antes de mesclar fica esperando para sempre; e quem não sabe disso lê o
+histórico e conclui que a régua foi ignorada.
+
+⚠️ **O desfazer é barato**, e é o que torna a inversão aceitável: `git revert`
+mais push, e o Vercel republica sozinho. Não há estado a migrar.
+
+
 ## Telas
 
 | tela | rota | o que responde |
@@ -469,6 +490,52 @@ E o login é feito **pela tela**, não por `fetch` montado à mão — quem mont
 corpo é o próprio front, que já sabe que o campo é `password` e não `senha`.
 Uma sessão chegou a queimar três tentativas numa conta `super_admin`
 justamente por montar esse payload por conta própria.
+
+## Depois de TODO deploy: conferir produção
+
+```bash
+node scripts/verificar-deploy-em-producao.mjs                 # confere e fecha
+node scripts/verificar-deploy-em-producao.mjs --deixar-aberto # confere e deixa a janela
+```
+
+🔴 **Roda depois de todo deploy do front**, porque produção sai da `main` e a
+conferência não pode vir antes (ver *"Produção sai da `main`"*). É a resposta
+a uma pergunta só: *o que subiu é o que eu escrevi?*
+
+⚠️ **Só LÊ.** Nenhuma tela dele grava nada — ao contrário de
+`verificar-producao.mjs`, que envia um documento de verdade. Pode rodar
+quantas vezes quiser, a qualquer hora.
+
+O que ele cobre é o que sobrevive ao build e só a tela responde: rótulo,
+ausência de rótulo e forma da célula. Comportamento é do vitest; a integração
+com o S3 é do `verificar-producao.mjs`.
+
+### 🔴 A sessão fica GUARDADA — é assim que não se queima tentativa
+
+`scripts/sessaoDeProducao.mjs` grava o `storageState` do Chrome em
+`.sessao-de-producao.json` (gitignorado) depois de um login que deu certo. Na
+rodada seguinte o contexto nasce com ele, a tela já abre logada, e **o login
+nem acontece**.
+
+Medido: a primeira rodada imprime *"Login feito (1 tentativa) e sessão
+guardada"*; a segunda, *"Sessão guardada reaproveitada — nenhuma tentativa de
+login gasta"*.
+
+⚠️ **Por que isso importa**: a conta bloqueia em 5 tentativas, e antes disso
+cada roteiro de produção logava do zero. Três rodadas de conferência num dia
+já chegavam perigosamente perto do bloqueio — e o bloqueio custa mais que a
+conferência, porque tira a única conta de teste que existe.
+
+⚠️ **Sessão expirada não vira tentativa perdida**: o arquivo é apagado
+**antes** de a senha ser digitada. Sem isso a rodada seguinte tentaria de novo
+com o mesmo estado morto e gastaria outra tentativa.
+
+➡️ **Para forçar um login novo** (trocou a senha, quer testar a tela de
+entrada): apague o `.sessao-de-producao.json`. É uma tentativa, e só.
+
+⚠️ Os roteiros antigos (`verificar-producao.mjs`,
+`verificar-carga-ponta-a-ponta.mjs`) ainda logam do zero — cada rodada deles
+custa uma tentativa. Migrá-los para o helper é trabalho pendente.
 
 ### O outro roteiro de produção: a carga histórica de ponta a ponta
 
