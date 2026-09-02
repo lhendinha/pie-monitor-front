@@ -2235,6 +2235,12 @@ subgrupo" para oferecer.
 - **Só o CEP dizia "(opcional)"** e os outros seis não diziam nada, do lado de
   campos de contato que dizem um por um -- lia como se apenas o CEP fosse
   dispensável. O "(opcional)" subiu para o `RotuloDeSecao` do bloco.
+
+  ⚠️ **E saiu de vez em 01/09/2026**, junto com os outros sete: o app passou a
+  dizer só o asterisco vermelho no obrigatório, e nada no opcional (ver *"Um
+  vocabulário só para 'este campo é obrigatório'"*). Este parágrafo descreve
+  uma etapa do caminho, não o estado de hoje -- `CamposDeEndereco` não tem
+  "(opcional)" em lugar nenhum, e um guarda mecânico cobra isso.
 - **Clicar em `#uf-cliente` não abre o painel**: o react-select põe esse id num
   input escondido de **1px** de altura. Quem abre é o controle visível.
 - **Uma asserção que esperava para sempre**: das duas ocorrências do número
@@ -3339,3 +3345,129 @@ servidor sem derrubar teste nenhum da API.
   falha parecia defeito de ordenação;
 - seletor por `tbody td` funciona em três telas e falha na quarta:
   Atendimentos não usa `<table>`, as linhas dele são `Flex`.
+
+## Um vocabulário só para "este campo é obrigatório" (01/09/2026)
+
+O app dizia as duas coisas ao mesmo tempo: **oito** rótulos traziam
+"(opcional)" enquanto os outros **51** campos dispensáveis não traziam nada.
+Então a ausência do texto não significava nada -- e um campo calado ao lado de
+um "(opcional)" lia como obrigatório, que é o oposto da verdade.
+
+**A régua: asterisco vermelho no obrigatório, e NADA no opcional.** O asterisco
+do `Campo` já dizia o que precisava ser dito; o "(opcional)" era um segundo
+vocabulário para a mesma pergunta.
+
+⚠️ **O guarda cobre METADE, e a metade que falta é humana.**
+`padraoDosCamposOpcionais.test.ts` cobra a ausência do texto, que é
+automatizável. A outra metade -- todo campo que TRAVA o envio ter o asterisco
+-- depende de ler a lógica de cada formulário. A auditoria inversa foi feita
+na entrega; quem acrescentar campo obrigatório depois é quem tem de lembrar.
+
+⚠️ **Três telas ficam SEM asterisco de propósito**, mesmo tendo campo exigido:
+`LoginPage`, `EsqueciSenhaPage` e `ModalDoQuadro`. Ali não há campo dispensável
+ao lado, e marcar tudo não separa nada. A razão está escrita em cada uma.
+
+⚠️ E o título "Endereço (opcional)" saiu junto. Ele existia por comparação --
+os campos de contato ao lado diziam "(opcional)" um a um. Saindo eles, o
+título perdeu o motivo; mantê-lo teria deixado o único "(opcional)" do app
+exatamente onde ele menos informa.
+
+## "Apelido" virou "Nome completo" na TELA, e só na tela (01/09/2026)
+
+🔴 **A estrutura continua `apelido`** -- campo da API, chave do `localStorage`,
+nome de variável, parâmetro de função. O que mudou foi rótulo, `placeholder`,
+texto de ajuda e coluna de tabela.
+
+⚠️ **Isto vai parecer inconsistência para quem chegar depois**, e não é: a
+troca nasceu porque a régua de titularidade da OAB compara o nome cadastrado
+com o do tribunal, e "apelido" convidava a pessoa a escrever "Zé" num campo que
+precisa de "José Almeida Souza". Renomear o campo na API custaria migração de
+dados e uma janela em que os dois nomes coexistem, para ganhar nada que a
+pessoa veja.
+
+**Antes de "corrigir" a divergência, leia isto.** O par tela/estrutura é
+deliberado, e o teste `nomeDoProduto.test.ts` não cobre este caso -- ele guarda
+"Argos", outro renome com a mesma forma (ver *"Argos, não PJe Monitor"*).
+
+## Sair de um formulário sem perder o que foi digitado (01/09/2026)
+
+Todos os modais de cadastro e edição descartavam o trabalho **em silêncio**:
+Escape, clique no fundo, X e "Cancelar" chamavam `onFechar` direto, e como a
+visibilidade é montagem condicional no pai, o estado local morria junto. O caso
+mais caro era o `ModalDeDocumento` -- arquivo escolhido mais descrição digitada
+sumiam num clique fora da caixa.
+
+**A regra: quem mexeu em algum campo e tenta sair é perguntado; quem só abriu e
+desistiu continua saindo com um gesto.**
+
+### As decisões que não se deduzem do código
+
+🔴 **A guarda mora no `Modal` base, com prop OBRIGATÓRIA** (`descarte`), e não
+em cada chamador. O motivo não é "esquecer": **metade dos modais fecha sozinha
+depois de salvar** (`onSuccess: () => { onSalvo(); onFechar(); }`). Se a guarda
+embrulhasse o `onFechar` do chamador, interceptaria esse fechamento também --
+e o formulário ainda está sujo nesse instante. A pessoa salvaria e ouviria a
+pergunta. Ligada só aos GESTOS, dentro do base, isso não acontece.
+
+Prop obrigatória e não opcional: esquecer a guarda perde trabalho em silêncio;
+esquecer o opt-out (`"semFormulario"`) é erro de compilação.
+
+🔴 **O marco zero é o retrato da ABERTURA, contando os pré-populados.** Modal de
+criação que nasce com coluna/data/processo preenchidos **não** pergunta se
+ninguém mexeu. É o que `resemear` resolve: quem semeia avisa o retrato com os
+mesmos literais que acabou de gravar, no mesmo lugar -- sem depender de ordem
+de efeitos.
+
+🔴 **A regra da projeção: projete o valor que o ENVIO mandaria.** Não o valor
+cru do campo. É ela que resolve máscara (`apenasDigitos`, não o texto
+formatado), `.trim()` e vazio normalizado, de uma vez. Projetar o cru sujaria o
+formulário quando a pessoa re-escolhe no `Select` a opção que já aparecia
+marcada.
+
+🔴 **O diálogo é IRMÃO da cortina, não filho.** Dentro dela, o clique no fundo
+do diálogo borbulha até o `onClick` da cortina externa e fecha o formulário.
+⚠️ **Essa mutação SOBREVIVE em jsdom** -- o clique só reabriria um diálogo já
+aberto. É por isso que existe `scripts/verificar-guarda-de-descarte.mjs`.
+
+⚠️ **Três textos, porque um só mentiria**: edição diz "as alterações serão
+perdidas"; criação diz "este cadastro será perdido"; e os modais que salvam na
+hora (`ModalDoQuadro`, `MembrosDoSubgrupo`) dizem que o que já foi mudado está
+salvo. Um texto único afirmaria perda onde não há.
+
+### Quatro defeitos vizinhos que a guarda revelou
+
+Nenhum foi causado por ela; todos ficaram visíveis porque ela olhou para o
+gesto de fechar.
+
+- **Três comboboxes caseiros não paravam o Escape** (`CampoDeClientes`,
+  `VinculoDeRegistro`, `CampoDeProcesso`): com a lista aberta, Escape já
+  fechava o modal inteiro. Com a guarda, viraria "quer descartar?" para quem só
+  quis fechar a lista. Corrigido ANTES, como pré-requisito.
+- **`mascararTelefone` travava em `(11)`**: o parêntese fechava no segundo
+  dígito, e apagar o `)` fazia a máscara recolocá-lo. O campo não voltava a
+  vazio nem com backspace. A guarda tornou isso visível -- quem digitasse dois
+  dígitos sem querer era perguntado ao sair, sem conseguir desfazer.
+- **"Cancelar" durante um envio fechava a tela e a mutation seguia**
+  (`ModalDeDocumento`, `ModalDeTarefa`): o documento nascia mesmo assim.
+- **O modal remontava vazio a cada refetch** em `DocumentosVinculados`, que o
+  renderizava em quatro ramos de `return` com raízes diferentes -- trocar de
+  ramo remonta a árvore e o arquivo escolhido some. Passou a ter um `return`
+  só, com o ramo escolhido numa variável.
+
+### Fora de escopo, registrado
+
+- **Sair da PÁGINA** (`useBlocker` exige migrar de `<BrowserRouter>` para
+  `createBrowserRouter`) e **F5** (`beforeunload`).
+- **Overlays de filtro** com "Aplicar" -- não são cadastro/edição.
+- **Renome inline**: o rascunho vive em `NomeEditavel`, invisível para a
+  projeção do `ModalDoQuadro`.
+
+### Onde está o detalhe
+
+Este registro guarda as decisões. O como está nos docblocks, que são densos de
+propósito: `components/Modal/index.tsx` (as regras de revisão, incluindo *"o
+modal NUNCA mora dentro de um ramo condicional"*),
+`hooks/useGuardaDeDescarte.ts` (a projeção, `resemear`, o retrato),
+`utils/iguais.ts` (a régua de igualdade e por que `Object.is`),
+`contexts/DescarteContext.tsx`, `components/BotaoDeCancelar/` e
+`components/RodapeDeFormulario/`.
