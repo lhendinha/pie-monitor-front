@@ -14,6 +14,7 @@ import {
 } from "../../components";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import { hojeISO } from "../../utils";
 import { paraIso } from "../../utils/calendario";
 import BarraDeDatas from "./components/BarraDeDatas";
@@ -130,6 +131,8 @@ export default function AgendaPage() {
    * tarefas da tela referenciam. Ver `useAssuntosDasTarefas`. */
   const tarefas = tarefasQuery.data || [];
   const { assuntoDoAtendimento } = useAssuntosDasTarefas(tarefas);
+  /* UMA vez na página, não uma por linha -- mesma razão do assunto acima. */
+  const subgrupoNome = useNomeDeSubgrupo();
   const visiveis = useMemo(() => {
     if (filtros.pessoa === "todas") return tarefas;
     if (filtros.pessoa === "sem") return tarefas.filter((t) => !t.responsavel_id);
@@ -225,6 +228,7 @@ export default function AgendaPage() {
               isoDeHoje={isoDeHoje}
               porDia={porDia}
               assuntoDoAtendimento={assuntoDoAtendimento}
+              subgrupoNome={subgrupoNome}
               onAbrirTarefa={setTarefaAberta}
               onEscolherDia={abrirDia}
             />
@@ -256,6 +260,7 @@ export default function AgendaPage() {
                   tarefa={tarefa}
                   concluida={tarefa.esta_concluida ?? false}
                   nomeDaColuna={tarefa.coluna_nome ?? undefined}
+                  subgrupoNome={subgrupoNome(tarefa.subgrupo_id)}
                   assuntoDoAtendimento={
                     tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
                   }
@@ -307,6 +312,7 @@ interface PropsDaArea {
   isoDeHoje: string;
   porDia: Map<string, Tarefa[]>;
   assuntoDoAtendimento: (id: string) => string | undefined;
+  subgrupoNome: (id: string) => string;
   onAbrirTarefa: (tarefa: Tarefa) => void;
   onEscolherDia: (iso: string) => void;
 }
@@ -320,6 +326,7 @@ function AreaDaVisao({
   isoDeHoje,
   porDia,
   assuntoDoAtendimento,
+  subgrupoNome,
   onAbrirTarefa,
   onEscolherDia,
 }: PropsDaArea) {
@@ -367,6 +374,7 @@ function AreaDaVisao({
       <ListaDeUmDia
         data={dataVisivel}
         tarefas={tarefas}
+        subgrupoNome={subgrupoNome}
         assuntoDoAtendimento={assuntoDoAtendimento}
         onAbrir={onAbrirTarefa}
         /* A barra de datas logo acima já diz que dia é este. */
@@ -412,6 +420,7 @@ function AreaDaVisao({
           key={paraIso(dia)}
           data={dia}
           tarefas={tarefas}
+          subgrupoNome={subgrupoNome}
           assuntoDoAtendimento={assuntoDoAtendimento}
           onAbrir={onAbrirTarefa}
         />

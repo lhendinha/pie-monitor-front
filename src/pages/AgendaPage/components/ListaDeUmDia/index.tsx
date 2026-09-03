@@ -9,6 +9,8 @@ interface ListaDeUmDiaProps {
   data: Date;
   tarefas: Tarefa[];
   assuntoDoAtendimento: (id: string) => string | undefined;
+  /** Repassado à linha -- a página resolve, esta visão só entrega. */
+  subgrupoNome: (id: string) => string;
   onAbrir: (tarefa: Tarefa) => void;
   /** Desenha a data no cabeçalho.
    *
@@ -29,6 +31,7 @@ export default function ListaDeUmDia({
   data,
   tarefas,
   assuntoDoAtendimento,
+  subgrupoNome,
   onAbrir,
   comData = true,
 }: ListaDeUmDiaProps) {
@@ -44,6 +47,7 @@ export default function ListaDeUmDia({
             assuntoDoAtendimento={
               tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
             }
+            subgrupoNome={subgrupoNome(tarefa.subgrupo_id)}
             onAbrir={onAbrir}
             ultima={indice === tarefas.length - 1}
           />

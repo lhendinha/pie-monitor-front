@@ -152,6 +152,43 @@ describe("subgrupos", () => {
       expect.objectContaining({ subgrupoId: undefined }),
     );
   });
+
+  it("🔴 cada tarefa mostra de qual subgrupo é", async () => {
+    /* A Agenda junta, no mesmo dia, as tarefas de TODOS os subgrupos da
+       pessoa -- e sem isto duas tarefas de título parecido ficam
+       indistinguíveis, que é o relato que originou esta frente.
+
+       ⚠️ Na visão de LISTA, que é onde a linha aparece inteira. Nas visões de
+       calendário a tarefa é um bloquinho de dia, sem espaço para etiqueta. */
+    comTarefas(tarefa({ tarefa_id: "t1", titulo: "Protocolar réplica", data: ISO_HOJE }));
+    await montar();
+    await trocarVisao("Em lista");
+
+    /* ⚠️ Escopado à LINHA da tarefa: a etiqueta com este nome aparece também
+       na pílula de filtro de subgrupo, e um seletor global casaria com as
+       duas -- passando sem provar que a LINHA mostra o subgrupo. */
+    /* ⚠️ Escopado ao BOTÃO da tarefa, e por dois motivos: a etiqueta com este
+       nome aparece também na pílula de filtro de subgrupo, e o próprio título
+       casa duas vezes (o `Text` e um ancestral). O botão é a linha. */
+    await screen.findAllByText("Protocolar réplica");
+    const linha = screen
+      .getAllByRole("button")
+      .find((b) => b.textContent?.includes("Protocolar réplica"))!;
+    expect(within(linha).getByTitle("Cível")).toHaveTextContent("Cível");
+  });
+
+  it("⚠️ o par negativo: sem o subgrupo no catálogo, mostra o id -- e não some", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    comTarefas(tarefa({ tarefa_id: "t1", titulo: "Protocolar réplica", data: ISO_HOJE }));
+    await montar();
+    await trocarVisao("Em lista");
+
+    await screen.findAllByText("Protocolar réplica");
+    const linha = screen
+      .getAllByRole("button")
+      .find((b) => b.textContent?.includes("Protocolar réplica"))!;
+    expect(within(linha).getByTitle("s1")).toHaveTextContent("s1");
+  });
 });
 
 describe("navegação", () => {
