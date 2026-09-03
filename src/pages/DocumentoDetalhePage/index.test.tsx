@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
+  /* ⚠️ O catálogo de subgrupos: sem ele a consulta erra em silêncio e a
+     etiqueta cai para o id -- o teste passaria sem exercitar o caminho real. */
+  listarSubgrupos: vi.fn(),
   detalhesDocumento: vi.fn(),
   atualizarDocumento: vi.fn(),
   removerDocumento: vi.fn(),
@@ -85,6 +88,9 @@ async function carregada() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+  });
   mocks.detalhesDocumento.mockResolvedValue(DOCUMENTO);
   mocks.atualizarDocumento.mockResolvedValue({});
   mocks.removerDocumento.mockResolvedValue({});
@@ -383,5 +389,15 @@ describe("quem pode destruir", () => {
     await carregada();
 
     expect(screen.queryByRole("button", { name: /Excluir/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("o subgrupo no cabeçalho", () => {
+  it("🔴 mostra de qual subgrupo é o documento", async () => {
+    /* Mesma divergência do detalhe de atendimento: das três telas irmãs, só a
+       de processo mostrava. */
+    montar();
+
+    expect(await screen.findByTitle("Cível")).toHaveTextContent("Cível");
   });
 });

@@ -7,6 +7,7 @@ import { ESPERA_DA_BUSCA_MS } from "../../../../constants/busca";
 import { MINIMO_PRA_BUSCAR, RESULTADOS_POR_TIPO } from "../../../../constants/vinculoDeRegistro";
 import { Z_INDEX_CALENDARIO } from "../../../../constants/camadaFlutuante";
 import { useValorComEspera } from "../../../../hooks/useValorComEspera";
+import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import { listarProcessos } from "../../../../services";
 import { OPCAO_LINHA } from "../../../../theme/painelFiltro";
 import { mascararNumeroProcesso } from "../../../../utils";
@@ -32,6 +33,7 @@ interface CampoDeProcessoProps {
  * dois caminhos separados do começo ao fim.
  */
 export default function CampoDeProcesso({ id, valor, onMudar }: CampoDeProcessoProps) {
+  const subgrupoNome = useNomeDeSubgrupo();
   const [texto, setTexto] = useState("");
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
   const [aberto, setAberto] = useState(false);
@@ -131,6 +133,17 @@ export default function CampoDeProcesso({ id, valor, onMudar }: CampoDeProcessoP
                   _hover={{ bg: "bg.canvas" }}
                 >
                   {rotulo}
+                  {/* 🔴 SEGUNDA LINHA, e não etiqueta à direita. Este painel
+                      tem 340px (`PAINEL.largura`) e o número mascarado ocupa
+                      quase tudo -- uma etiqueta ali disputaria largura com o
+                      dado principal. Em altura sobra.
+
+                      ⚠️ E a busca atravessa TODOS os seus subgrupos: dois
+                      processos de subgrupos diferentes chegam aqui
+                      indistinguíveis, que é o caso que o cliente relatou. */}
+                  <Text as="span" display="block" fontSize="11.5px" color="fg.subtle" mt="1px">
+                    {subgrupoNome(processo.subgrupo_id)}
+                  </Text>
                 </BotaoNu>
               );
             })

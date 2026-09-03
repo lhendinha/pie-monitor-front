@@ -2,7 +2,7 @@ import { Box, Flex, Heading, Input, Stack, Textarea } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { Botao, Campo, CampoDeClientes, Cartao, Etiqueta, IconeLixeira, LinhaDeCampos, Select, VinculoDeRegistro } from "../../../../components";
+import { Botao, Campo, CampoDeClientes, Cartao, Etiqueta, IconeLixeira, LinhaDeCampos, Select, VinculoDeRegistro, EtiquetasDeSubgrupo } from "../../../../components";
 import { useToast } from "../../../../contexts/ToastContext";
 import {
   DOCUMENTO_ARQUIVO,
@@ -21,6 +21,8 @@ import type { Documento, VinculosDeRegistro } from "../../../../types";
 import type { RespostaDeMembros } from "../../../../types/respostas";
 
 interface FormularioDocumentoProps {
+  /** Traduz `subgrupo_id` em nome -- resolvido pela página. */
+  subgrupoNome: (id: string) => string;
   /** O documento JÁ CARREGADO. Este componente não conhece estado de
    * consulta -- ver o comentário do componente. */
   documento: Documento;
@@ -52,6 +54,7 @@ export default function FormularioDocumento({
   documento,
   onSalvo,
   onRemover,
+  subgrupoNome,
 }: FormularioDocumentoProps) {
   const toast = useToast();
   const ehArquivo = documento.tipo === DOCUMENTO_ARQUIVO;
@@ -145,6 +148,9 @@ export default function FormularioDocumento({
             <Etiqueta cores={{ bg: "bg.canvas", color: "fg.muted" }}>
               {rotuloDoTipo(documento.tipo)}
             </Etiqueta>
+            <EtiquetasDeSubgrupo nomes={[subgrupoNome(documento.subgrupo_id)]} />
+            {/* 🔴 O subgrupo, ao lado do tipo -- como o detalhe do PROCESSO já
+                fazia, e que era a única das três telas irmãs a fazer. */}
           </Flex>
         </Box>
 

@@ -13,6 +13,7 @@ import {
   RESULTADOS_POR_TIPO,
 } from "../../constants/vinculoDeRegistro";
 import EtiquetaDeVinculo from "../EtiquetaDeVinculo";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import type { Vinculo, VinculosDeRegistro } from "../../types";
 import type {
   RespostaDeAtendimentosResumidos,
@@ -65,6 +66,7 @@ export default function VinculoDeRegistro({
   onMudar,
   id = "vinculo",
 }: VinculoDeRegistroProps) {
+  const subgrupoNome = useNomeDeSubgrupo();
   const [texto, setTexto] = useState("");
   /** Mesmo debounce das outras buscas do sistema, agora num hook só. */
   const termo = useValorComEspera(texto.trim(), ESPERA_DA_BUSCA_MS);
@@ -94,17 +96,26 @@ export default function VinculoDeRegistro({
         listarAtendimentos({ busca, tamanhoPagina: RESULTADOS_POR_TIPO }) as Promise<RespostaDeAtendimentosResumidos>,
       ]);
       return [
+        /* 🔴 O subgrupo entra no `detalhe`, que a opção já desenha na segunda
+           linha -- e não numa terceira. O comentário daquela linha já dizia a
+           razão um nível acima: numa lista misturada, "0000123-45…" e "Revisão
+           de contrato" não dizem sozinhos de onde vieram. Também não dizem de
+           qual SUBGRUPO, e esta busca atravessa todos os seus.
+
+           ⚠️ Sem campo novo no tipo `Vinculo`: `detalhe` é o único que a
+           opção exibe (conferido -- nada mais o consome), e o objeto escolhido
+           é guardado com ele. */
         ...(processos.processos ?? []).slice(0, RESULTADOS_POR_TIPO).map((p) => ({
           tipo: "processo" as const,
           id: p.numero_processo,
           rotulo: mascararNumeroProcesso(p.numero_processo),
-          detalhe: p.apelido || undefined,
+          detalhe: [p.apelido, subgrupoNome(p.subgrupo_id)].filter(Boolean).join(" · "),
         })),
         ...(atendimentos.atendimentos ?? []).slice(0, RESULTADOS_POR_TIPO).map((a) => ({
           tipo: "atendimento" as const,
           id: a.atendimento_id,
           rotulo: a.assunto,
-          detalhe: a.status || undefined,
+          detalhe: [a.status, subgrupoNome(a.subgrupo_id)].filter(Boolean).join(" · "),
         })),
       ];
     },
