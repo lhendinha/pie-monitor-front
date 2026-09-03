@@ -5,6 +5,11 @@ import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   listarHistorico: vi.fn(),
+  /* 🔴 Rota PRÓPRIA do link do e-mail (03/09/2026). Antes o deep link usava
+     `listarHistorico({ numeroProcesso })`; ela passou a PAGINAR quando o
+     número virou filtro de tela, e procurar numa página devolveria "não
+     encontrei" para algo que está na seguinte. */
+  historicoDoProcesso: vi.fn(),
   detalhesProcesso: vi.fn(),
   listarSubgrupos: vi.fn(),
 }));
@@ -14,6 +19,7 @@ vi.mock("../../services", async (importOriginal) => {
   return {
     ...real,
     listarHistorico: mocks.listarHistorico,
+    historicoDoProcesso: mocks.historicoDoProcesso,
     detalhesProcesso: mocks.detalhesProcesso,
     /* ⚠️ Entrou quando a linha passou a mostrar o subgrupo: sem mock, o
        catálogo era uma chamada de rede de verdade dentro do teste. */
@@ -227,11 +233,8 @@ describe("HistoricoPage", () => {
   });
 
   it("deep link com match abre o modal certo sozinho e consome o link", async () => {
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
-      opcoes?.numeroProcesso
-        ? Promise.resolve({ historico: [ITEM] })
-        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
-    );
+    mocks.historicoDoProcesso.mockReturnValue(Promise.resolve({ historico: [ITEM] }));
+    mocks.listarHistorico.mockReturnValue(Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 }));
     const onDeepLinkConsumido = vi.fn();
     renderComRota(
       <HistoricoPage
@@ -241,7 +244,7 @@ describe("HistoricoPage", () => {
     );
 
     expect(await screen.findByText("Detalhes do envio")).toBeInTheDocument();
-    expect(mocks.listarHistorico).toHaveBeenCalledWith({ numeroProcesso: ITEM.numero_processo });
+    expect(mocks.historicoDoProcesso).toHaveBeenCalledWith(ITEM.numero_processo);
     await waitFor(() => expect(onDeepLinkConsumido).toHaveBeenCalledTimes(1));
   });
 
@@ -251,14 +254,12 @@ describe("HistoricoPage", () => {
      * estava sendo buscado -- e, se falhasse, só um toast que ela podia nem
      * associar ao link.
      *
-     * A busca por `numeroProcesso` nunca assenta aqui: é a espera
+     * A busca da rota própria nunca assenta aqui: é a espera
      * congelada. Fica vermelho se o modal voltar a depender de `itemAberto`
      * pra existir. */
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
-      opcoes?.numeroProcesso
-        ? new Promise(() => {})
-        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
-    );
+    /* A busca da ROTA PRÓPRIA nunca assenta: é a espera congelada. */
+    mocks.historicoDoProcesso.mockReturnValue(new Promise(() => {}));
+    mocks.listarHistorico.mockResolvedValue({ historico: [ITEM], total: 1, total_paginas: 1 });
     renderComRota(
       <HistoricoPage
         deepLink={{ processo: ITEM.numero_processo, comunicacaoId: String(ITEM.comunicacao_id) }}
@@ -274,11 +275,8 @@ describe("HistoricoPage", () => {
   });
 
   it("deep link sem match no comunicacao_id mostra toast e ainda consome o link", async () => {
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
-      opcoes?.numeroProcesso
-        ? Promise.resolve({ historico: [] })
-        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
-    );
+    mocks.historicoDoProcesso.mockReturnValue(Promise.resolve({ historico: [] }));
+    mocks.listarHistorico.mockReturnValue(Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 }));
     const onDeepLinkConsumido = vi.fn();
     renderComRota(
       <HistoricoPage
@@ -472,5 +470,41 @@ describe("botão 'Adicionar tarefa' nos Detalhes do envio", () => {
     // Os dois empilhados: fechar os dois devolveria a pessoa pra lista sem
     // o envio que ela estava lendo.
     expect(screen.getByText("Detalhes do envio")).toBeInTheDocument();
+  });
+});
+
+describe("o link do e-mail usa a rota PRÓPRIA, não a lista", () => {
+  it("🔴 acha a notificação mesmo além da primeira página", async () => {
+    /* O caso que motivou separar as rotas, e que nenhum teste guardava.
+
+       O link traz `?processo=` e `?comunicacao=`, e o front procura o item
+       daquele `comunicacao_id`. Se essa busca usasse `listarHistorico`, que
+       PAGINA de 10 em 10 desde que o número virou filtro de tela, uma
+       notificação a partir do 11º item devolveria "não foi possível
+       localizar" -- mentira, porque ela existe.
+
+       ⚠️ Aqui a lista paginada devolve 10 itens que NÃO contêm o alvo, e a
+       rota própria devolve os 11. Se alguém trocar a chamada de volta, o
+       modal abre no item errado ou mostra o toast de erro. */
+    const outros = Array.from({ length: 10 }, (_, i) => ({
+      ...ITEM, comunicacao_id: 900 + i, assunto: `Outro ${i}`,
+    }));
+    const alvo = { ...ITEM, comunicacao_id: 999, assunto: "O do link" };
+
+    mocks.listarHistorico.mockResolvedValue({
+      historico: outros, total: 11, total_paginas: 2,
+    });
+    mocks.historicoDoProcesso.mockResolvedValue({ historico: [...outros, alvo] });
+
+    renderComRota(
+      <HistoricoPage
+        deepLink={{ processo: ITEM.numero_processo, comunicacaoId: "999" }}
+        onDeepLinkConsumido={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("Detalhes do envio")).toBeInTheDocument();
+    expect(await screen.findByText("O do link")).toBeInTheDocument();
+    expect(mocks.historicoDoProcesso).toHaveBeenCalledWith(ITEM.numero_processo);
   });
 });

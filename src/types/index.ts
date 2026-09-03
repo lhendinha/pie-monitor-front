@@ -1170,6 +1170,7 @@ export interface OpcoesListarAtendimentos {
 }
 
 export interface OpcoesListarHistorico {
+  subgrupoId?: string;
   numeroProcesso?: string;
   /** "movimentacao" ou "lembrete". Vazio traz os dois. */
   tipoEnvio?: string;
