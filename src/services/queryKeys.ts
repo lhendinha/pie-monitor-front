@@ -64,6 +64,8 @@ export const qk = {
    * nenhum. O tipo é explícito de propósito: acrescentar parâmetro na API e
    * esquecer aqui vira erro de compilação, não bug silencioso. */
   historico: (params: {
+    subgrupoId?: string;
+    numeroProcesso?: string;
     pagina?: number;
     tamanhoPagina?: number;
     tipoEnvio?: string;
