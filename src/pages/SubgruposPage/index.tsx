@@ -3,16 +3,8 @@ import { useState } from "react";
 import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  AreaAtualizando,
-  CartaoDeTabela,
-  EstadoDeErro,
-  Esqueleto,
-  ModalDeAviso,
-  ModalDeConfirmacao,
-  Pagination,
-  useToast,
-} from "../../components";
+import { AreaAtualizando, CartaoDeTabela, EstadoDeErro, Esqueleto, ModalDeAviso, ModalDeConfirmacao, Pagination } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import {
   atualizarSubgrupo,
   listarSubgrupos,

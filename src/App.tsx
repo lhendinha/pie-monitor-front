@@ -1,6 +1,6 @@
 import { BrowserRouter } from "react-router-dom";
 
-import { ToastProvider } from "./components";
+import { ToastProvider } from "./contexts/ToastContext";
 import { SessaoProvider } from "./contexts/SessaoContext";
 import Rotas from "./routes";
 

@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderComProviders } from "../../test/queryTestUtils";
-import { useToast } from "./index";
+import { renderComProviders } from "../test/queryTestUtils";
+import { useToast } from "./ToastContext";
 
 function Gatilhos() {
   const toast = useToast();

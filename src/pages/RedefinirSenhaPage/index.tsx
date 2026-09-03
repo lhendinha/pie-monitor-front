@@ -1,15 +1,8 @@
 import { Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 
-import {
-  Botao,
-  BotaoDeLink,
-  Campo,
-  CampoDeSenha,
-  CartaoDeAutenticacao,
-  Faixa,
-  useToast,
-} from "../../components";
+import { Botao, BotaoDeLink, Campo, CampoDeSenha, CartaoDeAutenticacao, Faixa } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
 import { ApiError, redefinirSenha } from "../../services";
 

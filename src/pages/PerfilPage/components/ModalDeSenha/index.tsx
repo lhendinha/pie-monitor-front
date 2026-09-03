@@ -2,15 +2,8 @@ import { Box, Stack } from "@chakra-ui/react";
 import { useId, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import {
-  Botao,
-  Campo,
-  CampoDeSenha,
-  Faixa,
-  Modal,
-  RodapeDeFormulario,
-  useToast,
-} from "../../../../components";
+import { Botao, Campo, CampoDeSenha, Faixa, Modal, RodapeDeFormulario } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../../../constants";
 import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { alterarMinhaSenha } from "../../../../services";

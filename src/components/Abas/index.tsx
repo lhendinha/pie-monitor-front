@@ -2,11 +2,8 @@ import { Flex } from "@chakra-ui/react";
 
 import { idDaAba, idDoPainel } from "../../utils/abas";
 import { BotaoNu } from "../BotaoNu";
+import type { Aba } from "./types";
 
-interface Aba<T extends string> {
-  id: T;
-  rotulo: string;
-}
 
 interface AbasProps<T extends string> {
   abas: Aba<T>[];

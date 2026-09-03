@@ -2,14 +2,8 @@ import { Input, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Botao,
-  Campo,
-  CartaoDeTabela,
-  EstadoDeErro,
-  Esqueleto,
-  useToast,
-} from "../../../../components";
+import { Botao, Campo, CartaoDeTabela, EstadoDeErro, Esqueleto } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import {
   atualizarConfiguracoesDoGrupo,
   lerConfiguracoesDoGrupo,

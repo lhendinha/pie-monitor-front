@@ -2,17 +2,8 @@ import { Menu, Portal } from "@chakra-ui/react";
 
 import { PilulaDeFiltro } from "../../../../components";
 import { OPCAO_DE_MENU, OPCAO_DE_MENU_ATIVA, PAINEL_DE_MENU } from "../../../../theme/menu";
+import type { OpcaoDeFiltro } from "./types";
 
-interface OpcaoDeFiltro<T> {
-  /** Identidade não vazia da opção.
-   *
-   * ⚠️ Separada de `valor` de propósito: o "Todos" de cada filtro tem valor
-   * vazio/falso/zero, e item de menu com `value=""` o zag não registra --
-   * ele simplesmente não selecionava. */
-  id: string;
-  valor: T;
-  rotulo: string;
-}
 
 interface FiltroDeMenuProps<T> {
   /** A PRIMEIRA opção é a neutra ("Todos ..."): é comparando com ela que a

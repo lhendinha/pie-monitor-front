@@ -341,7 +341,7 @@ src/
   services/             -- auth.ts + api/ (client.ts e um arquivo por área) + index.ts
   theme/                -- tokens e paletas de design
   hooks/                -- hooks compartilhados por mais de uma página
-  contexts/             -- SessaoContext
+  contexts/             -- SessaoContext, DescarteContext, ToastContext
   components/           -- 53 componentes gerais, cada um em pasta com index.tsx
   pages/                -- 19 páginas, cada uma em pasta com index.tsx
   test/setup.ts
@@ -359,6 +359,41 @@ src/
    components/NomeDele/index.tsx`, e não entra no índice público.
 4. **O nome tem que fazer sentido onde o arquivo mora.** Tipo que sobe pra
    `types/` costuma precisar de nome novo -- ver a seção abaixo.
+5. 🔴 **Interface que NÃO são as props do componente sai do arquivo dele**
+   (03/09/2026). O `index.tsx` declara o componente e, no máximo,
+   `<NomeDaPasta>Props`. Qualquer outro tipo vai para o `types.ts` da própria
+   pasta -- ou para `src/types/` quando serve a mais de uma tela.
+   ⚠️ **"É privado" justifica ficar na PASTA, não no ARQUIVO.** Foi o erro que
+   uma varredura minha cometeu: achei cinco tipos dentro de `index.tsx`,
+   conferi que nenhum era exportado e concluí que estavam certos. Não estavam
+   -- `ToastContextValue`, `Aba`, `OpcaoDeFiltro` e `NoModal` saíram, e o
+   `Sessao` saiu depois, quando o guarda passou a olhar `contexts/` também.
+   ⚠️ Guardado por `tiposForaDoIndex.test.ts`.
+6. 🔴 **Tudo que cria contexto mora em `contexts/`** (03/09/2026), sem
+   exceção -- ver *"Por que o Toast virou contexto"*.
+
+### Por que o Toast virou contexto (03/09/2026)
+
+`ToastProvider` e `useToast` moravam em `components/Toast/`, ao lado de
+`SessaoContext` e `DescarteContext` que já estavam em `contexts/`. A pergunta
+"por que ele está fora?" não tinha resposta escrita.
+
+🔴 **A resposta que eu dei primeiro estava errada.** Argumentei que o Toast
+*desenha na tela* (empilha os avisos) enquanto os outros dois só devolvem
+`{children}`, e que por isso ele era componente. É um critério de **forma** --
+e este projeto não decide por forma em lugar nenhum. A regra escrita aqui é
+*alcance decide o destino*.
+
+**Pelo alcance, ele é o mais global dos três**: `useToast` é importado por 33
+arquivos; `useSessaoContexto` por 8 e `usePedirParaFechar` por 2.
+
+⚠️ **E pasta por TIPO só se paga se for completa.** O valor de `contexts/` é
+poder listar e saber o que existe. Com uma exceção, ela deixa de responder
+isso, e a pergunta volta a exigir busca -- foi exatamente o que aconteceu.
+
+Resultado: `contexts/ToastContext.tsx` (provê) e `components/Aviso/` (desenha
+um aviso). O barril de `components` **não** exporta mais `useToast`: ele não é
+componente, e deixá-lo lá manteria o atalho que escondia a bagunça.
 
 Uma página completa fica assim (`AgendaPage`):
 

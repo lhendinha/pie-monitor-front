@@ -6,20 +6,8 @@ import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
-import {
-  Botao,
-  CabecalhoDePagina,
-  CartaoDeTabela,
-  AreaAtualizando,
-  EstadoVazio,
-  EstadoDeErro,
-  Esqueleto,
-  IconePlus,
-  Modal,
-  ModalDeTarefa,
-  Pagination,
-  useToast,
-} from "../../components";
+import { Botao, CabecalhoDePagina, CartaoDeTabela, AreaAtualizando, EstadoVazio, EstadoDeErro, Esqueleto, IconePlus, Modal, ModalDeTarefa, Pagination } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { ApiError, listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";

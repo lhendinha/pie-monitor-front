@@ -13,16 +13,8 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
-import {
-  Botao,
-  CabecalhoDePagina,
-  EstadoVazio,
-  EstadoDeErro,
-  Esqueleto,
-  IconePlus,
-  ModalDeTarefa,
-  useToast,
-} from "../../components";
+import { Botao, CabecalhoDePagina, EstadoVazio, EstadoDeErro, Esqueleto, IconePlus, ModalDeTarefa } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { PERIODO_TODOS } from "../../constants";
 import {
   atualizarTarefa,

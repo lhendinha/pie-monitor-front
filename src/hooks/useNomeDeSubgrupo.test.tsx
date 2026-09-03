@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { criarQueryClientDeTeste } from "../test/queryTestUtils";
-import { ToastProvider } from "../components/Toast";
+import { ToastProvider } from "../contexts/ToastContext";
 import { system } from "../theme";
 
 const mocks = vi.hoisted(() => ({ listarSubgrupos: vi.fn() }));

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { ApiError } from "./api";
 import { estaAutenticado } from "./auth";
-import { useToast } from "../components";
+import { useToast } from "../contexts/ToastContext";
 import { dispararAutenticacaoInvalida, setGrupoTrocadoListener } from "./authBridge";
 
 function ehSessaoExpirada(erro: unknown): boolean {

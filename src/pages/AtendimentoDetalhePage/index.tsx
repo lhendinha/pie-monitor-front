@@ -3,24 +3,8 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Abas,
-  BotaoDeTexto,
-  Botao,
-  Cartao,
-  DocumentosVinculados,
-  EstadoDeErro,
-  Esqueleto,
-  Etiqueta,
-  EtiquetaDeMetadado,
-  IconeClientes,
-  IconeLink,
-  IconeSeta,
-  ModalDeConfirmacao,
-  IconeLixeira,
-  PainelDaAba,
-  useToast,
-} from "../../components";
+import { Abas, BotaoDeTexto, Botao, Cartao, DocumentosVinculados, EstadoDeErro, Esqueleto, Etiqueta, EtiquetaDeMetadado, IconeClientes, IconeLink, IconeSeta, ModalDeConfirmacao, IconeLixeira, PainelDaAba } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import {
   adicionarRegistro,
   atualizarAtendimento,

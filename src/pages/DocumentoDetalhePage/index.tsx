@@ -3,15 +3,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  BotaoDeTexto,
-  CartaoDeTabela,
-  EstadoDeErro,
-  Esqueleto,
-  IconeSeta,
-  ModalDeConfirmacao,
-  useToast,
-} from "../../components";
+import { BotaoDeTexto, CartaoDeTabela, EstadoDeErro, Esqueleto, IconeSeta, ModalDeConfirmacao } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { DOCUMENTO_ARQUIVO } from "../../constants";
 import { detalhesDocumento, removerDocumento } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";

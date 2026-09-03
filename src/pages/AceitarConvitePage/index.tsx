@@ -2,16 +2,8 @@ import { Input, Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  Botao,
-  BotaoDeLink,
-  Campo,
-  CampoDeSenha,
-  CartaoDeAutenticacao,
-  Esqueleto,
-  Faixa,
-  useToast,
-} from "../../components";
+import { Botao, BotaoDeLink, Campo, CampoDeSenha, CartaoDeAutenticacao, Esqueleto, Faixa } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
 import { ApiError, aceitarConvite, verificarConvite } from "../../services";
 import type {
