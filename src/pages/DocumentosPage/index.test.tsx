@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -86,6 +86,61 @@ beforeEach(() => {
   mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
   mocks.listarProcessos.mockResolvedValue({ processos: [] });
   mocks.listarAtendimentos.mockResolvedValue({ atendimentos: [] });
+});
+
+describe("a coluna Subgrupo", () => {
+  it("🔴 existe, vem DEPOIS de Vínculo e mostra a etiqueta com o nome", async () => {
+    /* A posição não é decorativa: o subgrupo qualifica o vínculo -- "Vínculo"
+       diz a que processo o documento pertence, o subgrupo diz de onde esse
+       processo é. No fim da linha, o olho teria de atravessar tudo e voltar.
+
+       ⚠️ O discriminador é o `title`, que é o que `EtiquetasDeSubgrupo`
+       promete e texto solto não tem. Cor e raio quebrariam no primeiro ajuste
+       de tema sem nada estar errado. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+    });
+    montar();
+    await screen.findByText("peticao-inicial-assinada.pdf");
+
+    const cabecalhos = screen.getAllByRole("columnheader").map((c) => c.textContent);
+    const posicao = cabecalhos.indexOf("Subgrupo");
+    expect(posicao).toBe(cabecalhos.indexOf("Vínculo") + 1);
+
+    /* ⚠️ Escopado à CÉLULA daquela posição, e não `findByTitle` solto: o
+       cenário tem vários documentos do mesmo subgrupo, e o seletor global
+       casaria com todos. Assim o teste também prova que a etiqueta está na
+       coluna certa, não só que existe em algum lugar da linha. */
+    const primeira = screen.getAllByRole("row")[1];
+    const celula = within(primeira).getAllByRole("cell")[posicao];
+    expect(within(celula).getByTitle("Cível")).toHaveTextContent("Cível");
+  });
+
+  it("⚠️ o par negativo: catálogo VAZIO mostra o id, e a etiqueta não some", async () => {
+    /* Sumir faria a coluna mentir -- leria como "este documento não tem
+       subgrupo". Mostrar o id é feio e honesto. */
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    montar();
+    await screen.findByText("peticao-inicial-assinada.pdf");
+
+    const posicao = screen.getAllByRole("columnheader").map((c) => c.textContent).indexOf("Subgrupo");
+    const celula = within(screen.getAllByRole("row")[1]).getAllByRole("cell")[posicao];
+    expect(within(celula).getByTitle("s1")).toHaveTextContent("s1");
+  });
+
+  it("🔴 guarda mecânico: o cabeçalho e cada linha têm o MESMO número de colunas", async () => {
+    /* `Tabela` recebe só os NOMES das colunas; as células são de cada
+       `Linha*`. Acrescentar coluna exige dois arquivos, e a divergência é
+       SILENCIOSA -- o cabeçalho ganha uma coluna, as linhas não, e a tabela
+       desalinha sem erro nenhum. É o modo de falha que este guarda persegue. */
+    montar();
+    await screen.findByText("peticao-inicial-assinada.pdf");
+
+    const colunas = screen.getAllByRole("columnheader").length;
+    for (const linha of screen.getAllByRole("row").slice(1)) {
+      expect(within(linha).getAllByRole("cell")).toHaveLength(colunas);
+    }
+  });
 });
 
 describe("listagem", () => {

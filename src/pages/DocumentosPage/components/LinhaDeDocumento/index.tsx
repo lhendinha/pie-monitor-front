@@ -1,12 +1,16 @@
 import { Table, Text } from "@chakra-ui/react";
 
-import { CelulaComSub } from "../../../../components";
+import { CelulaComSub, EtiquetasDeSubgrupo } from "../../../../components";
 import { rotuloDoTipo } from "../../../../constants";
 import { formatarDataDeInstante, mascararNumeroProcesso } from "../../../../utils";
 import type { Documento } from "../../../../types";
 
 interface LinhaDeDocumentoProps {
   documento: Documento;
+  /** Traduz `subgrupo_id` em nome. Vem da PÁGINA, e não de um
+   * `useNomeDeSubgrupo()` aqui dentro: o hook por linha seria uma assinatura
+   * de query por documento da página. Mesmo arranjo de `LinhaProcesso`. */
+  subgrupoNome: (id: string) => string;
   onAbrir: (documento: Documento) => void;
 }
 
@@ -39,7 +43,7 @@ function vinculoDe(d: Documento): { principal: string; sub?: string } {
  * (`tabIndex` + Enter/Espaço). Sem isso, quem navega por Tab não teria
  * caminho nenhum pra abrir um documento.
  */
-export default function LinhaDeDocumento({ documento, onAbrir }: LinhaDeDocumentoProps) {
+export default function LinhaDeDocumento({ documento, subgrupoNome, onAbrir }: LinhaDeDocumentoProps) {
   const vinculo = vinculoDe(documento);
 
   return (
@@ -79,6 +83,10 @@ export default function LinhaDeDocumento({ documento, onAbrir }: LinhaDeDocument
         }
         sub={vinculo.sub}
       />
+      {/* ⚠️ Lista de UM: documento pertence a um subgrupo só. O resumo por
+          contagem de `EtiquetasDeSubgrupo` não chega a aparecer aqui -- ele
+          existe para Membros, Inscrições e Histórico, onde a lista é lista. */}
+      <CelulaComSub principal={<EtiquetasDeSubgrupo nomes={[subgrupoNome(documento.subgrupo_id)]} />} />
       <CelulaComSub
         principal={
           documento.responsavel_nome ||

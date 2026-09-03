@@ -29,6 +29,7 @@ import { qk } from "../../services/queryKeys";
 import { contar } from "../../utils";
 import LinhaDeDocumento from "./components/LinhaDeDocumento";
 import { COLUNAS_DE_DOCUMENTOS } from "./constants";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import type { RespostaDeDocumentosPaginada } from "../../types/respostas";
 
 /** Listagem de documentos do escritório.
@@ -45,6 +46,10 @@ export default function DocumentosPage() {
   const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
   const [modalAberto, setModalAberto] = useState(false);
   const navegar = useNavigate();
+  /* UMA vez na página, não uma por linha -- a chave do catálogo é
+     compartilhada, mas um hook por documento seria uma assinatura de query
+     por linha. Mesmo arranjo de `ProcessosPage`. */
+  const subgrupoNome = useNomeDeSubgrupo();
   const queryClient = useQueryClient();
 
   /** Debounce de verdade: sem ele cada tecla vira uma `queryKey` nova e uma
@@ -185,6 +190,7 @@ export default function DocumentosPage() {
                 <LinhaDeDocumento
                   key={`${documento.subgrupo_id}:${documento.documento_id}`}
                   documento={documento}
+                  subgrupoNome={subgrupoNome}
                   onAbrir={(d) => navegar(`/documentos/${d.subgrupo_id}/${d.documento_id}`)}
                 />
               ))}
