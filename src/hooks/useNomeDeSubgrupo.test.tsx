@@ -11,7 +11,7 @@ import { system } from "../theme";
 const mocks = vi.hoisted(() => ({ listarSubgrupos: vi.fn() }));
 vi.mock("../services", () => mocks);
 
-import { useNomeDeSubgrupo } from "./useNomeDeSubgrupo";
+import { useNomeDeSubgrupo, useNomesDeSubgruposVisiveis } from "./useNomeDeSubgrupo";
 
 /** Os mesmos provedores de `renderComProviders`, na mesma ordem -- o hook
  *  chama `useToastOnQueryError`, que exige o `ToastProvider`. */
@@ -83,5 +83,44 @@ describe("useNomeDeSubgrupo", () => {
     await waitFor(() => expect(b.result.current("sg-civel")).toBe("Cível"));
 
     expect(mocks.listarSubgrupos).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("useNomesDeSubgruposVisiveis", () => {
+  it("🔴 DESCARTA o id que não está no catálogo -- ao contrário do irmão", async () => {
+    /* O par que prova a diferença deliberada entre os dois hooks. Aqui "não
+       resolveu" significa "não é seu": o catálogo já vem recortado pelo
+       servidor (`GET /subgrupos` é escopado), e um envio entra na lista da
+       pessoa por INTERSEÇÃO -- basta um dos notificados cruzar com os dela.
+       Mostrar os outros seria despejar identificador alheio na tela.
+
+       ⚠️ Se um dia alguém "consertar" isto para cair no id, o Histórico passa
+       a exibir código cru ao lado dos nomes. É o que este teste impede. */
+    const { result } = renderHook(() => useNomesDeSubgruposVisiveis(), { wrapper: comProvedores() });
+    await waitFor(() => expect(result.current(["sg-civel"])).toEqual(["Cível"]));
+
+    expect(result.current(["sg-civel", "sg-alheio", "sg-trab"])).toEqual(["Cível", "Trabalhista"]);
+  });
+
+  it("⚠️ o irmão faz o OPOSTO com a mesma entrada -- e isso é decisão, não descuido", async () => {
+    /* Guarda a assimetria: um item de UM subgrupo mostra o id quando ele foi
+       apagado (a etiqueta sumir faria a coluna afirmar "sem subgrupo"); uma
+       LISTA descarta o que não é seu. */
+    const { result } = renderHook(
+      () => ({ um: useNomeDeSubgrupo(), varios: useNomesDeSubgruposVisiveis() }),
+      { wrapper: comProvedores() },
+    );
+    await waitFor(() => expect(result.current.um("sg-civel")).toBe("Cível"));
+
+    expect(result.current.um("sg-alheio")).toBe("sg-alheio");
+    expect(result.current.varios(["sg-alheio"])).toEqual([]);
+  });
+
+  it("lista ausente ou vazia devolve vazio, sem quebrar", async () => {
+    const { result } = renderHook(() => useNomesDeSubgruposVisiveis(), { wrapper: comProvedores() });
+    await waitFor(() => expect(result.current(["sg-civel"])).toEqual(["Cível"]));
+
+    expect(result.current(undefined)).toEqual([]);
+    expect(result.current([])).toEqual([]);
   });
 });

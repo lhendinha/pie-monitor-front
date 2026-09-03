@@ -6,11 +6,19 @@ import { renderComRota } from "../../test/queryTestUtils";
 const mocks = vi.hoisted(() => ({
   listarHistorico: vi.fn(),
   detalhesProcesso: vi.fn(),
+  listarSubgrupos: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
   const real = await importOriginal<typeof import("../../services")>();
-  return { ...real, listarHistorico: mocks.listarHistorico, detalhesProcesso: mocks.detalhesProcesso };
+  return {
+    ...real,
+    listarHistorico: mocks.listarHistorico,
+    detalhesProcesso: mocks.detalhesProcesso,
+    /* ⚠️ Entrou quando a linha passou a mostrar o subgrupo: sem mock, o
+       catálogo era uma chamada de rede de verdade dentro do teste. */
+    listarSubgrupos: mocks.listarSubgrupos,
+  };
 });
 
 import HistoricoPage from "./index";
@@ -27,6 +35,53 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.detalhesProcesso.mockResolvedValue({ comunicacoes: [], processos: [] });
   mocks.listarHistorico.mockResolvedValue({ historico: [ITEM], total: 1, total_paginas: 1 });
+  /* A pessoa participa de UM subgrupo. `GET /subgrupos` é escopado, então o
+     catálogo já vem recortado -- é ele que define o que ela pode ver. */
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+    total: 1,
+    total_paginas: 1,
+  });
+});
+
+describe("o subgrupo na linha", () => {
+  it("🔴 mostra SÓ os subgrupos que a pessoa participa -- nunca o id de subgrupo alheio", async () => {
+    /* A regra exclusiva desta tela. Um envio entra na lista por INTERSEÇÃO:
+       basta um dos `subgrupos_notificados` cruzar com os seus. Os outros
+       podem ser de gente que ela nem enxerga -- `GET /subgrupos` é escopado
+       (`subgrupos_service.listar_pagina`).
+
+       🔴 Nas outras seis telas o id desconhecido APARECE, e ali está certo:
+       significa subgrupo apagado, e sumir faria a coluna afirmar "sem
+       subgrupo". Aqui significa "não é seu", e mostrar seria despejar
+       identificador alheio ao lado dos nomes. */
+    mocks.listarHistorico.mockResolvedValue({
+      historico: [{ ...ITEM, subgrupos_notificados: ["s1", "s-alheio", "s-outro"] }],
+      total: 1,
+      total_paginas: 1,
+    });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    expect(await screen.findByTitle("Cível")).toHaveTextContent("Cível");
+    expect(screen.queryByText(/s-alheio/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/s-outro/)).not.toBeInTheDocument();
+  });
+
+  it("⚠️ sem notificados, mostra o travessão -- e não some nem quebra", async () => {
+    /* Registro antigo pode não ter o campo. A linha continua legível. */
+    mocks.listarHistorico.mockResolvedValue({
+      historico: [{ ...ITEM, subgrupos_notificados: [] }],
+      total: 1,
+      total_paginas: 1,
+    });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    /* ⚠️ Sem `title` aqui: no caso vazio o componente devolve só o
+       travessão, sem o `Flex` que carrega o atributo. Asserção pelo texto. */
+    expect(await screen.findByText("—")).toBeInTheDocument();
+  });
 });
 
 describe("HistoricoPage", () => {

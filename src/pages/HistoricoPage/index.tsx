@@ -23,6 +23,7 @@ import {
 import { ApiError, listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
+import { useNomesDeSubgruposVisiveis } from "../../hooks/useNomeDeSubgrupo";
 import { contar, mascararNumeroProcesso } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
 import FiltroDeMenu from "./components/FiltroDeMenu";
@@ -103,6 +104,10 @@ export default function HistoricoPage({
   });
   const { atualizar } = useParametrosDaUrl();
 
+  /* UMA vez na página, não uma por item. ⚠️ `Visiveis` e não `Nome`: aqui a
+     lista pode conter subgrupo que a pessoa não participa, e o comportamento
+     tem de ser DESCARTAR, não cair para o id. Ver o hook. */
+  const subgruposVisiveis = useNomesDeSubgruposVisiveis();
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const [criandoTarefa, setCriandoTarefa] = useState(false);
 
@@ -267,6 +272,7 @@ export default function HistoricoPage({
                   <ItemDeHistorico
                     key={`${h.numero_processo}-${h.enviado_em}-${i}`}
                     item={h}
+                    subgruposVisiveis={subgruposVisiveis}
                     onAbrir={setItemAberto}
                   />
                 ))}
