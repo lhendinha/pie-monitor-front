@@ -1,11 +1,15 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 
-import { Etiqueta, Ponto } from "../../../../components";
+import { Etiqueta, EtiquetasDeSubgrupo, Ponto } from "../../../../components";
 import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
 import type { HistoricoItem } from "../../../../types";
 
 interface ItemDeHistoricoProps {
+  /** Traduz `subgrupos_notificados` nos nomes que a pessoa PODE ver,
+   * descartando os demais. Vem da página -- uma consulta para a lista
+   * inteira, não uma por item. */
+  subgruposVisiveis: (ids: string[] | undefined) => string[];
   item: HistoricoItem;
   onAbrir: (item: HistoricoItem) => void;
 }
@@ -15,7 +19,7 @@ interface ItemDeHistoricoProps {
  * A linha inteira abre o detalhe, então precisa ser alcançável pelo
  * teclado: `tabIndex` + Enter/Espaço.
  */
-export default function ItemDeHistorico({ item, onAbrir }: ItemDeHistoricoProps) {
+export default function ItemDeHistorico({ item, subgruposVisiveis, onAbrir }: ItemDeHistoricoProps) {
   const falhou = Boolean(item.falhou);
 
   /** Lembrete de tarefa não tem processo -- `numero_processo` guarda
@@ -71,6 +75,20 @@ export default function ItemDeHistorico({ item, onAbrir }: ItemDeHistoricoProps)
         <Text fontSize="12px" color="fg.subtle">
           {meta}
         </Text>
+        {/* 🔴 Só os subgrupos QUE VOCÊ PARTICIPA, e este é o único lugar do
+            sistema com essa regra.
+
+            Um envio entra na sua lista por INTERSEÇÃO: basta um dos
+            `subgrupos_notificados` cruzar com os seus. Os outros podem ser de
+            gente que você nem enxerga, e despejar o id deles aqui não seria
+            honestidade -- seria mostrar identificador alheio ao lado dos
+            nomes. Ver `useNomesDeSubgruposVisiveis`, que carrega o porquê de
+            o comportamento ser o OPOSTO do das outras telas.
+
+            ⚠️ Lista de verdade, ao contrário das outras seis: aqui a régua
+            "até dois nomes, depois a contagem" de `EtiquetasDeSubgrupo`
+            realmente entra em jogo. */}
+        <EtiquetasDeSubgrupo nomes={subgruposVisiveis(item.subgrupos_notificados)} />
         {item.destinatarios && item.destinatarios.length > 0 && (
           <Text fontSize="12px" color="fg.subtle">
             Pra: {item.destinatarios.join(", ")}

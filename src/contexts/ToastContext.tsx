@@ -1,14 +1,11 @@
 import { Flex } from "@chakra-ui/react";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
-import { DURACAO_DO_AVISO_MS } from "../../constants/toast";
-import Aviso from "./Aviso";
-import type { ToastItem } from "../../types";
+import { DURACAO_DO_AVISO_MS } from "../constants/toast";
+import Aviso from "../components/Aviso";
+import type { ToastItem } from "../types";
+import type { ToastContextValue } from "./types";
 
-interface ToastContextValue {
-  erro: (mensagem: string) => void;
-  sucesso: (mensagem: string) => void;
-}
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 

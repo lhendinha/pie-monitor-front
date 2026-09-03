@@ -2,7 +2,6 @@ export { default as Modal } from "./Modal";
 export { default as Esqueleto } from "./Esqueleto";
 export { default as Pagination } from "./Pagination";
 export { Select, MultiSelect } from "./Select";
-export { ToastProvider, useToast } from "./Toast";
 export { IconeHistorico, IconeArrastar, IconeBusca, IconeCalendario, IconeClientes, IconeSeta, IconeChevron, IconeLink, IconeEnviar, IconeSino, IconeLixeira, IconeLapis, IconePlus, IconeGrupo, IconeCheck, IconeAlerta, IconeCadeado, IconeOlho, IconeOlhoCortado, IconeX } from "./Icons";
 export { default as ItemDeMovimentacao } from "./ItemDeMovimentacao";
 export { default as AppShell } from "./AppShell";

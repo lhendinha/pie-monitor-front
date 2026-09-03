@@ -10,7 +10,7 @@ import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
 import { OPCAO_LINHA } from "../../theme/painelFiltro";
 import { criarCliente, papelAtende } from "../../services";
-import { useToast } from "../Toast";
+import { useToast } from "../../contexts/ToastContext";
 import { toastErroMutation } from "../../services/queryClient";
 
 interface CampoDeClientesProps {

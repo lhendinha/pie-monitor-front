@@ -2,7 +2,8 @@ import { Flex, Input, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import { Botao, IconePlus, useToast } from "../../../../components";
+import { Botao, IconePlus } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { criarSubgrupo } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 

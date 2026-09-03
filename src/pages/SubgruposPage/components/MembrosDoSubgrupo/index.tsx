@@ -2,20 +2,8 @@ import { Flex, Input, Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Avatar,
-  Botao,
-  BotaoQuadrado,
-  EstadoVazio,
-  EstadoDeErro,
-  Esqueleto,
-  EtiquetaDePapel,
-  IconeLixeira,
-  IconePlus,
-  Modal,
-  ModalDeConfirmacao,
-  useToast,
-} from "../../../../components";
+import { Avatar, Botao, BotaoQuadrado, EstadoVazio, EstadoDeErro, Esqueleto, EtiquetaDePapel, IconeLixeira, IconePlus, Modal, ModalDeConfirmacao } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import {
   adicionarMembro,
   entrouAgora,

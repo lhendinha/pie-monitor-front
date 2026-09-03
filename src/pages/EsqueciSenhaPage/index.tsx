@@ -1,14 +1,8 @@
 import { Input, Stack, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 
-import {
-  Botao,
-  BotaoDeLink,
-  Campo,
-  CartaoDeAutenticacao,
-  Faixa,
-  useToast,
-} from "../../components";
+import { Botao, BotaoDeLink, Campo, CartaoDeAutenticacao, Faixa } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { solicitarRecuperacaoSenha } from "../../services";
 import { emailValido } from "../../utils";
 

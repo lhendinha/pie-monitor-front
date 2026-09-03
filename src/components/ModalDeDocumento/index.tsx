@@ -15,7 +15,7 @@ import Modal from "../Modal";
 import { useGuardaDeDescarte } from "../../hooks/useGuardaDeDescarte";
 import { Select } from "../Select";
 import VinculoDeRegistro from "../VinculoDeRegistro";
-import { useToast } from "../Toast";
+import { useToast } from "../../contexts/ToastContext";
 import {
   criarDocumento,
   enviarArquivo,

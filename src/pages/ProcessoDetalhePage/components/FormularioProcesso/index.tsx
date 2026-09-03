@@ -2,14 +2,8 @@ import { Flex, Heading, Input } from "@chakra-ui/react";
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import {
-  Botao,
-  Campo,
-  Cartao,
-  EtiquetaDeMetadado,
-  IconeLixeira,
-  useToast,
-} from "../../../../components";
+import { Botao, Campo, Cartao, EtiquetaDeMetadado, IconeLixeira } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { atualizarProcesso } from "../../../../services";
 import { camposAlterados } from "../../../../utils/processos";
 import { toastErroMutation } from "../../../../services/queryClient";

@@ -2,18 +2,8 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Botao,
-  CartaoDeTabela,
-  EstadoDeErro,
-  EstadoVazio,
-  Esqueleto,
-  Etiqueta,
-  ModalDeConfirmacao,
-  Pagination,
-  Tabela,
-  useToast,
-} from "../../../../components";
+import { Botao, CartaoDeTabela, EstadoDeErro, EstadoVazio, Esqueleto, Etiqueta, ModalDeConfirmacao, Pagination, Tabela } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { TAMANHO_PAGINA_PADRAO } from "../../../../constants";
 import { useTodosOsSubgrupos } from "../../../../hooks/useCatalogos";
 import {
@@ -32,14 +22,8 @@ import {
 } from "../../constants";
 import type { ConfiguracoesDoGrupo, InscricaoAvulsa } from "../../../../types";
 import type { PedidoDeGravacao } from "../../types";
+import type { NoModal } from "./types";
 
-/** Quem o modal está editando. `"nova"` é o cadastro; ausente, ele está
- * fechado.
- *
- * ⚠️ Um estado só, e não um par de booleanos "está aberto" / "está editando":
- * dois deles deixariam representável "fechado, editando a 263/MG", que não
- * quer dizer nada -- e alguém teria de lembrar de zerar os dois juntos. */
-type NoModal = InscricaoAvulsa | "nova" | null;
 
 /** Sub-aba "Inscrições na OAB": as inscrições do GRUPO.
  *

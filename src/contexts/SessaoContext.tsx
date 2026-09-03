@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from "react";
 
+import type { Sessao } from "./types";
 import { useSessao } from "../hooks/useSessao";
 
-type Sessao = ReturnType<typeof useSessao>;
 
 const Contexto = createContext<Sessao | null>(null);
 

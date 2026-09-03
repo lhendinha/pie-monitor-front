@@ -3,24 +3,9 @@ import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Abas,
-  BotaoDeTexto,
-  Botao,
-  Cartao,
-  DocumentosVinculados,
-  EstadoDeErro,
-  Esqueleto,
-  Etiqueta,
-  EtiquetaDeMetadado,
-  IconeClientes,
-  IconeLink,
-  IconeSeta,
-  ModalDeConfirmacao,
-  IconeLixeira,
-  PainelDaAba,
-  useToast,
-} from "../../components";
+import { Abas, BotaoDeTexto, Botao, Cartao, DocumentosVinculados, EstadoDeErro, Esqueleto, Etiqueta, EtiquetaDeMetadado, IconeClientes, IconeLink, IconeSeta, ModalDeConfirmacao, IconeLixeira, PainelDaAba } from "../../components";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
+import { useToast } from "../../contexts/ToastContext";
 import {
   adicionarRegistro,
   atualizarAtendimento,
@@ -51,6 +36,7 @@ import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
  * procurado em dois lugares diferentes conforme a tela.
  */
 export default function AtendimentoDetalhePage() {
+  const subgrupoNome = useNomeDeSubgrupo();
   const { subgrupoId = "", atendimentoId = "" } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -175,6 +161,14 @@ export default function AtendimentoDetalhePage() {
           </Heading>
           <Flex align="center" gap="8px" mt="8px" wrap="wrap">
             <Etiqueta cores={coresDoStatus(atendimento.status)}>{atendimento.status}</Etiqueta>
+            {/* 🔴 O subgrupo, como no detalhe do PROCESSO -- que já fazia isto
+                e era a única das três telas irmãs a fazer.
+
+                ⚠️ SEM ícone, ao contrário dos chips de cliente e processo
+                abaixo. O ícone existe lá para separar duas coisas que se
+                confundem entre si; o subgrupo não se confunde com nenhuma das
+                duas, e um terceiro ícone só encheria a linha. */}
+            <EtiquetaDeMetadado>{subgrupoNome(atendimento.subgrupo_id)}</EtiquetaDeMetadado>
             {/* Os chips daqui levam ÍCONE, ao contrário dos do detalhe do
                 processo (que no artifact são só texto): aqui eles dizem
                 coisas de naturezas diferentes -- quem é o cliente e a que

@@ -2,13 +2,8 @@ import { Box, Flex, Text, chakra } from "@chakra-ui/react";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
-import {
-  Botao,
-  CampoDeArquivo,
-  Cartao,
-  IconeLink,
-  useToast,
-} from "../../../../components";
+import { Botao, CampoDeArquivo, Cartao, IconeLink } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { DOCUMENTO_ARQUIVO, formatarTamanho } from "../../../../constants";
 import {
   enviarArquivo,

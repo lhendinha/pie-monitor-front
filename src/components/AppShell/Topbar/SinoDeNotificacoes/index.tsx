@@ -15,6 +15,7 @@ import {
 import { useNotificacoes } from "../../../../hooks/useNotificacoes";
 import { destinoDaNotificacao } from "../../../../utils/notificacao";
 import type { Notificacao } from "../../../../types";
+import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import LinhaDeNotificacao from "./LinhaDeNotificacao";
 
 /** O sino da barra superior: badge com a contagem e painel com a lista.
@@ -25,6 +26,10 @@ import LinhaDeNotificacao from "./LinhaDeNotificacao";
  * pessoa a ignorá-lo.
  */
 export default function SinoDeNotificacoes() {
+  /* ⚠️ Custo novo, e fica escrito: o sino renderiza em TODA página e não
+     carregava catálogo de subgrupo. É UMA requisição por sessão -- a chave
+     `qk.todosOsSubgrupos()` é compartilhada, e são 8 subgrupos em produção. */
+  const subgrupoNome = useNomeDeSubgrupo();
   const [aberto, setAberto] = useState(false);
   const navigate = useNavigate();
   const {
@@ -108,6 +113,7 @@ export default function SinoDeNotificacoes() {
                   <LinhaDeNotificacao
                     key={n.notificacao_id}
                     notificacao={n}
+                    subgrupoNome={subgrupoNome}
                     onAbrir={destinoDaNotificacao(n) ? () => abrir(n) : undefined}
                     ultima={indice === notificacoes.length - 1}
                   />

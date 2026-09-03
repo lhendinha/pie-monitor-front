@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
+  /* ⚠️ O catálogo de subgrupos: sem ele a consulta erra em silêncio e a
+     etiqueta cai para o id -- o teste passaria sem exercitar o caminho real. */
+  listarSubgrupos: vi.fn(),
   detalhesAtendimento: vi.fn(),
   atualizarAtendimento: vi.fn(),
   adicionarRegistro: vi.fn(),
@@ -51,6 +54,9 @@ const ATENDIMENTO = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+  });
   mocks.papelAtende.mockReturnValue(true);
   mocks.getApelido.mockReturnValue("Ana");
   mocks.getEmail.mockReturnValue("ana@x.com");
@@ -435,5 +441,20 @@ describe("abas", () => {
       ),
     );
     expect(within(painel("Documentos")).getByText("Procuração")).toBeInTheDocument();
+  });
+});
+
+describe("o subgrupo no cabeçalho", () => {
+  it("🔴 mostra de qual subgrupo é o atendimento", async () => {
+    /* As três telas de detalhe eram irmãs e só a de PROCESSO mostrava o
+       subgrupo. Esta e a de documento divergiam -- e quem participa de vários
+       abria o item sem saber de onde ele vinha.
+
+       ⚠️ Sem ícone, ao contrário dos chips de cliente e processo: o ícone lá
+       separa duas coisas que se confundem entre si, e o subgrupo não se
+       confunde com nenhuma delas. */
+    montar();
+
+    expect(await screen.findByText("Cível")).toBeInTheDocument();
   });
 });

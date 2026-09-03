@@ -1,19 +1,49 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useLocation } from "react-router-dom";
+
 import { renderComRota } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   listarHistorico: vi.fn(),
+  /* 🔴 Rota PRÓPRIA do link do e-mail (03/09/2026). Antes o deep link usava
+     `listarHistorico({ numeroProcesso })`; ela passou a PAGINAR quando o
+     número virou filtro de tela, e procurar numa página devolveria "não
+     encontrei" para algo que está na seguinte. */
+  historicoDoProcesso: vi.fn(),
   detalhesProcesso: vi.fn(),
+  listarSubgrupos: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
   const real = await importOriginal<typeof import("../../services")>();
-  return { ...real, listarHistorico: mocks.listarHistorico, detalhesProcesso: mocks.detalhesProcesso };
+  return {
+    ...real,
+    listarHistorico: mocks.listarHistorico,
+    historicoDoProcesso: mocks.historicoDoProcesso,
+    detalhesProcesso: mocks.detalhesProcesso,
+    /* ⚠️ Entrou quando a linha passou a mostrar o subgrupo: sem mock, o
+       catálogo era uma chamada de rede de verdade dentro do teste. */
+    listarSubgrupos: mocks.listarSubgrupos,
+  };
 });
 
 import HistoricoPage from "./index";
+import type { OpcoesListarHistorico } from "../../types";
+
+/** Espelha a query string na tela.
+ *
+ * 🔴 `renderComRota` monta um `MemoryRouter`: a URL vive na memória do
+ * roteador e o `window.location` do jsdom NUNCA muda. Uma asserção sobre
+ * `window.location.search` passa em falso -- ela compara `""` com `""` e diz
+ * que o filtro foi para o endereço mesmo quando nada foi. Mesma sonda de
+ * `useEstadoNaUrl.test.tsx`. */
+function SondaDeUrl() {
+  return <div data-testid="url">{useLocation().search || "(sem query)"}</div>;
+}
+
+const urlDaSonda = () => screen.getByTestId("url").textContent;
 
 const ITEM = {
   numero_processo: "00002668720218130559",
@@ -27,6 +57,53 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.detalhesProcesso.mockResolvedValue({ comunicacoes: [], processos: [] });
   mocks.listarHistorico.mockResolvedValue({ historico: [ITEM], total: 1, total_paginas: 1 });
+  /* A pessoa participa de UM subgrupo. `GET /subgrupos` é escopado, então o
+     catálogo já vem recortado -- é ele que define o que ela pode ver. */
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+    total: 1,
+    total_paginas: 1,
+  });
+});
+
+describe("o subgrupo na linha", () => {
+  it("🔴 mostra SÓ os subgrupos que a pessoa participa -- nunca o id de subgrupo alheio", async () => {
+    /* A regra exclusiva desta tela. Um envio entra na lista por INTERSEÇÃO:
+       basta um dos `subgrupos_notificados` cruzar com os seus. Os outros
+       podem ser de gente que ela nem enxerga -- `GET /subgrupos` é escopado
+       (`subgrupos_service.listar_pagina`).
+
+       🔴 Nas outras seis telas o id desconhecido APARECE, e ali está certo:
+       significa subgrupo apagado, e sumir faria a coluna afirmar "sem
+       subgrupo". Aqui significa "não é seu", e mostrar seria despejar
+       identificador alheio ao lado dos nomes. */
+    mocks.listarHistorico.mockResolvedValue({
+      historico: [{ ...ITEM, subgrupos_notificados: ["s1", "s-alheio", "s-outro"] }],
+      total: 1,
+      total_paginas: 1,
+    });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    expect(await screen.findByTitle("Cível")).toHaveTextContent("Cível");
+    expect(screen.queryByText(/s-alheio/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/s-outro/)).not.toBeInTheDocument();
+  });
+
+  it("⚠️ sem notificados, mostra o travessão -- e não some nem quebra", async () => {
+    /* Registro antigo pode não ter o campo. A linha continua legível. */
+    mocks.listarHistorico.mockResolvedValue({
+      historico: [{ ...ITEM, subgrupos_notificados: [] }],
+      total: 1,
+      total_paginas: 1,
+    });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    /* ⚠️ Sem `title` aqui: no caso vazio o componente devolve só o
+       travessão, sem o `Flex` que carrega o atributo. Asserção pelo texto. */
+    expect(await screen.findByText("—")).toBeInTheDocument();
+  });
 });
 
 describe("HistoricoPage", () => {
@@ -34,13 +111,15 @@ describe("HistoricoPage", () => {
     renderComRota(<HistoricoPage />);
 
     expect(await screen.findByText("Intimação", { exact: false })).toBeInTheDocument();
-    expect(mocks.listarHistorico).toHaveBeenCalledWith({
-      pagina: 1,
-      tamanhoPagina: 10,
-      tipoEnvio: "movimentacao",
-      apenasComFalha: false,
-      dias: 0,
-    });
+    expect(mocks.listarHistorico).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pagina: 1,
+        tamanhoPagina: 10,
+        tipoEnvio: "movimentacao",
+        apenasComFalha: false,
+        dias: 0,
+      }),
+    );
     // Filtro ligado precisa PARECER ligado: senão a pessoa vê uma lista
     // incompleta achando que está vendo tudo.
     expect(screen.getByRole("button", { name: /Movimentações/ })).toBeInTheDocument();
@@ -55,13 +134,15 @@ describe("HistoricoPage", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Lembretes" }));
 
     await waitFor(() =>
-      expect(mocks.listarHistorico).toHaveBeenCalledWith({
-        pagina: 1,
-        tamanhoPagina: 10,
-        tipoEnvio: "lembrete",
-        apenasComFalha: false,
-        dias: 0,
-      }),
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tamanhoPagina: 10,
+          tipoEnvio: "lembrete",
+          apenasComFalha: false,
+          dias: 0,
+        }),
+      ),
     );
   });
 
@@ -78,13 +159,15 @@ describe("HistoricoPage", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Todos" }));
 
     await waitFor(() =>
-      expect(mocks.listarHistorico).toHaveBeenCalledWith({
-        pagina: 1,
-        tamanhoPagina: 10,
-        tipoEnvio: "",
-        apenasComFalha: false,
-        dias: 0,
-      }),
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tamanhoPagina: 10,
+          tipoEnvio: "",
+          apenasComFalha: false,
+          dias: 0,
+        }),
+      ),
     );
   });
 
@@ -103,7 +186,7 @@ describe("HistoricoPage", () => {
 
   it("vazio POR FILTRO oferece o caminho de volta", async () => {
     // Como a tela abre filtrada, "não tem nada" costuma ser mentira.
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
+    mocks.listarHistorico.mockImplementation((opcoes: OpcoesListarHistorico) =>
       opcoes?.tamanhoPagina === 1
         ? Promise.resolve({ historico: [], total: 7, total_paginas: 7 })
         : Promise.resolve({ historico: [], total: 0, total_paginas: 0 }),
@@ -125,13 +208,15 @@ describe("HistoricoPage", () => {
     await user.click(screen.getByRole("button", { name: "Ver todos os envios" }));
 
     await waitFor(() =>
-      expect(mocks.listarHistorico).toHaveBeenCalledWith({
-        pagina: 1,
-        tamanhoPagina: 10,
-        tipoEnvio: "",
-        apenasComFalha: false,
-        dias: 0,
-      }),
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tamanhoPagina: 10,
+          tipoEnvio: "",
+          apenasComFalha: false,
+          dias: 0,
+        }),
+      ),
     );
   });
 
@@ -172,11 +257,8 @@ describe("HistoricoPage", () => {
   });
 
   it("deep link com match abre o modal certo sozinho e consome o link", async () => {
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
-      opcoes?.numeroProcesso
-        ? Promise.resolve({ historico: [ITEM] })
-        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
-    );
+    mocks.historicoDoProcesso.mockReturnValue(Promise.resolve({ historico: [ITEM] }));
+    mocks.listarHistorico.mockReturnValue(Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 }));
     const onDeepLinkConsumido = vi.fn();
     renderComRota(
       <HistoricoPage
@@ -186,7 +268,7 @@ describe("HistoricoPage", () => {
     );
 
     expect(await screen.findByText("Detalhes do envio")).toBeInTheDocument();
-    expect(mocks.listarHistorico).toHaveBeenCalledWith({ numeroProcesso: ITEM.numero_processo });
+    expect(mocks.historicoDoProcesso).toHaveBeenCalledWith(ITEM.numero_processo);
     await waitFor(() => expect(onDeepLinkConsumido).toHaveBeenCalledTimes(1));
   });
 
@@ -196,14 +278,12 @@ describe("HistoricoPage", () => {
      * estava sendo buscado -- e, se falhasse, só um toast que ela podia nem
      * associar ao link.
      *
-     * A busca por `numeroProcesso` nunca assenta aqui: é a espera
+     * A busca da rota própria nunca assenta aqui: é a espera
      * congelada. Fica vermelho se o modal voltar a depender de `itemAberto`
      * pra existir. */
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
-      opcoes?.numeroProcesso
-        ? new Promise(() => {})
-        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
-    );
+    /* A busca da ROTA PRÓPRIA nunca assenta: é a espera congelada. */
+    mocks.historicoDoProcesso.mockReturnValue(new Promise(() => {}));
+    mocks.listarHistorico.mockResolvedValue({ historico: [ITEM], total: 1, total_paginas: 1 });
     renderComRota(
       <HistoricoPage
         deepLink={{ processo: ITEM.numero_processo, comunicacaoId: String(ITEM.comunicacao_id) }}
@@ -219,11 +299,8 @@ describe("HistoricoPage", () => {
   });
 
   it("deep link sem match no comunicacao_id mostra toast e ainda consome o link", async () => {
-    mocks.listarHistorico.mockImplementation((opcoes: any) =>
-      opcoes?.numeroProcesso
-        ? Promise.resolve({ historico: [] })
-        : Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 })
-    );
+    mocks.historicoDoProcesso.mockReturnValue(Promise.resolve({ historico: [] }));
+    mocks.listarHistorico.mockReturnValue(Promise.resolve({ historico: [ITEM], total: 1, total_paginas: 1 }));
     const onDeepLinkConsumido = vi.fn();
     renderComRota(
       <HistoricoPage
@@ -239,11 +316,19 @@ describe("HistoricoPage", () => {
     expect(screen.queryByText("Detalhes do envio")).not.toBeInTheDocument();
   });
 
-  it("sem deepLink, não dispara a busca por numeroProcesso", async () => {
+  it("sem deepLink, não busca o histórico de processo nenhum", async () => {
+    /* ⚠️ A asserção mudou de alvo em 03/09/2026, e o motivo é o contrato.
+       Antes ela olhava `listarHistorico` sem `numeroProcesso` -- e hoje ele
+       vai SEMPRE, vazio, porque o número virou filtro de tela. Quem dispara
+       a busca do link é `historicoDoProcesso`, e é ela que não pode ser
+       chamada sem link. */
     renderComRota(<HistoricoPage />);
     await screen.findByText("Intimação", { exact: false });
-    expect(mocks.listarHistorico).not.toHaveBeenCalledWith(
-      expect.objectContaining({ numeroProcesso: expect.anything() })
+
+    expect(mocks.historicoDoProcesso).not.toHaveBeenCalled();
+    // e a lista normal foi pedida sem recorte por processo
+    expect(mocks.listarHistorico).toHaveBeenCalledWith(
+      expect.objectContaining({ numeroProcesso: "" }),
     );
   });
 });
@@ -261,13 +346,15 @@ describe("os filtros que a Área de trabalho aciona", () => {
     renderComRota(<HistoricoPage tipoEnvioInicial="" apenasComFalhaInicial />);
 
     await waitFor(() =>
-      expect(mocks.listarHistorico).toHaveBeenCalledWith({
-        pagina: 1,
-        tamanhoPagina: 10,
-        tipoEnvio: "",
-        apenasComFalha: true,
-        dias: 0,
-      }),
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tamanhoPagina: 10,
+          tipoEnvio: "",
+          apenasComFalha: true,
+          dias: 0,
+        }),
+      ),
     );
     /* ⚠️ E a pílula tem que PARECER ligada. Filtro invisível faz a pessoa
        ver uma lista incompleta achando que está vendo tudo -- a mesma regra
@@ -281,13 +368,15 @@ describe("os filtros que a Área de trabalho aciona", () => {
     renderComRota(<HistoricoPage tipoEnvioInicial="movimentacao" diasInicial={7} />);
 
     await waitFor(() =>
-      expect(mocks.listarHistorico).toHaveBeenCalledWith({
-        pagina: 1,
-        tamanhoPagina: 10,
-        tipoEnvio: "movimentacao",
-        apenasComFalha: false,
-        dias: 7,
-      }),
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tamanhoPagina: 10,
+          tipoEnvio: "movimentacao",
+          apenasComFalha: false,
+          dias: 7,
+        }),
+      ),
     );
     expect(await screen.findByRole("button", { name: "Últimos 7 dias" })).toHaveAttribute(
       "data-ativo",
@@ -308,13 +397,15 @@ describe("os filtros que a Área de trabalho aciona", () => {
     await user.click(await screen.findByRole("menuitem", { name: "Últimos 7 dias" }));
 
     await waitFor(() =>
-      expect(mocks.listarHistorico).toHaveBeenCalledWith({
-        pagina: 1,
-        tamanhoPagina: 10,
-        tipoEnvio: "movimentacao",
-        apenasComFalha: true,
-        dias: 7,
-      }),
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tamanhoPagina: 10,
+          tipoEnvio: "movimentacao",
+          apenasComFalha: true,
+          dias: 7,
+        }),
+      ),
     );
   });
 
@@ -417,5 +508,256 @@ describe("botão 'Adicionar tarefa' nos Detalhes do envio", () => {
     // Os dois empilhados: fechar os dois devolveria a pessoa pra lista sem
     // o envio que ela estava lendo.
     expect(screen.getByText("Detalhes do envio")).toBeInTheDocument();
+  });
+});
+
+describe("o link do e-mail usa a rota PRÓPRIA, não a lista", () => {
+  it("🔴 acha a notificação mesmo além da primeira página", async () => {
+    /* O caso que motivou separar as rotas, e que nenhum teste guardava.
+
+       O link traz `?processo=` e `?comunicacao=`, e o front procura o item
+       daquele `comunicacao_id`. Se essa busca usasse `listarHistorico`, que
+       PAGINA de 10 em 10 desde que o número virou filtro de tela, uma
+       notificação a partir do 11º item devolveria "não foi possível
+       localizar" -- mentira, porque ela existe.
+
+       ⚠️ Aqui a lista paginada devolve 10 itens que NÃO contêm o alvo, e a
+       rota própria devolve os 11. Se alguém trocar a chamada de volta, o
+       modal abre no item errado ou mostra o toast de erro. */
+    const outros = Array.from({ length: 10 }, (_, i) => ({
+      ...ITEM, comunicacao_id: 900 + i, assunto: `Outro ${i}`,
+    }));
+    const alvo = { ...ITEM, comunicacao_id: 999, assunto: "O do link" };
+
+    mocks.listarHistorico.mockResolvedValue({
+      historico: outros, total: 11, total_paginas: 2,
+    });
+    mocks.historicoDoProcesso.mockResolvedValue({ historico: [...outros, alvo] });
+
+    renderComRota(
+      <HistoricoPage
+        deepLink={{ processo: ITEM.numero_processo, comunicacaoId: "999" }}
+        onDeepLinkConsumido={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("Detalhes do envio")).toBeInTheDocument();
+    expect(await screen.findByText("O do link")).toBeInTheDocument();
+    expect(mocks.historicoDoProcesso).toHaveBeenCalledWith(ITEM.numero_processo);
+  });
+});
+
+describe("os dois filtros novos da barra", () => {
+  beforeEach(() => {
+    /* DOIS subgrupos: com um só o chip não aparece, e o teste passaria sem
+       ter olhado para nada. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [
+        { subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" },
+        { subgrupo_id: "s2", nome: "Trabalhista", grupo_id: "g1" },
+      ],
+      total: 2,
+      total_paginas: 1,
+    });
+  });
+
+  it("🔴 o chip de subgrupo manda o escolhido para a API", async () => {
+    const user = userEvent.setup();
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    await user.click(await screen.findByRole("button", { name: /Todos os subgrupos/ }));
+    await user.click(await screen.findByRole("menuitem", { name: "Trabalhista" }));
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({ subgrupoId: "s2" }),
+      ),
+    );
+  });
+
+  it("⚠️ com UM subgrupo só, o chip NÃO aparece -- ele não filtraria nada", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+      total: 1,
+      total_paginas: 1,
+    });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    expect(screen.queryByRole("button", { name: /Todos os subgrupos/ })).not.toBeInTheDocument();
+  });
+
+  it("🔴 o campo de número manda o digitado, e SOMA com os outros", async () => {
+    /* O que a separação de rotas destravou: antes o número mandava sozinho e
+       zerava os demais filtros no servidor. */
+    const user = userEvent.setup();
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    await user.type(screen.getByLabelText("Buscar por número do processo"), "10004766920184013801");
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          numeroProcesso: "10004766920184013801",
+          tipoEnvio: "movimentacao",
+        }),
+      ),
+    );
+  });
+
+  it("🔴 espera as teclas pararem -- senão são VINTE requisições por número", async () => {
+    /* Um número de processo tem 20 dígitos. Sem `useValorComEspera`, cada
+       tecla vira uma `queryKey` nova, uma requisição e uma piscada da lista.
+       A prova é o que NÃO foi pedido: nenhuma consulta com número pela
+       metade. */
+    const user = userEvent.setup({ delay: null });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    const numero = "10004766920184013801";
+    await user.type(screen.getByLabelText("Buscar por número do processo"), numero);
+
+    // o completo chega
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({ numeroProcesso: numero }),
+      ),
+    );
+    // e os pedaços, não
+    const pedidos = mocks.listarHistorico.mock.calls
+      .map(([o]) => (o as OpcoesListarHistorico)?.numeroProcesso)
+      .filter((n): n is string => Boolean(n));
+    const pelaMetade = pedidos.filter((n) => n !== numero);
+    expect(pelaMetade).toEqual([]);
+  });
+
+  it("🔴 os dois vão para a URL -- senão morrem no F5 e o link não vale", async () => {
+    /* Convenção do projeto ("o estado da listagem mora na URL"): sem isto o
+       filtro não sobrevive ao F5 e não vira link para mandar a alguém. */
+    const user = userEvent.setup();
+    renderComRota(
+      <>
+        <HistoricoPage />
+        <SondaDeUrl />
+      </>,
+    );
+    await screen.findByText("Intimação", { exact: false });
+
+    await user.type(screen.getByLabelText("Buscar por número do processo"), "123");
+    await waitFor(() => expect(urlDaSonda()).toContain("processo=123"));
+
+    await user.click(await screen.findByRole("button", { name: /Todos os subgrupos/ }));
+    await user.click(await screen.findByRole("menuitem", { name: "Trabalhista" }));
+    await waitFor(() => expect(urlDaSonda()).toContain("subgrupo=s2"));
+  });
+
+  it("🔴 «Ver todos os envios» limpa os CINCO, inclusive os dois novos", async () => {
+    /* O comentário do `limparFiltros` guarda o defeito de quando ele limpava
+       só o tipo: com outro filtro ligado, o botão de saída não saía -- a lista
+       seguia vazia e o único caminho de volta não levava a lugar nenhum. Com
+       dois filtros novos, o mesmo defeito volta a caber.
+
+       🔴 Monta com os CINCO ligados, e não com os padrões: se algum nascesse
+       já vazio, o assert passaria mesmo com o botão ignorando ele. */
+    mocks.listarHistorico.mockImplementation((opcoes: OpcoesListarHistorico) =>
+      opcoes?.tamanhoPagina === 1
+        ? Promise.resolve({ historico: [], total: 7, total_paginas: 7 })
+        : Promise.resolve({ historico: [], total: 0, total_paginas: 0 }),
+    );
+    const user = userEvent.setup();
+    renderComRota(
+      <>
+        <HistoricoPage tipoEnvioInicial="lembrete" apenasComFalhaInicial diasInicial={7} />
+        <SondaDeUrl />
+      </>,
+      "/historico?subgrupo=s2&processo=999&pagina=2",
+    );
+
+    expect(await screen.findByText("Nenhum envio com esses filtros.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ver todos os envios" }));
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pagina: 1,
+          tipoEnvio: "",
+          apenasComFalha: false,
+          dias: 0,
+          subgrupoId: "",
+          numeroProcesso: "",
+        }),
+      ),
+    );
+    /* E o endereço não guarda mais VALOR nenhum -- senão o F5 traria os
+       filtros de volta e o botão de saída teria sido uma ilusão.
+
+       ⚠️ A query não fica vazia: `atualizar` grava os padrões (`?tipo=&falha=0`),
+       comportamento que já existia com três filtros. O que importa é que
+       `s2` e `999` sumiram, e que a `pagina=2` foi junto (`tambemApaga`) --
+       limpar filtro e continuar na página 2 devolveria uma lista vazia. */
+    await waitFor(() => {
+      expect(urlDaSonda()).not.toContain("s2");
+      expect(urlDaSonda()).not.toContain("999");
+      expect(urlDaSonda()).not.toContain("pagina");
+    });
+  });
+
+  it("⚠️ catálogo de subgrupos FALHA: o chip some, a lista continua", async () => {
+    /* Caminho de erro do chip. O catálogo é uma segunda requisição, alheia à
+       do histórico: se ela cair, o filtro não tem o que oferecer -- mas a
+       tela é a do HISTÓRICO, e derrubá-la junto trocaria um controle a menos
+       por uma tela inteira a menos. */
+    mocks.listarSubgrupos.mockRejectedValue(new Error("500"));
+    renderComRota(<HistoricoPage />);
+
+    // a lista chegou, apesar do catálogo caído
+    expect(await screen.findByText("Intimação", { exact: false })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: /Todos os subgrupos/ })).not.toBeInTheDocument(),
+    );
+  });
+
+  it("⚠️ a LISTA falha com filtro ligado: erro de verdade, não «não tem nada»", async () => {
+    /* O par negativo do estado vazio. Sem a checagem de erro antes da de
+       lista vazia, uma falha de rede virava "Nenhum e-mail enviado ainda" --
+       e como o total também caía pra 0, nem o botão de saída aparecia pra
+       desmentir. Com filtro na URL o engano é pior: a pessoa culpa o filtro
+       que acabou de digitar. */
+    mocks.listarHistorico.mockRejectedValue(new Error("500"));
+    renderComRota(<HistoricoPage />, "/historico?processo=999&subgrupo=s2");
+
+    expect(await screen.findByText("Não foi possível carregar o histórico.")).toBeInTheDocument();
+    expect(screen.queryByText("Nenhum e-mail enviado ainda.", { exact: false })).not.toBeInTheDocument();
+    expect(screen.queryByText("Nenhum envio com esses filtros.")).not.toBeInTheDocument();
+  });
+
+  it("🔴 manda o PEDAÇO digitado, sem exigir os 20 dígitos", async () => {
+    /* A queixa de 03/09/2026: "digitei 3802 e não achou nada". A busca por
+       pedaço é da API (`email_historico_repository` compara por dígito), e o
+       que cabe à tela é MANDAR o pedaço em vez de segurá-lo esperando um
+       número completo. */
+    const user = userEvent.setup({ delay: null });
+    renderComRota(<HistoricoPage />);
+    await screen.findByText("Intimação", { exact: false });
+
+    await user.type(screen.getByLabelText("Buscar por número do processo"), "3802");
+
+    await waitFor(() =>
+      expect(mocks.listarHistorico).toHaveBeenCalledWith(
+        expect.objectContaining({ numeroProcesso: "3802" }),
+      ),
+    );
+  });
+
+  it("⚠️ o rótulo diz BUSCAR, não filtrar -- é o que evita a queixa de novo", () => {
+    /* Um par com o teste acima: mandar o pedaço não adianta se a tela promete
+       igualdade. O rótulo antigo ("Filtrar por número do processo") e o
+       placeholder ("Número do processo") faziam quem tem só o fim do número
+       nem tentar. */
+    renderComRota(<HistoricoPage />);
+    const campo = screen.getByLabelText("Buscar por número do processo");
+    expect(campo).toHaveAttribute("placeholder", "Número do processo ou parte");
   });
 });

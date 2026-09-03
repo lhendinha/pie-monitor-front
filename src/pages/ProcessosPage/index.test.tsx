@@ -69,6 +69,31 @@ beforeEach(() => {
 });
 
 describe("ProcessosPage", () => {
+  it("🔴 o subgrupo é ETIQUETA, e na 3ª coluna -- não texto solto", async () => {
+    /* Processos era a única tela que já mostrava o subgrupo, e mostrava de
+       um jeito próprio, enquanto Membros e Inscrições usavam
+       `EtiquetasDeSubgrupo`. Com seis telas passando a exibir o mesmo dado,
+       a terceira forma de desenhar a mesma coisa é a que diverge no primeiro
+       ajuste.
+
+       ⚠️ O discriminador é o `title`, e não a cor ou o raio da borda: é o que
+       o componente PROMETE ("o que a célula resume, o ponteiro devolve") e o
+       que texto solto não tem. Asserção de estilo quebraria no primeiro
+       ajuste de tema sem que nada estivesse errado.
+
+       ⚠️ E a POSIÇÃO entra no teste: a coluna é a 3ª, "na ordem do artifact".
+       Padronizar era como ela é desenhada, não onde ela está -- movê-la para
+       o fim obrigaria o olho a atravessar a linha e voltar. */
+    renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
+    await screen.findByText("Meu processo");
+
+    const etiqueta = await screen.findByTitle("Cível");
+    expect(etiqueta).toHaveTextContent("Cível");
+
+    const cabecalhos = screen.getAllByRole("columnheader").map((c) => c.textContent);
+    expect(cabecalhos[2]).toBe("Subgrupo");
+  });
+
   it("mostra a lista de processos depois de carregar, com pagina/tamanhoPagina", async () => {
     renderComProviders(<MemoryRouter><ProcessosPage /></MemoryRouter>);
     expect(await screen.findByText("Meu processo")).toBeInTheDocument();

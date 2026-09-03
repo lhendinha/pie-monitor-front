@@ -3,15 +3,9 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  BotaoDeTexto,
-  CartaoDeTabela,
-  EstadoDeErro,
-  Esqueleto,
-  IconeSeta,
-  ModalDeConfirmacao,
-  useToast,
-} from "../../components";
+import { BotaoDeTexto, CartaoDeTabela, EstadoDeErro, Esqueleto, IconeSeta, ModalDeConfirmacao } from "../../components";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
+import { useToast } from "../../contexts/ToastContext";
 import { DOCUMENTO_ARQUIVO } from "../../constants";
 import { detalhesDocumento, removerDocumento } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
@@ -37,6 +31,7 @@ import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
  * inteira.
  */
 export default function DocumentoDetalhePage() {
+  const subgrupoNome = useNomeDeSubgrupo();
   const { subgrupoId = "", documentoId = "" } = useParams();
   const navegar = useNavigate();
   const queryClient = useQueryClient();
@@ -133,6 +128,7 @@ export default function DocumentoDetalhePage() {
           e montá-lo antes da resposta os deixaria vazios pra sempre. */}
       <FormularioDocumento
         documento={documento}
+        subgrupoNome={subgrupoNome}
         onSalvo={invalidar}
         onRemover={() => setConfirmandoExclusao(true)}
       />

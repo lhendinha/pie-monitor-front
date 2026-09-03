@@ -1,11 +1,15 @@
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 
 import { BotaoNu } from "../../../../BotaoNu";
+import EtiquetasDeSubgrupo from "../../../../EtiquetasDeSubgrupo";
 import { formatarDataHora } from "../../../../../utils";
 import { detalheSecundario, frasePrincipal } from "../../../../../utils/notificacao";
 import type { Notificacao } from "../../../../../types";
 
 interface LinhaDeNotificacaoProps {
+  /** Traduz `subgrupo_id` em nome. Vem do SINO -- uma consulta para a lista
+   * inteira, não uma por notificação. */
+  subgrupoNome: (id: string) => string;
   notificacao: Notificacao;
   /** Apelido de quem agiu. O aviso guarda só o e-mail, e quem resolve o
    * nome é quem monta a lista. */
@@ -25,6 +29,7 @@ export default function LinhaDeNotificacao({
   notificacao,
   onAbrir,
   ultima,
+  subgrupoNome,
 }: LinhaDeNotificacaoProps) {
   const clicavel = Boolean(onAbrir);
 
@@ -63,9 +68,19 @@ export default function LinhaDeNotificacao({
         <Text fontSize="12px" color="fg.muted" mt="1px" truncate>
           {detalheSecundario(notificacao)}
         </Text>
-        <Text fontSize="11px" color="fg.subtle" mt="3px" fontFamily="mono">
-          {formatarDataHora(notificacao.criado_em)}
-        </Text>
+        {/* 🔴 Junto da data, que é a linha de metadados desta linha. O sino
+            avisa sobre tudo que acontece nos seus subgrupos, misturado -- e
+            "Fulano atribuiu uma tarefa a você" não diz de onde ela vem.
+
+            ⚠️ Fora do `Text` da data, e não dentro: aquele é `fontFamily
+            mono` e a etiqueta tem tipografia própria. Herdar mono deixaria a
+            etiqueta diferente das outras seis telas. */}
+        <Flex align="center" gap="7px" mt="3px" minW="0">
+          <Text fontSize="11px" color="fg.subtle" fontFamily="mono">
+            {formatarDataHora(notificacao.criado_em)}
+          </Text>
+          <EtiquetasDeSubgrupo nomes={[subgrupoNome(notificacao.subgrupo_id)]} />
+        </Flex>
       </Box>
     </BotaoNu>
   );

@@ -1,7 +1,7 @@
 import { Table, Text } from "@chakra-ui/react";
 
 import { formatarData, formatarDataHoraAmPm, mascararNumeroProcesso } from "../../../../utils";
-import { CelulaComSub } from "../../../../components";
+import { CelulaComSub, EtiquetasDeSubgrupo } from "../../../../components";
 import type { Processo } from "../../../../types";
 
 interface LinhaProcessoProps {
@@ -68,7 +68,22 @@ export default function LinhaProcesso({
         sub={temApelido ? mascararNumeroProcesso(p.numero_processo) : undefined}
       />
       <CelulaComSub principal={clientesNomes(p) || "—"} />
-      <CelulaComSub principal={subgrupoNome(p.subgrupo_id)} />
+      {/* 🔴 Etiqueta, e não texto solto (02/09/2026). Era o único lugar do
+          sistema que já mostrava o subgrupo, e mostrava de um jeito próprio --
+          enquanto Membros e Inscrições usavam `EtiquetasDeSubgrupo`. Com seis
+          telas passando a exibir o mesmo dado, a terceira forma de desenhar a
+          mesma coisa seria a que diverge no primeiro ajuste.
+
+          ⚠️ **A coluna NÃO sai do lugar.** Ela é a 3ª, "na ordem do artifact"
+          (`COLUNAS_PROCESSOS`), e fica. O que se padroniza é como ela é
+          desenhada, não onde está: o subgrupo qualifica o processo, e
+          qualificador longe do identificador obriga o olho a atravessar a
+          linha e voltar.
+
+          ⚠️ Lista de UM: processo pertence a um subgrupo só. O resumo por
+          contagem do componente nunca chega a aparecer aqui -- ele existe para
+          Membros, Inscrições e Histórico, onde a lista é lista de verdade. */}
+      <CelulaComSub principal={<EtiquetasDeSubgrupo nomes={[subgrupoNome(p.subgrupo_id)]} />} />
       <CelulaComSub
         principal={situacaoRotulo(p.situacao_id) || "—"}
         sub={faseRotulo(p.fase_id) || undefined}

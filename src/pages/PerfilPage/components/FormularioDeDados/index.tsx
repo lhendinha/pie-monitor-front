@@ -2,13 +2,8 @@ import { Box, Input } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  Botao,
-  Campo,
-  DicaDeCampo,
-  RodapeDeAcoes,
-  useToast,
-} from "../../../../components";
+import { Botao, Campo, DicaDeCampo, RodapeDeAcoes } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { useSessaoContexto } from "../../../../contexts/SessaoContext";
 import { atualizarMeuPerfil } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";

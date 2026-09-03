@@ -1,28 +1,19 @@
 import { Flex, Stack, Text } from "@chakra-ui/react";
 
 import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
+import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
-import {
-  Botao,
-  CabecalhoDePagina,
-  CartaoDeTabela,
-  AreaAtualizando,
-  EstadoVazio,
-  EstadoDeErro,
-  Esqueleto,
-  IconePlus,
-  Modal,
-  ModalDeTarefa,
-  Pagination,
-  useToast,
-} from "../../components";
-import { ApiError, listarHistorico } from "../../services";
+import { Botao, CabecalhoDePagina, CampoDeBusca, CartaoDeTabela, AreaAtualizando, EstadoVazio, EstadoDeErro, Esqueleto, IconePlus, Modal, ModalDeTarefa, Pagination } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
+import { ApiError, historicoDoProcesso, listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
+import { useNomesDeSubgruposVisiveis } from "../../hooks/useNomeDeSubgrupo";
+import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
 import { contar, mascararNumeroProcesso } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
 import FiltroDeMenu from "./components/FiltroDeMenu";
@@ -101,8 +92,39 @@ export default function HistoricoPage({
   const [dias, setDias] = useEstadoNaUrl("dias", PADROES.dias, {
     tambemApaga: ["pagina"],
   });
+  /* Os dois filtros novos (03/09/2026), na URL como os três acima -- senão
+     morrem no F5 e o link não pode ser mandado pra ninguém. */
+  const [subgrupoId, setSubgrupoId] = useEstadoNaUrl("subgrupo", "", {
+    tambemApaga: ["pagina"],
+  });
+  const [numeroInput, setNumeroInput] = useEstadoNaUrl("processo", "", {
+    tambemApaga: ["pagina"],
+  });
+  /* 🔴 Espera entre teclas, como em Documentos e Clientes: sem ela cada
+     tecla vira uma `queryKey` nova e uma requisição -- digitar um número de
+     processo seriam VINTE. O campo mostra o que foi digitado na hora; quem
+     espera é a consulta. */
+  const numeroProcesso = useValorComEspera(numeroInput);
   const { atualizar } = useParametrosDaUrl();
 
+  /* UMA vez na página, não uma por item. ⚠️ `Visiveis` e não `Nome`: aqui a
+     lista pode conter subgrupo que a pessoa não participa, e o comportamento
+     tem de ser DESCARTAR, não cair para o id. Ver o hook. */
+  const subgruposVisiveis = useNomesDeSubgruposVisiveis();
+
+  /* As opções do chip de subgrupo: "Todos" mais os que a pessoa participa.
+     ⚠️ O catálogo JÁ vem recortado pelo servidor (`GET /subgrupos` é
+     escopado), então não há o que filtrar aqui -- e não se deve inventar uma
+     segunda régua de permissão no front. */
+  const subgruposQuery = useTodosOsSubgrupos();
+  const opcoesDeSubgrupo = [
+    { id: "todos", valor: "", rotulo: "Todos os subgrupos" },
+    ...(subgruposQuery.data || []).map((sg) => ({
+      id: sg.subgrupo_id,
+      valor: sg.subgrupo_id,
+      rotulo: sg.nome,
+    })),
+  ];
   const [itemAberto, setItemAberto] = useState<HistoricoItem | null>(null);
   const [criandoTarefa, setCriandoTarefa] = useState(false);
 
@@ -118,14 +140,15 @@ export default function HistoricoPage({
   const toast = useToast();
 
   const query = useQuery<RespostaDeHistoricoPaginada>({
-    queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias }),
+    queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias, subgrupoId, numeroProcesso }),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
        `queryKey` muda, a chave nasce fria, `isPending` vira `true` e a
        tabela DESMONTA -- pisca a cada página, a cada filtro e a cada tecla
        da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
        visível ainda é o antigo. */
     placeholderData: keepPreviousData,
-    queryFn: () => listarHistorico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias }),
+    queryFn: () =>
+      listarHistorico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias, subgrupoId, numeroProcesso }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar o histórico.");
   const historico = query.data?.historico || [];
@@ -152,8 +175,13 @@ export default function HistoricoPage({
    * (sem fechar sobre a prop) pra não pegar um `deepLink` desatualizado se
    * ele mudar antes de a resposta chegar. */
   const deepLinkMutation = useMutation({
+    /* 🔴 `historicoDoProcesso`, e NÃO `listarHistorico({ numeroProcesso })`
+       (03/09/2026). A segunda passou a PAGINAR quando o número virou filtro
+       de tela -- e este `find` procura no conjunto inteiro. Com a paginada,
+       uma notificação a partir do 11º item devolveria "não foi possível
+       localizar", que é mentira: ela existe, só não estava na página. */
     mutationFn: (variaveis: AlvoDoDeepLink) =>
-      listarHistorico({ numeroProcesso: variaveis.processo }) as Promise<RespostaDeHistorico>,
+      historicoDoProcesso(variaveis.processo) as Promise<RespostaDeHistorico>,
     onSuccess: (d, variaveis) => {
       const encontrado = (d.historico || []).find(
         (h) => String(h.comunicacao_id) === variaveis.comunicacaoId,
@@ -194,7 +222,14 @@ export default function HistoricoPage({
     /* ⚠️ Escreve os valores neutros em vez de APAGAR as chaves: apagar
        devolveria o padrão, e aqui o padrão pode ser o filtro que veio da
        Área de trabalho -- "limpar" traria ele de volta. */
-    atualizar({ tipo: "", falha: false, dias: 0 }, { tambemApaga: ["pagina"] });
+    /* ⚠️ Os CINCO. Quando limpava só o tipo, "o botão de saída não saía" --
+       o comentário acima é dessa época. Os dois novos entram pela mesma
+       razão: um filtro que sobrevive ao "ver todos" deixa a lista vazia e a
+       pessoa sem caminho. */
+    atualizar(
+      { tipo: "", falha: false, dias: 0, subgrupo: "", processo: "" },
+      { tambemApaga: ["pagina"] },
+    );
   }
 
   return (
@@ -208,6 +243,38 @@ export default function HistoricoPage({
         <FiltroDeMenu opcoes={TIPOS_DE_ENVIO} valor={tipoEnvio} onMudar={setTipoEnvio} />
         <FiltroDeMenu opcoes={FILTROS_DE_FALHA} valor={apenasComFalha} onMudar={setApenasComFalha} />
         <FiltroDeMenu opcoes={FILTROS_DE_PERIODO} valor={dias} onMudar={setDias} />
+        {/* 🔴 Só aparece com DOIS ou mais subgrupos: com um só, o filtro não
+            filtra nada e ocupa a barra. Mesma régua da pílula de subgrupo de
+            Processos, e o motivo está escrito lá. */}
+        {opcoesDeSubgrupo.length > 2 && (
+          <FiltroDeMenu opcoes={opcoesDeSubgrupo} valor={subgrupoId} onMudar={setSubgrupoId} />
+        )}
+        {/* ⚠️ Campo de TEXTO, e não um seletor: são milhares de processos, e
+            a pessoa chega aqui com o número na mão -- do e-mail, do sistema do
+            tribunal, de um papel.
+
+            🔴 `CampoDeBusca`, e não um `Input` cru: é a mesma caixa de
+            Processos, Clientes e Grupo -- lupa por dentro, fundo de
+            superfície, borda de 1px. A primeira versão usava `Input size="sm"`
+            e ficava visivelmente diferente da busca das outras telas, na
+            mesma barra de filtros. */}
+        {/* ⚠️ SEM `larguraMaxima`: o padrão do componente é 340px, a medida
+            que Clientes e Documentos usam (Processos tem 420px porque a busca
+            dele cobre número, cliente e apelido). A primeira versão passava
+            230px, um valor avulso -- e um número de processo mascarado tem 25
+            caracteres, então o campo ficava apertado justamente no dado que
+            ele recebe. */}
+        {/* 🔴 "Buscar" e "ou parte", e não "Filtrar"/"Número do processo": o
+            campo BUSCA por pedaço (a API compara por dígito), e o rótulo
+            antigo prometia igualdade. Quem digitou "3802" esperando o fim de
+            um número e recebeu nada foi a queixa que abriu isto. */}
+        <CampoDeBusca
+          rotulo="Buscar por número do processo"
+          placeholder="Número do processo ou parte"
+          valor={numeroInput}
+          onMudar={setNumeroInput}
+          buscando={numeroInput !== numeroProcesso}
+        />
       </Flex>
 
       {/* Some enquanto carrega, em vez de dizer "carregando…": o esqueleto
@@ -267,6 +334,7 @@ export default function HistoricoPage({
                   <ItemDeHistorico
                     key={`${h.numero_processo}-${h.enviado_em}-${i}`}
                     item={h}
+                    subgruposVisiveis={subgruposVisiveis}
                     onAbrir={setItemAberto}
                   />
                 ))}

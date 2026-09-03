@@ -5,8 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
+  /* ⚠️ O catálogo de subgrupos: sem ele a consulta erra em silêncio e a
+     etiqueta cai para o id -- o teste passaria sem exercitar o caminho real. */
+  listarSubgrupos: vi.fn(),
   listarProcessos: vi.fn(async () => ({
-    processos: [{ numero_processo: "00002668720218130559", apelido: "Caso Alfa" }],
+    processos: [{ subgrupo_id: "s1", numero_processo: "00002668720218130559", apelido: "Caso Alfa" }],
     total: 1,
   })),
   listarAtendimentos: vi.fn(async () => ({ atendimentos: [], total: 0 })),
@@ -46,6 +49,9 @@ const campo = () => screen.getByRole("combobox");
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+  });
 });
 
 describe("o Escape com o painel aberto", () => {
@@ -73,5 +79,24 @@ describe("o Escape com o painel aberto", () => {
     await usuario.keyboard("{Escape}");
 
     expect(aoFechar).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("o subgrupo na opção", () => {
+  it("🔴 cada resultado diz de qual subgrupo é", async () => {
+    /* Este seletor busca em TODOS os seus subgrupos ao mesmo tempo, e mistura
+       processos com atendimentos. O comentário da segunda linha já dizia a
+       razão um nível acima -- "não dizem sozinhos de onde vieram" --, e
+       tampouco dizem de qual subgrupo.
+
+       ⚠️ Na segunda LINHA, e não como etiqueta à direita: o painel tem 340px
+       (`PAINEL.largura`) e o número mascarado ocupa quase tudo. Em altura
+       sobra. */
+    const usuario = userEvent.setup();
+    montarNoModal();
+
+    await usuario.type(campo(), "266");
+
+    expect(await screen.findByText(/Processo · Caso Alfa · Cível/)).toBeInTheDocument();
   });
 });

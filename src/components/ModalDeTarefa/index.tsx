@@ -14,7 +14,7 @@ import { useGuardaDeDescarte } from "../../hooks/useGuardaDeDescarte";
 import ModalDeConfirmacao from "../ModalDeConfirmacao";
 import { Select } from "../Select";
 import SeletorData from "../SeletorData";
-import { useToast } from "../Toast";
+import { useToast } from "../../contexts/ToastContext";
 import {
   criarTarefa,
   atualizarTarefa,

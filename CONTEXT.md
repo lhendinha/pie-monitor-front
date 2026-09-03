@@ -341,7 +341,7 @@ src/
   services/             -- auth.ts + api/ (client.ts e um arquivo por área) + index.ts
   theme/                -- tokens e paletas de design
   hooks/                -- hooks compartilhados por mais de uma página
-  contexts/             -- SessaoContext
+  contexts/             -- SessaoContext, DescarteContext, ToastContext
   components/           -- 53 componentes gerais, cada um em pasta com index.tsx
   pages/                -- 19 páginas, cada uma em pasta com index.tsx
   test/setup.ts
@@ -359,6 +359,41 @@ src/
    components/NomeDele/index.tsx`, e não entra no índice público.
 4. **O nome tem que fazer sentido onde o arquivo mora.** Tipo que sobe pra
    `types/` costuma precisar de nome novo -- ver a seção abaixo.
+5. 🔴 **Interface que NÃO são as props do componente sai do arquivo dele**
+   (03/09/2026). O `index.tsx` declara o componente e, no máximo,
+   `<NomeDaPasta>Props`. Qualquer outro tipo vai para o `types.ts` da própria
+   pasta -- ou para `src/types/` quando serve a mais de uma tela.
+   ⚠️ **"É privado" justifica ficar na PASTA, não no ARQUIVO.** Foi o erro que
+   uma varredura minha cometeu: achei cinco tipos dentro de `index.tsx`,
+   conferi que nenhum era exportado e concluí que estavam certos. Não estavam
+   -- `ToastContextValue`, `Aba`, `OpcaoDeFiltro` e `NoModal` saíram, e o
+   `Sessao` saiu depois, quando o guarda passou a olhar `contexts/` também.
+   ⚠️ Guardado por `tiposForaDoIndex.test.ts`.
+6. 🔴 **Tudo que cria contexto mora em `contexts/`** (03/09/2026), sem
+   exceção -- ver *"Por que o Toast virou contexto"*.
+
+### Por que o Toast virou contexto (03/09/2026)
+
+`ToastProvider` e `useToast` moravam em `components/Toast/`, ao lado de
+`SessaoContext` e `DescarteContext` que já estavam em `contexts/`. A pergunta
+"por que ele está fora?" não tinha resposta escrita.
+
+🔴 **A resposta que eu dei primeiro estava errada.** Argumentei que o Toast
+*desenha na tela* (empilha os avisos) enquanto os outros dois só devolvem
+`{children}`, e que por isso ele era componente. É um critério de **forma** --
+e este projeto não decide por forma em lugar nenhum. A regra escrita aqui é
+*alcance decide o destino*.
+
+**Pelo alcance, ele é o mais global dos três**: `useToast` é importado por 33
+arquivos; `useSessaoContexto` por 8 e `usePedirParaFechar` por 2.
+
+⚠️ **E pasta por TIPO só se paga se for completa.** O valor de `contexts/` é
+poder listar e saber o que existe. Com uma exceção, ela deixa de responder
+isso, e a pergunta volta a exigir busca -- foi exatamente o que aconteceu.
+
+Resultado: `contexts/ToastContext.tsx` (provê) e `components/Aviso/` (desenha
+um aviso). O barril de `components` **não** exporta mais `useToast`: ele não é
+componente, e deixá-lo lá manteria o atalho que escondia a bagunça.
 
 Uma página completa fica assim (`AgendaPage`):
 
@@ -3471,3 +3506,151 @@ modal NUNCA mora dentro de um ramo condicional"*),
 `utils/iguais.ts` (a régua de igualdade e por que `Object.is`),
 `contexts/DescarteContext.tsx`, `components/BotaoDeCancelar/` e
 `components/RodapeDeFormulario/`.
+
+## De qual subgrupo é isto? (02-03/09/2026)
+
+Requisito do cliente: quem participa de mais de um subgrupo não sabia, ao ler
+uma lista ou escolher um processo, de qual subgrupo cada item era. O relato
+citou "adicionar atendimento", processos, documentos e histórico -- este
+último como pior caso, "porque não temos os filtros necessários".
+
+🔴 **A verificação corrigiu o enunciado e ampliou o resto.** O seletor de
+responsáveis **não** tinha o problema (já vem escopado ao subgrupo escolhido
+logo acima); Processos **já** mostrava o subgrupo; e a varredura achou **sete
+listagens** sem ele, mais dois seletores e duas telas de detalhe -- não três
+telas.
+
+### Uma régua só, a de Membros
+
+`components/EtiquetasDeSubgrupo` já fazia o que o cliente pediu e virou o
+padrão das sete listagens: até **2** nomes, de três em diante a contagem, e a
+lista inteira no `title`. Vazio é **travessão nu** -- `Text` de 12,5px em
+`fg.subtle`, sem `Etiqueta` em volta, como Inscrições na OAB já mostrava.
+
+⚠️ **A altura da linha é a régua de aceitação**, e é por isso que o teto de
+dois nomes existe: uma etiqueta que quebre em duas fileiras estoura a altura
+uniforme. Medido em Chrome no Histórico: 9 linhas de 118px, com a linha de
+DUAS etiquetas medindo o mesmo que as de uma.
+
+🔴 **A POSIÇÃO segue cada tabela; só o NOME é padronizado** ("Subgrupo", no
+singular). Eu tinha proposto "sempre a última coluna, como em Membros" -- e
+estava errado nos dois pontos: `COLUNAS_PROCESSOS` está *na ordem do artifact*
+com Subgrupo em 3º, deliberada; e "última" não é padrão nenhum, é consequência
+de Membros ter 4 colunas. O subgrupo fica **junto do que ele qualifica**.
+
+### `useNomeDeSubgrupo` e `useNomesDeSubgruposVisiveis`, de propósito opostos
+
+O primeiro cai para o **id** quando o nome não resolve; o segundo **descarta**.
+Não é inconsistência -- "não resolveu" significa coisas diferentes:
+
+- **um item, um subgrupo** (processo, documento, tarefa, notificação): não
+  resolver quer dizer que o subgrupo foi APAGADO. O item é seu, e o id é o
+  resto honesto; a etiqueta sumir faria a coluna afirmar "sem subgrupo";
+- **um item, VÁRIOS subgrupos** (o histórico): o envio entra na lista por
+  **interseção** -- basta um dos `subgrupos_notificados` cruzar com os seus.
+  Os outros podem ser de gente que a pessoa nem enxerga, porque
+  `GET /subgrupos` é escopado. Mostrar o id ali não seria honestidade, seria
+  despejar identificador alheio ao lado dos nomes.
+
+⚠️ **O catálogo É a régua de visibilidade** -- ele já vem recortado pelo
+servidor. Por isso o filtro é "está no catálogo?", e não uma segunda checagem
+de permissão inventada no front.
+
+⚠️ Custa **uma** requisição no total, não uma por tela: `qk.todosOsSubgrupos()`
+é chave compartilhada e o React Query deduplica.
+
+### Os dois filtros do Histórico (03/09/2026)
+
+O pior caso do relato. A tela ganhou o **chip de subgrupo** e o **campo de
+número do processo**, ambos em `useEstadoNaUrl` como os três que já existiam.
+
+🔴 **O chip exigiu API**: `GET /historico` não aceitava o parâmetro. O filtro
+entrou no `email_historico_repository`, em memória, ao lado dos outros três --
+e a API subiu e foi conferida em produção **antes** do front.
+
+🔴 **O número do processo exigiu SEPARAR as rotas, e isso foi uma regressão
+minha.** `numero_processo` já existia na rota, mas só como resolvedor do link
+do e-mail: mandava sozinho e devolvia a lista inteira daquele processo, sem
+paginar. Ao transformá-lo em filtro de tela ele passou a paginar -- e o link
+do e-mail, que procura um envio específico, passou a responder "não encontrei"
+para o que estava na página seguinte. Silencioso.
+
+➡️ Duas rotas, cada uma com uma pergunta: `GET /historico` é a **listagem**
+(envelope paginado, todos os filtros valendo juntos) e `GET /historico/{numero}`
+é a **resolução do link** (lista crua, sem paginação). O front usa
+`historicoDoProcesso` só no deep link.
+
+⚠️ **O chip some com um subgrupo só** -- ali não filtra nada, e controle sem
+efeito é pior que controle nenhum. Mesma régua de Processos e Documentos.
+
+🔴 **O campo é `CampoDeBusca`, não um `Input`.** A primeira versão usava
+`Input size="sm"`: mesmo rótulo, mesmo comportamento, todos os testes
+passando -- e na barra ficava sem lupa, com fundo transparente e 36px de
+altura, ao lado de uma busca de Processos com lupa, fundo branco e 38px. O
+`aria-label` não guarda aparência; quem guarda é
+`scripts/verificar-filtros-do-historico.mjs`, que compara os estilos
+computados das DUAS telas -- a régua é a outra tela, não um valor escrito no
+roteiro.
+
+⚠️ **E veio com a espera entre teclas** (`useValorComEspera`), que o `Input`
+cru não tinha: um número de processo tem 20 dígitos, e sem ela eram vinte
+`queryKey` novas e vinte requisições.
+
+⚠️ **A largura é o padrão do componente (340px), não um valor avulso.** A
+primeira versão passava `larguraMaxima="230px"` -- e um número mascarado tem
+25 caracteres, então o campo ficava apertado justamente no dado que recebe.
+Processos usa 420px porque a busca dele cobre número, cliente e apelido.
+🔴 O roteiro guarda o TETO declarado, não a largura renderizada: o campo é
+`flex: 1` e encolhe conforme o que mais está na barra -- em Processos ele tem
+teto de 420px e renderiza 247px.
+
+### 🔴 O campo BUSCA por pedaço, e o rótulo tinha de dizer isso
+
+Segunda queixa da mesma tela, no mesmo dia: *"se eu digitar 3802, não deveria
+mostrar os processos que contêm 3802?"*. Deveria -- e não mostrava. Medido
+contra o offline antes de mexer:
+
+| o que se digita | antes | agora |
+|---|---|---|
+| `3802` (o fim do número) | 0 | 2 |
+| `5000123-45.2023.4.01.3802` (colado da tela) | **0** | 2 |
+| `50001234520234013802` (cru) | 2 | 2 |
+
+A segunda linha é a pior: colar o número **como a tela e o e-mail o mostram**
+não achava nada. A régua já existia -- `processos_repository.buscar_no_grupo`
+compara `apenas_digitos(termo) in item["numero_processo"]` --, e só o Histórico
+estava fora dela porque ali o número é chave de partição. A mudança é de API
+(ver o README da `api`); ao front coube **mandar o pedaço** e parar de prometer
+igualdade no rótulo.
+
+🔴 **"Buscar por número do processo" / "Número do processo ou parte"**, e não
+"Filtrar…" / "Número do processo". Texto que promete igualdade faz quem só tem
+o fim do número nem tentar -- e foi exatamente o que aconteceu. Os dois testes
+andam em par: um prova que o pedaço é MANDADO, o outro que a tela não promete
+o contrário.
+
+⚠️ **`limparFiltros` limpa os CINCO.** O comentário dele guarda o defeito de
+quando limpava só o tipo -- "o botão de saída não saía". Um filtro que
+sobrevive ao "Ver todos os envios" deixa a lista vazia e a pessoa sem caminho
+de volta.
+
+⚠️ **Este virou o quinto filtro do Histórico**, e `api/PLANO_PAGINACAO.md`
+estabeleceu que filtro é o que impede o marcador de página. Não bloqueia nada
+aqui, mas quem for mexer lá precisa saber que a conta mudou.
+
+### O que a verificação em Chrome pegou, e o roteiro não pegava
+
+Três "falhas" da primeira execução eram do **roteiro**, não da tela, e as três
+viraram comentário lá:
+
+1. **"Mostrando X de Y" tem semântica própria aqui**: o Y é o total SEM
+   filtro -- é o que permite a tela dizer "tem 28, seu filtro escondeu". Quem
+   filtra é o X. Comparar o Y dava "28 -> 28" e parecia filtro quebrado;
+2. **o Histórico não é `<table>`**: `tbody tr` devolvia lista vazia, e lista
+   vazia passa em "todas as alturas são iguais" sem medir nada;
+3. **a última linha mede 1px a menos por desenho** (`_last` sem borda), e a
+   medida acusava a etiqueta por isso.
+
+⚠️ A lição, que já é regra aqui: uma checagem que passa não prova nada até
+alguém quebrar o código de propósito e vê-la falhar. As duas do campo de busca
+foram provadas assim -- voltando ao `Input` cru.

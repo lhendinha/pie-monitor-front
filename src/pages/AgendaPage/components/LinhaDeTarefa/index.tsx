@@ -1,6 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 
-import { BotaoNu } from "../../../../components";
+import { BotaoNu, EtiquetasDeSubgrupo } from "../../../../components";
 
 import { CORES_DA_PRIORIDADE } from "../../../../constants";
 import { mascararNumeroProcesso } from "../../../../utils";
@@ -18,6 +18,9 @@ interface LinhaDeTarefaProps {
   /** Assunto do atendimento vinculado, quando houver. A tarefa guarda só o
    * id, e quem resolve o nome é a página. */
   assuntoDoAtendimento?: string;
+  /** Nome do subgrupo da tarefa. Resolvido pela PÁGINA, pela mesma razão do
+   * assunto acima: uma consulta para a lista inteira, não uma por linha. */
+  subgrupoNome: string;
   onAbrir: (tarefa: Tarefa) => void;
   /** Última da lista não desenha a divisória de baixo. */
   ultima?: boolean;
@@ -37,6 +40,7 @@ export default function LinhaDeTarefa({
   concluida,
   nomeDaColuna,
   assuntoDoAtendimento,
+  subgrupoNome,
   onAbrir,
   ultima,
 }: LinhaDeTarefaProps) {
@@ -85,7 +89,16 @@ export default function LinhaDeTarefa({
         )}
       </Box>
 
-      <Flex align="center" gap="5px" flexShrink="0">
+      <Flex align="center" gap="8px" flexShrink="0">
+        {/* 🔴 Junto do bloco de metadados da direita, não colado no título: a
+            Agenda junta as tarefas de TODOS os seus subgrupos no mesmo dia, e
+            aqui é onde a linha já responde "em que pé isto está".
+
+            ⚠️ Este `Flex` tem `flexShrink="0"` e NÃO tem `wrap` -- ao
+            contrário do de Atendimentos. Se a etiqueta não couber, ela
+            espreme o título em vez de descer. Medido em Chrome antes de
+            fechar. */}
+        <EtiquetasDeSubgrupo nomes={[subgrupoNome]} />
         <Box w="8px" h="8px" borderRadius="full" bg={cor} aria-hidden="true" />
         <Text fontSize="11.5px" fontWeight="700" color="fg.muted" whiteSpace="nowrap">
           {tarefa.prioridade}

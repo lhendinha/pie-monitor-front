@@ -17,14 +17,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import {
-  Botao,
-  Campo,
-  IconePlus,
-  Modal,
-  ModalDeConfirmacao,
-  useToast,
-} from "../../../../components";
+import { Botao, Campo, IconePlus, Modal, ModalDeConfirmacao } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import {
   atualizarColuna,
   criarColuna,

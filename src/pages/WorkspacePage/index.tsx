@@ -2,7 +2,8 @@ import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
-import { Avatar, CabecalhoDePagina, useToast } from "../../components";
+import { Avatar, CabecalhoDePagina } from "../../components";
+import { useToast } from "../../contexts/ToastContext";
 import { getApelido, getEmail, resumoDaAreaDeTrabalho } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";

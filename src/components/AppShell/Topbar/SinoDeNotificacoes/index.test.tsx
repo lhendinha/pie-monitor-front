@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
   listarTodosOsMembrosDoGrupo: vi.fn(),
   papelAtende: vi.fn(),
   getAccessToken: vi.fn(),
+  /* ⚠️ Entrou quando a linha passou a mostrar o subgrupo. É a terceira vez
+     nesta frente que faltar este mock transformaria o catálogo numa chamada
+     de rede DENTRO da suíte -- por isso agora eu confiro antes de escrever. */
+  listarSubgrupos: vi.fn(),
 }));
 const navegou = vi.hoisted(() => vi.fn());
 
@@ -202,5 +206,34 @@ describe("erro", () => {
     expect(
       await screen.findByRole("button", { name: /Tentar de novo/ }, { timeout: 8000 }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("o subgrupo na notificação", () => {
+  it("🔴 mostra de qual subgrupo veio o aviso", async () => {
+    /* O sino junta tudo que acontece nos seus subgrupos. "Fulano atribuiu uma
+       tarefa a você" não diz de onde ela vem -- e quem participa de vários
+       precisa saber antes de abrir.
+
+       ⚠️ A etiqueta fica ao lado da DATA, e fora do `Text` dela: aquele é
+       `fontFamily mono`, e herdar mono deixaria esta etiqueta diferente das
+       outras seis telas. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
+    });
+    comSino([notificacao()]);
+    renderComProviders(<SinoDeNotificacoes />);
+    await userEvent.click(sino());
+
+    expect(await screen.findByTitle("Cível")).toHaveTextContent("Cível");
+  });
+
+  it("⚠️ o par negativo: sem o subgrupo no catálogo, mostra o id -- e não some", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    comSino([notificacao()]);
+    renderComProviders(<SinoDeNotificacoes />);
+    await userEvent.click(sino());
+
+    expect(await screen.findByTitle("s1")).toHaveTextContent("s1");
   });
 });

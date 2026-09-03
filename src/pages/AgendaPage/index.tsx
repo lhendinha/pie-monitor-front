@@ -1,4 +1,4 @@
-import { Box, Grid, Stack } from "@chakra-ui/react";
+import { Box, Grid } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -14,16 +14,14 @@ import {
 } from "../../components";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import { hojeISO } from "../../utils";
 import { paraIso } from "../../utils/calendario";
+import AreaDaVisao from "./components/AreaDaVisao";
 import BarraDeDatas from "./components/BarraDeDatas";
 import FiltrosDaAgenda from "./components/FiltrosDaAgenda";
 import LinhaDeTarefa from "./components/LinhaDeTarefa";
-import ListaDeUmDia from "./components/ListaDeUmDia";
-import VisaoPorMes from "./components/VisaoPorMes";
-import VisaoPorSemana from "./components/VisaoPorSemana";
 import { useTarefasDaAgenda } from "./hooks/useTarefasDaAgenda";
-import { DIAS_DA_LISTA } from "./constants";
 import { agruparPorDia } from "./tarefasPorDia";
 import {
   dataPadraoDaNovaTarefa,
@@ -31,7 +29,6 @@ import {
   navegar,
   rotuloDeAtrasadas,
   rotuloDoPeriodo,
-  somarDias,
 } from "./periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros, PeriodoDaAgenda } from "./types";
 import type { OpcaoDeSelect, Tarefa } from "../../types";
@@ -130,6 +127,8 @@ export default function AgendaPage() {
    * tarefas da tela referenciam. Ver `useAssuntosDasTarefas`. */
   const tarefas = tarefasQuery.data || [];
   const { assuntoDoAtendimento } = useAssuntosDasTarefas(tarefas);
+  /* UMA vez na página, não uma por linha -- mesma razão do assunto acima. */
+  const subgrupoNome = useNomeDeSubgrupo();
   const visiveis = useMemo(() => {
     if (filtros.pessoa === "todas") return tarefas;
     if (filtros.pessoa === "sem") return tarefas.filter((t) => !t.responsavel_id);
@@ -225,6 +224,7 @@ export default function AgendaPage() {
               isoDeHoje={isoDeHoje}
               porDia={porDia}
               assuntoDoAtendimento={assuntoDoAtendimento}
+              subgrupoNome={subgrupoNome}
               onAbrirTarefa={setTarefaAberta}
               onEscolherDia={abrirDia}
             />
@@ -256,6 +256,7 @@ export default function AgendaPage() {
                   tarefa={tarefa}
                   concluida={tarefa.esta_concluida ?? false}
                   nomeDaColuna={tarefa.coluna_nome ?? undefined}
+                  subgrupoNome={subgrupoNome(tarefa.subgrupo_id)}
                   assuntoDoAtendimento={
                     tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
                   }
@@ -298,124 +299,5 @@ export default function AgendaPage() {
         />
       )}
     </Box>
-  );
-}
-
-interface PropsDaArea {
-  filtros: Filtros;
-  dataVisivel: Date;
-  isoDeHoje: string;
-  porDia: Map<string, Tarefa[]>;
-  assuntoDoAtendimento: (id: string) => string | undefined;
-  onAbrirTarefa: (tarefa: Tarefa) => void;
-  onEscolherDia: (iso: string) => void;
-}
-
-/** Escolhe a visão. Separado do corpo da página só pra que o `return` dela
- * caiba num olhar -- quatro ternários aninhados no meio do JSX escondem a
- * estrutura da tela. */
-function AreaDaVisao({
-  filtros,
-  dataVisivel,
-  isoDeHoje,
-  porDia,
-  assuntoDoAtendimento,
-  onAbrirTarefa,
-  onEscolherDia,
-}: PropsDaArea) {
-  /* 🔴 No modo atrasadas os três ramos de calendário são PULADOS e a
-     renderização cai na lista, lá embaixo.
-     As outras visões são recortes de calendário, e aqui a lista ignora o
-     calendário: renderizar o mês mostraria a grade do mês corrente com zero
-     pontinhos -- a tela dizendo que não há nada atrasado. A pílula de visão
-     fica desabilitada, então isto só é alcançado ao LIGAR o filtro estando
-     noutra visão. */
-  const atrasadas = filtros.periodo === "atrasadas";
-
-  if (!atrasadas && filtros.visao === "semana") {
-    return (
-      <VisaoPorSemana
-        data={dataVisivel}
-        isoDeHoje={isoDeHoje}
-        porDia={porDia}
-        onEscolherDia={onEscolherDia}
-      />
-    );
-  }
-
-  if (!atrasadas && filtros.visao === "mes") {
-    return (
-      <VisaoPorMes
-        data={dataVisivel}
-        isoDeHoje={isoDeHoje}
-        porDia={porDia}
-        onEscolherDia={onEscolherDia}
-      />
-    );
-  }
-
-  if (!atrasadas && filtros.visao === "dia") {
-    const tarefas = porDia.get(paraIso(dataVisivel)) || [];
-    if (tarefas.length === 0) {
-      return (
-        <Cartao>
-          <EstadoVazio mensagem="Nenhuma tarefa com data neste dia." />
-        </Cartao>
-      );
-    }
-    return (
-      <ListaDeUmDia
-        data={dataVisivel}
-        tarefas={tarefas}
-        assuntoDoAtendimento={assuntoDoAtendimento}
-        onAbrir={onAbrirTarefa}
-        /* A barra de datas logo acima já diz que dia é este. */
-        comData={false}
-      />
-    );
-  }
-
-  /* Em lista: só os dias COM tarefa, na ordem. Mostrar catorze cabeçalhos
-     pra encontrar três com conteúdo faria rolar a tela à toa.
-
-     🔴 No modo atrasadas os dias vêm do RESULTADO, não de uma janela. A
-     consulta já traz só o que interessa (abertas, `data < hoje`), e a
-     janela de 14 dias pra frente não conteria nenhuma delas -- tarefa
-     atrasada está no passado, então a lista sairia vazia com uma mensagem
-     falando de "próximos 14 dias". */
-  const dias = atrasadas
-    ? [...porDia.entries()]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([iso, tarefas]) => ({ dia: new Date(`${iso}T00:00:00`), tarefas }))
-    : Array.from({ length: DIAS_DA_LISTA }, (_, i) => somarDias(dataVisivel, i))
-        .map((dia) => ({ dia, tarefas: porDia.get(paraIso(dia)) || [] }))
-        .filter((grupo) => grupo.tarefas.length > 0);
-
-  if (dias.length === 0) {
-    return (
-      <Cartao>
-        <EstadoVazio
-          mensagem={
-            atrasadas
-              ? "Nenhuma tarefa atrasada."
-              : `Nenhuma tarefa nos próximos ${DIAS_DA_LISTA} dias.`
-          }
-        />
-      </Cartao>
-    );
-  }
-
-  return (
-    <Stack gap="12px">
-      {dias.map(({ dia, tarefas }) => (
-        <ListaDeUmDia
-          key={paraIso(dia)}
-          data={dia}
-          tarefas={tarefas}
-          assuntoDoAtendimento={assuntoDoAtendimento}
-          onAbrir={onAbrirTarefa}
-        />
-      ))}
-    </Stack>
   );
 }

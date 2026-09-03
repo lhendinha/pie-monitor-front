@@ -17,14 +17,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import {
-  CartaoDeTabela,
-  EstadoVazio,
-  EstadoDeErro,
-  Esqueleto,
-  ModalDeConfirmacao,
-  useToast,
-} from "../../../../components";
+import { CartaoDeTabela, EstadoVazio, EstadoDeErro, Esqueleto, ModalDeConfirmacao } from "../../../../components";
+import { useToast } from "../../../../contexts/ToastContext";
 import { TETO_POR_PAGINA } from "../../../../constants";
 import {
   atualizarOpcaoProcesso,
