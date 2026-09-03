@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   listarTarefas: vi.fn(),
   listarQuadro: vi.fn(),
   atualizarTarefa: vi.fn(),
+  /* ⚠️ Entrou quando a linha passou a mostrar o subgrupo: sem mock, o
+     catálogo era uma chamada de rede de verdade dentro do teste. */
+  listarSubgrupos: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
@@ -77,6 +80,33 @@ beforeEach(() => {
         : { tarefas: [tarefa("t3", "Conferir prazo", null), tarefa("t4", "Ler intimação", null)], total: 2, total_paginas: 1 },
     ),
   );
+});
+
+describe("o subgrupo na linha", () => {
+  it("🔴 cada tarefa mostra de qual subgrupo é", async () => {
+    /* A Área de trabalho mistura tarefas de TODOS os subgrupos, inclusive as
+       "disponíveis para assumir". Assumir uma tarefa sem saber de onde ela vem
+       é o caso mais caro desta frente.
+
+       ⚠️ A etiqueta fica na linha de APOIO, junto do número do processo, e não
+       no bloco da direita: aquele é o par "responsável + prazo", deliberado --
+       quem é dono e quando vence se leem juntos. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "sg", nome: "Cível", grupo_id: "g1" }],
+    });
+    montar();
+    await screen.findByText("Protocolar réplica");
+
+    expect(await screen.findAllByTitle("Cível")).not.toHaveLength(0);
+  });
+
+  it("⚠️ o par negativo: sem o subgrupo no catálogo, mostra o id -- e não some", async () => {
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    montar();
+    await screen.findByText("Protocolar réplica");
+
+    expect(await screen.findAllByTitle("sg")).not.toHaveLength(0);
+  });
 });
 
 describe("WorkspacePage — retorno por linha", () => {

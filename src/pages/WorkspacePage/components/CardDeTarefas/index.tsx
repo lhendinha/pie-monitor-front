@@ -15,6 +15,7 @@ import { listarTarefas } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { contar } from "../../../../utils";
+import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import LinhaDeTarefa from "../LinhaDeTarefa";
 import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants";
 import type { Tarefa } from "../../../../types";
@@ -50,6 +51,15 @@ export default function CardDeTarefas({
   acao,
   responsavel,
 }: CardDeTarefasProps) {
+  /* 🔴 O hook fica NESTE card, e não na página. Aqui é diferente das outras
+     telas: quem busca as tarefas e mapeia as linhas é o próprio card, que tem
+     `useQuery` seu. Atravessar `subgrupoNome` pela página obrigaria a
+     `WorkspacePage` a conhecer um dado que ela não usa.
+
+     ⚠️ São DOIS cards na tela, logo duas chamadas -- e ainda assim UMA
+     requisição: a chave `qk.todosOsSubgrupos()` é compartilhada e o React
+     Query desduplica. Há teste guardando isso em `useNomeDeSubgrupo`. */
+  const subgrupoNome = useNomeDeSubgrupo();
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState<number>(TAMANHO_PAGINA_CARD_PADRAO);
 
@@ -108,6 +118,7 @@ export default function CardDeTarefas({
                 tarefa={t}
                 acao={acao?.(t)}
                 responsavel={responsavel?.(t)}
+                subgrupoNome={subgrupoNome(t.subgrupo_id)}
               />
             ))}
           </AreaAtualizando>
