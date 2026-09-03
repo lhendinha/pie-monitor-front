@@ -1,6 +1,6 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 
-import { Avatar, BotaoNu, Etiqueta, IconeClientes } from "../../../../components";
+import { Avatar, BotaoNu, Etiqueta, EtiquetasDeSubgrupo, IconeClientes } from "../../../../components";
 import { coresDoStatus } from "../../../../theme/atendimento";
 import { formatarDataDeInstante } from "../../../../utils";
 import type { Atendimento } from "../../../../types";
@@ -14,6 +14,10 @@ interface LinhaDeAtendimentoProps {
    * e-mail, e o avatar tira as iniciais do que receber -- sem resolver, a
    * lista mostrava as iniciais do E-MAIL ("jo") enquanto o detalhe mostrava
    * as do nome ("JM"), pra mesma pessoa. */
+  /** Traduz `subgrupo_id` em nome. Vem da PÁGINA pela mesma razão dos nomes
+   * de cliente logo acima: uma consulta para a lista inteira, não uma por
+   * linha. */
+  subgrupoNome: (id: string) => string;
   onAbrir: (atendimento: Atendimento) => void;
   ultima?: boolean;
 }
@@ -34,6 +38,7 @@ interface LinhaDeAtendimentoProps {
  */
 export default function LinhaDeAtendimento({
   atendimento,
+  subgrupoNome,
   onAbrir,
   ultima,
 }: LinhaDeAtendimentoProps) {
@@ -68,6 +73,15 @@ export default function LinhaDeAtendimento({
           </Text>
           <Text as="span">— {atendimento.assunto}</Text>
           <Etiqueta cores={coresDoStatus(atendimento.status)}>{atendimento.status}</Etiqueta>
+          {/* 🔴 Ao lado da etiqueta de status, e não numa linha própria: a
+              lista mistura os subgrupos da pessoa, e aqui já existe uma
+              etiqueta -- agrupar as duas é mais limpo que espalhá-las.
+
+              ⚠️ O `Flex` acima tem `wrap`, e medi em Chrome antes de escrever
+              isto: sobram 124px na linha, contra ~90px da etiqueta. Ela entra
+              sem quebrar. Se um assunto muito longo comer a folga, o `wrap`
+              desce a etiqueta em vez de estourar a linha. */}
+          <EtiquetasDeSubgrupo nomes={[subgrupoNome(atendimento.subgrupo_id)]} />
         </Flex>
 
         {clientes && (

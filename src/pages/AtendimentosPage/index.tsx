@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
 import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
 import { useLocation, useNavigate } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +45,9 @@ import type {
 export default function AtendimentosPage() {
   const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const [buscaInput, setBuscaInput] = useEstadoNaUrl("busca", "", { tambemApaga: ["pagina"] });
+  /* UMA vez na página, não uma por linha -- mesma razão dos nomes de cliente,
+     que esta tela já resolve assim. */
+  const subgrupoNome = useNomeDeSubgrupo();
   /** A Área de trabalho abre esta tela já filtrada: clicar em "Atendimentos
    * em andamento" tem que mostrar exatamente os que geraram aquele número.
    *
@@ -173,6 +177,7 @@ export default function AtendimentosPage() {
                   <LinhaDeAtendimento
                     key={`${atendimento.subgrupo_id}:${atendimento.atendimento_id}`}
                     atendimento={atendimento}
+                    subgrupoNome={subgrupoNome}
                     onAbrir={(a) =>
                       navigate(`/atendimentos/${a.subgrupo_id}/${a.atendimento_id}`)
                     }

@@ -84,6 +84,34 @@ async function montar(estadoInicial?: Record<string, unknown>) {
 }
 
 describe("lista", () => {
+  it("🔴 mostra de qual SUBGRUPO é o atendimento, ao lado do status", async () => {
+    /* A lista mistura os subgrupos da pessoa, e sem isto dois atendimentos de
+       assunto parecido ficam indistinguíveis -- que é o relato que originou
+       esta frente.
+
+       ⚠️ A etiqueta fica ao lado da de status, no mesmo `Flex`, e não numa
+       linha própria: ali já existe uma etiqueta, e agrupar as duas é mais
+       limpo que espalhá-las. Medido em Chrome antes de escrever: sobram 124px
+       na linha, contra ~90px da etiqueta.
+
+       ⚠️ O discriminador é o `title` de `EtiquetasDeSubgrupo` -- o que texto
+       solto não tem. Cor e raio quebrariam no primeiro ajuste de tema. */
+    await montar();
+    await screen.findByText(/Revisão de contrato/);
+
+    expect(screen.getByTitle("Cível")).toHaveTextContent("Cível");
+  });
+
+  it("⚠️ o par negativo: sem o subgrupo no catálogo, mostra o id -- e não some", async () => {
+    /* Sumir faria a linha mentir: leria como atendimento sem subgrupo, o que
+       não existe. O id é feio e honesto. */
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    await montar();
+    await screen.findByText(/Revisão de contrato/);
+
+    expect(screen.getByTitle("s1")).toHaveTextContent("s1");
+  });
+
   it("mostra assunto, status e o nome do cliente -- não o id", async () => {
     await montar();
     expect(await screen.findByText(/Revisão de contrato/)).toBeInTheDocument();
