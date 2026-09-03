@@ -2,7 +2,7 @@ import { Stack, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { BotaoNu, Esqueleto, Ponto } from "../../../../components";
+import { BotaoNu, Esqueleto, EtiquetasDeSubgrupo, Ponto } from "../../../../components";
 import { useCatalogosDeProcesso } from "../../../../hooks/useCatalogosDeProcesso";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
@@ -88,6 +88,16 @@ export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProp
               {p.apelido}
             </Text>
           )}
+
+          {/* 🔴 Logo depois do apelido -- junto do que identifica o processo.
+              Um cliente pode ter processos em subgrupos diferentes, e é aqui
+              que a lista os põe lado a lado.
+
+              ⚠️ `apoio.subgrupoNome`, e não `useNomeDeSubgrupo()`: este
+              componente já chama `useCatalogosDeProcesso`, que expõe a mesma
+              tradução sobre o mesmo catálogo. Um hook a mais aqui seria uma
+              segunda assinatura para o mesmo dado. */}
+          <EtiquetasDeSubgrupo nomes={[apoio.subgrupoNome(p.subgrupo_id)]} />
           <Text fontSize="13px" color="fg.subtle">
             {[apoio.situacaoRotulo(p.situacao_id), apoio.faseRotulo(p.fase_id)]
               .filter(Boolean)

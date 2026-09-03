@@ -609,3 +609,45 @@ describe("aba de documentos", () => {
     );
   });
 });
+
+describe("o subgrupo de cada processo do cliente", () => {
+  /** Um cliente com processos em subgrupos DIFERENTES -- é o caso que a
+   *  lista existe para mostrar lado a lado. */
+  function comProcessosDeDoisSubgrupos() {
+    mocks.listarProcessos.mockResolvedValue({
+      processos: [
+        { subgrupo_id: "sg-fam", numero_processo: "10004766920184013801", apelido: "Inventário" },
+        { subgrupo_id: "sg-trab", numero_processo: "00002668720218130559", apelido: "Rescisão" },
+      ],
+      total: 2,
+      total_paginas: 1,
+    });
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [
+        { subgrupo_id: "sg-fam", nome: "Família", grupo_id: "g1" },
+        { subgrupo_id: "sg-trab", nome: "Trabalhista", grupo_id: "g1" },
+      ],
+    });
+  }
+
+  it("🔴 mostra o subgrupo de cada um -- eles podem ser diferentes", async () => {
+    /* Este é o motivo da tela entrar na frente: o mesmo cliente aparece em
+       subgrupos diferentes, e a lista os põe um embaixo do outro sem dizer
+       qual é qual. */
+    comProcessosDeDoisSubgrupos();
+    montar();
+    await irParaProcessos();
+
+    expect(await screen.findByTitle("Família")).toHaveTextContent("Família");
+    expect(screen.getByTitle("Trabalhista")).toHaveTextContent("Trabalhista");
+  });
+
+  it("⚠️ o par negativo: sem o subgrupo no catálogo, mostra o id -- e não some", async () => {
+    comProcessosDeDoisSubgrupos();
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    montar();
+    await irParaProcessos();
+
+    expect(await screen.findByTitle("sg-fam")).toHaveTextContent("sg-fam");
+  });
+});
