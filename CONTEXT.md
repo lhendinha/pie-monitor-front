@@ -3638,6 +3638,16 @@ de volta.
 estabeleceu que filtro é o que impede o marcador de página. Não bloqueia nada
 aqui, mas quem for mexer lá precisa saber que a conta mudou.
 
+#### Fora de escopo, registrado (03/09/2026)
+
+**O link do e-mail pré-preencher o campo de número.** Hoje o link abre o
+Histórico com o aviso certo destacado, mas a lista inteira e o campo "Buscar
+por número do processo" vazio -- a pessoa vê o item, não vê *por quê* aquele,
+e ao rolar perde o contexto. Como o link já carrega o número
+(`/historico/{numero}`), a tela poderia chegar com o campo preenchido e a lista
+filtrada naquele processo. É só front. Decidido em 03/09: fica documentado,
+sem ação por enquanto.
+
 ### O que a verificação em Chrome pegou, e o roteiro não pegava
 
 Três "falhas" da primeira execução eram do **roteiro**, não da tela, e as três
