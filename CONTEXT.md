@@ -6,6 +6,32 @@
 > repositório da API, `argos-monitor-api` (caminho interno:
 > /Users/pedrohenriquesousaalmeida/Documents/Projects/PJE Monitor/api).
 
+## 0) Toda mudança de código nasce numa branch, a partir da `main` (04/09/2026)
+
+🔴 **Regra, escrita em 04/09/2026 porque até então só existia de costume.**
+Nenhuma edição de código é feita direto na `main`. O fluxo, sem exceção:
+
+1. `git checkout main && git pull`, e daí `git checkout -b nome-da-mudanca`.
+   O nome diz o que a branch faz, nunca quem a fez ou quando.
+2. Todo o trabalho -- código, teste, prosa que acompanha -- acontece dentro
+   dela, em commits verdes (lint e suíte passando a cada commit).
+3. A conferência visual é feita **da branch**, em Chrome real, na porta 5174
+   do `yarn dev`; o merge na `main` só acontece com a tela conferida.
+4. Depois do merge o Vercel publica sozinho, e a conferência em produção vem
+   **depois**, com `scripts/verificar-deploy-em-producao.mjs` -- é a exceção
+   documentada no `README.md`, seção *"Produção sai da main"*. A ordem de
+   deploy é invertida; a regra da branch, não.
+5. Uma mudança grande em fases é **uma branch por fase**, cada uma nascendo
+   da `main` já com a fase anterior mesclada. Nunca uma branch em cima da
+   outra.
+
+⚠️ **O que a `main` recebe direto**: só documento (`CONTEXT.md`, `README.md`)
+que não altera código nem teste.
+
+➡️ Por que está escrito: uma mudança a meio caminho na `main` vai para
+produção no próximo push, porque o Vercel publica tudo o que chega nela.
+Branch é o que torna cada entrega desfazível sozinha com um `git revert`.
+
 ## 1) Objetivo do projeto
 
 Front-end React + TypeScript pra um sistema que monitora processos
