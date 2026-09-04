@@ -48,6 +48,7 @@ export default function FormularioDaInscricao() {
      querer apagaria a inscrição de quem já tem. */
   useEffect(() => {
     if (query.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito (decidido em 03/09/2026)
       setNumeroOab(query.data.numero_oab ?? "");
       setUfOab(query.data.uf_oab ?? "");
       setLigada(query.data.importacao_automatica);

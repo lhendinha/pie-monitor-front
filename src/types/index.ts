@@ -1291,7 +1291,9 @@ export interface OpcoesListarProcessos extends FiltrosBuscaProcessos {
 export interface RespostaCruaDaApi {
   ok: boolean;
   status: number;
-  dados: any;
+  /** O JSON cru da resposta. `unknown`, não `any`: quem lê tem de dizer o
+   * que espera -- é `chamar<T>` que o converte no tipo do chamador. */
+  dados: unknown;
 }
 
 /** O envelope de qualquer listagem paginada da API. */

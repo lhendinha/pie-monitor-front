@@ -66,6 +66,7 @@ async function requisicaoCrua(path: string, opcoes: OpcoesRequisicao = {}): Prom
  * tenta renovar uma vez via refresh token antes de desistir. Usada por
  * todos os módulos de domínio dentro de services/api/.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- o padrão `any` é decisão: 78 chamadas em services/api/ deixam o tipo pro `Promise<X>` da função que as envolve; `unknown` quebraria todas sem tornar nenhuma mais segura
 export async function chamar<T = any>(path: string, opcoes: OpcoesRequisicao = {}): Promise<T> {
   let { ok, status, dados } = await requisicaoCrua(path, opcoes);
 
@@ -84,7 +85,10 @@ export async function chamar<T = any>(path: string, opcoes: OpcoesRequisicao = {
     // Este `limparTokens()` incondicional desfazia essa distinção -- um
     // segundo de instabilidade no POST /refresh custava a sessão inteira,
     // com o refresh token ainda válido no servidor.
-    throw new ApiError(dados.detail || "Erro desconhecido", status, dados);
+    // `dados` é `unknown` de propósito (é JSON cru): só vira objeto depois de conferido
+    const corpo = typeof dados === "object" && dados !== null ? (dados as Record<string, unknown>) : undefined;
+    const detalhe = corpo?.detail;
+    throw new ApiError(typeof detalhe === "string" ? detalhe : "Erro desconhecido", status, corpo);
   }
   return dados as T;
 }

@@ -171,6 +171,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   /** Abre o modal quando a tarefa do link chega -- uma vez só. */
   useEffect(() => {
     if (tarefaDoLinkQuery.data && !linkConsumido) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- consome o deep link UMA vez quando a tarefa chega; caso listado no eslint.config.js
       setTarefaAberta(tarefaDoLinkQuery.data);
       setLinkConsumido(true);
     }

@@ -36,6 +36,7 @@ export default function ConfiguracoesDoGrupo() {
      "Salvar" sem querer gravaria... nada, ou o mínimo. */
   useEffect(() => {
     if (query.data) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito (decidido em 03/09/2026)
       setNome(query.data.nome);
       setDias(String(query.data.dias_para_arquivar));
     }

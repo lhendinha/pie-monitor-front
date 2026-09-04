@@ -64,6 +64,7 @@ export default function NomeEditavel({
    * `confirmar()` -> e o rename que ela cancelou era COMITADO. Valia pra
    * subgrupo, fase e coluna. */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- ressincroniza o rascunho quando a edição reabre; sem isto o texto cancelado com Escape voltava e era salvo no blur (o caso está no comentário acima e no eslint.config.js)
     if (editando) setRascunho(nome);
   }, [editando, nome]);
 

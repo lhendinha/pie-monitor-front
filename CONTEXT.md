@@ -3664,3 +3664,54 @@ viraram comentário lá:
 ⚠️ A lição, que já é regra aqui: uma checagem que passa não prova nada até
 alguém quebrar o código de propósito e vê-la falhar. As duas do campo de busca
 foram provadas assim -- voltando ao `Input` cru.
+
+## Lint zerado, caso a caso (03/09/2026)
+
+Eram 12 avisos, parados desde 02/09 ("depois retomamos isso"). O
+`eslint.config.js` já dizia o que fazer com eles: `set-state-in-effect` e
+`no-explicit-any` são **aviso**, não erro, porque *"vale ver caso a caso, não
+travar o build"*. Ver caso a caso é o que foi feito -- e a decisão de cada
+um ficou escrita **no sítio**, no padrão que o projeto já usava em dois
+lugares (`eslint-disable-next-line` com o motivo na mesma linha).
+
+**Três eram defeito de verdade, corrigidos:**
+
+- `AgendaPage`: `const tarefas = tarefasQuery.data || []` criava um array
+  NOVO a cada render sem dados, e o `useMemo` de `visiveis` recomputava
+  sempre. Virou `useMemo` também.
+- `RespostaCruaDaApi.dados` era `any`; é JSON cru, então é `unknown`, e o
+  `client.ts` passou a conferir que é objeto antes de ler `detail`.
+- `EditarMembroForm`: `resemear` faltava nas deps do efeito de semeadura. É
+  `useCallback` (`useGuardaDeDescarte.ts:88`), então entrar nas deps é
+  correto e não muda comportamento -- conferido, não suposto.
+
+**Oito eram decisão, e agora estão escritas onde valem:**
+
+- 🔴 **Semeadura de formulário com `useEffect`** (`ConfiguracoesDoGrupo`,
+  `FormularioDaInscricao`, `EditarMembroForm`): o projeto usa o padrão de
+  propósito. Em 03/09 eu tinha trocado um por `if` durante o render e o
+  usuário perguntou *"não podemos continuar utilizando o useEffect?"* --
+  podemos, e a decisão ficou registrada no sítio.
+- `NomeEditavel` (ressincronizar o rascunho quando a edição reabre) e
+  `KanbanPage` (consumir o deep link uma vez): os dois casos que o
+  `eslint.config.js` já citava como o motivo de a regra ser aviso.
+- `OpcoesLista`: `isPending` fora das deps de propósito -- o comentário
+  longo acima do efeito explica a corrida que isso evita; o `disable` só
+  aponta pra ele.
+- `EditarMembroForm`: o efeito de recarga é chaveado em `membro.email` de
+  propósito; `membro.subgrupos` mudar é justamente o que ele existe pra
+  não confiar.
+- `chamar<T = any>`: 78 chamadas em `services/api/` deixam o tipo pro
+  `Promise<X>` da função que as envolve. `unknown` quebraria todas sem tornar
+  nenhuma mais segura.
+
+➡️ **A regra daqui em diante: zero avisos.** Aviso novo é decisão nova, e
+decisão se escreve no sítio -- não se acumula.
+
+### O intermitente de `FormularioDaInscricao` não reproduziu
+
+Registrado em 02/09 como "~1 em 7". Em 03/09: 15 rodadas isoladas do arquivo
+e 4 suítes inteiras, mais uma com ordem embaralhada -- 1.188 de 1.188 em
+todas. Não há correção porque não há defeito reproduzido; inventar uma
+seria pior. Se voltar, o que registrar é a saída da rodada que falhou, não a
+memória de que falhava.

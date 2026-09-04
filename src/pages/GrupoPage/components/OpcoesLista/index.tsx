@@ -159,7 +159,9 @@ export default function OpcoesLista({ tipo, titulo, nomeSingular }: OpcoesListaP
    * a corrida que este guard existe pra evitar. */
   useEffect(() => {
     if (reordenarMutation.isPending) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- limpa o carimbo otimista quando o dado de verdade chega; é o guard da corrida descrito acima
     setOrdemLocal(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `isPending` fica FORA das deps de propósito, ver o comentário acima: nas deps ele apagaria `ordemLocal` cedo demais
   }, [query.data]);
 
   function handleDragEnd(event: DragEndEvent) {

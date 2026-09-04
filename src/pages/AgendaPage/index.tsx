@@ -125,7 +125,10 @@ export default function AgendaPage() {
    * liga em vez de mostrar um id. */
   /* ⚠️ O hook vem DEPOIS de `tarefas` -- ele pede só os atendimentos que as
    * tarefas da tela referenciam. Ver `useAssuntosDasTarefas`. */
-  const tarefas = tarefasQuery.data || [];
+  /* ⚠️ `useMemo`, e não `|| []` solto: sem isto cada render sem dados criava
+     um array NOVO, e o `useMemo` de `visiveis` logo abaixo recomputava a cada
+     render -- era o que o lint apontava. */
+  const tarefas = useMemo(() => tarefasQuery.data || [], [tarefasQuery.data]);
   const { assuntoDoAtendimento } = useAssuntosDasTarefas(tarefas);
   /* UMA vez na página, não uma por linha -- mesma razão do assunto acima. */
   const subgrupoNome = useNomeDeSubgrupo();

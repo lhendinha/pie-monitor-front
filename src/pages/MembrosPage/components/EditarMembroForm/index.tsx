@@ -158,6 +158,7 @@ export default function EditarMembroForm({
         if (grupoAlteradoRef.current) return;
         setFalhouAoRecarregar(true);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recarrega SÓ quando muda a pessoa: `membro.subgrupos` mudar é justamente o que este efeito existe pra não confiar (ver o comentário acima)
   }, [membro.email]);
 
   const subgruposDoGrupoQuery = useQuery<RespostaDeSubgrupos>({
@@ -188,6 +189,7 @@ export default function EditarMembroForm({
   useEffect(() => {
     const d = editavelQuery.data;
     if (!d) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito (decidido em 03/09/2026), ver o comentário acima e o eslint.config.js
     setNumeroOab(d.numero_oab ?? "");
     setUfOab(d.uf_oab ?? "");
     setImportacaoLigada(d.importacao_automatica);
@@ -202,7 +204,7 @@ export default function EditarMembroForm({
       importacaoLigada: d.importacao_automatica,
       destino: d.importacao_automatica ? d.subgrupos_destino[0] ?? "" : "",
     });
-  }, [editavelQuery.data]);
+  }, [editavelQuery.data, resemear]);
 
   /* A inscrição que VALERÁ depois de salvar -- a digitada. Cadastrar a OAB e
      ligar a importação num "Salvar" só é aceito pelo servidor. */
