@@ -178,7 +178,11 @@ conferir(
    exatamente o que aconteceu. Roteiro que muda estado precisa ler o estado. */
 const statusAtual = textoDoForm.includes("Fechado") ? "Fechado" : "Em andamento";
 const statusNovo = statusAtual === "Fechado" ? "Em andamento" : "Fechado";
-const controleDeStatus = pagina.locator("form").getByText(statusAtual).first();
+/* 🔴 Pelo id do campo, não pelo texto: o status é um `react-select`, e o texto
+   do valor fica sob um contêiner que intercepta o clique -- o roteiro ficava
+   58 tentativas esperando "Em andamento" ser clicável. O input do controle é
+   o que abre o painel. */
+const controleDeStatus = pagina.locator("#status-do-atendimento");
 await controleDeStatus.scrollIntoViewIfNeeded();
 await controleDeStatus.click();
 await pagina.getByRole("option", { name: statusNovo }).click();

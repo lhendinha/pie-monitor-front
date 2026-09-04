@@ -145,9 +145,13 @@ conferir(
   "com envio, oferece o caminho pro e-mail",
 );
 await modal.getByRole("button", { name: "Ver o e-mail enviado" }).click();
-await pagina.getByText("Detalhes do envio").waitFor({ timeout: 15000 }).catch(() => {});
+/* ⚠️ Espera o TEOR, não o título do diálogo: o título aparece antes de a
+   consulta ao histórico do processo voltar, e conferir o teor no instante do
+   título dava falso negativo com o salto funcionando. */
+const teorDoEnvio = pagina.getByRole("dialog").getByText("Fica a parte intimada");
+await teorDoEnvio.waitFor({ timeout: 15000 }).catch(() => {});
 conferir(
-  await pagina.getByRole("dialog").getByText("Fica a parte intimada").isVisible(),
+  await teorDoEnvio.isVisible(),
   "e o Histórico abre JÁ naquele envio",
   pagina.url().replace(APP, ""),
 );
@@ -177,9 +181,15 @@ conferir(
 /* ⚠️ Conta BOTÕES, não procura classe: `RodapeDeAcoes` é emotion, com nome
    de classe embaralhado -- um seletor por classe nunca casaria, e a checagem
    passaria sempre sem verificar nada. Sem envio e sem link do tribunal, o
-   único botão do diálogo é o X de fechar. */
-const botoesDoModal = await pagina.getByRole("dialog").getByRole("button").count();
-conferir(botoesDoModal === 1, "sem ação nenhuma, o modal fica só com o X", `${botoesDoModal} botão(ões)`);
+   diálogo fica com o X de fechar e com "Adicionar tarefa", que existe em toda
+   movimentação desde 03/09/2026 (`verificar-ponta-a-ponta` prova o botão). */
+const dialogo = pagina.getByRole("dialog");
+const botoesDoModal = await dialogo.getByRole("button").count();
+conferir(
+  botoesDoModal === 2 && (await dialogo.getByRole("button", { name: /Adicionar tarefa/ }).count()) === 1,
+  "sem envio nem link, o modal fica só com o X e o 'Adicionar tarefa'",
+  `${botoesDoModal} botão(ões)`,
+);
 await pagina.getByRole("button", { name: "Fechar" }).click();
 /* 🔴 Duas asserções, e a segunda é a que importa. Conferindo só a URL, este
    roteiro deu "ok" enquanto fechar o teor expulsava a pessoa pra aba de
