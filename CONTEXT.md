@@ -2604,7 +2604,7 @@ que nunca recusa lista vazia:
 - não sendo, os processos nascem **sem responsável**, e é assim de propósito:
   `manager`+ age em subgrupo que não participa, e um default incondicional
   faria o servidor pôr alguém que o próprio validador recusaria
-  (`membros_service.responsaveis_na_criacao` explica o fluxo que isso
+  (`responsaveis_service.responsaveis_na_criacao` explica o fluxo que isso
   quebraria).
 
 🔴 Então **não "corrigir" a tela para exigir o campo** só porque o desenho o
