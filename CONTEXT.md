@@ -103,7 +103,7 @@ origem fica vago num barrel compartilhado, e foi preciso renomear seis:
 Ao acrescentar um tipo de notificação ou um alvo, **três arquivos mudam
 juntos** -- e o build quebra se algum ficar para trás:
 
-1. `api/src/domain/entities.py` -- a constante `NOTIFICACAO_*` / `ALVO_*`;
+1. `api/src/domain/entities/notificacao.py` -- a constante `NOTIFICACAO_*` / `ALVO_*`;
 2. `front/src/constants/notificacoes.ts` -- a constante `TIPO_*` / `ALVO_*`
    **e** a entrada em `TIPOS_DE_NOTIFICACAO` / `ALVOS_DE_NOTIFICACAO`;
 3. `front/src/utils/notificacao.ts` -- o `case` no `switch`.
