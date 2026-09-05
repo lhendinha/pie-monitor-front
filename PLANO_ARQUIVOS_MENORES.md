@@ -152,6 +152,50 @@ Sem deploy. Sem Chrome.
 
 ## Fase 1 -- `types/index.ts` vira pacote por domínio
 
+**Status: EXECUTADA em 05/09/2026** (branch `fase-1-types-por-dominio`).
+O que a execução decidiu, e o que ela achou de diferente do planejado:
+
+- **O pacote tinha TRÊS arquivos, não dois**: `requisicoes.ts` (2 tipos, os
+  corpos que as chamadas mandam) já existia ao lado de `respostas.ts` e a
+  medição da v1 não o viu. Ficou onde está, e entrou na prova: `OK: 117
+  declarações idênticas` (87 + 28 + 2), com as três cópias no `--antes` e
+  os catorze arquivos de `src/types/` no `--depois`.
+- **Arestas por AST** (só referência de tipo, sem comentário): `grupo ->
+  sessao` (`Membro` e `MembroEditavel` citam `Papel`) e `ui -> sessao`
+  (`ItemNavegacao` cita `Papel`). Nada mais. Os "ciclos" medidos por texto
+  na v1 (`Processo` <-> `Atendimento`, `Notificacao` <-> `MensagemDoCanal`)
+  eram menção em prosa, ou tipos no mesmo domínio. A tabela do corte valeu
+  como estava, inclusive `ResumoDaAreaDeTrabalho` em **notificacao** e
+  `ComClientes` em **cliente** (nenhum tipo de outro domínio o referencia).
+- `respostas.ts` segue importando de `./index`; `requisicoes.ts` não importa
+  de ninguém.
+- **Prosa viajou colada, sem mudar** (regra 9), com uma exceção: as réguas
+  de seção (`/* --- título --- */` e as linhas de `// ----`) não pertencem a
+  tipo nenhum e saíram. O texto dos dois banners longos ("Tipos que estavam
+  espalhados", "Os parâmetros e corpos das chamadas de API") ficou colado ao
+  tipo que vinha depois dele -- `ComOrdem` em `ui.ts` e `OpcoesListarAtendimentos`
+  em `atendimento.ts` -- e é trabalho da Fase 3 decidir o que dele vira
+  história no `CONTEXT.md`. O comentário do `import type` de `constants/`
+  agora aparece nos três arquivos que importam de lá (`tarefa.ts`,
+  `atendimento.ts`, `notificacao.ts`): também Fase 3.
+- ⚠️ **Cinco docstrings já estavam no lugar errado no arquivo antigo**, e
+  foram movidos como estavam. Dois descrevem OUTRO tipo (o de `GET /me`
+  está acima de `CamposDoMeuPerfil`, em `sessao.ts`; "Tarefa do Kanban" está
+  acima de `ResumoDaAreaDeTrabalho`, em `notificacao.ts`) e três são
+  docstring duplo, o velho seguido do novo (`FiltrosBuscaProcessos` em
+  `processo.ts`; `AtendimentoResumido` e `VinculosDeRegistro` em
+  `atendimento.ts`). A Fase 3 corrige; nesta fase corrigir seria mudar
+  prosa fora da régua.
+- Guarda **`tiposDoPacote.test.ts`** com quatro testes, provado por mutação:
+  um `import type` que fecha ciclo, um `export` a menos e uma declaração
+  dentro do índice fazem cada um o seu teste falhar. Suíte: **1.202** testes
+  em 107 arquivos; `yarn typecheck`, `yarn lint`, `yarn build` verdes.
+  Nenhum dos 161 importadores mudou.
+- Fora de `types/`: a regra 1 da seção 3 do `CONTEXT.md` ganhou a exceção,
+  as duas citações de lá e dois comentários (`constants/limites.ts`,
+  `CartaoDoArquivo`) passaram a apontar o arquivo do domínio, e o README
+  lista os arquivos.
+
 ### O que foi medido
 
 87 tipos exportados (68 `interface`, 19 `type`) em cinco seções cujos títulos
@@ -400,7 +444,7 @@ desenha. Merge após revisão.
 
 ## Achados no caminho (fora deste plano)
 
-- O README diz "702 testes em 66 arquivos" (linha 428); são 1.191 em 104.
+- O README diz "702 testes em 66 arquivos" (linha 428); são 1.202 em 107 (Fase 1).
   `contagensDoReadme.test.ts` só cobre componentes e páginas. Ou o número vira guarda,
   ou sai do README -- a régua daquele guarda é que número em `.md` que só
   envelhece não fica.
@@ -423,6 +467,11 @@ mesma"; o guarda de prosa exclui testes, `.d.ts` e o setup. Conferido de
 novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
 compila sob as opções do projeto; o `printer` do TypeScript apaga o
 `{/* */}` do JSX com `removeComments`.
+
+**v4 (05/09/2026, Fase 1)**: o pacote tinha `requisicoes.ts`, que a
+medição não viu (a prova passou de 115 para 117); os ciclos "medidos por
+texto" não existiam por AST; cinco docstrings fora do lugar no arquivo
+antigo, registrados para a Fase 3.
 
 **v3 (05/09/2026, Fase 0)**: os números passaram a vir de
 `scripts/medirArquivos.mjs`, e três mudaram: prosa 10.576 -> 10.444 (a régua
