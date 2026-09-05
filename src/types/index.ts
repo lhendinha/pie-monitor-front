@@ -1030,10 +1030,15 @@ export interface FiltrosBuscaProcessos {
   situacaoIds?: string[];
   dataVerificarAte?: string;
   prazoFinalAte?: string;
-  /** E-mail de quem responde. "eu" é resolvido no FRONT (vira `getEmail()`):
-   * o servidor não precisa saber o que "eu" significa. */
+  /** E-mail de quem responde. "eu" é resolvido no FRONT (vira `getEmail()`),
+   * e o servidor reconhece o PRÓPRIO e-mail: "Meus processos" é a régua de
+   * destinatário -- os que respondo, e os sem responsável de que eu receberia
+   * o aviso (gestor do subgrupo; ou membro, quando não há gestor). É a mesma
+   * conta do card da Área de trabalho, e por isso os dois batem. Outra pessoa
+   * é filtro literal. */
   responsavelId?: string;
-  /** Só os ÓRFÃOS -- os que caíram no fallback e avisam o subgrupo inteiro.
+  /** Só os ÓRFÃOS -- os que caíram no fallback e avisam os gestores do
+   * subgrupo (ou o subgrupo inteiro, se não há gestor).
    *
    * 🔴 Campo próprio, e não `responsavelId: ""`. `montarQuery` descarta valor
    * vazio, e no servidor `""` já é "não filtrar": pedido assim, o filtro nem

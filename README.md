@@ -282,7 +282,8 @@ pode não vê os botões.
 
 Processo e atendimento têm **responsáveis** (múltiplo, mínimo 1), e são eles
 que recebem os avisos daquele item -- movimentação, prazo e mudança de status.
-Sem responsável válido, o aviso volta a ir pro subgrupo inteiro.
+Sem responsável válido, o aviso vai para os **gestores** do subgrupo
+(`manager`+ que participam dele); sem gestor, para o subgrupo inteiro.
 
 Na tela isso aparece em quatro lugares:
 
@@ -293,12 +294,13 @@ Na tela isso aparece em quatro lugares:
   inteiro, que a verificação parou;
 - **filtro** nas duas listagens: *todos / meus / cada pessoa / **sem
   responsável***;
-- **Área de trabalho**: as duas linhas de prazo contam só os seus, e o clique
-  abre a lista já filtrada por "eu".
+- **Área de trabalho**: as duas linhas de prazo contam os de que você
+  receberia aviso, e o clique abre a lista já filtrada por "eu" -- que usa a
+  mesma régua, então os dois números batem.
 
 🔴 **"Sem responsável" é achável de propósito.** Item órfão tem o aviso
-alargado pro subgrupo pelo fallback, e sem um jeito de listar isso ninguém
-entende por quê. Por isso ele é opção de filtro E marca na linha, em vez do
+alargado para os gestores do subgrupo (ou para o subgrupo inteiro, sem gestor),
+e sem um jeito de listar isso ninguém entende por quê. Por isso ele é opção de filtro E marca na linha, em vez do
 traço que as outras colunas vazias usam.
 
 ⚠️ **Quem pode tirar OUTRA pessoa da lista é `manager`+** -- acrescentar e sair

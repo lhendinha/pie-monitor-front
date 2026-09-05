@@ -120,8 +120,9 @@ export default function LinhaProcesso({
         sub={(p.prazo_final && p.proxima_providencia) || undefined}
       />
       {/* 🔴 "Sem responsável" NÃO é um traço como as outras colunas vazias.
-          É o sintoma de um item órfão: o aviso dele passou a ir pro subgrupo
-          inteiro pelo fallback, e sem a marca ninguém entende por quê. */}
+          É o sintoma de um item órfão: o aviso dele vai para os gestores do
+          subgrupo (ou para o subgrupo inteiro, sem gestor), e sem a marca
+          ninguém entende por quê. */}
       <CelulaComSub
         principal={
           nomeDoResponsavel(p) || (

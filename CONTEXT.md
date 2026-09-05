@@ -1420,7 +1420,8 @@ replicar essa régua no front, e ela já é a resposta que
 ### "Sem responsável" é achável de propósito
 
 Se o único responsável sai do subgrupo, o item fica órfão: o aviso passa a ir
-para o subgrupo inteiro pelo fallback, e **ninguém entende por quê**. A
+para os gestores do subgrupo (ou para o subgrupo inteiro, sem gestor -- régua
+em três degraus da API desde 05/09/2026), e **ninguém entende por quê**. A
 resposta não é mais um canal de aviso -- é a listagem deixar isso achável.
 Custa uma opção na pílula e uma marca na linha, no lugar do traço que as
 outras colunas vazias usam.

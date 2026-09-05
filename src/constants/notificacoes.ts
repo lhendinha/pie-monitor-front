@@ -47,11 +47,11 @@ export const TIPO_PROCESSOS_ATRIBUIDOS = "processos_atribuidos";
  * **criou** o processo, sem ninguém pedir. Reusar o outro faria o aviso
  * dizer que alguém agiu quando ninguém agiu.
  *
- * 🔴 **Vai para `manager`+, não para o subgrupo inteiro** -- e é a única
- * notificação do sistema com esse recorte. A razão é a AÇÃO disponível:
- * processos que chegam sem responsável precisam ser distribuídos, e um
- * `user` não pode fazer isso. As MOVIMENTAÇÕES desses mesmos processos
- * seguem avisando o subgrupo inteiro, pela régua de `destinatarios`.
+ * 🔴 **Vai para `manager`+** pela mesma razão que a régua de `destinatarios`
+ * manda o item sem responsável para os gestores do subgrupo: processos que
+ * chegam sem responsável precisam ser distribuídos, e um `user` não pode
+ * fazer isso. As MOVIMENTAÇÕES desses mesmos processos seguem a régua: os
+ * gestores do subgrupo, ou o subgrupo inteiro se não há gestor.
  *
  * ⚠️ **Chega sem `alvo_id`**: não há UM processo para onde ir. O destino é a
  * listagem filtrada pelo subgrupo que os recebeu.

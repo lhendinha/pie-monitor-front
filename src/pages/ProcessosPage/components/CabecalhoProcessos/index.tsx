@@ -202,8 +202,10 @@ export default function CabecalhoProcessos({
             da pílula), e as três primeiras continuam servindo.
 
             🔴 "Sem responsável" é opção de filtro de propósito: é o sintoma
-            de um item órfão, cujo aviso passou a ir pro subgrupo inteiro pelo
-            fallback. Sem um jeito de listar isso, ninguém entende por quê. */}
+            de um item órfão, cujo aviso vai para os gestores do subgrupo (ou
+            para o subgrupo inteiro, sem gestor). Sem um jeito de listar isso,
+            ninguém entende por quê. E "Meus" já inclui o órfão de quem o
+            recebe: é a régua de destinatário, a mesma do card da home. */}
         <Select
           variante="chip"
           placeholder="Todos os responsáveis"
