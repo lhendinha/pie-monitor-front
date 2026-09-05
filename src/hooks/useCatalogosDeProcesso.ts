@@ -75,14 +75,11 @@ export function useCatalogosDeProcesso() {
      * Processo sem cliente devolve string vazia -- quem chama decide o que
      * mostrar no lugar.
      *
-     * 🔴 Lê `cliente_nomes`, que vem DENTRO do processo. Antes procurava id
-     * por id no catálogo -- e por isso a coluna mostrava o id cru até o
-     * catálogo inteiro terminar de chegar: medido em Chrome, 3,8 segundos
-     * com 5.000 clientes.
-     *
-     * Com os dois SELETORES de cliente desta tela trocados por busca (o chip
-     * de filtro e o campo do formulário), o catálogo deixou de ser baixado
-     * aqui -- que era o que faltava. */
+     * 🔴 Lê `cliente_nomes`, que vem DENTRO do processo, e não o catálogo
+     * id por id: com o catálogo, a coluna mostra o id cru até ele inteiro
+     * terminar de chegar -- medido em Chrome, 3,8 segundos com 5.000
+     * clientes. Esta tela não baixa o catálogo de clientes: os dois
+     * seletores (o chip de filtro e o campo do formulário) são busca. */
     clientesNomes: (p: ComClientes) =>
       (p.cliente_nomes?.length ? p.cliente_nomes : p.cliente_ids || []).join(", "),
     faseRotulo: (id?: string | null) => rotuloOpcao(fases, id),

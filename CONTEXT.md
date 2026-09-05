@@ -243,6 +243,56 @@ arquivo ainda não tinha:
   travado sem `combobox`. `useBuscaDoPainel` zerava a busca ao fechar sem
   avisar o pai, e na Agenda isso desabilitava "Nova tarefa".
 
+## Histórias que saíram dos comentários (Fase 3 do `PLANO_ARQUIVOS_MENORES.md`, grupo 4, 05/09/2026)
+
+O que os comentários de `hooks/`, `utils/`, `services/`, `constants/`,
+`contexts/`, `routes/` e `theme/` contavam, e que este arquivo ainda não
+tinha:
+
+- **A lista de UFs dizia estar em ordem alfabética e não estava**: doze das
+  27 posições vinham na ordem do IBGE (`AP` antes de `AM`, `PR` antes de
+  `PE`, `SP` antes de `SE`). Corrigida em 01/09/2026, com o guarda que afirma
+  a ordem.
+- **`vinculoDeRegistro.ts` chamava-se vinculoDaTarefa**, e o nome ficou
+  estreito quando o mesmo campo passou a servir documento e o campo de
+  processo do atendimento -- a mesma história do tipo, no grupo 1.
+- **A coluna de clientes da listagem de processos procurava id por id no
+  catálogo inteiro**, e mostrava o id cru até ele chegar: 3,8 segundos com
+  5.000 clientes, medido em Chrome. `cliente_nomes` passou a vir dentro do
+  processo, e os dois seletores de cliente da tela viraram busca.
+- **`useNomeDeSubgrupo` nasceu em 02/09/2026 de uma linha que já existia em
+  `useCatalogosDeProcesso`**, quando sete telas passaram a precisar dela.
+- **`useTodosOsMembros` desembrulhava a resposta dentro do `queryFn`**,
+  deixando o cache com uma forma diferente da dos outros consumidores da
+  mesma chave; ninguém usava o hook ainda, e o primeiro que usasse
+  reintroduziria o defeito. Passou a `select`.
+- **O número do processo ia sozinho para o servidor no Histórico até
+  03/09/2026**, num ramo próprio sem paginação que ignorava os outros
+  filtros; o ramo virou a rota `historicoDoProcesso`.
+- **O produto chama-se Argos desde 25/08/2026**, e o prefixo `pje-monitor-`
+  das chaves de `localStorage` ficou de propósito: renomear deslogaria todo
+  mundo no primeiro carregamento.
+- **O 401 de um `/refresh` que devolveu 502 durante um deploy** passou a
+  cair no toast genérico depois que `ehSessaoExpirada` passou a exigir
+  "tokens sumiram"; virou o terceiro caso, `ehFalhaTransitoriaDeRenovacao`, em vez
+  de "Autenticação inválida" para dez segundos de instabilidade.
+- **As cores de status do atendimento estavam invertidas até 26/08/2026**:
+  o mapa pintava "Em andamento" de azul e "Fechado" de cinza, com o
+  docstring dizendo o contrário do que o mapa fazia. Âmbar para o aberto,
+  azul da marca para o fechado, e o texto reescrito junto.
+- **A regra "trocar uma cor obriga a alinhar o e-mail" é de 30/08/2026**,
+  mesmo dia em que ficou decidido que os processos removidos não vêm
+  pré-marcados na prévia da importação.
+- **A notificação de atribuição em massa ficou sem destino até 28/08/2026**:
+  esta função devolve uma string de rota, e os filtros de Processos
+  viajavam por `state` de navegação; quando o estado das listagens foi para a
+  URL, `?responsavel=…` virou endereço.
+- **O corpo do PATCH de processo zerava campo ausente até 28/08/2026**
+  (`campos.clienteIds || []` para os nove campos): a edição passou a mandar
+  `responsaveis: []` em todo salvamento porque o formulário nunca semeava o
+  campo, e o servidor recusava com 400 -- barulhento por sorte; com
+  `cliente_ids` teria apagado calado.
+
 ## 1) Objetivo do projeto
 
 Front-end React + TypeScript pra um sistema que monitora processos

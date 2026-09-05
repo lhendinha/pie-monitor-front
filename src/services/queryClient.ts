@@ -48,7 +48,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-/** 🔴 Trocou de grupo -> o cache inteiro é de outro escritório.
+/** Trocou de grupo -> o cache inteiro é de outro escritório.
  *
  * `auth.salvarTokens` dispara isto quando o token novo traz um `grupo_id`
  * diferente do guardado -- vale tanto pro aviso que chega pelo canal quanto
@@ -85,13 +85,11 @@ setGrupoTrocadoListener(() => queryClient.resetQueries());
  * Ignora 401 (a transição de sessão expirada já é global, ver authBridge). */
 /** 401 que veio de uma renovação que falhou por motivo TRANSITÓRIO.
  *
- * 🔴 Terceiro caso, que a versão anterior não tinha. Depois que
- * `ehSessaoExpirada` passou a exigir "tokens sumiram", o 401 de um
- * `/refresh` que devolveu 502 durante um deploy deixou de ser suprimido --
- * e caía no `toast.erro(erro.message)`, mostrando "Autenticação inválida"
- * pra quem só pegou dez segundos de instabilidade. A sessão continua de pé,
- * então a mensagem estava errada nas duas pontas: assustava e não dizia o
- * que fazer.
+ * 🔴 O terceiro caso, ao lado de "sessão expirada" e "autenticação
+ * inválida": o 401 de um `/refresh` que devolveu 502 durante um deploy não é
+ * nenhum dos dois -- a sessão continua de pé. Cair no `toast.erro` genérico
+ * mostraria "Autenticação inválida" pra quem só pegou dez segundos de
+ * instabilidade: errado nas duas pontas, assusta e não diz o que fazer.
  */
 function ehFalhaTransitoriaDeRenovacao(erro: unknown): boolean {
   return erro instanceof ApiError && erro.status === 401 && estaAutenticado();

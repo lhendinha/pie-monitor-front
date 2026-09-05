@@ -8,7 +8,7 @@
  * Os valores vieram do artifact de referência (as variáveis CSS do `:root`),
  * não de estimativa.
  *
- * 🔴 **TROCAR UMA COR AQUI OBRIGA A ALINHAR O E-MAIL** (regra de 30/08/2026).
+ * 🔴 **TROCAR UMA COR AQUI OBRIGA A ALINHAR O E-MAIL.**
  *
  * O e-mail de notificação da API COPIA esta paleta, em
  * `api/src/shared/email_template.py`. A cópia existe porque cliente de e-mail

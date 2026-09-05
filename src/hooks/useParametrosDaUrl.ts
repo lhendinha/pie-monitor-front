@@ -7,7 +7,7 @@ import type { OpcoesDoEstadoNaUrl, ValorDaUrl } from "../types";
 /** Escreve VÁRIOS parâmetros da URL numa vez só. É o mecanismo; o hook
  * abaixo é a conveniência de um valor.
  *
- * 🔴 **Por que a URL, e não memória:** ela responde de graça as quatro
+ * **Por que a URL, e não memória:** ela responde de graça as quatro
  * perguntas que o estado de uma listagem tem -- voltar pelo navegador,
  * recarregar, mandar o link para alguém, e enxergar o estado sem abrir o
  * depurador. É o padrão do ecossistema (`useSearchParams`, search params do

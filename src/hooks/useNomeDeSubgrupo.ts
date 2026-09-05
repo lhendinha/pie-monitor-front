@@ -5,11 +5,10 @@ import { useToastOnQueryError } from "../services/queryClient";
 
 /** Traduz `subgrupo_id` no nome do subgrupo, em qualquer tela.
  *
- * 🔴 **Nasceu de uma linha que já existia em `useCatalogosDeProcesso`** e que
- * sete telas passaram a precisar (02/09/2026): quem participa de mais de um
- * subgrupo não conseguia dizer, ao ler uma lista ou escolher um processo, de
- * qual subgrupo cada item era. A régua do projeto é que a terceira cópia vira
- * função -- aqui seriam oito.
+ * UMA função para as sete telas que mostram o subgrupo de cada item: quem
+ * participa de mais de um subgrupo precisa saber, ao ler uma lista ou
+ * escolher um processo, de qual subgrupo cada item é. A régua do projeto é
+ * que a terceira cópia vira função -- aqui seriam oito.
  *
  * ⚠️ **Custa UMA requisição no total, não uma por tela.** A chave
  * `qk.todosOsSubgrupos()` é compartilhada e o React Query deduplica: a segunda

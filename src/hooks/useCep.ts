@@ -28,7 +28,7 @@ export function useCep({ aoPreencher }: OpcoesDaConsultaDeCep) {
    * CEP -- e sobrescreveria o que a pessoa já tivesse corrigido à mão no
    * logradouro. Consultar é para quando o CEP MUDA.
    *
-   * 🔴 E é esquecido quando a consulta FALHA, senão a mensagem "tente de
+   * ⚠️ E é esquecido quando a consulta FALHA, senão a mensagem "tente de
    * novo" seria mentira: com a memória intacta, redigitar o mesmo CEP não
    * dispararia nada, e a pessoa não teria como tentar. */
   const ultimoConsultado = useRef("");

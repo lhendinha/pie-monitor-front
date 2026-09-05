@@ -21,7 +21,7 @@ export const TIPO_LEMBRETE = "lembrete";
  * canal e antecipa a correção. */
 export const TIPO_SESSAO_ALTERADA = "sessao_alterada";
 
-/* --- "quem responde, recebe" (26/08/2026) ------------------------------- */
+/* --- "quem responde, recebe" -------------------------------------------- */
 
 /** Alguém passou a responder por um processo/atendimento/documento. */
 export const TIPO_PROCESSO_ATRIBUIDO = "processo_atribuido";
@@ -47,7 +47,7 @@ export const TIPO_PROCESSOS_ATRIBUIDOS = "processos_atribuidos";
  * **criou** o processo, sem ninguém pedir. Reusar o outro faria o aviso
  * dizer que alguém agiu quando ninguém agiu.
  *
- * 🔴 **Vai para `manager`+** pela mesma razão que a régua de `destinatarios`
+ * ⚠️ **Vai para `manager`+** pela mesma razão que a régua de `destinatarios`
  * manda o item sem responsável para os gestores do subgrupo: processos que
  * chegam sem responsável precisam ser distribuídos, e um `user` não pode
  * fazer isso. As MOVIMENTAÇÕES desses mesmos processos seguem a régua: os

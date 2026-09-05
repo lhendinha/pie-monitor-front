@@ -11,17 +11,13 @@ export function useTodosOsMembros(habilitado = true) {
     queryKey: qk.todosOsMembros(),
     /* 🔴 `queryFn` guarda a resposta INTEIRA; `select` é que expõe o array.
      *
-     * A versão anterior desembrulhava dentro do `queryFn`, então o cache
-     * ficava com `Membro[]` -- enquanto os três consumidores vivos dessa
-     * mesma chave (SinoDeNotificacoes, AtendimentosPage, MembrosDoSubgrupo)
-     * usam `listarTodosOsMembrosDoGrupo` direto e guardam `{ membros }`.
-     *
-     * Duas formas na mesma chave é exatamente o defeito que este módulo
-     * existe pra eliminar: o React Query deduplica por chave e roda o
-     * `queryFn` de quem montar primeiro, então quem lesse `.membros` de um
-     * array -- ou iterasse um objeto -- dependia da ordem de montagem.
-     * Ninguém usa este hook ainda; o primeiro que usasse reintroduziria o
-     * problema.
+     * Desembrulhar dentro do `queryFn` deixaria o cache com `Membro[]`,
+     * enquanto os consumidores da mesma chave (`MembrosDoSubgrupo`) usam
+     * `listarTodosOsMembrosDoGrupo` direto e guardam `{ membros }`. Duas
+     * formas na mesma chave é exatamente o defeito que este módulo existe
+     * pra eliminar: o React Query deduplica por chave e roda o `queryFn` de
+     * quem montar primeiro, então quem lesse `.membros` de um array -- ou
+     * iterasse um objeto -- dependeria da ordem de montagem.
      *
      * Com `select`, o cache é idêntico ao dos outros e a transformação
      * acontece só na saída deste hook. */
