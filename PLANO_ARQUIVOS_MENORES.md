@@ -547,13 +547,11 @@ desenha. Merge após revisão.
 
 ## Achados no caminho (fora deste plano)
 
-- O README diz "702 testes em 66 arquivos" (linha 428); são 1.202 em 107 (Fase 1).
+- ~~O README diz "702 testes em 66 arquivos"~~ -- resolvido em 05/09/2026: o número saiu, e `contagensDoReadme.test.ts` não deixa voltar.
   `contagensDoReadme.test.ts` só cobre componentes e páginas. Ou o número vira guarda,
   ou sai do README -- a régua daquele guarda é que número em `.md` que só
   envelhece não fica.
-- `progresso` de `PreviaDaImportacao` é objeto tipado inline nas props
-  (`{ feitos, total }`); `ProgressoDaImportacao` em `types/processo.ts` tem os
-  mesmos campos mais `tipo`. Nomear é trabalho de uma linha, fora deste plano.
+- ~~`progresso` de `PreviaDaImportacao` é objeto tipado inline~~ -- resolvido em 05/09/2026: `ContagemDaImportacao` em `types/processo.ts`, e `ProgressoDaImportacao` a estende.
 
 ## O que mudou de versão para versão, e por quê
 

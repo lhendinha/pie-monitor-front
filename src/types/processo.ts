@@ -151,8 +151,14 @@ export interface ResultadoDaImportacao {
  * ⚠️ `feitos` conta o TENTADO, não o que deu certo: uma barra que só andasse
  * com sucesso ficaria parada numa importação com falhas, sugerindo
  * travamento. */
-export interface ProgressoDaImportacao {
+export interface ProgressoDaImportacao extends ContagemDaImportacao {
   tipo: "importacao_progresso";
+}
+
+/** O que a barra de progresso da importação lê: os dois números da
+ * mensagem do canal, sem o `tipo` -- é o que o hook guarda e a prévia
+ * desenha. */
+export interface ContagemDaImportacao {
   feitos: number;
   total: number;
 }

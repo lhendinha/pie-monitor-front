@@ -1,4 +1,4 @@
-import type { PreviaDaImportacao as Previa } from "../../../../types";
+import type { PreviaDaImportacao as Previa, ContagemDaImportacao } from "../../../../types";
 
 export interface PreviaDaImportacaoProps {
   previa: Previa;
@@ -13,7 +13,7 @@ export interface PreviaDaImportacaoProps {
    * inteira falharia depois da busca. */
   souMembro: boolean;
   importando: boolean;
-  progresso: { feitos: number; total: number } | null;
+  progresso: ContagemDaImportacao | null;
   onImportar: (numeros: string[], responsaveis: string[]) => void;
   onVoltar: () => void;
 }

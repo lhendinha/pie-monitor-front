@@ -51,6 +51,13 @@ describe("as contagens do README", () => {
     expect(pastas("/src/pages")).toBeGreaterThan(10);
   });
 
+  it("🔴 o README NÃO anuncia contagem de testes -- esse número só envelhece", () => {
+    /* Ele disse "702 testes em 66 arquivos" enquanto havia 1.202 em 107. A
+       suíte muda a cada commit e não há guarda barato que a conte sem
+       rodá-la; o número saiu, e este teste não deixa voltar. */
+    expect(README).not.toMatch(/\d+ testes em \d+ arquivos/);
+  });
+
   it.each([
     ["components", "componentes gerais", "/src/components"],
     ["pages", "páginas", "/src/pages"],
