@@ -8,7 +8,7 @@ export interface Cliente {
   criado_em?: string;
   cpf_cnpj?: string | null;
   /** Quantos processos do grupo referenciam este cliente. Campo DERIVADO,
-   * calculado pela API (22/08/2026) -- não está gravado no cliente. Conta
+   * calculado pela API -- não está gravado no cliente. Conta
    * a linha de processo, então o mesmo número em dois subgrupos conta
    * duas vezes. */
   processos?: number;
@@ -16,8 +16,8 @@ export interface Cliente {
   email?: string | null;
   /** Endereço -- opcional inteiro, e PLANO como na API (um objeto aninhado
    * exigiria uma segunda semântica de PATCH). Ausente em cliente cadastrado
-   * antes de 27/08/2026, e quem lê trata `null`/`undefined` como "não
-   * informado". */
+   * antes de o endereço existir, e quem lê trata `null`/`undefined` como
+   * "não informado". */
   cep?: string | null;
   logradouro?: string | null;
   /** TEXTO, nunca número: "S/N", "123-A" e "km 12" são endereços reais. */

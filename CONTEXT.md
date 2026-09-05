@@ -32,6 +32,116 @@ que não altera código nem teste.
 produção no próximo push, porque o Vercel publica tudo o que chega nela.
 Branch é o que torna cada entrega desfazível sozinha com um `git revert`.
 
+## 0b) O padrão de prosa (05/09/2026)
+
+É a seção 0b do `api/CONTEXT.md` traduzida para as formas do TypeScript.
+Vale para todo código novo, e a Fase 3 do `PLANO_ARQUIVOS_MENORES.md` aplica
+ao existente, grupo a grupo. Medido em 05/09/2026, antes dela: 2.048 blocos
+de prosa em `src/`, 20 com mais de um 🔴, 821 🔴 e 800 ⚠️ contra 4 ➡️, e 52
+arquivos com data solta. `prosaSemDiario.test.ts` cobra a parte mecânica
+(data só na mesma frase que "medi").
+
+### As formas, e o que cada uma é
+
+| forma | onde | é o quê |
+|---|---|---|
+| `/** ... */` colado no `export default function` ou no primeiro export | todo arquivo | o **docstring de módulo**: a primeira linha diz o que o arquivo é |
+| `/** ... */` colado numa função, hook, tipo ou constante exportada | quando ela pede | docstring da definição |
+| `/* ... */` antes de uma instrução, ou `//` na linha | dentro do corpo | comentário de decisão local |
+| `{/* ... */}` no JSX | entre elementos | idem, na árvore |
+
+### Forma: três partes, nesta ordem, e nada mais
+
+1. **A primeira linha diz o que é.** Uma frase, sem "Este componente...".
+2. **A regra e o custo.** 🔴 para a decisão que quebra algo se for desfeita,
+   ⚠️ para a armadilha que não derruba teste. Número medido entra aqui, com
+   a data ao lado -- número envelhece, e a data diz quando remedir.
+3. **O ponteiro** ➡️: o teste que cobre, ou a seção deste arquivo com a
+   história. Uma linha.
+
+### Marcadores com significado fixo
+
+| marcador | significa | limite |
+|---|---|---|
+| 🔴 | **invariante**: quebrar isso é defeito em produção | no máximo UM por bloco; se há dois, um deles é ⚠️ |
+| ⚠️ | **armadilha**: o jeito óbvio de fazer que está errado, e por quê | quantas forem armadilhas de verdade |
+| ➡️ | **ponteiro**: o teste, a seção ou a função onde o assunto mora | uma linha |
+| ✅ | **sai**. Status é histórico, e histórico não fica no código | -- |
+
+### O que sai do código e vem para este arquivo
+
+- Data solta, "a primeira versão fazia X", "antes era assim", "corrigido em",
+  nome de função que não existe mais. **A única data que fica é a que
+  acompanha um número medido.**
+- A narrativa de como o defeito foi encontrado. No código fica a regra que o
+  defeito ensinou; o caminho até ela é diário.
+- A mesma explicação repetida em quem chama. A regra mora em quem a
+  implementa, e o chamador aponta com ➡️ em uma linha.
+
+⚠️ **Nada se perde.** Este arquivo já é o diário do projeto. Onde o código
+tiver história que ele não tem, ela entra aqui, sob *"Histórias que saíram
+dos comentários"*, ANTES de sair do código.
+
+### Tamanho como sinal, não como lei
+
+Docstring de módulo acima de vinte linhas, ou de definição acima de dez,
+quase sempre carrega diário ou repetição. Não vira guarda mecânico -- vira
+pergunta na revisão: *"o que aqui é regra, e o que é história?"*.
+
+## Histórias que saíram dos comentários (Fase 3 do `PLANO_ARQUIVOS_MENORES.md`, grupo 1, 05/09/2026)
+
+O padrão de prosa (seção 0b) tira o diário do código. O que os comentários
+de `types/`, dos seis componentes da Fase 2 e dos hooks deles contavam, e
+que este arquivo ainda não tinha:
+
+- **O quadro padrão do Kanban era o ÚLTIMO da lista de subgrupos**, com o
+  comentário "o último da lista, que é o mais recente, que é o que costuma
+  estar em uso" -- e as três afirmações eram falsas: a listagem passou a
+  vir em ordem alfabética, "mais recente" nunca foi "mais usado", e quem
+  trabalha no mesmo subgrupo trocava a pílula a cada visita. Daí
+  `useUltimoSubgrupo`: o último USADO, lembrado entre visitas, com o nome.
+- **O link do e-mail no Histórico passou a resolver por `historicoDoProcesso`
+  (03/09/2026)**, quando o número do processo virou filtro de tela e
+  `listarHistorico` passou a paginar: o `find` que acha a comunicação do
+  link procura no conjunto inteiro, e com a paginada uma notificação a
+  partir do 11º item dava "não foi possível localizar". Os filtros de
+  subgrupo e de número entraram na URL nesse mesmo dia.
+- **A caixa de busca do Histórico** nasceu como um `Input` pequeno com 230px
+  e ficava visivelmente diferente da de Processos na mesma barra; virou
+  `CampoDeBusca` com o teto padrão de 340px. `verificar-filtros-do-historico`
+  mede a caixa contra a de Processos por isso.
+- **"Do subgrupo SELECIONADO", na prévia da importação (30/08/2026)**, veio
+  de um relato de uso: quem é membro de 6 dos 12 subgrupos lia "deste
+  subgrupo" e não sabia de qual a frase falava, porque o seletor fica na
+  etapa da busca e some na prévia. Frente registrada: a prévia exibir o
+  destino, junto com o destino múltiplo.
+- **`ErroDaBuscaPorOab` carrega o campo** porque a primeira versão da tela
+  decidia onde mostrar o erro por substring da mensagem ("contém OAB",
+  "contém UF") -- e "Selecione a UF da OAB" contém as duas.
+- **`Comunicacao.link` não é mostrado desde 26/08/2026**: havia um "Abrir o
+  documento no tribunal" no detalhe da movimentação, removido a pedido; em
+  7 dos 71 links medidos ele nem abria. `tem_envio` nasceu no mesmo dia
+  (9 de 73 movimentações tinham envio em produção); resposta anterior não
+  o traz.
+- **`Cliente.processos` é derivado desde 22/08/2026** e **o endereço existe
+  desde 27/08/2026**; cliente anterior vem sem os campos.
+- **`VinculosDeRegistro` chamava-se VinculosDaTarefa** enquanto só a tarefa
+  tinha o campo; o documento passou a usar o mesmo, e o nome de um
+  consumidor só era o convite pra segunda cópia do tipo.
+- **`falhouAoRecarregar`, em `EditarMembroForm`**, teve duas descrições
+  contraditórias no mesmo arquivo: uma dizia que cobria "não achou a
+  pessoa", e não cobria -- aquele caso é sucesso da rede. A decisão de
+  semear formulário por `useEffect` (o `eslint-disable` de
+  `react-hooks/set-state-in-effect`) é de 03/09/2026 e está no
+  `eslint.config.js`.
+- **O antigo `types/index.ts` tinha cinco seções** cujos títulos já não
+  descreviam o conteúdo, um banner "Tipos que estavam espalhados" (a
+  história de quando cada tipo morava no módulo que o usava primeiro, e o
+  `ToastItem` era importado de dentro de `components/Toast/`) e outro sobre
+  os parâmetros das chamadas ("eram 15 interfaces espalhadas por 12
+  arquivos"). Os dois saíram nas Fases 1 e 3; a regra que sobrou está no
+  docstring do índice.
+
 ## 1) Objetivo do projeto
 
 Front-end React + TypeScript pra um sistema que monitora processos

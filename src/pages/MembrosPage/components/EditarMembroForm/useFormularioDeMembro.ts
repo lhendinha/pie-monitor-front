@@ -37,11 +37,9 @@ export function useFormularioDeMembro({ membro, onAtualizado, onFechar }: Opcoes
    * estar velho -- e salvar por cima remove participação que alguém acabou
    * de criar. Melhor travar e dizer.
    *
-   * ⚠️ Não cobre "não achou a pessoa", apesar de a versão anterior deste
-   * texto dizer que sim. Aquele caso é SUCESSO da rede e está tratado no
-   * `.then`, com o motivo escrito lá: se ela realmente saiu do grupo,
-   * reabrir o modal dá o mesmo resultado, então travar não recupera nada.
-   * Duas descrições contraditórias do mesmo sinalizador, no mesmo arquivo. */
+   * ⚠️ Não cobre "não achou a pessoa": aquele caso é SUCESSO da rede e está
+   * tratado no `.then` -- se ela realmente saiu do grupo, reabrir o modal dá
+   * o mesmo resultado, então travar não recupera nada. */
   const [falhouAoRecarregar, setFalhouAoRecarregar] = useState(false);
   const [numeroOab, setNumeroOab] = useState("");
   const [ufOab, setUfOab] = useState("");
@@ -169,7 +167,7 @@ export function useFormularioDeMembro({ membro, onAtualizado, onFechar }: Opcoes
   useEffect(() => {
     const d = editavelQuery.data;
     if (!d) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito (decidido em 03/09/2026), ver o comentário acima e o eslint.config.js
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito, ver o comentário acima e o eslint.config.js
     setNumeroOab(d.numero_oab ?? "");
     setUfOab(d.uf_oab ?? "");
     setImportacaoLigada(d.importacao_automatica);

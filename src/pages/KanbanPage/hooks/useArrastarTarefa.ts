@@ -38,17 +38,16 @@ export function useArrastarTarefa(aoAssentar: () => void) {
    *
    * ⚠️ O alvo da solta pode ser uma COLUNA ou um CARTÃO -- os cartões são
    * `useSortable`, e todo sortable também é área de solta. Sem resolver
-   * isso, largar em cima de outro cartão mandava o id do CARTÃO como
-   * `coluna_id` (visto na verificação: `coluna_id: "sg-civel:t5"`), e o
-   * servidor recusaria com 400 dizendo que a coluna não é do quadro.
-   *
-   * O servidor recusa coluna de outro quadro de propósito; aqui isso nem
+   * isso, largar em cima de outro cartão manda o id do CARTÃO como
+   * `coluna_id`, e o servidor recusa com 400 dizendo que a coluna não é do
+   * quadro. (Ele recusa coluna de outro quadro de propósito; aqui isso nem
    * chega a acontecer, porque as colunas oferecidas são as do quadro
-   * aberto. A validação existe dos dois lados. */
-  /** ⚠️ Otimista, e não um PATCH solto. Sem isto o cartão VOLTAVA pra coluna
-   * de origem no instante da solta e só pulava pra nova quando o refetch
-   * chegasse -- um pisca-pisca que parece que o arraste falhou. Agora ele
-   * fica onde foi largado, e volta sozinho se o servidor recusar. */
+   * aberto. A validação existe dos dois lados.)
+   *
+   * ⚠️ Otimista, e não um PATCH solto: sem isto o cartão VOLTA pra coluna
+   * de origem no instante da solta e só pula pra nova quando o refetch
+   * chega -- um pisca-pisca que parece que o arraste falhou. Assim ele fica
+   * onde foi largado, e volta sozinho se o servidor recusar. */
   const moverMutation = useMutation({
     mutationFn: ({ tarefa, destino }: MoverTarefa) =>
       atualizarTarefa(tarefa.subgrupo_id, tarefa.tarefa_id, { coluna_id: destino }),

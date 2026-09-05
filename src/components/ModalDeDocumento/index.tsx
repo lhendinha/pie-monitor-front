@@ -24,7 +24,7 @@ import type { ModalDeDocumentoProps } from "./types";
 
 /** Adicionar documento: arquivo enviado ou link.
  *
- * 🔴 **Só CRIA.** Editar e excluir vivem na tela do documento, como em
+ * **Só CRIA.** Editar e excluir vivem na tela do documento, como em
  * Processos e Clientes -- clicar na linha abre a tela, e é lá que se mexe.
  * Um modal que também edita traria duas telas para a mesma coisa, e é o
  * caminho que o sistema já não segue.

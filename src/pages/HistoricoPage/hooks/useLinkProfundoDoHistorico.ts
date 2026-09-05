@@ -32,9 +32,9 @@ export function useLinkProfundoDoHistorico(
    * (sem fechar sobre a prop) pra não pegar um `deepLink` desatualizado se
    * ele mudar antes de a resposta chegar. */
   const deepLinkMutation = useMutation({
-    /* 🔴 `historicoDoProcesso`, e NÃO `listarHistorico({ numeroProcesso })`
-       (03/09/2026). A segunda passou a PAGINAR quando o número virou filtro
-       de tela -- e este `find` procura no conjunto inteiro. Com a paginada,
+    /* 🔴 `historicoDoProcesso`, e NÃO `listarHistorico({ numeroProcesso })`:
+       a segunda PAGINA, porque o número é filtro de tela -- e este `find`
+       procura no conjunto inteiro. Com a paginada,
        uma notificação a partir do 11º item devolveria "não foi possível
        localizar", que é mentira: ela existe, só não estava na página. */
     mutationFn: (variaveis: AlvoDoDeepLink) =>
