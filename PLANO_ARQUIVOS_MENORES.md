@@ -1,4 +1,4 @@
-# Plano: arquivos menores e prosa no padrão -- o front (v1, 05/09/2026)
+# Plano: arquivos menores e prosa no padrão -- o front (v2, 05/09/2026)
 
 Irmão do `api/PLANO_ARQUIVOS_MENORES.md`, executado e concluído em 04/09/2026.
 O objetivo é o mesmo: **quebrar o que ficou grande sem mudar comportamento, e
@@ -23,8 +23,8 @@ não** -- e é bom saber disso antes de planejar um corte que não existe.
 | arquivos entre 301 e 500 linhas | 12 |
 | arquivos com mais de 250 linhas de CÓDIGO (sem prosa e sem vazias) | **6** |
 | arquivos com diário datado na prosa | **42** (66 linhas com data e sem "medi") |
-| blocos de prosa | 1.876; **20** com mais de um 🔴 |
-| arquivos com docstring de módulo ou do export principal | 344 de 384 |
+| blocos de prosa (bloco `/* */` ou sequência de `//`) | 2.013; **20** com mais de um 🔴 |
+| arquivos com docstring de módulo ou do export principal | 344 de 383 (faltam 39: barris, ícones, `main.tsx`) |
 
 Então há três trabalhos, em tamanho decrescente:
 
@@ -48,12 +48,16 @@ Quatro provas, e nenhuma substitui a outra:
    do TypeScript (`typescript` 5.9.3, já instalado) para imprimir cada
    declaração de topo dos arquivos ANTES e DEPOIS **sem comentários** e com
    espaço normalizado, e compara por nome: função, componente, hook, `const`,
-   `interface`, `type`. Sumiu, apareceu ou mudou é erro. Renomeio e troca de
-   módulo são normalizados como no irmão da API (`--renomeios`, `--modulos`).
-   Instrução anônima de topo é chaveada pelo conteúdo (o achado do grupo 5 da
-   API já entra de nascença).
-2. **A suíte** -- `yarn vitest run`, hoje **1.191 testes em 104 arquivos**,
-   com `yarn tsc --noEmit` e `yarn eslint src` zerados antes e depois. Teste
+   `interface`, `type`. Sumiu, apareceu ou mudou é erro. Renomeio é
+   normalizado como no irmão da API (`--renomeios`); `import` e reexport
+   (`export ... from`) são ignorados, porque mudam por definição numa
+   movimentação. Não há `--modulos`: no front a referência a um símbolo movido
+   não ganha prefixo de módulo, só muda o `import`. Instrução anônima de topo é
+   chaveada pelo conteúdo (o achado do grupo 5 da API já entra de nascença).
+2. **A suíte** -- `yarn test` (vitest), hoje **1.191 testes em 104 arquivos**,
+   com `yarn typecheck` (`tsc -b`) e `yarn lint` zerados antes e depois; e
+   `yarn build` na fase que mexe em `types/`, porque é o `tsc -b && vite build`
+   da Vercel que decide se o reexport compila. Teste
    que cita um caminho que mudou é ajustado no MESMO commit da movimentação,
    e só o import: a asserção não muda.
 3. **Chrome de verdade** -- nas fases que movem componente ou hook. A regra do
@@ -76,15 +80,18 @@ As do front que já existem, e que este plano NÃO reescreve:
 1. **Componente e página viram pasta com `index.tsx`; constante, tipo,
    helper e hook são arquivo solto** (`CONTEXT.md`, seção 3). Hook de uma
    página só mora em `pages/AquelaPagina/hooks/useNome.ts` -- precedente
-   medido: `AgendaPage/hooks`, `ClienteDetalhePage/hooks`, `KanbanPage/hooks`.
+   medido: sete páginas já têm `hooks/` (Agenda, ClienteDetalhe, Kanban,
+   ProcessoDetalhe, Processos, Subgrupos, Workspace).
 2. **Alcance decide o destino, e o nome muda junto com o lugar.**
 3. **Componente de uma página só** mora em `pages/X/components/Nome/index.tsx`
-   e não entra em `components/index.ts` (67 exports hoje).
+   e não entra em `components/index.ts` (67 exports hoje). E não conta para o
+   README: `contagensDoReadme` conta PASTAS de `components/` e de `pages/`.
 4. **Interface que não é as props sai do `index.tsx`** -- guardado por
    `tiposForaDoIndex.test.ts`.
 5. **`contagensDoReadme.test.ts`** cobra os números da seção "Estrutura" do
-   README (hoje 69 pastas em `components/`, 22 em `pages/`). Fase que cria
-   componente em `components/` atualiza o README no mesmo commit.
+   README (hoje 68 pastas em `components/`, 21 em `pages/`, e o README já
+   diz isso). Fase que cria componente em `components/` atualiza o README no
+   mesmo commit.
 6. **`comentariosCitamCodigoReal.test.ts`** cobra nome citado em crase nos
    comentários do front; e **o guarda da API lê o README e o CONTEXT daqui**
    (`api/tests/test_docs_citam_codigo_real.py`). Nome que este plano apaga
@@ -123,8 +130,14 @@ que faz a prova ignorar prosa em TSX; e é o que o teste sintético afirma
 com um `{/* comentário */}` dentro de um componente movido.
 
 **Medido antes de começar**: os números da tabela acima, gerados por um
-script que fica registrado no commit da Fase 0 (`scripts/medirArquivos.mjs`),
+script que fica registrado no commit da Fase 0 (**scripts/medirArquivos.mjs**),
 para a Fase 3 poder medir o depois com a mesma régua.
+
+**Entra também**: este plano em `_todos_os_md()` de
+`api/tests/test_docs_citam_codigo_real.py` (regra 11). ⚠️ Aquele guarda trata
+como caminho qualquer crase que termine em `.ts`, `.tsx` ou `.mjs`, e confere
+pelo NOME do arquivo em qualquer pasta dos dois repositórios: nome de arquivo
+futuro neste plano vai em **negrito** até existir.
 
 Sem deploy. Sem Chrome.
 
@@ -135,12 +148,17 @@ Sem deploy. Sem Chrome.
 87 tipos exportados (68 `interface`, 19 `type`) em cinco seções cujos títulos
 **já não descrevem o conteúdo**: a seção "importação de processos por OAB"
 tem 42 tipos, entre eles `Membro`, `Tarefa`, `Atendimento` e `Notificacao`.
-194 arquivos importam de `types`. O pacote já existe em embrião: `types/`
-tem `index.ts` e `respostas.ts` (28 exports, os envelopes da API).
+**161 arquivos** importam de `src/types` (medido pelo `import ... from`
+resolvido, não por texto: a primeira contagem, 194, somava os `./types`
+locais de página). O pacote já existe em embrião: `types/` tem `index.ts` e
+`respostas.ts` (28 exports, os envelopes da API), e `respostas.ts` importa de
+`./index`.
 
-Alcance dos mais usados (pastas de página ou componente que os citam):
-`Grupo` 14, `Processo` 14, `Subgrupo` 12, `Cliente` 9, `Tarefa` 8,
-`Documento` 7, `Papel` 7, `Atendimento` 6.
+Alcance dos mais importados (pastas de página ou componente com `import
+type` deles): `Papel` 8, `CamposOpcionaisProcesso` 5, `EnderecoDoCliente` 5,
+`OpcaoDeSelect` 5, `Tarefa` 5, `TipoOpcaoProcesso` 4, `IntervaloDeDatas` 4,
+`Vinculo` 4. ⚠️ Contar por texto dava `Grupo` 14 e `Processo` 14 -- prosa
+cita nome; só o import diz quem depende.
 
 Referências entre tipos (medidas por nome no texto da declaração, então
 INCLUEM menções em comentário -- a Fase 0 refaz por AST): `Processo` cita
@@ -168,8 +186,11 @@ Fase 1 é o que impede o pacote de virar um novelo.
 
 `index.ts` vira só reexport: `export type * from "./processo"` e assim por
 diante (`isolatedModules` está ligado; `export type *` é TypeScript 5+, e o
-projeto está em 5.9). **Nenhum dos 194 importadores muda.** `respostas.ts`
-continua onde está e passa a importar dos arquivos de domínio.
+projeto está em 5.9; conferido com `tsc` sob `isolatedModules` e
+`moduleResolution: bundler`). **Nenhum dos 161 importadores muda.**
+`respostas.ts` continua onde está; pode seguir importando de `./index` (não
+há ciclo: o índice só reexporta) ou passar aos domínios -- decisão da
+execução, registrada.
 
 ⚠️ A tabela é a MELHOR hipótese a partir do que foi medido. `ResumoDaAreaDeTrabalho`
 em `notificacao.ts`, por exemplo, é escolha discutível (é o resumo da home);
@@ -201,18 +222,22 @@ medido" desta fase, como o irmão fez.
 
 1. Branch a partir da `main`; cópia de `types/index.ts` e `types/respostas.ts`
    para `/tmp` (o ANTES da prova).
-2. Um arquivo por domínio, na ordem das folhas: `url.ts`, `api.ts`, `ui.ts`,
-   `sessao.ts` (não dependem de ninguém), depois `cliente.ts`, `tarefa.ts`,
-   `documento.ts`, `notificacao.ts`, `atendimento.ts`, `grupo.ts`,
-   `processo.ts`. Comentário viaja colado com o tipo (regra 9). Referência
-   entre domínios vira `import type` explícito, na direção decidida.
-3. `index.ts` vira os reexports; `respostas.ts` troca `./index` pelos
-   domínios.
-4. `node scripts/conferirMovimentacao.mjs --antes /tmp/index.ts /tmp/respostas.ts --depois src/types/*.ts --modulos ...` dá `OK: 115 declarações idênticas`
-   (87 + 28). `tsc`, `eslint`, `vitest`: verdes, **1.191 + os testes novos**.
+2. Um arquivo por domínio, na ordem das folhas: **url**, **api**, **ui**,
+   **sessao** (não dependem de ninguém), depois **cliente**, **tarefa**,
+   **documento**, **notificacao**, **atendimento**, **grupo**, **processo**.
+   Comentário viaja colado com o tipo (regra 9). Referência entre domínios
+   vira `import type` explícito, na direção decidida.
+3. `index.ts` vira os reexports.
+4. A prova: `--antes` com as duas cópias de `/tmp`, `--depois` com todos os
+   arquivos de `src/types/`, dá `OK: 115 declarações idênticas` (87 + 28;
+   medido: não há `const` nem função de topo nos dois arquivos). `yarn
+   typecheck`, `yarn lint`, `yarn build`, `yarn test`: verdes, **1.191 + os
+   testes novos**.
 5. README, `CONTEXT.md` (regra e as duas citações), guarda novo. Commit.
 6. Sem Chrome: tipo não desenha nada. Merge após revisão; a Vercel publica;
-   `verificar-deploy-em-producao.mjs` confirma que a tela é a mesma.
+   `verificar-deploy-em-producao.mjs` confere os rótulos e marcas das telas
+   que ele cobre no build publicado -- é o que o projeto já usa depois de
+   todo deploy, e não uma prova de igualdade da tela inteira.
 
 ## Fase 2 -- os seis componentes com mais de 250 linhas de código
 
@@ -239,18 +264,25 @@ lendo o arquivo:
   o estado é pouco (2 `useState`, 3 `useMemo`).
 - **ModalDeTarefa**, **ModalDeDocumento** e **EditarMembroForm** têm de 6 a 8
   `useState` e uma ou duas mutações: o corte natural é um hook de formulário
-  ao lado do componente (`components/ModalDeTarefa/useFormularioDeTarefa.ts`,
-  etc.), no precedente de `pages/ProcessosPage/hooks/useFiltrosProcessos.ts`,
-  deixando o `index.tsx` com o JSX e o hook com o estado e as mutações.
+  ao lado do componente (**components/ModalDeTarefa/useFormularioDeTarefa.ts**,
+  e assim por diante), no precedente de `useFiltrosProcessos.ts` em
+  `pages/ProcessosPage/hooks/`, deixando o `index.tsx` com o JSX e o hook com
+  o estado e as mutações.
 - **KanbanPage** tem cinco funções internas e oito hooks: o corte é por
   responsabilidade (arrastar, criar coluna, mover cartão), cada uma virando
   hook em `pages/KanbanPage/hooks/` -- a pasta já existe com
   `useTarefasDoQuadro.ts`.
 - **HistoricoPage** usa oito hooks e tem 185 linhas de JSX: o candidato é a
   mutação do link profundo (`historicoDoProcesso` + abrir o envio) virar
-  `pages/HistoricoPage/hooks/useLinkProfundoDoHistorico.ts`, e o cabeçalho
+  **pages/HistoricoPage/hooks/useLinkProfundoDoHistorico.ts**, e o cabeçalho
   de filtros virar componente de página, como Atendimentos e Processos já
   fizeram (`CabecalhoAtendimentos`, `CabecalhoProcessos`).
+  ⚠️ **Pré-requisito medido**: o roteiro em Chrome desta tela,
+  `verificar-filtros-do-historico.mjs`, NÃO roda de volume limpo -- o
+  cabeçalho dele manda rodar uma semente que ficou num scratchpad e não está
+  no repositório. Ele ficou fora da bateria de 04/09/2026 por isso. Antes de
+  cortar a HistoricoPage, a semente vira `scripts/offline/` na API e o
+  roteiro entra na bateria.
 
 ⚠️ **Nenhum desses cortes está decidido.** Cada um tem uma seção "O que foi
 medido" na execução, com o arquivo lido, e a decisão pode ser "não corta":
@@ -265,9 +297,10 @@ mecânica não alcança, e é o único caso deste plano em que isso acontece.
 Aqui valem as outras três: os testes do componente (2 a 3 arquivos cada,
 medido por grep), os roteiros em Chrome que passam pela tela
 (`verificar-ponta-a-ponta`, `verificar-abas`, `verificar-documentos`,
-`verificar-responsaveis`, `verificar-importar-por-oab`, `verificar-filtros-do-historico`,
-`verificar-agenda-sem-quadros`), e a conferência de produção. Por isso esta
-fase é a que mais custa e vem depois da Fase 1, que é mecânica.
+`verificar-responsaveis`, `verificar-importar-por-oab`,
+`verificar-agenda-sem-quadros`, e `verificar-filtros-do-historico` depois do
+pré-requisito acima), e a conferência de produção. Por isso esta fase é a
+que mais custa e vem depois da Fase 1, que é mecânica.
 
 ### Ordem de execução
 
@@ -333,9 +366,9 @@ menos um bloco por arquivo não vazio, e centenas na soma).
 ### Os grupos (um por branch)
 
 1. **Os seis da Fase 2 e `types/`** -- que acabaram de ser lidos.
-2. **Páginas**: os 22 `pages/*/index.tsx` e os componentes de página.
-3. **`components/`**: as 69 pastas.
-4. **`hooks/`, `utils/`, `services/`, `constants/`, `contexts/`, `routes/`, `theme/`** -- e a lista **JA_LIMPOS** dá lugar a `src/` inteiro.
+2. **Páginas**: os 21 `pages/*/index.tsx`, com os componentes e hooks de página.
+3. **`components/`**: as 68 pastas.
+4. **`hooks/`, `utils/`, `services/`, `constants/`, `contexts/`, `routes/`, `theme/`** -- e a lista **JA_LIMPOS** dá lugar a `src/` inteiro, fora `*.test.*`, `*.d.ts` e `test/setup.ts`, que não são prosa do produto.
 
 Cada grupo: `git show main:` de cada arquivo em `/tmp`; reescrita bloco a
 bloco; `conferirMovimentacao.mjs` dá `OK` (prosa não é declaração);
@@ -355,6 +388,32 @@ desenha. Merge após revisão.
 - **Renomear componentes** para "melhorar o nome": o guarda da API lê os
   `.md` daqui e cada rename custa citação nos dois repositórios. Só o nome
   que a mudança de lugar exige (regra 2).
+
+## Achados no caminho (fora deste plano)
+
+- O README diz "702 testes em 66 arquivos" (linha 428); são 1.191 em 104.
+  `contagensDoReadme` só cobre componentes e páginas. Ou o número vira guarda,
+  ou sai do README -- a régua daquele guarda é que número em `.md` que só
+  envelhece não fica.
+- `verificar-filtros-do-historico.mjs` depende de uma semente que não está
+  no repositório (ver Fase 2).
+
+## O que mudou de versão para versão, e por quê
+
+**v2 (05/09/2026)**, depois da auditoria da v1 em quinze aspectos, cada um
+remedido: 194 importadores eram 161 (texto contava os `./types` de página);
+alcance por texto virou alcance por import; 69/22 pastas eram 68/21 (o
+`index.ts` entrava na conta); 384 arquivos eram 383 (o `.d.ts`); 1.876 blocos
+eram 2.013 (as sequências de `//` não entravam); os comandos passaram a ser
+os do `package.json`; `--modulos` saiu da prova (não se aplica ao front);
+`yarn build` entrou na Fase 1; o precedente de hooks de página era três e
+são sete; nomes de arquivo futuros ficaram em negrito por causa do guarda da
+API; `verificar-filtros-do-historico` ganhou o pré-requisito da semente; a
+frase sobre `verificar-deploy-em-producao` deixou de prometer "a tela é a
+mesma"; o guarda de prosa exclui testes, `.d.ts` e o setup. Conferido de
+novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
+compila sob as opções do projeto; o `printer` do TypeScript apaga o
+`{/* */}` do JSX com `removeComments`.
 
 ## Estimativa, medida contra o irmão
 
