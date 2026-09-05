@@ -377,6 +377,13 @@ src/
 
 1. **Componente e página viram PASTA com `index.tsx`.** Tudo o mais --
    constante, tipo, helper, hook -- é arquivo solto, nunca pasta com índice.
+   ⚠️ A única exceção é `src/types/` (05/09/2026): é um PACOTE, um arquivo
+   por domínio (`processo.ts`, `grupo.ts`, `sessao.ts`...) e um `index.ts`
+   que só reexporta (`export type * from`). Quem importa continua
+   escrevendo `from "../types"`; quem declara escolhe o arquivo pelo
+   domínio. É o mesmo desenho e a mesma razão de `domain/entities/` na
+   API. Guardado por `tiposDoPacote.test.ts`: só reexport no índice, sem
+   ciclo entre os arquivos, e o total de tipos afirmado por contagem.
 2. **Alcance decide o destino.** Serviu a mais de uma página? Sobe pra
    `types/`, `constants/`, `utils/` ou `hooks/`. É de uma página só? Fica na
    pasta dela, como `constants.ts`, `types.ts` e helpers soltos ao lado do
@@ -2282,7 +2289,7 @@ procura no canto.
 
 ### `subgrupos_notificados` tem TRÊS estados, não dois
 
-O campo é `string[] | undefined`, e o próprio `types/index.ts` documenta o
+O campo é `string[] | undefined`, e o próprio `types/processo.ts` documenta o
 gêmeo com a medição junto: *"26/08/2026 sobre dado de produção: 9 de 73.
 Ausente em resposta de API anterior; quem lê trata `undefined` como 'não sei,
 não oferece'"*.
@@ -2524,7 +2531,7 @@ com nada. A medida saiu de um clone posto no `body` da própria demo.
 
 | o quê | onde |
 |---|---|
-| `EstadoDoAchado` | `types/index.ts` — vocabulário de mais de um dono |
+| `EstadoDoAchado` | `types/processo.ts` — vocabulário de mais de um dono |
 | `estadoDoAchado`, `etiquetaDoAchado`, `selecionaveis`, `preSelecionados`, `concordar` | `utils/importacao.ts` |
 | `ESTILO_DE_LINK`, `TONS_DO_CARTAO_DE_RESUMO`, `CORES_DA_ETIQUETA_DE_SITUACAO`, `COLUNAS_DA_PREVIA` | `pages/ProcessosPage/constants.ts` |
 | `AvisoDaImportacao`, `CartaoDeResumo`, `EtiquetaDeSituacao` | pasta própria em `components/` da página |

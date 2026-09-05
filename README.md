@@ -719,9 +719,12 @@ src/
     index.tsx               -- o mapa de rotas
     Rota*.tsx               -- rotas com casca própria (Login, Raiz, Tarefa, Histórico…)
 
-  types/                    -- todo tipo de alcance global
-    index.ts                -- domínio + os tipos compartilhados de UI
+  types/                    -- todo tipo de alcance global, um arquivo por domínio
+    index.ts                -- só reexporta os arquivos de domínio (`export type *`)
+    sessao.ts, grupo.ts, processo.ts, cliente.ts, tarefa.ts, atendimento.ts,
+    documento.ts, notificacao.ts, ui.ts, api.ts, url.ts
     respostas.ts            -- os envelopes que cada rota da API devolve
+    requisicoes.ts          -- os corpos que as chamadas mandam
   constants/                -- arquivos soltos + index.ts que reexporta
     ambiente.ts             -- ÚNICO lugar que lê `import.meta.env`
     roles.ts, paginacao.ts, periodos.ts, select.ts, senha.ts, toast.ts…

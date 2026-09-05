@@ -122,7 +122,7 @@ export default function CartaoDoArquivo({
       <Flex align="center" justify="space-between" gap="16px" wrap="wrap">
         <Box minW="0">
           {/* O nome com que ele BAIXA, que não é necessariamente o título --
-              ver `types/index.ts`. Mostrá-lo aqui é o que impede a surpresa
+              ver `types/documento.ts`. Mostrá-lo aqui é o que impede a surpresa
               de renomear o título e receber outro nome no download. */}
           <Text fontSize="13px" fontWeight="700" color="fg" wordBreak="break-all">
             {documento.nome_arquivo || "—"}

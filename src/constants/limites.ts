@@ -42,7 +42,7 @@ export const TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA = 512;
 /** Título de um DOCUMENTO -- como ele se chama na lista.
  *
  * ⚠️ Não confundir com o NOME DO ARQUIVO, que é outro campo e não se edita:
- * ele é o nome com que o arquivo baixa. Ver `types/index.ts`. */
+ * ele é o nome com que o arquivo baixa. Ver `types/documento.ts`. */
 export const TAMANHO_MAXIMO_DO_TITULO_DE_DOCUMENTO = 512;
 
 /** Descrição de um documento -- as duas linhas embaixo do título na lista. */
