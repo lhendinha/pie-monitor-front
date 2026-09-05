@@ -1,6 +1,7 @@
 /** O filtro por subgrupo em Atendimentos e Documentos, em Chrome de verdade.
  *
  *   1) cd ../api && yarn offline
+ *      .venv/bin/python scripts/offline/semear_filtro_de_subgrupo.py
  *   2) VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
  *        yarn dev --port 5174 --strictPort
  *   3) node scripts/verificar-filtro-de-subgrupo.mjs
@@ -19,7 +20,10 @@ import { chromium } from "playwright";
 const APP = "http://localhost:5174";
 const CONTA = { email: "chefe@local.test", senha: "Senha!Local1" };
 /** Subgrupo que tem conteúdo nas DUAS telas -- ver o aviso do cabeçalho. */
-const SUBGRUPO_COM_CONTEUDO = "Resumo";
+/* O subgrupo que `semear_filtro_de_subgrupo.py` cria com UM atendimento e UM
+   documento -- e a semente garante que exista conteúdo FORA dele também, senão
+   "filtrou" e "não filtrou" dariam a mesma contagem. */
+const SUBGRUPO_COM_CONTEUDO = "A Filtro";
 
 const navegador = await chromium.launch({ channel: "chrome", headless: false, slowMo: 40 });
 const pagina = await (await navegador.newContext({ viewport: { width: 1500, height: 980 } })).newPage();
@@ -74,10 +78,17 @@ async function conferirTela(rota, nome) {
 
   // 🔴 O clique de verdade -- é isto que o jsdom não prova.
   await pilula.click();
-  const alvo = pagina.getByRole("option", { name: SUBGRUPO_COM_CONTEUDO });
+  /* ⚠️ Nome EXATO: "A Filtro" é substring de nada, mas a régua vale para
+     qualquer nome que um dia contenha outro. E a pílula lista só a primeira
+     página (50) em ordem alfabética, sem busca -- daí o nome da semente. */
+  const alvo = pagina.getByRole("option", { name: SUBGRUPO_COM_CONTEUDO, exact: true });
   await alvo.waitFor({ timeout: 5000 });
   await alvo.click();
-  await pagina.waitForTimeout(1200);
+  /* Espera a URL mudar, e não um tempo fixo: com a lista grande, 1,2s não
+     bastavam para a escolha chegar à URL e a lista ser relida. */
+  await pagina.waitForURL((u) => u.searchParams.has("subgrupo"), { timeout: 8000 }).catch(() => {});
+  await pagina.waitForLoadState("networkidle");
+  await pagina.waitForTimeout(400);
 
   const depois = await mostrando();
   const url = new URL(pagina.url());

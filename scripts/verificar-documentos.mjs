@@ -290,7 +290,11 @@ conferir(
 );
 await dialogo.getByRole("button", { name: /Excluir/ }).click();
 await pagina.getByRole("heading", { name: "Documentos" }).waitFor();
-// De novo: espera a lista CHEGAR antes de afirmar que algo não está nela.
+/* Espera o item SUMIR, e não a lista chegar: a lista vem do cache do React
+   Query e mostra o estado anterior até a releitura voltar -- esperar por
+   outro título já presente nos dois estados contava o excluído ainda na tela
+   e dava falso negativo com a exclusão feita (a API já não o listava). */
+await pagina.getByText("peticao-de-teste.pdf").waitFor({ state: "detached", timeout: 15_000 }).catch(() => {});
 await pagina.getByText("peticao-inicial-assinada.pdf").waitFor({ timeout: 15_000 });
 conferir(
   (await pagina.getByText("peticao-de-teste.pdf").count()) === 0,

@@ -85,4 +85,11 @@ console.log(`     mostra o BETA (escritório novo):   ${agoraBeta ? "ok" : "🔴
 console.log(`     continua logada: ${p.url().includes("/login") ? "🔴 foi deslogada" : "ok"}`);
 console.log(`  5) ${erros.length ? "ERROS: " + [...new Set(erros)].join(" | ") : "sem erros no console"}`);
 await p.waitForTimeout(1500);
+// 6) devolve a conta ao Alfa: o roteiro muda estado de verdade, e deixar a
+//    pessoa no Beta quebra os roteiros seguintes que a usam como `admin` do
+//    Alfa (e a saída do subgrupo já passou o acervo dela ao sucessor).
+await fetch(`${API}/grupos/membros/movida@local.test`, { method: "PATCH",
+  headers: { "Content-Type": "application/json", Authorization: `Bearer ${chefe.access_token}` },
+  body: JSON.stringify({ apelido: "Ana Movida", grupo_id: "g-alfa", subgrupos: ["sub-g-alfa"] }) });
+console.log("  6) devolvida ao ALFA (estado como antes do roteiro)");
 await n.close();

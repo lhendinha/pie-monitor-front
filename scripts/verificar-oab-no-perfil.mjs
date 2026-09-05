@@ -1,9 +1,14 @@
 /** A inscrição da OAB no perfil -- em Chrome de verdade.
  *
  *   1) cd ../api && yarn offline
+ *      .venv/bin/python scripts/offline/semear_titular_da_oab.py
  *   2) VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
  *        yarn dev --port 5174
  *   3) node scripts/verificar-oab-no-perfil.mjs
+ *
+ * 🔴 A semente é obrigatória desde a régua de titularidade: gravar `148502/MG`
+ * no perfil só passa se o nome da conta for o do titular no tribunal, e a
+ * semente busca esse nome no PJe na hora (não fica no repositório).
  *
  * 🔴 O que só Chrome responde, e que jsdom deu como aprovado:
  *
