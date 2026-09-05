@@ -102,7 +102,7 @@ export default function AgendaPage() {
        "fam" fazia a agenda passar a mostrar só Família -- sem ninguém ter
        aplicado nada. */
     : subgrupos.primeiraPagina.map((o: OpcaoDeSelect) => o.value);
-  /* 🔴 Aqui existia `useQuadrosDosSubgrupos` -- 96 linhas e UMA REQUISIÇÃO
+  /* 🔴 Aqui existia o hook useQuadrosDosSubgrupos (removido) -- 96 linhas e UMA REQUISIÇÃO
      POR SUBGRUPO exibido, só pra saber o nome da coluna e se a tarefa estava
      concluída. Hoje isso vem NA tarefa (`coluna_nome`, `esta_concluida`),
      resolvido pelo servidor.
