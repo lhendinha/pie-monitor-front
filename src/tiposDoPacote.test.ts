@@ -17,7 +17,7 @@ const PASTA = join(process.cwd(), "src/types");
 /** Os envelopes e corpos das rotas ficam fora do índice de propósito: quem
  * os usa importa `types/respostas` e `types/requisicoes` pelo caminho. */
 const FORA_DO_INDICE = new Set(["index.ts", "respostas.ts", "requisicoes.ts"]);
-const TIPOS_NO_PACOTE = 87;
+const TIPOS_NO_PACOTE = 88;
 
 const dominios = readdirSync(PASTA)
   .filter((a) => a.endsWith(".ts") && !FORA_DO_INDICE.has(a))

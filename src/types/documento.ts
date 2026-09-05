@@ -92,3 +92,11 @@ export interface CamposDeDocumento {
   cliente_ids?: string[];
   responsavel_id?: string | null;
 }
+
+/** Clientes já escolhidos ao abrir o modal de documento, com os nomes: a
+ * etiqueta mostra nome, e a busca do campo não roda sozinha pra
+ * descobri-lo. */
+export interface ClientesIniciaisDoDocumento {
+  ids: string[];
+  nomes: Map<string, string>;
+}
