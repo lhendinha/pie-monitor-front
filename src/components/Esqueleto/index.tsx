@@ -4,12 +4,11 @@ import type { EsqueletoProps } from "./types";
 /** Espaço reservado enquanto os dados carregam.
  *
  * Usa o `Skeleton` do Chakra por baixo -- ele já resolve a animação e o
- * `prefers-reduced-motion`, que a versão anterior tratava à mão.
+ * `prefers-reduced-motion`.
  *
  * O artifact não desenha estado de carregamento (é uma demo estática), por
  * isso as medidas vêm do que ele carrega: barras da altura de uma linha de
- * tabela, no raio e na cor de borda do sistema. A versão antiga usava o
- * creme da paleta pré-Argos (`--paper-dim`), e destoava de tudo.
+ * tabela, no raio e na cor de borda do sistema.
  */
 export default function Esqueleto({ linhas = 3, altura = "56px" }: EsqueletoProps) {
   return (

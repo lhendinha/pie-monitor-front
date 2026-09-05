@@ -86,8 +86,7 @@ export function Select({
    *
    * ⚠️ Só no remoto. As opções LOCAIS (o "Sem responsável" do filtro de
    * pessoas, o "Nenhuma" dos campos de fase) não vieram dessa consulta e não
-   * têm por que sumir com ela -- foi o defeito da primeira versão, que
-   * esvaziava tudo. O aviso de falha convive com o que sobrou; ver
+   * têm por que sumir com ela. O aviso de falha convive com o que sobrou; ver
    * `MenuDeFiltro`. */
   /* No padrão quem filtra é a lib (`filterOption` abaixo), então ela recebe
      a lista inteira; no chip o filtro já foi aplicado aqui. */
@@ -124,8 +123,7 @@ export function Select({
          só renderiza o input quando `isSearchable`, e com ele desabilitado
          não renderiza nada -- some o `combobox` de que teclado e leitor de
          tela dependem para saber que existe um controle ali, esperando.
-         Achado ao ligar a busca por padrão (28/08/2026); o teste
-         "fica TRAVADO enquanto carrega" é quem cobra.
+         ➡️ O teste "fica TRAVADO enquanto carrega" é quem cobra.
 
          ⚠️ E não se perde nada: não há o que filtrar numa lista que ainda
          não chegou. */

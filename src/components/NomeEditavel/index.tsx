@@ -61,15 +61,12 @@ export default function NomeEditavel({
 
   /* ⚠️ Depende só de `falhou`, e guarda o que foi ENVIADO.
    *
-   * 🔴 A primeira versão tinha `rascunho` nas dependências e gravava
-   * `rascunho.trim()`. Enquanto `falhou` fosse true, cada TECLA regravava o
-   * recusado com o que estava sendo digitado -- e aí `confirmar()` sempre
-   * caía no ramo de cancelar. Depois de um único 409, Enter e clique fora
-   * DESCARTAVAM o rename em silêncio, em todas as linhas, pra sempre.
-   * Consertar o laço quebrou a funcionalidade inteira.
-   *
-   * O que precisa ser lembrado é o texto que o servidor recusou, não o que
-   * a pessoa está escrevendo agora. */
+   * 🔴 NÃO depende de `rascunho`: com ele nas dependências, enquanto `falhou`
+   * fosse true cada TECLA regravaria o recusado com o que está sendo
+   * digitado -- e `confirmar()` cairia sempre no ramo de cancelar. Depois de
+   * um único 409, Enter e clique fora descartariam o rename em silêncio, em
+   * todas as linhas, pra sempre. O que precisa ser lembrado é o texto que o
+   * servidor recusou, não o que a pessoa está escrevendo agora. */
   useEffect(() => {
     if (falhou) recusadoRef.current = enviadoRef.current;
   }, [falhou]);
@@ -77,12 +74,12 @@ export default function NomeEditavel({
   /** `"enter"` é gesto EXPLÍCITO; `"blur"` é ambíguo -- e a diferença
    * decide se o texto já recusado é reenviado.
    *
-   * 🔴 A versão anterior aplicava a guarda aos dois. `falhou` vem de
-   * `mutation.isError`, que é true pra QUALQUER falha -- não só o 409 de
-   * nome duplicado pro qual a guarda foi escrita. Depois de um blip de
-   * rede, apertar Enter com o mesmo texto caía no ramo de cancelar: nenhum
-   * pedido, nenhuma mensagem, e o nome ficava inalcançável pra sempre a
-   * menos que a pessoa mudasse o texto.
+   * 🔴 A guarda vale SÓ pro blur. `falhou` vem de `mutation.isError`, que é
+   * true pra QUALQUER falha -- não só o 409 de nome duplicado pro qual a
+   * guarda foi escrita. Aplicada ao Enter, um blip de rede faria apertar
+   * Enter com o mesmo texto cair no ramo de cancelar: nenhum pedido, nenhuma
+   * mensagem, e o nome inalcançável pra sempre a menos que a pessoa mudasse
+   * o texto.
    *
    * Separando por origem, não é preciso classificar o erro: sair do campo
    * não reenvia (era daí que vinha o laço), e Enter sempre reenvia, porque

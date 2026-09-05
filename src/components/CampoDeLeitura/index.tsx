@@ -13,9 +13,8 @@ import type { CampoDeLeituraProps } from "./types";
  * controle nenhum -- um `<label for>` apontando pra nada é rótulo que não
  * rotula.
  *
- * ⚠️ Morava dentro de `HistoricoPage`, onde nasceu. Subiu pra cá em
- * 26/08/2026, quando o modal de movimentação do detalhe do processo passou
- * a precisar do mesmo par rótulo/valor: o alcance deixou de ser uma página.
+ * Mora em `components/` porque o Histórico e o detalhe do processo mostram o
+ * mesmo par rótulo/valor: o alcance é mais de uma página.
  */
 export default function CampoDeLeitura({ rotulo, children }: CampoDeLeituraProps) {
   return (

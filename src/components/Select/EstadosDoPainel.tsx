@@ -62,8 +62,8 @@ export function FalhaDoPainel({ onTentarDeNovo }: { onTentarDeNovo: () => void }
 
 /** A faixa que aparece SOBRE a lista anterior enquanto a próxima vem.
  *
- * 🔴 A primeira versão esvaziava a lista durante a espera, e a cada tecla o
- * painel piscava do conteúdo pro vazio e de volta. Manter o resultado
+ * 🔴 Esmaece o resultado anterior em vez de esvaziar a lista: esvaziada, a
+ * cada tecla o painel pisca do conteúdo pro vazio e de volta. Manter o
  * anterior esmaecido diz "isto aqui está velho" sem tirar da tela a única
  * referência que a pessoa tem -- é o mesmo raciocínio do
  * `keepPreviousData` que a tabela usa pra não remontar entre páginas.

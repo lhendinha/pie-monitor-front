@@ -146,8 +146,8 @@ export interface SelectProps {
    * ⚠️ Com `onBuscar` o controle NÃO é travado: ali é ABRIR que dispara a
    * busca, e uma pílula travada enquanto carrega nunca sairia do lugar. */
   carregando?: boolean;
-  /** Digitar para filtrar. **Ligado por padrão** (28/08/2026): é o
-   * comportamento esperado de qualquer seletor do sistema, e listas curtas
+  /** Digitar para filtrar. **Ligado por padrão**: é o comportamento esperado
+   * de qualquer seletor do sistema, e listas curtas
    * hoje crescem amanhã -- fase e situação são cadastráveis, subgrupo e
    * pessoa também.
    *

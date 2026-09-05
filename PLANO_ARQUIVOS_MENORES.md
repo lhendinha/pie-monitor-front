@@ -454,7 +454,13 @@ sob o título *"Histórias que saíram dos comentários"*, por área.
 
 ## Fase 3 -- prosa: a decisão fica, o diário sai
 
-**Status: grupos 1 e 2 EXECUTADOS em 05/09/2026.** Grupo 2 (branch
+**Status: grupos 1, 2 e 3 EXECUTADOS em 05/09/2026.** Grupo 3 (branch
+`fase-3-prosa-grupo-3`, as 68 pastas de `components/`, 188 arquivos): 17
+arquivos com defeito -- dois blocos com dois ou três 🔴, oito datas soltas,
+onze "a primeira versão"/"a versão anterior" -- e nove histórias no
+`CONTEXT.md`. O bloco duplicado de `Select` e `MultiSelect` ficou num só, com
+o irmão apontando. `JA_LIMPOS` cobre `components/` inteiro; prova por
+arquivo `OK` nos 188; suíte com **1.644** testes. Grupo 2 (branch
 `fase-3-prosa-grupo-2`, as 21 páginas com componentes e hooks, 211
 arquivos): a varredura achou 28 arquivos com defeito -- 10 blocos com dois
 ou três 🔴, 19 datas soltas, dois `eslint-disable` datados, um docstring

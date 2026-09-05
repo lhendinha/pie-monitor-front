@@ -44,13 +44,12 @@ export function MenuDeFiltro(props: MenuProps<OpcaoDeSelect, boolean, GroupBase<
         </Box>
       )}
 
-      {/* 🔴 O aviso de falha CONVIVE com a lista, não a substitui.
-          A primeira versão esvaziava as opções pra abrir espaço pro aviso --
-          e levava junto as que não vieram do servidor: no filtro de pessoas,
-          "Sem responsável" desaparecia porque a lista de gente falhou. Uma
-          opção local não tem por que sumir por causa de uma consulta remota.
-          Quando não há mesmo nada, o aviso fica sozinho, que é o caso
-          original. */}
+      {/* 🔴 O aviso de falha CONVIVE com a lista, não a substitui. Esvaziar as
+          opções pra abrir espaço pro aviso levaria junto as que não vieram
+          do servidor: no filtro de pessoas, "Sem responsável" sumiria porque
+          a lista de gente falhou. Uma opção local não tem por que sumir por
+          causa de uma consulta remota. Quando não há mesmo nada, o aviso fica
+          sozinho. */}
       {extras.erro && extras.onTentarDeNovo && (
         <FalhaDoPainel onTentarDeNovo={extras.onTentarDeNovo} />
       )}

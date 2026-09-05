@@ -65,11 +65,10 @@ export default function CamposDeEndereco({
           app é asterisco vermelho no obrigatório e NADA no resto, e o bloco
           é opcional inteiro.
 
-          ⚠️ Até 01/09/2026 o título dizia "Endereço (opcional)", e a razão
-          era COMPARATIVA: os campos de contato do cliente diziam "(opcional)"
-          um por um, então um bloco calado ao lado deles lia como obrigatório.
-          Esses "(opcional)" saíram no mesmo commit, e a comparação que
-          sustentava a exceção deixou de existir. */}
+          ⚠️ Nem no título do bloco: a única razão para um "Endereço
+          (opcional)" seria COMPARATIVA -- um bloco calado ao lado de campos
+          que digam "(opcional)" um por um lê como obrigatório -- e os campos
+          de contato do cliente também não dizem. */}
       <RotuloDeSecao>Endereço</RotuloDeSecao>
 
       <LinhaDeCampos>
