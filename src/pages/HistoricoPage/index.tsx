@@ -4,12 +4,11 @@ import { useEstadoNaUrl } from "../../hooks/useEstadoNaUrl";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { usePaginacaoDaLista } from "../../hooks/usePaginacaoDaLista";
 import { useParametrosDaUrl } from "../../hooks/useParametrosDaUrl";
-import { useEffect, useState } from "react";
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { Botao, CabecalhoDePagina, CampoDeBusca, CartaoDeTabela, AreaAtualizando, EstadoVazio, EstadoDeErro, Esqueleto, IconePlus, Modal, ModalDeTarefa, Pagination } from "../../components";
-import { useToast } from "../../contexts/ToastContext";
-import { ApiError, historicoDoProcesso, listarHistorico } from "../../services";
+import { listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { useNomesDeSubgruposVisiveis } from "../../hooks/useNomeDeSubgrupo";
@@ -18,6 +17,7 @@ import { contar, mascararNumeroProcesso } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
 import FiltroDeMenu from "./components/FiltroDeMenu";
 import ItemDeHistorico from "./components/ItemDeHistorico";
+import { useLinkProfundoDoHistorico } from "./hooks/useLinkProfundoDoHistorico";
 import {
   FILTROS_DE_FALHA,
   FILTROS_DE_PERIODO,
@@ -25,12 +25,7 @@ import {
   TIPO_DE_ENVIO_PADRAO,
 } from "./constants";
 import type { DeepLinkHistorico, HistoricoItem } from "../../types";
-import type { AlvoDoDeepLink } from "./types";
-import type {
-  RespostaDeHistorico,
-  RespostaDeHistoricoPaginada,
-  RespostaDeTotal,
-} from "../../types/respostas";
+import type { RespostaDeHistoricoPaginada, RespostaDeTotal } from "../../types/respostas";
 
 interface HistoricoPageProps {
   deepLink?: DeepLinkHistorico | null;
@@ -137,8 +132,6 @@ export default function HistoricoPage({
   const notificados = itemAberto?.subgrupos_notificados;
   const subgrupoDaTarefa =
     itemAberto && !itemAberto.tarefa_id && notificados?.length === 1 ? notificados[0] : null;
-  const toast = useToast();
-
   const query = useQuery<RespostaDeHistoricoPaginada>({
     queryKey: qk.historico({ pagina, tamanhoPagina, tipoEnvio, apenasComFalha, dias, subgrupoId, numeroProcesso }),
     /* Mantém a página anterior na tela enquanto a nova vem. Sem isto a
@@ -165,46 +158,7 @@ export default function HistoricoPage({
   });
   const totalSemFiltro = totalQuery.data?.total ?? 0;
 
-  /** Resolução do link do e-mail -- SEPARADA da consulta paginada, pra nunca
-   * bloquear nem substituir a lista principal. Busca todos os registros
-   * daquele processo (não a página atual) e acha o que bate com o
-   * `comunicacao_id` do link.
-   *
-   * É uma ação de uma vez só, e não um dado declarativo de render, por isso
-   * é mutation e não query -- e as variáveis vão como argumento do `mutate`
-   * (sem fechar sobre a prop) pra não pegar um `deepLink` desatualizado se
-   * ele mudar antes de a resposta chegar. */
-  const deepLinkMutation = useMutation({
-    /* 🔴 `historicoDoProcesso`, e NÃO `listarHistorico({ numeroProcesso })`
-       (03/09/2026). A segunda passou a PAGINAR quando o número virou filtro
-       de tela -- e este `find` procura no conjunto inteiro. Com a paginada,
-       uma notificação a partir do 11º item devolveria "não foi possível
-       localizar", que é mentira: ela existe, só não estava na página. */
-    mutationFn: (variaveis: AlvoDoDeepLink) =>
-      historicoDoProcesso(variaveis.processo) as Promise<RespostaDeHistorico>,
-    onSuccess: (d, variaveis) => {
-      const encontrado = (d.historico || []).find(
-        (h) => String(h.comunicacao_id) === variaveis.comunicacaoId,
-      );
-      if (encontrado) setItemAberto(encontrado);
-      else toast.erro("Não foi possível localizar a notificação do link recebido.");
-    },
-    onError: (err) => {
-      if (!(err instanceof ApiError && err.status === 401)) {
-        toast.erro("Não foi possível carregar os detalhes do link recebido.");
-      }
-    },
-    onSettled: () => onDeepLinkConsumido?.(),
-  });
-
-  useEffect(() => {
-    if (!deepLink) return;
-    deepLinkMutation.mutate({ processo: deepLink.processo, comunicacaoId: deepLink.comunicacaoId });
-    // Deps proposital: só `deepLink`. É resolvido uma vez (o App zera o
-    // estado depois, via `onDeepLinkConsumido`, pra não reabrir sozinho numa
-    // próxima visita), não a cada mudança de toast/mutation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deepLink]);
+  const { resolvendo: resolvendoLink } = useLinkProfundoDoHistorico(deepLink, setItemAberto, onDeepLinkConsumido);
 
   /* Voltar pra página 1 a cada filtro: estar na página 4 de um conjunto que
      acabou de encolher pra 2 páginas mostraria vazio sem motivo.
@@ -372,7 +326,7 @@ export default function HistoricoPage({
           3. AUSENTE: `subgrupos_notificados` é opcional, e registro anterior
              a 26/08/2026 não o tem (9 de 73 medidos em produção). `undefined`
              é "não sei", e não se oferece o que não se sabe. */}
-      {(itemAberto || deepLinkMutation.isPending) && (
+      {(itemAberto || resolvendoLink) && (
         <Modal
           descarte="semFormulario"
           titulo="Detalhes do envio"

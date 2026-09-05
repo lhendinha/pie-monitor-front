@@ -1,7 +1,7 @@
 /** Os dois filtros novos do Histórico, em Chrome de verdade.
  *
  *   1) cd ../api && yarn offline
- *   2) python <scratchpad>/semear_historico.py   -- ver o cenário abaixo
+ *   2) .venv/bin/python scripts/offline/semear_historico.py   -- na pasta api
  *   3) VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
  *        yarn dev --port 5174 --strictPort
  *   4) node scripts/verificar-filtros-do-historico.mjs
