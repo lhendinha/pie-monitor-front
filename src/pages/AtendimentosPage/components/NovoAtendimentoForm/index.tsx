@@ -9,7 +9,7 @@ import { criarAtendimento } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import CampoDeProcesso from "../CampoDeProcesso";
 import type { ProcessoEscolhido } from "../../types";
-import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
+import type { OpcoesBuscaveis } from "../../../../types";
 
 interface NovoAtendimentoFormProps {
   /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */

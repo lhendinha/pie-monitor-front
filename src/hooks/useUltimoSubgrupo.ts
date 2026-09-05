@@ -1,29 +1,6 @@
 import { useCallback, useState } from "react";
 
-/** O último subgrupo usado numa tela, lembrado entre visitas.
- *
- * 🔴 O padrão era `subgrupos[subgrupos.length - 1]`, e o comentário ao lado
- * dizia "o último da lista, que é o mais recente, que é o que costuma estar
- * em uso". Nenhuma das três afirmações se sustentava: a listagem passou a
- * vir em ordem ALFABÉTICA, então o último é o último do alfabeto; mesmo na
- * ordem antiga, "mais recente" não é "mais usado"; e quem trabalha num
- * subgrupo específico trocava a pílula toda vez que entrava na tela.
- *
- * Lembrar o que a pessoa escolheu acerta em quem tem rotina e não piora nada
- * pra quem não tem -- na primeira visita o comportamento é o mesmo de antes.
- *
- * ⚠️ Guarda o NOME junto do id. A pílula só carrega a primeira página de
- * subgrupos; sem o nome, quem trabalha num subgrupo fora dela reabriria a
- * tela com o id cru no rótulo.
- *
- * ⚠️ Uma memória POR TELA. O quadro escolhe um subgrupo e a agenda escolhe
- * vários -- e o que a pessoa quer ver num não diz o que ela quer ver no
- * outro.
- */
-interface SubgrupoLembrado {
-  id: string;
-  nome: string;
-}
+import type { SubgrupoLembrado } from "../types";
 
 /* ⚠️ `pje-monitor-` de propósito, mesmo o produto sendo Argos: é chave de
    `localStorage` já gravada nos navegadores. Trocar não migra, esquece --
@@ -45,6 +22,26 @@ function ler(chave: string): SubgrupoLembrado | null {
   }
 }
 
+/** O último subgrupo usado numa tela, lembrado entre visitas.
+ *
+ * 🔴 O padrão era `subgrupos[subgrupos.length - 1]`, e o comentário ao lado
+ * dizia "o último da lista, que é o mais recente, que é o que costuma estar
+ * em uso". Nenhuma das três afirmações se sustentava: a listagem passou a
+ * vir em ordem ALFABÉTICA, então o último é o último do alfabeto; mesmo na
+ * ordem antiga, "mais recente" não é "mais usado"; e quem trabalha num
+ * subgrupo específico trocava a pílula toda vez que entrava na tela.
+ *
+ * Lembrar o que a pessoa escolheu acerta em quem tem rotina e não piora nada
+ * pra quem não tem -- na primeira visita o comportamento é o mesmo de antes.
+ *
+ * ⚠️ Guarda o NOME junto do id. A pílula só carrega a primeira página de
+ * subgrupos; sem o nome, quem trabalha num subgrupo fora dela reabriria a
+ * tela com o id cru no rótulo.
+ *
+ * ⚠️ Uma memória POR TELA. O quadro escolhe um subgrupo e a agenda escolhe
+ * vários -- e o que a pessoa quer ver num não diz o que ela quer ver no
+ * outro.
+ */
 export function useUltimoSubgrupo(tela: "kanban" | "agenda") {
   const chave = PREFIXO + tela;
   const [lembrado, setLembrado] = useState<SubgrupoLembrado | null>(() => ler(chave));

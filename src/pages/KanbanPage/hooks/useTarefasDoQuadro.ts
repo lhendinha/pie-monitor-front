@@ -4,12 +4,7 @@ import { TETO_POR_PAGINA } from "../../../constants";
 import { listarTarefas } from "../../../services";
 import { qk } from "../../../services/queryKeys";
 import type { Tarefa } from "../../../types";
-
-interface Janela {
-  /** Vazias = "Todos os períodos", e aí vem o subgrupo inteiro. */
-  dataDe?: string;
-  dataAte?: string;
-}
+import type { JanelaDeDatasDoQuadro } from "../types";
 
 /** As tarefas que o quadro mostra: as do subgrupo, dentro da janela de
  * datas escolhida.
@@ -33,7 +28,7 @@ interface Janela {
  * dizendo "nenhum resultado" pra um cartão que existe. A tela ainda avisa
  * quando o vazio pode ser culpa da janela.
  */
-export function useTarefasDoQuadro(subgrupoId: string, janela: Janela) {
+export function useTarefasDoQuadro(subgrupoId: string, janela: JanelaDeDatasDoQuadro) {
   return useQuery<Tarefa[]>({
     queryKey: qk.tarefas({ subgrupoId, ...janela, quadro: true }),
     enabled: Boolean(subgrupoId),

@@ -20,11 +20,9 @@ import type { FiltrosDoQuadro } from "./types";
 import type { RespostaDoQuadro } from "../../types/respostas";
 import type { Tarefa } from "../../types";
 import type { TarefaDoLink } from "./types";
-import {
-  podeListarPessoas,
-  usePessoasBuscaveis,
-  useSubgruposBuscaveis,
-} from "../../hooks/useOpcoesBuscaveis";
+import { podeListarPessoas } from "../../utils/permissoes";
+import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { useUltimoSubgrupo } from "../../hooks/useUltimoSubgrupo";
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês

@@ -11,7 +11,8 @@ import { system } from "../theme";
 const mocks = vi.hoisted(() => ({ listarSubgrupos: vi.fn() }));
 vi.mock("../services", () => mocks);
 
-import { useNomeDeSubgrupo, useNomesDeSubgruposVisiveis } from "./useNomeDeSubgrupo";
+import { useNomeDeSubgrupo } from "./useNomeDeSubgrupo";
+import { useNomesDeSubgruposVisiveis } from "./useNomesDeSubgruposVisiveis";
 
 /** Os mesmos provedores de `renderComProviders`, na mesma ordem -- o hook
  *  chama `useToastOnQueryError`, que exige o `ToastProvider`. */

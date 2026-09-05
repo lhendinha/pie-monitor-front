@@ -17,23 +17,12 @@ import {
 } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { hojeISO, mascararNumeroProcesso } from "../../utils";
 
-import type { Tarefa, Vinculo, VinculosDeRegistro } from "../../types";
+import type { VinculosDeRegistro } from "../../types";
 import type { RespostaDeMembros, RespostaDoQuadro } from "../../types/respostas";
-
-/** As props de `ModalDeTarefa` que o formulário usa -- todas menos o nome
- * do subgrupo, que só a tela mostra. A explicação de cada uma está lá. */
-export interface OpcoesDoFormularioDeTarefa {
-  tarefa?: Tarefa | null;
-  subgrupoAtual: string;
-  colunaInicial?: string;
-  vinculoInicial?: Vinculo | null;
-  dataInicial?: string;
-  onSalvo: () => void;
-  onFechar: () => void;
-}
+import type { OpcoesDoFormularioDeTarefa } from "./types";
 
 export function useFormularioDeTarefa({
   tarefa,

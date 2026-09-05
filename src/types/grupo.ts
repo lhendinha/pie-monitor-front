@@ -167,3 +167,10 @@ export interface OpcoesListarSubgrupos {
    * inteira pra filtrar aqui. */
   busca?: string;
 }
+
+/** O último subgrupo usado numa tela, como `useUltimoSubgrupo` o guarda:
+ * o NOME vai junto porque a pílula só carrega a primeira página. */
+export interface SubgrupoLembrado {
+  id: string;
+  nome: string;
+}

@@ -7,7 +7,7 @@ import { IconeX } from "../Icons";
 import { ESPERA_DA_BUSCA_MS } from "../../constants/busca";
 import { Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
-import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useClientesBuscaveis } from "../../hooks/useClientesBuscaveis";
 import { OPCAO_LINHA } from "../../theme/painelFiltro";
 import { criarCliente, papelAtende } from "../../services";
 import { useToast } from "../../contexts/ToastContext";

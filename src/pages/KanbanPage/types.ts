@@ -48,3 +48,10 @@ export interface RenomearColuna {
   id: string;
   nome: string;
 }
+
+/** A janela de datas que o quadro pede ao servidor (`data_de`/`data_ate`). */
+export interface JanelaDeDatasDoQuadro {
+  /** Vazias = "Todos os períodos", e aí vem o subgrupo inteiro. */
+  dataDe?: string;
+  dataAte?: string;
+}

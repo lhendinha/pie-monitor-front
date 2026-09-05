@@ -539,7 +539,7 @@ describe("modo Atrasadas", () => {
     );
     /* ⚠️ Índice, não `.at(-1)`: o alvo do `tsc` deste projeto não tem
        `Array.prototype.at`, e o vitest transpila diferente -- passaria aqui
-       e quebraria no `yarn build`. Mesma armadilha do `useCatalogos.test`. */
+       e quebraria no `yarn build`. Mesma armadilha do `catalogos.test`. */
     const chamadas = mocks.listarTarefas.mock.calls;
     const [chamada] = chamadas[chamadas.length - 1];
     expect(chamada.dataDe, "a janela da visão não pode ir junto").toBeUndefined();

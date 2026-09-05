@@ -12,7 +12,7 @@ import Modal from "../Modal";
 import ModalDeConfirmacao from "../ModalDeConfirmacao";
 import { Select } from "../Select";
 import SeletorData from "../SeletorData";
-import { comOpcaoEscolhida } from "../../hooks/useOpcoesBuscaveis";
+import { comOpcaoEscolhida } from "../../utils/opcoesEscolhidas";
 import { PRIORIDADES, TAMANHO_MAXIMO_DO_TITULO_DE_TAREFA } from "../../constants";
 import VinculoDeRegistro from "../VinculoDeRegistro";
 import { useFormularioDeTarefa } from "./useFormularioDeTarefa";

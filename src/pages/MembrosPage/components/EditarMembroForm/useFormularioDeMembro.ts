@@ -17,19 +17,12 @@ import {
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { qk } from "../../../../services/queryKeys";
-import type { Membro, MembroEditavel, Papel } from "../../../../types";
+import type { MembroEditavel, Papel } from "../../../../types";
 import type {
   RespostaDeMembros,
   RespostaDeSubgrupos,
 } from "../../../../types/respostas";
-
-/** As props de `EditarMembroForm` que o formulário usa -- todas menos a
- * lista de grupos e a permissão de mover, que só a tela lê. */
-export interface OpcoesDoFormularioDeMembro {
-  membro: Membro;
-  onAtualizado: () => void;
-  onFechar: () => void;
-}
+import type { OpcoesDoFormularioDeMembro } from "./types";
 
 export function useFormularioDeMembro({ membro, onAtualizado, onFechar }: OpcoesDoFormularioDeMembro) {
   const grupoProprioId = getGrupoId() || "";

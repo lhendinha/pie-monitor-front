@@ -6,10 +6,10 @@ import {
   Select,
   SeletorDePeriodo,
 } from "../../../../components";
-import { comOpcaoEscolhida } from "../../../../hooks/useOpcoesBuscaveis";
+import { comOpcaoEscolhida } from "../../../../utils/opcoesEscolhidas";
 
 import type { FiltrosDoQuadro } from "../../types";
-import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
+import type { OpcoesBuscaveis } from "../../../../types";
 
 interface FiltrosDoKanbanProps {
   /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */

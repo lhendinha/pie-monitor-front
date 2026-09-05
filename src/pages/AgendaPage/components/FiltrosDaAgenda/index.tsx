@@ -1,11 +1,11 @@
 import { Flex } from "@chakra-ui/react";
 
 import { MultiSelect, Select } from "../../../../components";
-import { comOpcaoEscolhida, comOpcoesEscolhidas } from "../../../../hooks/useOpcoesBuscaveis";
+import { comOpcaoEscolhida, comOpcoesEscolhidas } from "../../../../utils/opcoesEscolhidas";
 import { PERIODOS_DA_AGENDA } from "../../constants";
 import SeletorDeVisao from "../SeletorDeVisao";
 import type { FiltrosDaAgenda, FiltrosDaAgenda as Filtros } from "../../types";
-import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
+import type { OpcoesBuscaveis } from "../../../../types";
 
 interface FiltrosDaAgendaProps {
   /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */

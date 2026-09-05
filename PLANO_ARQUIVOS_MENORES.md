@@ -294,6 +294,63 @@ medido" desta fase, como o irmão fez.
 
 ## Fase 2 -- os seis componentes com mais de 250 linhas de código
 
+**Status: EXECUTADA em 05/09/2026** (branch `fase-2-componentes-grandes`,
+um commit por componente, e um sétimo com as duas regras que a execução
+fez o usuário escrever). O que cada leitura decidiu:
+
+| componente | corte | antes -> depois (linhas) | prova |
+|---|---|---|---|
+| `ModalDeTarefa` | hook `useFormularioDeTarefa.ts` ao lado (estado, consultas, mutações, guarda de descarte) | 467 -> 281 + 285 | corpo movido com diff VAZIO contra o original; 11 testes iguais |
+| `EditarMembroForm` | hook `useFormularioDeMembro.ts` ao lado | 490 -> 273 + 296 | diff vazio; 27 testes iguais |
+| `PreviaDaImportacao` | dois componentes de página: `ResumoDaPrevia` (a grade de cartões) e `LinhaDaPrevia` (a linha da tabela); sem hook, o estado ficou | 408 -> 298 + 79 + 79 | 80 testes da página iguais |
+| `KanbanPage` | `hooks/useArrastarTarefa.ts` (sensores, mutação otimista, fim do arraste) e `hooks/useTarefaDoLink.ts` (busca direta + abertura única) | 460 -> 352 + 96 + 50 | duas linhas diferem: `onSettled` e `setTarefaAberta` viraram parâmetro; 59 testes iguais |
+| `ModalDeDocumento` | hook `useFormularioDeDocumento.ts` ao lado | 364 -> 240 + 210 | diff vazio; 22 testes iguais |
+| `HistoricoPage` | `hooks/useLinkProfundoDoHistorico.ts`; o cabeçalho de filtros NÃO virou componente (seriam onze props para 36 linhas de JSX, e a página já tinha 244 de código) | 419 -> 373 + 67 | uma linha difere (`setItemAberto` virou parâmetro); 45 testes iguais |
+
+Depois dos seis: **nenhum arquivo de `src/` passa de 250 linhas de código**
+(eram 5 pelo medidor; a tabela deste plano contava 6 porque a HistoricoPage
+tinha 244), e nove ficam entre 301 e 500 linhas totais, todos por prosa.
+
+O que a execução achou, e o que o usuário decidiu no caminho:
+
+- O pré-requisito da HistoricoPage virou `api/scripts/offline/semear_historico.py`
+  (branch `semente-do-historico` da API): dois subgrupos, dois processos,
+  cinco movimentações e um lembrete, na forma que o roteiro exige. O roteiro
+  aponta a semente e entrou na bateria.
+- `clientesIniciais` do `ModalDeDocumento` era objeto tipado inline nas
+  props; o hook precisava nomeá-lo e virou `ClientesIniciaisDoDocumento` em
+  `types/documento.ts`. O mesmo defeito existe em `progresso` de
+  `PreviaDaImportacao` -- registrado nos achados, não corrigido aqui.
+- 🔴 **Duas regras novas, dadas pelo usuário ao revisar os hooks** (regras 7
+  e 8 da seção 3 do `CONTEXT.md`): arquivo de hook não declara tipo, e tem
+  UM hook só. A varredura achou nove tipos em hooks (seis anteriores ao
+  plano e os três `OpcoesDoFormulario*` desta fase) e quatro arquivos com
+  mais de um hook. Todos movidos: os tipos para o `types.ts` da pasta ou
+  para `src/types/` (o pacote passou de 88 para 92: `OpcoesBuscaveis`,
+  `SubgrupoLembrado`, `EtapaDaImportacao`, `OpcoesDaConsultaDeCep`), com nome
+  revisto quando o antigo só fazia sentido dentro do arquivo; o antigo
+  useCatalogos virou `useTodosOsSubgrupos.ts`, `useOpcoesDeProcesso.ts` e
+  `useTodosOsMembros.ts`; o antigo useOpcoesBuscaveis virou
+  `useListaBuscavel.ts`, `useClientesBuscaveis.ts`, `useSubgruposBuscaveis.ts`,
+  `usePessoasBuscaveis.ts`, `utils/opcoesEscolhidas.ts` e `utils/permissoes.ts`;
+  `useNomesDeSubgruposVisiveis.ts` saiu de `useNomeDeSubgrupo.ts`;
+  `impedimentosDoSubgrupo.ts` saiu do hook da SubgruposPage. Guarda novo
+  **`hooksUmPorArquivo.test.ts`**, com a mutação embutida. Suíte: **1.206**
+  testes em 108 arquivos; `tsc`, `eslint` e `build` verdes.
+- **Bateria em Chrome de volume limpo (`yarn offline:limpar`), 05/09/2026**:
+  as doze sementes do README da API e os 20 roteiros offline de
+  `front/scripts/` -- todos passam. Três precisaram de conserto no PRÓPRIO
+  roteiro, nenhum no sistema: `verificar-filtros-do-historico` media a altura
+  das linhas na tela de abertura, onde os envios de `semear_resumo.py` (sem
+  órgão nem tipo) medem 98px contra 118px -- passou a medir na lista
+  filtrada pelo processo semeado; `verificar-ordenacao` esperava "Zuleica"
+  na primeira página de 10, e com 16 processos no volume ela é a 12ª -- abre
+  cada lista com `?tamanho=50`; `verificar-oab-no-perfil` recebia 400 do
+  `PATCH /me` porque `verificar-nome-do-autor` roda a própria semente e
+  devolve à conta o nome "Chefe Sousa" -- a semente do titular passa a vir
+  depois dele, escrito no README da API. `verificar-tela.mjs` aponta a porta
+  5173 (a do usuário) e fica fora da bateria.
+
 ### O que foi medido
 
 Linhas de código (sem prosa, sem vazias), linhas de JSX (do `return (` ao
@@ -448,8 +505,9 @@ desenha. Merge após revisão.
   `contagensDoReadme.test.ts` só cobre componentes e páginas. Ou o número vira guarda,
   ou sai do README -- a régua daquele guarda é que número em `.md` que só
   envelhece não fica.
-- `verificar-filtros-do-historico.mjs` depende de uma semente que não está
-  no repositório (ver Fase 2).
+- `progresso` de `PreviaDaImportacao` é objeto tipado inline nas props
+  (`{ feitos, total }`); `ProgressoDaImportacao` em `types/processo.ts` tem os
+  mesmos campos mais `tipo`. Nomear é trabalho de uma linha, fora deste plano.
 
 ## O que mudou de versão para versão, e por quê
 
@@ -467,6 +525,13 @@ mesma"; o guarda de prosa exclui testes, `.d.ts` e o setup. Conferido de
 novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
 compila sob as opções do projeto; o `printer` do TypeScript apaga o
 `{/* */}` do JSX com `removeComments`.
+
+**v5 (05/09/2026, Fase 2)**: a HistoricoPage tinha 244 linhas de código,
+abaixo do sinal, e mesmo assim ganhou o hook do link (o corte era limpo);
+o cabeçalho de filtros dela ficou. Duas regras novas do usuário entraram no
+`CONTEXT.md` e num guarda, e a varredura delas mexeu em treze arquivos
+fora dos seis componentes. A semente do Histórico saiu do achado e virou
+script da API.
 
 **v4 (05/09/2026, Fase 1)**: o pacote tinha `requisicoes.ts`, que a
 medição não viu (a prova passou de 115 para 117); os ciclos "medidos por

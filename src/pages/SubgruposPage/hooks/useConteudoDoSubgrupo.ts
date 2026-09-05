@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import { conteudoDoSubgrupo } from "../../../services";
 import { qk } from "../../../services/queryKeys";
-import { contar } from "../../../utils";
 import type { ConteudoDoSubgrupo } from "../../../types";
 
 /** O que ainda existe dentro do subgrupo, perguntado só quando alguém pede
@@ -30,19 +29,4 @@ export function useConteudoDoSubgrupo(id: string | null) {
     // solto, o erro que toda esta pré-verificação existe pra evitar.
     gcTime: 0,
   });
-}
-
-/** As contagens viram a lista que o diálogo mostra -- só o que existe.
- * "0 processos" no meio da lista é ruído. */
-export function impedimentosDoSubgrupo(conteudo?: ConteudoDoSubgrupo): string[] {
-  if (!conteudo) return [];
-  const linhas: [number, string, string][] = [
-    [conteudo.membros, "membro", "membros"],
-    [conteudo.processos, "processo", "processos"],
-    [conteudo.tarefas, "tarefa", "tarefas"],
-    [conteudo.atendimentos, "atendimento", "atendimentos"],
-  ];
-  return linhas
-    .filter(([quantidade]) => quantidade > 0)
-    .map(([quantidade, singular, plural]) => contar(quantidade, singular, plural));
 }

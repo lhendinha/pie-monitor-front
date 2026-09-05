@@ -4,17 +4,7 @@ import { ESPERA_DA_BUSCA_MS, PRIMEIRA_PAGINA_DE_OPCOES } from "../../constants/b
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { contemTermo } from "../../utils/texto";
 import type { OpcaoDeSelect } from "../../types";
-
-interface BuscaDoPainel {
-  busca: string;
-  mudarBusca: (termo: string) => void;
-  /** O que o react-select recebe: a lista já filtrada, no caso local; a
-   * lista que o pai trouxe, no remoto. */
-  opcoesVisiveis: OpcaoDeSelect[];
-  /** Quantos casaram com o termo mas não couberam no teto. Zero na imensa
-   * maioria das vezes; quando não é, o painel PRECISA dizer. */
-  ocultos: number;
-}
+import type { EstadoDaBuscaDoPainel } from "./types";
 
 /** A digitação dentro do painel, nos dois regimes.
  *
@@ -43,7 +33,7 @@ export function useBuscaDoPainel(
   opcoes: OpcaoDeSelect[],
   aberto: boolean,
   onBuscar?: (termo: string) => void,
-): BuscaDoPainel {
+): EstadoDaBuscaDoPainel {
   const [busca, setBusca] = useState("");
   const comEspera = useValorComEspera(busca.trim(), ESPERA_DA_BUSCA_MS);
 

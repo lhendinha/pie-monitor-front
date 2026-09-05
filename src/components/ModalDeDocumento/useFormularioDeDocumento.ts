@@ -16,20 +16,11 @@ import {
 } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { DOCUMENTO_ARQUIVO, DOCUMENTO_LINK } from "../../constants";
-import type { ClientesIniciaisDoDocumento, VinculosDeRegistro } from "../../types";
+import type { VinculosDeRegistro } from "../../types";
 import type { RespostaDeMembros } from "../../types/respostas";
-
-/** As props de `ModalDeDocumento`, que são todas do formulário. A
- * explicação de cada uma está lá. */
-export interface OpcoesDoFormularioDeDocumento {
-  subgrupoInicial?: string;
-  vinculosIniciais?: Partial<VinculosDeRegistro>;
-  clientesIniciais?: ClientesIniciaisDoDocumento;
-  onSalvo: () => void;
-  onFechar: () => void;
-}
+import type { OpcoesDoFormularioDeDocumento } from "./types";
 
 export function useFormularioDeDocumento({
   subgrupoInicial,

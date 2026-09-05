@@ -120,3 +120,40 @@ export type ValorDeFormulario =
   | undefined
   | File
   | readonly (string | number)[];
+
+/** O que uma pílula de filtro precisa receber pra se completar por busca. */
+export interface OpcoesBuscaveis {
+  /** O que a PÍLULA mostra: a primeira página, ou o resultado da busca em
+   * curso. Encolhe conforme a pessoa digita. */
+  opcoes: OpcaoDeSelect[];
+  /** A primeira página, SEM busca -- o que a página deve usar pra tudo que
+   * não é a lista da pílula: escolher o quadro padrão, saber se existe algum
+   * subgrupo, decidir se o botão de criar fica habilitado.
+   *
+   * 🔴 Separado de `opcoes` porque digitar é da PÍLULA, e a página lia a
+   * mesma lista. Três defeitos saíram disso, todos reproduzidos em Chrome:
+   * buscar "zzz" e fechar sem escolher desabilitava o "Nova tarefa" da
+   * Agenda (a página passava a achar que não existe subgrupo nenhum); o
+   * quadro do Kanban podia trocar sozinho enquanto se digitava; e a Agenda
+   * passava a considerar só os subgrupos que casavam com o termo.
+   *
+   * ⚠️ Só é preenchida com `sempreLigada`. Nas pílulas preguiçosas nada na
+   * página deriva da lista -- se derivasse, a página dependeria de alguém
+   * abrir o filtro. */
+  primeiraPagina: OpcaoDeSelect[];
+  /** Uma busca está em voo. Serve pro PAINEL (esmaecer a lista, mostrar a
+   * faixa) -- e não pra tela, que não pode piscar a cada tecla. */
+  carregando: boolean;
+  /** Ainda não chegou NADA. É esta que a tela usa pro esqueleto.
+   *
+   * 🔴 A tela usava `carregando`, que inclui a espera de cada busca: digitar
+   * na pílula de subgrupo do Kanban trocava o quadro inteiro por um
+   * esqueleto, letra a letra. Não aparecia na máquina local, onde a resposta
+   * é instantânea; apareceu com 700ms de latência. */
+  carregandoPrimeiraVez: boolean;
+  erro: boolean;
+  /** Entra em `onBuscar` do `Select`/`MultiSelect`. A primeira chamada
+   * (termo vazio, no momento em que o painel abre) é o que liga a consulta. */
+  buscar: (termo: string) => void;
+  tentarDeNovo: () => void;
+}

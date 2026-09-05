@@ -6,23 +6,8 @@ import type {
   PreviaDaImportacao,
   ProgressoDaImportacao,
   ResultadoDaImportacao,
+  EtapaDaImportacao,
 } from "../types";
-
-/** Em que ponto do fluxo a tela está.
- *
- * ⚠️ **`vazio` e `erro` são estados distintos**, e a tela precisa dos dois:
- * "nada encontrado" é resposta de sucesso do PJe, "falhou" é o serviço fora
- * do ar. Misturá-los mandaria a pessoa corrigir um número que está certo, ou
- * tentar de novo o que nunca vai funcionar.
- */
-export type EtapaDaImportacao =
-  | "formulario"
-  | "buscando"
-  | "vazio"
-  | "previa"
-  | "importando"
-  | "concluido"
-  | "erro";
 
 export function useImportacaoPorOab(subgrupoId: string) {
   const [etapa, setEtapa] = useState<EtapaDaImportacao>("formulario");

@@ -14,7 +14,8 @@ import { criarConvite } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
 import { emailValido } from "../../utils";
 import type { Papel } from "../../types";
-import { comOpcoesEscolhidas, useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { comOpcoesEscolhidas } from "../../utils/opcoesEscolhidas";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 
 /** Sub-aba "Convidar" da tela de Grupo.
  *

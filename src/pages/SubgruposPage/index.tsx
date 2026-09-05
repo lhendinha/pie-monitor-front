@@ -17,10 +17,8 @@ import FormularioNovoSubgrupo from "./components/FormularioNovoSubgrupo";
 import ListaDeSubgrupos from "./components/ListaDeSubgrupos";
 import MembrosDoSubgrupo from "./components/MembrosDoSubgrupo";
 import { podeExcluirSubgrupo } from "./podeExcluirSubgrupo";
-import {
-  impedimentosDoSubgrupo,
-  useConteudoDoSubgrupo,
-} from "./hooks/useConteudoDoSubgrupo";
+import { impedimentosDoSubgrupo } from "./impedimentosDoSubgrupo";
+import { useConteudoDoSubgrupo } from "./hooks/useConteudoDoSubgrupo";
 import type { Subgrupo } from "../../types";
 import type { RenomearSubgrupo } from "./types";
 import type {

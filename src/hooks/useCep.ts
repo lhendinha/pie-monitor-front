@@ -3,12 +3,7 @@ import { useRef, useState } from "react";
 import { DIGITOS_DO_CEP } from "../constants";
 import { consultarCep } from "../services";
 import { apenasDigitos } from "../utils";
-import type { EnderecoDoCep, EstadoDoCep } from "../types";
-
-interface UseCepOpcoes {
-  /** Chamado com o endereço quando a consulta acha algo. */
-  aoPreencher: (achado: EnderecoDoCep) => void;
-}
+import type { EstadoDoCep, OpcoesDaConsultaDeCep } from "../types";
 
 /**
  * Consulta o CEP quando ele fica completo e devolve o endereço.
@@ -24,7 +19,7 @@ interface UseCepOpcoes {
  * pareça mais lenta numa tela que na outra. CEP não é busca por texto: é
  * campo de tamanho fixo, que se sabe completo.
  */
-export function useCep({ aoPreencher }: UseCepOpcoes) {
+export function useCep({ aoPreencher }: OpcoesDaConsultaDeCep) {
   const [estado, setEstado] = useState<EstadoDoCep>({ buscando: false });
 
   /** O último CEP consultado COM SUCESSO.

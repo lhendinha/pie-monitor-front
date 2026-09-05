@@ -93,3 +93,9 @@ export interface ComClientes {
    * que o servidor resolve pra página pedida. Ver `Atendimento`. */
   cliente_nomes?: string[];
 }
+
+/** O que `useCep` recebe. */
+export interface OpcoesDaConsultaDeCep {
+  /** Chamado com o endereço quando a consulta acha algo. */
+  aoPreencher: (achado: EnderecoDoCep) => void;
+}

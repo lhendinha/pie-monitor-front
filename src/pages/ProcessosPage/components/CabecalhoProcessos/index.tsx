@@ -3,9 +3,9 @@ import { Box, Button, Flex, Heading, Text, Wrap } from "@chakra-ui/react";
 import { CampoDeBusca, MultiSelect, Select } from "../../../../components";
 import { RESPONSAVEL_EU, SEM_RESPONSAVEL } from "../../constants";
 import FiltroDatas from "../FiltroDatas";
-import { comOpcaoEscolhida } from "../../../../hooks/useOpcoesBuscaveis";
+import { comOpcaoEscolhida } from "../../../../utils/opcoesEscolhidas";
 import { contar } from "../../../../utils";
-import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
+import type { OpcoesBuscaveis } from "../../../../types";
 import type { FiltrosProcessos, OpcaoProcesso, Subgrupo } from "../../../../types";
 
 interface CabecalhoProcessosProps {

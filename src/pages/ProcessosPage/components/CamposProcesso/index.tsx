@@ -12,7 +12,7 @@ import {
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import type { OpcaoProcesso } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../types";
-import { useOpcoesDeProcesso } from "../../../../hooks/useCatalogos";
+import { useOpcoesDeProcesso } from "../../../../hooks/useOpcoesDeProcesso";
 
 interface CamposProcessoProps {
   valores: CamposOpcionaisProcesso;

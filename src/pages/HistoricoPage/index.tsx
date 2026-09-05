@@ -11,8 +11,8 @@ import { Botao, CabecalhoDePagina, CampoDeBusca, CartaoDeTabela, AreaAtualizando
 import { listarHistorico } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import { useNomesDeSubgruposVisiveis } from "../../hooks/useNomeDeSubgrupo";
-import { useTodosOsSubgrupos } from "../../hooks/useCatalogos";
+import { useNomesDeSubgruposVisiveis } from "../../hooks/useNomesDeSubgruposVisiveis";
+import { useTodosOsSubgrupos } from "../../hooks/useTodosOsSubgrupos";
 import { contar, mascararNumeroProcesso } from "../../utils";
 import DetalheHistorico from "./components/DetalheHistorico";
 import FiltroDeMenu from "./components/FiltroDeMenu";
