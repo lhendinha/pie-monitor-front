@@ -1,4 +1,4 @@
-# Plano: arquivos menores e prosa no padrão -- o front (v2, 05/09/2026)
+# Plano: arquivos menores e prosa no padrão -- o front (v3, 05/09/2026)
 
 Irmão do `api/PLANO_ARQUIVOS_MENORES.md`, executado e concluído em 04/09/2026.
 O objetivo é o mesmo: **quebrar o que ficou grande sem mudar comportamento, e
@@ -6,8 +6,8 @@ deixar a prosa no padrão** (a decisão fica, o diário sai). O que muda é o qu
 o front É: React com TypeScript, testes em jsdom que já deram falso "passou",
 e uma regra escrita de que interface se confere em Chrome de verdade.
 
-Tudo aqui foi **medido em 05/09/2026** com os comandos indicados. Nada foi
-assumido a partir do plano da API.
+Tudo aqui foi **medido em 05/09/2026** por `node scripts/medirArquivos.mjs src`
+(a régua da Fase 0). Nada foi assumido a partir do plano da API.
 
 ## Por que existe
 
@@ -18,12 +18,12 @@ não** -- e é bom saber disso antes de planejar um corte que não existe.
 |---|---|
 | arquivos de código em `src/` (fora testes) | 383 |
 | linhas | 33.196 |
-| linhas de prosa (comentário e JSDoc) | 10.576 (**32%**) |
+| linhas de prosa (comentário e JSDoc; linha vazia dentro de bloco não conta) | 10.444 (**31%**) |
 | arquivos com mais de 500 linhas | **1** (`src/types/index.ts`, 1.360) |
 | arquivos entre 301 e 500 linhas | 12 |
 | arquivos com mais de 250 linhas de CÓDIGO (sem prosa e sem vazias) | **6** |
-| arquivos com diário datado na prosa | **42** (66 linhas com data e sem "medi") |
-| blocos de prosa (bloco `/* */` ou sequência de `//`) | 2.013; **20** com mais de um 🔴 |
+| arquivos com diário datado na prosa | **48** (66 linhas com data e sem "medi") |
+| blocos de prosa (bloco `/* */` ou sequência de `//`) | 2.012; **20** com mais de um 🔴 |
 | arquivos com docstring de módulo ou do export principal | 344 de 383 (faltam 39: barris, ícones, `main.tsx`) |
 
 Então há três trabalhos, em tamanho decrescente:
@@ -35,7 +35,7 @@ Então há três trabalhos, em tamanho decrescente:
    "vários componentes num arquivo": cada um é UM componente com muito
    estado e muito JSX. O corte aqui é extrair hook ou subcomponente, e cada
    um se decide lendo o arquivo, na fase.
-3. **A prosa**: 42 arquivos com diário, 20 blocos com dois ou três 🔴, e nenhum
+3. **A prosa**: 48 arquivos com diário, 20 blocos com dois ou três 🔴, e nenhum
    padrão escrito para o front. O padrão da API (seção 0b do `api/CONTEXT.md`)
    se traduz para as formas do TypeScript e entra no `CONTEXT.md` daqui.
 
@@ -79,13 +79,13 @@ As do front que já existem, e que este plano NÃO reescreve:
 
 1. **Componente e página viram pasta com `index.tsx`; constante, tipo,
    helper e hook são arquivo solto** (`CONTEXT.md`, seção 3). Hook de uma
-   página só mora em `pages/AquelaPagina/hooks/useNome.ts` -- precedente
+   página só mora em **pages/&lt;Página&gt;/hooks/**, arquivo solto -- precedente
    medido: sete páginas já têm `hooks/` (Agenda, ClienteDetalhe, Kanban,
    ProcessoDetalhe, Processos, Subgrupos, Workspace).
 2. **Alcance decide o destino, e o nome muda junto com o lugar.**
 3. **Componente de uma página só** mora em `pages/X/components/Nome/index.tsx`
    e não entra em `components/index.ts` (67 exports hoje). E não conta para o
-   README: `contagensDoReadme` conta PASTAS de `components/` e de `pages/`.
+   README: `contagensDoReadme.test.ts` conta PASTAS de `components/` e de `pages/`.
 4. **Interface que não é as props sai do `index.tsx`** -- guardado por
    `tiposForaDoIndex.test.ts`.
 5. **`contagensDoReadme.test.ts`** cobra os números da seção "Estrutura" do
@@ -115,6 +115,15 @@ E as que este plano acrescenta, traduzidas do irmão:
     registrada no commit.
 
 ## Fase 0 -- a régua
+
+**Status: EXECUTADA em 05/09/2026** (branch `fase-0-regua-da-movimentacao`;
+`scripts/conferirMovimentacao.mjs` com cinco testes -- movimentação com
+renomeio e export novo dá `OK: 5`, o `+` trocado por `-` acusa `MUDOU`,
+declaração que some acusa `SUMIU`, instrução anônima é chaveada pelo
+conteúdo, repetição é `DUPLICADO`; `scripts/medirArquivos.mjs` com dois
+testes, e os números da tabela deste plano refeitos por ele; o plano entrou em
+`_todos_os_md()` do guarda da API, numa branch da API). Suíte: **1.198**
+(1.191 + 7).
 
 **Entra**: **scripts/conferirMovimentacao.mjs** e o teste dele
 (**scripts/conferirMovimentacao.test.ts**, rodado pelo vitest), no molde de
@@ -193,8 +202,8 @@ há ciclo: o índice só reexporta) ou passar aos domínios -- decisão da
 execução, registrada.
 
 ⚠️ A tabela é a MELHOR hipótese a partir do que foi medido. `ResumoDaAreaDeTrabalho`
-em `notificacao.ts`, por exemplo, é escolha discutível (é o resumo da home);
-`ComClientes` em `cliente.ts` ou em `processo.ts` depende de quem o cita. A
+em **notificacao**, por exemplo, é escolha discutível (é o resumo da home);
+`ComClientes` em **cliente** ou em **processo** depende de quem o cita. A
 execução lê cada tipo, decide, e registra a decisão na seção "O que foi
 medido" desta fase, como o irmão fez.
 
@@ -346,7 +355,7 @@ sob o título *"Histórias que saíram dos comentários"*, por área.
 
 ### O que foi medido (05/09/2026)
 
-**42 arquivos** têm data sem "medi" na prosa, 66 linhas. Os que concentram:
+**48 arquivos** têm data sem "medi" na prosa, 66 linhas. Os que concentram:
 `types/index.ts` 5 (já tratado na Fase 1, regra 9: o texto viaja, e a Fase 3
 o limpa nos arquivos de domínio), `utils/date.ts` 4, `HistoricoPage` 3,
 `FormularioDaInscricao` 3, e mais dezoito com 1 ou 2. A prosa é 32% do
@@ -392,7 +401,7 @@ desenha. Merge após revisão.
 ## Achados no caminho (fora deste plano)
 
 - O README diz "702 testes em 66 arquivos" (linha 428); são 1.191 em 104.
-  `contagensDoReadme` só cobre componentes e páginas. Ou o número vira guarda,
+  `contagensDoReadme.test.ts` só cobre componentes e páginas. Ou o número vira guarda,
   ou sai do README -- a régua daquele guarda é que número em `.md` que só
   envelhece não fica.
 - `verificar-filtros-do-historico.mjs` depende de uma semente que não está
@@ -414,6 +423,14 @@ mesma"; o guarda de prosa exclui testes, `.d.ts` e o setup. Conferido de
 novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
 compila sob as opções do projeto; o `printer` do TypeScript apaga o
 `{/* */}` do JSX com `removeComments`.
+
+**v3 (05/09/2026, Fase 0)**: os números passaram a vir de
+`scripts/medirArquivos.mjs`, e três mudaram: prosa 10.576 -> 10.444 (a régua
+provisória contava linha vazia dentro de bloco), diário em 42 -> 48 arquivos
+(a provisória só via data em linha que COMEÇA com marcador de comentário),
+blocos 2.013 -> 2.012. O guarda da API, ao ler este plano, acusou três
+citações: um teste citado sem a extensão, dois nomes de arquivo futuro em
+crase e um caminho de exemplo com placeholder. Corrigidas.
 
 ## Estimativa, medida contra o irmão
 
