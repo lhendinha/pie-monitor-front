@@ -1252,7 +1252,7 @@ de processo, labels) + Inter (corpo). Estética de "diário/docket" jurídico.
   (Prev/Next, como Subgrupos/Clientes) quebraria o drag-and-drop entre
   páginas (só reordenaria dentro da página carregada, não a lista
   inteira); buscar todas as páginas em loop resolveria sem esse problema
-  (o backend já lê a partição inteira por chamada de qualquer forma --
+  (para Fase/Situação o backend lê a partição inteira por chamada de qualquer forma; processos passaram a ler do índice estreito em 05/09/2026 --
   `opcoes_processo_repository.listar_pagina_por_tipo`, sem ganho real em
   paginar por request), mas foi adiado por ora -- 100 fases/situações é
   uma lista grande pra uma taxonomia curada por poucos `super_admin`.
