@@ -24,6 +24,15 @@ Nenhuma edição de código é feita direto na `main`. O fluxo, sem exceção:
 5. Uma mudança grande em fases é **uma branch por fase**, cada uma nascendo
    da `main` já com a fase anterior mesclada. Nunca uma branch em cima da
    outra.
+6. 🔴 **Todo plano (`PLANO_*.md`) nasce com três coisas** (05/09/2026, dito
+   pelo usuário ao revisar o `PLANO_PAGINACAO.md` da API): a **régua de
+   arquivos menores** (nenhum arquivo novo ou tocado passa de 250 linhas de
+   código -- `scripts/medirArquivos.mjs` confere -- e tipo, hook e helper
+   nascem onde a seção 3 manda), a **prosa no padrão da seção 0b** em todo
+   código que o plano escreve, e uma **fase final de documentação** com
+   commit próprio (`CONTEXT.md`, `README.md`, o próprio plano com status e
+   o que a execução achou). Um plano sem essas três partes está incompleto
+   antes de começar.
 
 ⚠️ **O que a `main` recebe direto**: só documento (`CONTEXT.md`, `README.md`)
 que não altera código nem teste.
