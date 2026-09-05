@@ -28,10 +28,10 @@ export default function MembrosPage() {
   const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } = usePaginacaoDaLista();
   const queryClient = useQueryClient();
 
-  /* 🔴 `admin`+, e não mais `super_admin` (31/08/2026): a inscrição da OAB
-     entrou no modal, e com o piso antigo o admin do escritório não teria como
-     corrigir a de um colega -- dependeria do operador da plataforma. O
-     servidor tem três travas para o que continua sendo só dele. */
+  /* 🔴 `admin`+, e não `super_admin`: a inscrição da OAB vive no modal, e com
+     o piso mais alto o admin do escritório não teria como corrigir a de um
+     colega -- dependeria do operador da plataforma. O servidor tem três
+     travas para o que continua sendo só dele. */
   const podeEditar = papelAtende("admin");
   /* ⚠️ Trocar GRUPO e criar `super_admin` seguem só do operador. O seletor de
      Grupo usa `GET /grupos`, que é `super_admin`-only -- pedi-la como admin
@@ -78,14 +78,11 @@ export default function MembrosPage() {
     // `qk.todosOsMembros()` nem os membros de subgrupo.
     queryClient.invalidateQueries({ queryKey: ["membros"] });
     queryClient.invalidateQueries({ queryKey: ["subgrupos"] });
-    /* 🔴 As notificações também, e o motivo MUDOU em 25/08/2026.
-       Antes, o sino traduzia e-mail em apelido com o cache de membros, então
-       derrubar aquele bastava. Agora o nome vem ASSADO na resposta do sino
+    /* 🔴 As notificações também: o nome vem ASSADO na resposta do sino
        (`autor_nome`, resolvido no servidor) -- sem invalidar aqui, renomear
        alguém deixaria o nome antigo na frase até a janela recuperar o foco.
        O sino fica montado a sessão inteira, então ele não se corrige sozinho
-       ao navegar. É o mesmo defeito que este bloco já existia pra evitar,
-       agora por outro caminho. */
+       ao navegar. */
     queryClient.invalidateQueries({ queryKey: ["notificacoes"] });
     if (podeMoverEntreGrupos) queryClient.invalidateQueries({ queryKey: qk.grupos() });
   }

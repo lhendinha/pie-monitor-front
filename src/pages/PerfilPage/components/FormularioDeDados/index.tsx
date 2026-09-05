@@ -75,10 +75,10 @@ export default function FormularioDeDados({ onAlterarSenha }: FormularioDeDadosP
             <Box as="strong" color="fg" display="block" mb="6px">
               Por que o nome completo importa
             </Box>
-            {/* ⚠️ Terminava com "Um apelido não bate." -- tirado em
-                31/08/2026. A frase anterior já diz que a comparação é com o
-                nome do tribunal; acrescentar o que NÃO serve é repetir pela
-                negativa, e soa como reprimenda a quem ainda não preencheu. */}
+            {/* ⚠️ Sem um "Um apelido não bate." no fim: a frase anterior já diz
+                que a comparação é com o nome do tribunal; acrescentar o que
+                NÃO serve é repetir pela negativa, e soa como reprimenda a
+                quem ainda não preencheu. */}
             Ele é o que o sistema vai comparar com o nome que o tribunal devolve para a
             sua inscrição na OAB, para confirmar que ela é sua.
           </DicaDeCampo>

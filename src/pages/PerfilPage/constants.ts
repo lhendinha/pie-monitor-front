@@ -1,11 +1,10 @@
 /** Abas do perfil.
  *
- * 🔴 Duas desde 30/08/2026, e a divisão é por ASSUNTO: quem eu sou e como
- * entro numa; o que o sistema vigia por mim na outra. Cada uma tem o próprio
- * "Salvar".
+ * 🔴 Duas, e a divisão é por ASSUNTO: quem eu sou e como entro numa; o que
+ * o sistema vigia por mim na outra. Cada uma tem o próprio "Salvar".
  *
- * ⚠️ E isso torna ESTRUTURAL o que antes era lógica: com um formulário só, o
- * PATCH tinha de escolher o que mandar (o servidor trata campo ausente como
+ * ⚠️ É isso que torna ESTRUTURAL o PATCH parcial: com um formulário só, o
+ * PATCH teria de escolher o que mandar (o servidor trata campo ausente como
  * "não mexer", e mandar o nome numa troca de OAB o reescreveria). Separadas,
  * cada aba só conhece os próprios campos -- não há como mandar o do vizinho.
  *

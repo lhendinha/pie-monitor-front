@@ -6,11 +6,10 @@ import type { FiltroDeMenuProps } from "./types";
 
 /** Pílula de filtro com menu, no formato do Histórico.
  *
- * 🔴 Nasceu de `FiltroDeTipo`, generalizada quando o Histórico ganhou mais
- * dois filtros (falha e período) em 26/08/2026. Três cópias do mesmo menu
- * divergiriam no primeiro ajuste de estilo -- e o realce da opção escolhida,
- * que é o que impede a pessoa de achar que não há filtro ligado, some numa
- * cópia sem ninguém notar.
+ * 🔴 UM menu para os filtros de tipo, falha e período: três cópias do mesmo
+ * menu divergiriam no primeiro ajuste de estilo -- e o realce da opção
+ * escolhida, que é o que impede a pessoa de achar que não há filtro ligado,
+ * some numa cópia sem ninguém notar.
  *
  * ⚠️ **Filtro ligado tem que PARECER ligado.** A pílula fica acesa sempre
  * que o valor difere do neutro -- e a tela abre em "Movimentações", já

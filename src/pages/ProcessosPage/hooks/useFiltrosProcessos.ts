@@ -35,7 +35,7 @@ export function useFiltrosProcessos(
    * Área de trabalho, onde clicar num número abre esta tela já filtrada. Se
    * reagissem a mudanças da prop, limpar o filtro aqui seria desfeito no
    * render seguinte. */
-  /* 🔴 UM parâmetro de URL por filtro, e não o objeto inteiro serializado.
+  /* UM parâmetro de URL por filtro, e não o objeto inteiro serializado.
      A URL é endereço: `?situacao=a&situacao=b&pagina=2` se lê, se edita e se
      manda para alguém. Um JSON espremido ali seria estado escondido à vista.
 

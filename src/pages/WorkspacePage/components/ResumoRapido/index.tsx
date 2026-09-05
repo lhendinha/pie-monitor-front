@@ -40,8 +40,8 @@ export default function ResumoRapido({
 
   /** As duas linhas de PRAZO abrem a listagem já filtrada por "eu".
    *
-   * 🔴 O servidor conta OS MEUS nesses dois números desde 26/08/2026 (a
-   * régua "eu seria avisado", que inclui os órfãos). Sem o filtro no clique,
+   * 🔴 O servidor conta OS MEUS nesses dois números (a régua "eu seria
+   * avisado", que inclui os órfãos). Sem o filtro no clique,
    * o cartão diria 2 e a lista abriria 9 -- exatamente o defeito de que
    * `resumo_service.montar` já se protege: *"o número do card não bateria
    * com a lista que o clique abre"*.
@@ -69,15 +69,13 @@ export default function ResumoRapido({
       rotulo: "Tarefas atrasadas",
       valor: resumo?.tarefas_atrasadas ?? 0,
       tom: "bad",
-      /* 🔴 Este número passou um tempo SEM link, e não por falta de tela.
-         "Atrasadas" é `data < hoje` em QUALQUER dia passado, e toda visão da
-         Agenda é limitada por janela de datas -- mandar pra lá levaria a uma
-         tela mostrando ZERO das atrasadas. Pior que link nenhum.
-
-         A Agenda ganhou um MODO pra isso (26/08/2026): a pílula "Todos os
-         períodos" com a opção "Atrasadas" ignora a janela, trava a visão em
-         lista e some com a navegação de datas. Só então o clique passou a
-         contar a mesma história que o número. */
+      /* 🔴 O link aponta o MODO "Atrasadas" da Agenda, e não uma visão com
+         janela: "Atrasadas" é `data < hoje` em QUALQUER dia passado, e toda
+         visão da Agenda é limitada por janela de datas -- mandar pra uma
+         delas levaria a uma tela mostrando ZERO das atrasadas, pior que link
+         nenhum. A pílula "Todos os períodos" com a opção "Atrasadas" ignora a
+         janela, trava a visão em lista e some com a navegação de datas: só
+         assim o clique conta a mesma história que o número. */
       ir: () => navegar("/agenda", { state: { periodo: "atrasadas" } }),
     },
     {

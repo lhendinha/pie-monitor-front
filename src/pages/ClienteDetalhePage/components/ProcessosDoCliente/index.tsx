@@ -17,9 +17,9 @@ import type { ProcessosDoClienteProps } from "./types";
  * pergunta que a coluna "Processos" da listagem responde em número, aqui
  * respondida por extenso.
  *
- * As linhas ABREM um resumo (26/08/2026). Antes eram texto morto: a lista
- * mostrava vinte números mascarados e a única forma de chegar em um deles
- * era copiar o número, sair pra listagem de processos e colar na busca.
+ * As linhas ABREM um resumo: uma lista de números mascarados que não leva a
+ * lugar nenhum obriga a copiar o número, sair pra listagem de processos e
+ * colar na busca.
  */
 export default function ProcessosDoCliente({ clienteId }: ProcessosDoClienteProps) {
   const apoio = useCatalogosDeProcesso();

@@ -60,11 +60,9 @@ export default function LinhaProcesso({
         sub={temApelido ? mascararNumeroProcesso(p.numero_processo) : undefined}
       />
       <CelulaComSub principal={clientesNomes(p) || "—"} />
-      {/* 🔴 Etiqueta, e não texto solto (02/09/2026). Era o único lugar do
-          sistema que já mostrava o subgrupo, e mostrava de um jeito próprio --
-          enquanto Membros e Inscrições usavam `EtiquetasDeSubgrupo`. Com seis
-          telas passando a exibir o mesmo dado, a terceira forma de desenhar a
-          mesma coisa seria a que diverge no primeiro ajuste.
+      {/* 🔴 Etiqueta, e não texto solto: seis telas exibem o subgrupo com
+          `EtiquetasDeSubgrupo`, e uma forma própria de desenhar a mesma coisa
+          seria a que diverge no primeiro ajuste.
 
           ⚠️ **A coluna NÃO sai do lugar.** Ela é a 3ª, "na ordem do artifact"
           (`COLUNAS_PROCESSOS`), e fica. O que se padroniza é como ela é

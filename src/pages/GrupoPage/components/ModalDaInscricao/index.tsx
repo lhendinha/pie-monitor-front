@@ -18,7 +18,7 @@ import type { ModalDaInscricaoProps } from "./types";
 
 /** Cadastrar ou editar uma inscrição avulsa.
  *
- * 🔴 **Um modal, e não uma linha embutida na tabela** -- e a razão é que a
+ * **Um modal, e não uma linha embutida na tabela** -- e a razão é que a
  * decisão tem QUATRO partes que dependem entre si: a inscrição, o interruptor,
  * e o destino que só faz sentido com o interruptor ligado. Espalhá-las na
  * linha faria a tabela carregar controles que 49 das 50 linhas não estão

@@ -21,7 +21,7 @@ import type { Documento } from "../../types";
  * nulo comparado a `""` passaria -- mesma armadilha já escrita em
  * `podeExcluirSubgrupo`.
  *
- * 🔴 Esconder o botão **não** é a proteção: quem manda é a rota. É pra não
+ * ⚠️ Esconder o botão **não** é a proteção: quem manda é a rota. É pra não
  * oferecer o que a API vai negar -- botão que existe e falha em 403 é pior
  * que botão ausente, porque a pessoa tenta, espera, e recebe uma recusa que
  * parece defeito.

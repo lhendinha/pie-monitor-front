@@ -20,13 +20,11 @@ import type { TarefasVinculadasProps } from "./types";
  *
  * É a única informação da página que não está em nenhuma outra tela: a
  * listagem mostra prazos do processo, não o que alguém marcou pra fazer.
- * Depende do filtro `processo_numero` de `GET /tarefas`, criado em
- * 22/08/2026 justamente pra isto.
+ * Depende do filtro `processo_numero` de `GET /tarefas`.
  *
- * As linhas ABREM a tarefa (26/08/2026). Antes eram texto morto: a lista
- * dizia que havia três coisas a fazer e não deixava mexer em nenhuma --
- * pra mudar uma data era preciso decorar o título, sair pra Agenda ou pro
- * Kanban e procurar lá.
+ * As linhas ABREM a tarefa: uma lista que diz que há três coisas a fazer e
+ * não deixa mexer em nenhuma obriga a decorar o título, sair pra Agenda ou
+ * pro Kanban e procurar lá.
  */
 export default function TarefasVinculadas({ numeroProcesso }: TarefasVinculadasProps) {
   const query = useTarefasDoProcesso(numeroProcesso);

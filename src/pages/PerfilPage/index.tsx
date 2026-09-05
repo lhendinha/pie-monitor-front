@@ -22,7 +22,7 @@ import type { AbaDoPerfil } from "../../types";
  * conta de quem está usando, não sobre o trabalho. Daí o "Voltar", que a
  * navegação lateral não oferece.
  *
- * 🔴 **Duas abas desde 30/08/2026**, divididas por ASSUNTO: quem eu sou e como
+ * 🔴 **Duas abas**, divididas por ASSUNTO: quem eu sou e como
  * entro numa; o que o sistema vigia por mim na outra. Cada uma tem o próprio
  * "Salvar", num cartão só -- e é isso que torna ESTRUTURAL a garantia de PATCH
  * parcial: uma aba não conhece os campos da outra, então não há como

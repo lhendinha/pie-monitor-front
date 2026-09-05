@@ -12,9 +12,7 @@ export interface CabecalhoClientesProps {
    *
    * ⚠️ O aviso só vale COM busca. Sem ela a lista também mostra menos que o
    * total -- é uma página de dez -- mas ali existe barra de páginas, e mandar
-   * "refine a busca" seria apontar a saída errada. Peguei isto na
-   * verificação: a primeira versão dizia "Mostrando 10 de 120 clientes —
-   * refine a busca" na tela normal.
+   * "refine a busca" seria apontar a saída errada.
    *
    * ⚠️ E só quando a tabela já corresponde ao que está escrito (`!buscando`).
    * Durante a espera entre teclas o que está na tela ainda é o resultado
