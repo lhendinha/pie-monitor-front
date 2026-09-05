@@ -1,40 +1,25 @@
 import { Flex } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Query } from "@tanstack/react-query";
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCorners,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { DndContext, closestCorners } from "@dnd-kit/core";
 
 import { Botao, CabecalhoDePagina, EstadoVazio, EstadoDeErro, Esqueleto, IconePlus, ModalDeTarefa } from "../../components";
-import { useToast } from "../../contexts/ToastContext";
 import { PERIODO_TODOS } from "../../constants";
-import {
-  atualizarTarefa,
-  detalhesTarefa,
-  listarQuadro,
-  papelAtende,
-} from "../../services";
-import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
+import { listarQuadro, papelAtende } from "../../services";
+import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { intervaloDoPeriodo } from "../../utils";
 import ColunaDoQuadro from "./components/ColunaDoQuadro";
-import { moverTarefaNaLista } from "./cacheDoQuadro";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
 
 import ModalDoQuadro from "./components/ModalDoQuadro";
+import { useArrastarTarefa } from "./hooks/useArrastarTarefa";
+import { useTarefaDoLink } from "./hooks/useTarefaDoLink";
 import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type { RespostaDoQuadro } from "../../types/respostas";
 import type { Tarefa } from "../../types";
-import type { MoverTarefa, TarefaDoLink } from "./types";
+import type { TarefaDoLink } from "./types";
 import {
   podeListarPessoas,
   usePessoasBuscaveis,
@@ -91,12 +76,9 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
     ...FILTROS_VAZIOS,
   });
   const [tarefaAberta, setTarefaAberta] = useState<Tarefa | null>(null);
-  /** O link já foi consumido -- fechar o modal não pode reabri-lo. */
-  const [linkConsumido, setLinkConsumido] = useState(false);
   const [criandoNaColuna, setCriandoNaColuna] = useState<string | null>(null);
   const [editandoQuadro, setEditandoQuadro] = useState(false);
   const queryClient = useQueryClient();
-  const toast = useToast();
 
   /* A primeira página já na montagem: é dela que sai o quadro padrão. */
   const subgrupos = useSubgruposBuscaveis(true);
@@ -147,104 +129,14 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   );
   useToastOnQueryError(tarefasQuery.error, "Não foi possível carregar as tarefas.");
 
-  /** Carrega a tarefa do link direto pelo par que a identifica.
-   *
-   * ⚠️ NÃO dá pra esperar que ela apareça no quadro: o quadro abre filtrado
-   * no mês, e um lembrete de prazo pode ser de uma tarefa fora dessa janela
-   * -- justamente as atrasadas, que são as que mais geram lembrete. Buscar
-   * a tarefa sozinha é o único caminho que sempre funciona. */
-  const tarefaDoLinkQuery = useQuery<Tarefa>({
-    queryKey: tarefaDoLink
-      ? qk.tarefa(tarefaDoLink.subgrupoId, tarefaDoLink.tarefaId)
-      : ["tarefa", "nenhuma"],
-    queryFn: () => detalhesTarefa(tarefaDoLink!.subgrupoId, tarefaDoLink!.tarefaId) as Promise<Tarefa>,
-    enabled: Boolean(tarefaDoLink) && !linkConsumido,
-    /* Link velho aponta pra tarefa que pode ter sido excluída. Retentar um
-       404 só atrasa o recado. */
-    retry: false,
-  });
-  useToastOnQueryError(
-    tarefaDoLinkQuery.error,
-    "Não foi possível abrir a tarefa do link. Ela pode ter sido excluída.",
-  );
-
-  /** Abre o modal quando a tarefa do link chega -- uma vez só. */
-  useEffect(() => {
-    if (tarefaDoLinkQuery.data && !linkConsumido) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- consome o deep link UMA vez quando a tarefa chega; caso listado no eslint.config.js
-      setTarefaAberta(tarefaDoLinkQuery.data);
-      setLinkConsumido(true);
-    }
-  }, [tarefaDoLinkQuery.data, linkConsumido]);
-  const sensors = useSensors(
-    /* 4px antes de virar arraste: sem isso, o clique que abre o cartão
-       seria engolido pelo início de um arraste de zero pixel. */
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
+  useTarefaDoLink(tarefaDoLink, setTarefaAberta);
 
   function invalidar() {
     queryClient.invalidateQueries({ queryKey: ["tarefas"] });
     queryClient.invalidateQueries({ queryKey: qk.resumo() });
   }
 
-  /** Arrastar cartão entre colunas = um PATCH só com `coluna_id`.
-   *
-   * ⚠️ O alvo da solta pode ser uma COLUNA ou um CARTÃO -- os cartões são
-   * `useSortable`, e todo sortable também é área de solta. Sem resolver
-   * isso, largar em cima de outro cartão mandava o id do CARTÃO como
-   * `coluna_id` (visto na verificação: `coluna_id: "sg-civel:t5"`), e o
-   * servidor recusaria com 400 dizendo que a coluna não é do quadro.
-   *
-   * O servidor recusa coluna de outro quadro de propósito; aqui isso nem
-   * chega a acontecer, porque as colunas oferecidas são as do quadro
-   * aberto. A validação existe dos dois lados. */
-  /** ⚠️ Otimista, e não um PATCH solto. Sem isto o cartão VOLTAVA pra coluna
-   * de origem no instante da solta e só pulava pra nova quando o refetch
-   * chegasse -- um pisca-pisca que parece que o arraste falhou. Agora ele
-   * fica onde foi largado, e volta sozinho se o servidor recusar. */
-  const moverMutation = useMutation({
-    mutationFn: ({ tarefa, destino }: MoverTarefa) =>
-      atualizarTarefa(tarefa.subgrupo_id, tarefa.tarefa_id, { coluna_id: destino }),
-    onMutate: async ({ tarefa, destino }) => {
-      // Cancela o que estiver em voo: um refetch chegando depois do carimbo
-      // otimista o sobrescreveria com a posição antiga.
-      await queryClient.cancelQueries({ queryKey: ["tarefas"] });
-      // 🔴 Só as consultas que guardam LISTA.
-      //
-      // O prefixo `["tarefas"]` é compartilhado por caches de formatos
-      // diferentes: `qk.tarefas(params)` da Área de trabalho guarda
-      // `{tarefas, total, total_paginas}` e `qk.tarefasDoProcesso` guarda
-      // outro objeto. Sem o predicado, o carimbo otimista chamava `.map`
-      // neles, lançava dentro do `onMutate`, e o React Query nem chegava a
-      // executar o `mutationFn` -- o cartão não mudava de coluna no servidor
-      // e a pessoa via só "Não foi possível mover a tarefa".
-      const soListas = { queryKey: ["tarefas"], predicate: (q: Query) => Array.isArray(q.state.data) };
-      const anteriores = queryClient.getQueriesData<Tarefa[]>(soListas);
-      // Todas as listas em cache, não só a visível: o mesmo cartão aparece
-      // em janelas de data diferentes, e deixar uma delas com a coluna
-      // velha faz o cartão saltar ao trocar o filtro.
-      queryClient.setQueriesData<Tarefa[]>(soListas, (lista) =>
-        moverTarefaNaLista(lista, tarefa.tarefa_id, destino),
-      );
-      return { anteriores };
-    },
-    onError: (err, _variaveis, contexto) => {
-      contexto?.anteriores.forEach(([chave, dados]) => queryClient.setQueryData(chave, dados));
-      toastErroMutation(toast, err, "Não foi possível mover a tarefa.");
-    },
-    onSettled: invalidar,
-  });
-
-  function handleDragEnd(evento: DragEndEvent) {
-    const tarefa = evento.active.data.current?.tarefa as Tarefa | undefined;
-    const over = evento.over;
-    if (!tarefa || !over) return;
-    const tarefaAlvo = over.data.current?.tarefa as Tarefa | undefined;
-    const destino = tarefaAlvo ? tarefaAlvo.coluna_id : String(over.id);
-    if (!destino || tarefa.coluna_id === destino) return;
-    moverMutation.mutate({ tarefa, destino });
-  }
+  const { sensors, handleDragEnd } = useArrastarTarefa(invalidar);
 
   const colunas = [...(quadroQuery.data?.colunas || [])].sort((a, b) => a.ordem - b.ordem);
   /** O Arquivado só aparece no quadro quando pedido.
