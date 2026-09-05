@@ -122,10 +122,9 @@ export type EstadoDoAchado = "aqui" | "noutro" | "em_outro" | "removido" | "novo
 
 /** O que impede a busca por OAB de sair, e onde pintar o erro.
  *
- * ⚠️ **Carrega o CAMPO, não só a frase.** A primeira versão da tela decidia
- * onde mostrar o erro por substring da mensagem ("contém OAB", "contém UF") --
- * e "Selecione a UF da OAB" contém as duas. Amarrar posição de erro ao texto
- * quebra no dia em que alguém melhora a frase.
+ * ⚠️ **Carrega o CAMPO, não só a frase.** Decidir onde mostrar o erro por
+ * substring da mensagem quebra no dia em que alguém melhora a frase -- e
+ * "Selecione a UF da OAB" contém "OAB" e "UF".
  *
  * ⚠️ O nome diz **PorOab** porque aqui ele não tem o arquivo em volta para
  * dizer de que busca se trata -- `ErroDaBusca` era claro em
@@ -169,9 +168,6 @@ export interface OpcaoProcesso {
   criado_em?: string;
 }
 
-/** Filtros estruturados do painel "Filtros" em ProcessosPage -- separado
- * de `FiltrosProcessos` (services/api/processos.ts), que já inclui `busca`
- * e usa nomes de campo iguais aos da query string. */
 /** Filtros estruturados da tela de Processos.
  *
  * Fase e situação são LISTAS: a tela usa seleção múltipla (como o artifact)
@@ -216,11 +212,10 @@ export interface Comunicacao {
   texto?: string;
   /** Endereço do documento no site do tribunal.
    *
-   * ⚠️ **Nenhuma tela mostra isto.** Houve um "Abrir o documento no
-   * tribunal" no detalhe da movimentação, removido a pedido em 26/08/2026:
-   * é porta pra fora do sistema, e em 7 dos 71 links medidos ela nem abria
-   * (6 davam 403, e 1 apontava pra host da rede interna do TST, vazado no
-   * dado do PJe). Fica no tipo porque continua chegando da API. */
+   * ⚠️ **Nenhuma tela mostra isto**: é porta pra fora do sistema, e em 7
+   * dos 71 links medidos em 26/08/2026 ela nem abria (6 davam 403, e 1
+   * apontava pra host da rede interna do TST, vazado no dado do PJe). Fica
+   * no tipo porque continua chegando da API. */
   link?: string;
   /** Esta movimentação gerou e-mail -- derivado, o servidor resolve
    * (`processos_service.detalhes`).
@@ -232,8 +227,8 @@ export interface Comunicacao {
    * em 2026 nunca gerou e-mail -- e não podia ter gerado. Medido em
    * 26/08/2026 sobre dado de produção: 9 de 73.
    *
-   * Ausente em resposta de API anterior a 26/08/2026; quem lê trata
-   * `undefined` como "não sei, não oferece". */
+   * ⚠️ Pode vir ausente em resposta antiga; quem lê trata `undefined` como
+   * "não sei, não oferece". */
   tem_envio?: boolean;
 }
 

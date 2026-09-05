@@ -67,8 +67,8 @@ export default function HistoricoPage({
   const [dias, setDias] = useEstadoNaUrl("dias", PADROES.dias, {
     tambemApaga: ["pagina"],
   });
-  /* Os dois filtros novos (03/09/2026), na URL como os três acima -- senão
-     morrem no F5 e o link não pode ser mandado pra ninguém. */
+  /* Subgrupo e número na URL como os três acima -- senão morrem no F5 e o
+     link não pode ser mandado pra ninguém. */
   const [subgrupoId, setSubgrupoId] = useEstadoNaUrl("subgrupo", "", {
     tambemApaga: ["pagina"],
   });
@@ -188,15 +188,15 @@ export default function HistoricoPage({
 
             🔴 `CampoDeBusca`, e não um `Input` cru: é a mesma caixa de
             Processos, Clientes e Grupo -- lupa por dentro, fundo de
-            superfície, borda de 1px. A primeira versão usava `Input size="sm"`
-            e ficava visivelmente diferente da busca das outras telas, na
-            mesma barra de filtros. */}
+            superfície, borda de 1px. Um `Input` solto fica visivelmente
+            diferente da busca das outras telas, na mesma barra de filtros.
+            ➡️ `verificar-filtros-do-historico.mjs` mede a caixa contra a de
+            Processos. */}
         {/* ⚠️ SEM `larguraMaxima`: o padrão do componente é 340px, a medida
             que Clientes e Documentos usam (Processos tem 420px porque a busca
-            dele cobre número, cliente e apelido). A primeira versão passava
-            230px, um valor avulso -- e um número de processo mascarado tem 25
-            caracteres, então o campo ficava apertado justamente no dado que
-            ele recebe. */}
+            dele cobre número, cliente e apelido). Um valor avulso menor
+            apertaria justamente o dado que o campo recebe: um número de
+            processo mascarado tem 25 caracteres. */}
         {/* 🔴 "Buscar" e "ou parte", e não "Filtrar"/"Número do processo": o
             campo BUSCA por pedaço (a API compara por dígito), e o rótulo
             antigo prometia igualdade. Quem digitou "3802" esperando o fim de

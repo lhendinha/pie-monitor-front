@@ -179,10 +179,10 @@ export default function EditarMembroForm({
             />
           </Campo>
 
-          {/* 🔴 A inscrição da OAB desta pessoa (Fase 1b, `admin`+).
-              Existe para destravar o admin: a titularidade passou a ser
-              conferida também quando o NOME muda, e sem estes campos ele
-              travaria ao corrigir um nome, sem como limpar a OAB de outro. */}
+          {/* 🔴 A inscrição da OAB desta pessoa, editável por `admin`+: a
+              titularidade é conferida também quando só o NOME muda, e sem
+              estes campos o admin travaria ao corrigir um nome, sem como
+              limpar a OAB de outro. */}
           {/* ⚠️ **Sem divisória, e sem espaçamento próprio.** O `Stack` do
               formulário já dá `gap="16px"` entre todas as linhas; uma régua
               aqui faria ESTA fronteira parecer mais importante que as

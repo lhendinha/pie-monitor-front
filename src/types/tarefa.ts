@@ -1,12 +1,8 @@
 /** Quadro, tarefa e calendário. */
-/* ⚠️ `PrioridadeDaTarefa` e `StatusDeAtendimento` são DERIVADOS da constante que os
-   gera (`typeof PRIORIDADES[number]`) -- é o que impede a lista de palavras
-   e o tipo de divergirem. Derivá-los aqui obriga `types` a importar de
-   `constants`, e o import é `import type`: some na compilação, então não há
-   ciclo em tempo de execução.
-
-   Import do ARQUIVO, não do índice de `constants` -- o índice reexporta o
-   pacote inteiro, e puxá-lo daqui ligaria `types` a tudo que mora lá. */
+/* ⚠️ Tipo DERIVADO da constante (`typeof X[number]`), pra lista e tipo não
+   divergirem. `import type` do ARQUIVO de `constants`, não do índice: o
+   índice reexporta o pacote inteiro, e puxá-lo daqui ligaria `types` a tudo
+   que mora lá. Some na compilação, então não há ciclo em tempo de execução. */
 import type { PRIORIDADES } from "../constants/prioridade";
 
 /** Uma coluna do quadro Kanban de um subgrupo. */
@@ -27,6 +23,7 @@ export interface ColunaDoQuadro {
   e_arquivado: boolean;
 }
 
+/** Tarefa do Kanban. */
 export interface Tarefa {
   subgrupo_id: string;
   tarefa_id: string;

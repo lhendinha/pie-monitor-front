@@ -5,6 +5,10 @@
  * pela ordem de chegada. É a única pasta de tipos com índice -- ver a
  * regra 1 da seção 3 do `CONTEXT.md`.
  *
+ * ⚠️ Os parâmetros das chamadas (`OpcoesListar*`) ficam aqui, em camelCase,
+ * porque é o que a TELA monta -- quem traduz para os nomes da API
+ * (`tamanho_pagina`, `cpf_cnpj`) é o serviço, no ato da chamada.
+ *
  * ➡️ `tiposDoPacote.test.ts` afirma que só há reexport aqui, que não há
  * ciclo entre os arquivos e que o total de tipos é o esperado.
  */

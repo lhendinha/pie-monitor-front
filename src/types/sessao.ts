@@ -2,14 +2,6 @@
 
 export type Papel = "user" | "manager" | "admin" | "super_admin";
 
-/** O que `GET /me` devolve.
- *
- * 🔴 A lista de campos é FECHADA do lado do servidor (`CAMPOS_DO_MEU_PERFIL`),
- * e é ela que impede material de credencial de sair. Acrescentar aqui sem
- * acrescentar lá dá `undefined` em silêncio.
- *
- * ⚠️ `numero_oab`/`uf_oab` vêm `null` -- nunca ausentes -- quando não há
- * inscrição: a tela pergunta "tem OAB?", não "o campo veio?". */
 /** O corpo de `PATCH /me`, montado campo a campo.
  *
  * 🔴 **Todo campo é opcional porque AUSENTE significa "não mexer".** Mandar
@@ -43,6 +35,14 @@ export interface SubgrupoDoPerfil {
   nome: string;
 }
 
+/** O que `GET /me` devolve.
+ *
+ * 🔴 A lista de campos é FECHADA do lado do servidor (`CAMPOS_DO_MEU_PERFIL`),
+ * e é ela que impede material de credencial de sair. Acrescentar aqui sem
+ * acrescentar lá dá `undefined` em silêncio.
+ *
+ * ⚠️ `numero_oab`/`uf_oab` vêm `null` -- nunca ausentes -- quando não há
+ * inscrição: a tela pergunta "tem OAB?", não "o campo veio?". */
 export interface MeuPerfil {
   email: string;
   apelido: string | null;
@@ -88,15 +88,8 @@ export interface OpcoesRequisicao {
   query?: Record<string, string | string[] | undefined>;
 }
 
-/** Abas de topo do App.tsx. "grupo" agrupa Subgrupos/Membros/Convidar/
- * Fases/Situações como sub-navegação (ver GrupoPage + SubAbaId). */
-
-
-/** Abas dentro de PerfilPage.
- *
- * ⚠️ Aqui e não em `PerfilPage/constants.ts`, onde nasceu: a régua do projeto
- * é que TIPO mora em `src/types` -- é o mesmo lugar de `SubAbaId`, logo
- * abaixo, que responde a mesma pergunta para a tela de Grupo. */
+/** As abas de PerfilPage -- o par de `SubAbaId`, que responde a mesma
+ * pergunta para a tela de Grupo. */
 export type AbaDoPerfil = "dados" | "inscricao";
 
 /** Sub-abas dentro de GrupoPage. */

@@ -1,3 +1,14 @@
+/** O que cada rota da API devolve, com nome.
+ *
+ * Antes cada tela escrevia o envelope à mão no genérico da consulta
+ * (`useQuery<{ subgrupos: Subgrupo[] }>`). `{ subgrupos: Subgrupo[] }`
+ * aparecia em sete arquivos, `{ membros: Membro[] }` em outros sete: sete
+ * lugares pra corrigir quando a rota ganhasse um campo, e nenhum jeito de
+ * saber que eram a mesma coisa.
+ *
+ * A chave do array repete o nome do recurso porque é assim que o backend
+ * monta o envelope (`shared/paginacao.py`) -- não é escolha desta camada.
+ */
 import type {
   Atendimento,
   AtendimentoResumido,
@@ -14,18 +25,6 @@ import type {
   Subgrupo,
   Tarefa,
 } from "./index";
-
-/** O que cada rota da API devolve, com nome.
- *
- * Antes cada tela escrevia o envelope à mão no genérico da consulta
- * (`useQuery<{ subgrupos: Subgrupo[] }>`). `{ subgrupos: Subgrupo[] }`
- * aparecia em sete arquivos, `{ membros: Membro[] }` em outros sete: sete
- * lugares pra corrigir quando a rota ganhasse um campo, e nenhum jeito de
- * saber que eram a mesma coisa.
- *
- * A chave do array repete o nome do recurso porque é assim que o backend
- * monta o envelope (`shared/paginacao.py`) -- não é escolha desta camada.
- */
 
 /** Só a contagem, que é o que as telas leem do envelope.
  *

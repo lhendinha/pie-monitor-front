@@ -8,19 +8,6 @@ export interface ComOrdem {
   ordem: number;
 }
 
-// Tipos que estavam espalhados
-//
-// Todos vinham declarados dentro do módulo que os usava primeiro --
-// `utils/`, `constants/`, `theme/`, `components/`, `services/`. Enquanto o
-// consumidor era um só isso não incomodava; quando passou a ser vários, o
-// import cruzava a casa inteira (o `ToastItem` vivia num arquivo dentro de
-// `components/Toast/` e era importado de dentro de `pages/`) e a resposta
-// pra "onde declaro este tipo?" passou a depender de quem chegou primeiro,
-// não do alcance dele.
-//
-// ⚠️ Tipo PRIVADO de uma página continua no `types.ts` dela -- o critério é
-// alcance, não arquivo. O que mora aqui é o que atravessa fronteira.
-
 /** Um item do menu lateral. `minimo` é o papel a partir do qual ele APARECE
  * -- não é permissão: a rota continua acessível por link direto, e quem
  * decide o que a pessoa pode fazer é sempre o backend. */

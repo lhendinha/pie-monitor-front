@@ -454,6 +454,29 @@ sob o título *"Histórias que saíram dos comentários"*, por área.
 
 ## Fase 3 -- prosa: a decisão fica, o diário sai
 
+**Status: grupo 1 EXECUTADO em 05/09/2026** (branch `fase-3-prosa-grupo-1`:
+os 36 arquivos de `types/`, dos seis componentes da Fase 2 e dos hooks e
+componentes que saíram deles). O que a leitura fez:
+
+- A seção **0b** entrou no `CONTEXT.md`, e a seção *"Histórias que saíram
+  dos comentários (grupo 1)"* recebeu dez histórias ANTES de elas saírem do
+  código: o quadro padrão do Kanban, o link do Histórico, a caixa de busca,
+  "do subgrupo selecionado", o campo do erro da OAB, `Comunicacao.link`,
+  `tem_envio`, os campos derivados do cliente, o nome antigo de
+  `VinculosDeRegistro`, as duas descrições de `falhouAoRecarregar` e os
+  banners do antigo índice de tipos.
+- Os cinco docstrings fora do lugar que a Fase 1 registrou foram
+  corrigidos (o de `GET /me` foi para `MeuPerfil`, "Tarefa do Kanban" foi
+  para `Tarefa`, os três duplos ficaram só com o mais novo), os dois banners
+  e o comentário triplicado do `import type` de `constants` saíram, e o
+  bloco de `ModalDeDocumento` com dois 🔴 ficou com um.
+- Guarda **`prosaSemDiario.test.ts`** com `JA_LIMPOS` do grupo 1, o par
+  negativo do leitor e a mutação embutida (data solta reprova, data medida
+  passa). Prova: `conferirMovimentacao.mjs` dá `OK` nos 36 arquivos (em dois
+  lotes, porque o componente e o tipo `PreviaDaImportacao` têm o mesmo nome
+  e o medidor acusa DUPLICADO no mesmo lote); `tsc`, `eslint` e a suíte
+  (**1.245** testes) verdes. Sem Chrome: prosa não desenha.
+
 ### O que foi medido (05/09/2026)
 
 **48 arquivos** têm data sem "medi" na prosa, 66 linhas. Os que concentram:
@@ -525,6 +548,12 @@ mesma"; o guarda de prosa exclui testes, `.d.ts` e o setup. Conferido de
 novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
 compila sob as opções do projeto; o `printer` do TypeScript apaga o
 `{/* */}` do JSX com `removeComments`.
+
+**v7 (05/09/2026, Fase 3, grupo 1)**: a régua do guarda ficou "data só na
+mesma frase que medi", igual à da API; o medidor de movimentação acusa
+DUPLICADO quando componente e tipo têm o mesmo nome no mesmo lote -- a
+prova roda em dois lotes, e fica registrado que `PreviaDaImportacao` é
+nome de componente E de tipo.
 
 **v6 (05/09/2026, ainda na Fase 2)**: a regra dos tipos foi estendida pelo
 usuário a componente, página e contexto, SEM a exceção das props: as 163

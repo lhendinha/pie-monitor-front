@@ -1,12 +1,8 @@
 /** Atendimento e os registros que ele acumula. */
-/* ⚠️ `PrioridadeDaTarefa` e `StatusDeAtendimento` são DERIVADOS da constante que os
-   gera (`typeof PRIORIDADES[number]`) -- é o que impede a lista de palavras
-   e o tipo de divergirem. Derivá-los aqui obriga `types` a importar de
-   `constants`, e o import é `import type`: some na compilação, então não há
-   ciclo em tempo de execução.
-
-   Import do ARQUIVO, não do índice de `constants` -- o índice reexporta o
-   pacote inteiro, e puxá-lo daqui ligaria `types` a tudo que mora lá. */
+/* ⚠️ Tipo DERIVADO da constante (`typeof X[number]`), pra lista e tipo não
+   divergirem. `import type` do ARQUIVO de `constants`, não do índice: o
+   índice reexporta o pacote inteiro, e puxá-lo daqui ligaria `types` a tudo
+   que mora lá. Some na compilação, então não há ciclo em tempo de execução. */
 import type { STATUS_DE_ATENDIMENTO } from "../constants/atendimento";
 
 /** Um registro da linha do tempo do atendimento.
@@ -65,9 +61,6 @@ export interface Atendimento {
   registros: RegistroDeAtendimento[];
 }
 
-/** O que o campo de vínculo da tarefa precisa. Continua separado de
- * `Atendimento` porque aquele campo só usa quatro chaves, e exigir a lista
- * de registros ali obrigaria a inventá-la em todo teste que monta um. */
 /** O mínimo pra rotular uma tarefa vinculada: quem é o atendimento e qual o
  * assunto. Deliberadamente menor que `AtendimentoResumido` -- devolver o
  * atendimento inteiro criaria uma segunda forma competindo com a da tela de
@@ -98,34 +91,15 @@ export interface Vinculo {
   detalhe?: string;
 }
 
-/** Os vínculos de uma tarefa: até um de cada tipo.
- *
- * Duas fatias, e não uma lista, porque é o formato do backend --
- * `processo_numero` e `atendimento_id` são campos independentes, um valor
- * cada. Escolher um processo novo TROCA o anterior; não empilha.
- */
 /** Os dois slots do campo de vínculo. Um por tipo, nunca uma lista -- é
  * assim que o banco guarda (`processo_numero` e `atendimento_id`, um valor
- * cada).
- *
- * ⚠️ Chamava-se `VinculosDaTarefa` enquanto só a tarefa tinha o campo. O
- * documento usa o mesmo, e um nome que fala de um consumidor só é o convite
- * pra segunda cópia do tipo. */
+ * cada). */
 export interface VinculosDeRegistro {
   processo: Vinculo | null;
   atendimento: Vinculo | null;
 }
 
 export type StatusDeAtendimento = (typeof STATUS_DE_ATENDIMENTO)[number];
-
-// Os parâmetros e corpos das chamadas de API
-//
-// 🔴 Moram AQUI, e não dentro de `services/api/*.ts`: lá ficam só as funções
-// que falam com a API. Eram 15 interfaces espalhadas por 12 arquivos, de
-// quando o padrão era o contrário.
-//
-// ⚠️ Em camelCase, porque é o que a TELA monta -- quem traduz para os nomes
-// da API (`tamanho_pagina`, `cpf_cnpj`) é o serviço, no ato da chamada.
 
 export interface OpcoesListarAtendimentos {
   busca?: string;

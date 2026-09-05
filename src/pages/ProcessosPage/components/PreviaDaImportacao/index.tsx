@@ -156,18 +156,12 @@ export default function PreviaDaImportacao({
             : /* 🔴 A frase diz o PORQUÊ, não só o que fazer: sem isso a
                  pessoa tentaria se escolher e não se acharia na lista.
 
-                 ⚠️ **"do subgrupo SELECIONADO", e não "deste subgrupo"** --
-                 corrigido em 30/08/2026, a partir de um relato de uso. O
+                 ⚠️ **"do subgrupo SELECIONADO", e não "deste subgrupo"**: o
                  seletor de subgrupo fica na etapa da BUSCA e some quando a
-                 prévia aparece: nesta tela não há nada a que "este" se
-                 refira. Quem é membro de 6 dos 12 subgrupos lia a frase e
-                 não tinha como saber de qual ela falava.
-
-                 "Selecionado" aponta para uma escolha que a pessoa fez, e
-                 não para um contexto que a tela não mostra.
-
-                 ➡️ A correção COMPLETA seria a prévia exibir o destino --
-                 fica registrada como frente, junto com o destino múltiplo. */
+                 prévia aparece, então nesta tela não há nada a que "este" se
+                 refira. "Selecionado" aponta para uma escolha que a pessoa
+                 fez, e não para um contexto que a tela não mostra.
+                 ➡️ `CONTEXT.md`, "Histórias que saíram dos comentários". */
               "Você não é membro do subgrupo selecionado, então precisa escolher quem responde entre os membros dele."
         }
       >
