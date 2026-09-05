@@ -1,12 +1,5 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface CabecalhoDePaginaProps {
-  titulo: string;
-  subtitulo?: string;
-  /** Ações à direita, tipicamente o botão de criar. */
-  acoes?: ReactNode;
-}
+import type { CabecalhoDePaginaProps } from "./types";
 
 /** Título e subtítulo de uma tela (`.page-head` do artifact): 23px/800 com
  * a explicação de uma linha embaixo. */

@@ -1,14 +1,10 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext } from "react";
 
 import type { Sessao } from "./types";
 import { useSessao } from "../hooks/useSessao";
-
+import type { SessaoProviderProps } from "./types";
 
 const Contexto = createContext<Sessao | null>(null);
-
-interface SessaoProviderProps {
-  children: ReactNode;
-}
 
 /** Contexto de sessão -- o ÚNICO estado global de cliente do app.
  *

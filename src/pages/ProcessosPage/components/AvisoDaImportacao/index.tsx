@@ -1,11 +1,5 @@
 import { Box, Text } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface AvisoDaImportacaoProps {
-  titulo: string;
-  /** O corpo -- uma frase que diz o que fazer a seguir, não só o que houve. */
-  children: ReactNode;
-}
+import type { AvisoDaImportacaoProps } from "./types";
 
 /** A faixa âmbar da tela de importação: nada encontrado, erro do servidor,
  * busca no teto.

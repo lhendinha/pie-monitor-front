@@ -1,13 +1,7 @@
 import { Box, Text } from "@chakra-ui/react";
 
 import { TONS_DO_CARTAO_DE_RESUMO } from "../../constants";
-
-interface CartaoDeResumoProps {
-  numero: number;
-  /** Já concordado em número -- quem chama usa `concordar`. */
-  rotulo: string;
-  tom?: keyof typeof TONS_DO_CARTAO_DE_RESUMO;
-}
+import type { CartaoDeResumoProps } from "./types";
 
 /** Um número grande e o que ele conta, na fileira da prévia da importação. */
 export default function CartaoDeResumo({ numero, rotulo, tom = "neutro" }: CartaoDeResumoProps) {

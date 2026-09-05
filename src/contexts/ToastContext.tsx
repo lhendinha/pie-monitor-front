@@ -1,17 +1,13 @@
 import { Flex } from "@chakra-ui/react";
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useRef, useState } from "react";
 
 import { DURACAO_DO_AVISO_MS } from "../constants/toast";
 import Aviso from "../components/Aviso";
 import type { ToastItem } from "../types";
 import type { ToastContextValue } from "./types";
-
+import type { ToastProviderProps } from "./types";
 
 const ToastContext = createContext<ToastContextValue | null>(null);
-
-interface ToastProviderProps {
-  children: ReactNode;
-}
 
 export function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);

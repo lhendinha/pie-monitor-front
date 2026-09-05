@@ -1,11 +1,5 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
-
-interface MarcaArgosProps {
-  /** `menu` é a do topo da barra lateral (26px, deitada); `gate` é a das
-   * telas de entrada (42px, empilhada e centralizada), onde a marca é a
-   * primeira coisa que a pessoa vê. */
-  tamanho?: "menu" | "gate";
-}
+import type { MarcaArgosProps } from "./types";
 
 const MEDIDAS = {
   menu: { simbolo: "26px", raio: "7px", palavra: "17px", direcao: "row", gap: "10px" },

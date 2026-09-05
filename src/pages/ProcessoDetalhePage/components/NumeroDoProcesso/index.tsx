@@ -1,10 +1,7 @@
 import { Text } from "@chakra-ui/react";
 
 import { mascararNumeroProcesso } from "../../../../utils";
-
-interface NumeroDoProcessoProps {
-  numero: string;
-}
+import type { NumeroDoProcessoProps } from "./types";
 
 /** O número do processo em destaque no meio de uma frase.
  *

@@ -48,7 +48,11 @@ async function entrar() {
 await entrar();
 
 // --- 1. a coluna --------------------------------------------------------
-await pagina.goto(`${APP}/processos`, { waitUntil: "networkidle" });
+/* ⚠️ 50 por página, e não a padrão de 10: o volume do offline acumula
+   processos de outras sementes e dos roteiros que criam processo, e "MEU
+   processo" caía na segunda página -- o roteiro dava timeout num nome que
+   existia. `tamanho` é o parâmetro de `usePaginacaoDaLista`. */
+await pagina.goto(`${APP}/processos?tamanho=50`, { waitUntil: "networkidle" });
 await pagina.getByText("MEU processo").first().waitFor({ timeout: 15000 });
 
 /* ⚠️ Comparado em MAIÚSCULAS, e isso é uma lição do próprio Chrome: o
@@ -84,7 +88,7 @@ conferir(
  * (`css-w54w9q-...`) quebraria no próximo build. Partir do estado limpo é o
  * caminho estável. */
 async function filtrarPor(opcao) {
-  await pagina.goto(`${APP}/processos`, { waitUntil: "networkidle" });
+  await pagina.goto(`${APP}/processos?tamanho=50`, { waitUntil: "networkidle" });
   await pagina.getByText("MEU processo").first().waitFor({ timeout: 15000 });
   await pagina.getByText("Todos os responsáveis").click();
   await pagina.getByRole("option", { name: opcao }).click();

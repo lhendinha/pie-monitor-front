@@ -5,12 +5,7 @@ import { Botao, BotaoDeLink, Campo, CampoDeSenha, CartaoDeAutenticacao, Faixa } 
 import { useToast } from "../../contexts/ToastContext";
 import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../constants";
 import { ApiError, redefinirSenha } from "../../services";
-
-interface RedefinirSenhaPageProps {
-  token: string;
-  /** Senha salva. Quem navega é a rota. */
-  onConcluido: () => void;
-}
+import type { RedefinirSenhaPageProps } from "./types";
 
 export default function RedefinirSenhaPage({ token, onConcluido }: RedefinirSenhaPageProps) {
   const [senha, setSenha] = useState("");

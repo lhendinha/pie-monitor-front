@@ -9,10 +9,7 @@ import { mascararNumeroProcesso } from "../../../../utils";
 import { useProcessosDoCliente } from "../../hooks/useProcessosDoCliente";
 import ModalDoProcesso from "../ModalDoProcesso";
 import type { Processo } from "../../../../types";
-
-interface ProcessosDoClienteProps {
-  clienteId: string;
-}
+import type { ProcessosDoClienteProps } from "./types";
 
 /** Os processos deste cliente.
  *

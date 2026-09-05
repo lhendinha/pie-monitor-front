@@ -9,39 +9,7 @@ import { OpcaoDeLinha } from "../OpcaoDeLinha";
 import { CampoDeBuscaDoPainel } from "./CampoDeBuscaDoPainel";
 import { FaixaDeBusca, FalhaDoPainel } from "./EstadosDoPainel";
 import type { OpcaoDeSelect } from "../../types";
-
-/** Props que o `Select`/`MultiSelect` na variante "chip" injeta via
- * `selectProps` pra este menu -- é o caminho que o react-select oferece pra
- * passar dado do componente pai pros componentes customizados. */
-export interface ExtrasDoMenu {
-  rotuloTodas: string;
-  nenhumSelecionado: boolean;
-  onTodas: () => void;
-  /** Desliga a linha "Todas as X" do topo.
-   *
-   * Pro seletor de SUBGRUPO do quadro e da agenda: lá a pílula não filtra,
-   * escolhe QUAL quadro a tela mostra -- e "todos os subgrupos" não é um
-   * quadro que exista. A linha prometeria uma tela que não há. */
-  comOpcaoTodas?: boolean;
-  /** Ausentes no filtro de valor único (cliente): lá escolher já aplica, e
-   * o artifact não desenha rodapé nenhum nesse painel. */
-  onCancelar?: () => void;
-  onAplicar?: () => void;
-  /** O que a pessoa digitou, e por onde ele muda. Ausentes nas pílulas de
-   * lista curta e fechada, onde digitar não ajudaria. */
-  busca?: string;
-  onBusca?: (termo: string) => void;
-  placeholderBusca?: string;
-  /** Já HÁ lista na tela e outra está a caminho -- esmaece e avisa, em vez
-   * de esvaziar. */
-  buscando?: boolean;
-  /** Quantos resultados casaram mas não couberam no teto da lista. */
-  ocultos?: number;
-  /** A busca no servidor falhou. */
-  erro?: boolean;
-  onTentarDeNovo?: () => void;
-  onFechar?: () => void;
-}
+import type { ExtrasDoMenu } from "./types";
 
 /** Painel do filtro em chip, com a moldura que o artifact tem e o menu
  * padrão do react-select não: a caixa de busca, a linha "Todas as X" no

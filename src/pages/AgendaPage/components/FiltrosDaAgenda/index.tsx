@@ -1,23 +1,11 @@
 import { Flex } from "@chakra-ui/react";
 
 import { MultiSelect, Select } from "../../../../components";
-import { comOpcaoEscolhida, comOpcoesEscolhidas } from "../../../../hooks/useOpcoesBuscaveis";
+import { comOpcaoEscolhida, comOpcoesEscolhidas } from "../../../../utils/opcoesEscolhidas";
 import { PERIODOS_DA_AGENDA } from "../../constants";
 import SeletorDeVisao from "../SeletorDeVisao";
-import type { FiltrosDaAgenda, FiltrosDaAgenda as Filtros } from "../../types";
-import type { OpcoesBuscaveis } from "../../../../hooks/useOpcoesBuscaveis";
-
-interface FiltrosDaAgendaProps {
-  /** Primeira página + busca -- ver `useSubgruposBuscaveis`. */
-  subgrupos: OpcoesBuscaveis;
-  /** Idem, pras pessoas. Só carrega quando a pílula abre. */
-  pessoas: OpcoesBuscaveis;
-  /** Se a lista de PESSOAS entra na pílula -- ver `podeListarPessoas`.
-   * Quem é `user` fica com as opções que não dependem dela. */
-  mostrarPessoas: boolean;
-  filtros: Filtros;
-  onMudar: (parcial: Partial<Filtros>) => void;
-}
+import type { FiltrosDaAgenda } from "../../types";
+import type { FiltrosDaAgendaProps } from "./types";
 
 /** A barra de filtros da Agenda.
  *

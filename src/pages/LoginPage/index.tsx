@@ -12,15 +12,7 @@ import {
 import { login } from "../../services";
 import { avisoDeTentativas } from "./avisoDeTentativas";
 import type { AlertaDoLogin } from "./types";
-
-interface LoginPageProps {
-  /** Recado que chega junto com a tela -- hoje só "sua sessão expirou".
-   * Vai DENTRO do cartão porque é sobre este login: solto acima dele
-   * parecia aviso do site inteiro. */
-  aviso?: string;
-  onEntrar: () => void;
-  onEsqueciSenha: () => void;
-}
+import type { LoginPageProps } from "./types";
 
 export default function LoginPage({ aviso, onEntrar, onEsqueciSenha }: LoginPageProps) {
   const [email, setEmail] = useState("");

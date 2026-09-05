@@ -1,6 +1,6 @@
 import { Flex, Text, chakra } from "@chakra-ui/react";
+import type { EtiquetaDeVinculoProps } from "./types";
 
-import type { Vinculo } from "../../types";
 
 const BotaoRemover = chakra("button", {
   base: {
@@ -19,11 +19,6 @@ const BotaoRemover = chakra("button", {
     _hover: { color: "status.bad" },
   },
 });
-
-interface EtiquetaDeVinculoProps {
-  vinculo: Vinculo;
-  onRemover: () => void;
-}
 
 /** O vínculo já escolhido, com o × que o desfaz.
  *

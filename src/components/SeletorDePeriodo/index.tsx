@@ -14,14 +14,7 @@ import type { IntervaloDeDatas } from "../../types";
 import { PilulaDeFiltro } from "../PilulaDeFiltro";
 import IntervaloPersonalizado from "./IntervaloPersonalizado";
 import ListaDeOpcoes from "./ListaDeOpcoes";
-
-interface SeletorDePeriodoProps {
-  /** Id de `PERIODOS_*`, `PERIODO_TODOS` ou `PERIODO_PERSONALIZADO`. */
-  periodoId: string;
-  /** Só é lido quando `periodoId` é o personalizado. */
-  intervaloPersonalizado?: IntervaloDeDatas;
-  onMudar: (periodoId: string, intervalo?: IntervaloDeDatas) => void;
-}
+import type { SeletorDePeriodoProps } from "./types";
 
 /** O rótulo da pílula. Personalizado mostra as duas datas em vez de
  * "Personalizado": o nome do filtro não diz que período é, e o número de um

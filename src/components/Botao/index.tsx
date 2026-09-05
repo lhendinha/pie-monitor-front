@@ -1,16 +1,8 @@
 import { Button } from "@chakra-ui/react";
-import type { ButtonProps } from "@chakra-ui/react";
-import type { ReactNode } from "react";
 
 import { BOTAO } from "../../theme/painelFiltro";
 import { CORES_DO_BOTAO } from "../../theme/botao";
-import type { VarianteBotao } from "../../types";
-
-interface BotaoProps extends Omit<ButtonProps, "variant"> {
-  variante?: VarianteBotao;
-  children: ReactNode;
-}
-
+import type { BotaoProps } from "./types";
 
 /** O botão do sistema (`.btn` do artifact): 9px 16px, raio 6, 13px/700.
  *

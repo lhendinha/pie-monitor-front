@@ -1,6 +1,4 @@
-interface IconeClientesProps {
-  tamanho?: number;
-}
+import type { IconeClientesProps } from "./types";
 
 /** Ícone de "Clientes". Traçado de 1.8 e `currentColor`: a cor vem do
  * estado de quem o usa (ativo/inativo), não do ícone.

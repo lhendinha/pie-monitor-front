@@ -8,10 +8,7 @@ import { REGRA_DA_SENHA, TAMANHO_MINIMO_DA_SENHA } from "../../../../constants";
 import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { alterarMinhaSenha } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
-
-interface ModalDeSenhaProps {
-  onFechar: () => void;
-}
+import type { ModalDeSenhaProps } from "./types";
 
 /** Troca de senha estando logado -- o único fluxo de senha que não passa
  * por e-mail.

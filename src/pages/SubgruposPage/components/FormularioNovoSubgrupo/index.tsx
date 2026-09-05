@@ -6,10 +6,7 @@ import { Botao, IconePlus } from "../../../../components";
 import { useToast } from "../../../../contexts/ToastContext";
 import { criarSubgrupo } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
-
-interface FormularioNovoSubgrupoProps {
-  onCriado: () => void;
-}
+import type { FormularioNovoSubgrupoProps } from "./types";
 
 /** Criar subgrupo é a PRIMEIRA LINHA da lista, dentro do mesmo cartão --
  * como no artifact. Fora dele viraria um formulário solto acima da tabela,

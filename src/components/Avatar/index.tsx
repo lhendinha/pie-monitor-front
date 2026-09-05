@@ -1,13 +1,7 @@
 import { Box } from "@chakra-ui/react";
 
 import { iniciais } from "../../utils";
-
-interface AvatarProps {
-  nome: string;
-  /** `pequeno` (22px) é o do chip da barra superior; `medio` (30px) é o das
-   * listas de pessoas, onde o avatar divide a linha com nome e e-mail. */
-  tamanho?: "pequeno" | "medio";
-}
+import type { AvatarProps } from "./types";
 
 const MEDIDAS = {
   pequeno: { caixa: "22px", fonte: "10px" },

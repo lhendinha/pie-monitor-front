@@ -32,11 +32,9 @@ import {
 } from "./periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros, PeriodoDaAgenda } from "./types";
 import type { OpcaoDeSelect, Tarefa } from "../../types";
-import {
-  podeListarPessoas,
-  usePessoasBuscaveis,
-  useSubgruposBuscaveis,
-} from "../../hooks/useOpcoesBuscaveis";
+import { podeListarPessoas } from "../../utils/permissoes";
+import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 
 /** Agenda: as tarefas do escritório projetadas por data.
  *

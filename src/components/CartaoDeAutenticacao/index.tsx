@@ -1,14 +1,7 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
-import type { ReactNode } from "react";
 
 import MarcaArgos from "../MarcaArgos";
-
-interface CartaoDeAutenticacaoProps {
-  titulo: string;
-  /** Explicação de uma ou duas linhas embaixo do título. */
-  subtitulo?: string;
-  children: ReactNode;
-}
+import type { CartaoDeAutenticacaoProps } from "./types";
 
 /** A moldura das telas de entrada (`.gate-page` + `.gate-card` do artifact):
  * cartão de 380px centrado na tela, com a marca em cima.

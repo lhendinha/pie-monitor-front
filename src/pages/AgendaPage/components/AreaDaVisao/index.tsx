@@ -7,19 +7,7 @@ import ListaDeUmDia from "../ListaDeUmDia";
 import VisaoPorMes from "../VisaoPorMes";
 import VisaoPorSemana from "../VisaoPorSemana";
 import { DIAS_DA_LISTA } from "../../constants";
-import type { FiltrosDaAgenda as Filtros } from "../../types";
-import type { Tarefa } from "../../../../types";
-
-interface AreaDaVisaoProps {
-  filtros: Filtros;
-  dataVisivel: Date;
-  isoDeHoje: string;
-  porDia: Map<string, Tarefa[]>;
-  assuntoDoAtendimento: (id: string) => string | undefined;
-  subgrupoNome: (id: string) => string;
-  onAbrirTarefa: (tarefa: Tarefa) => void;
-  onEscolherDia: (iso: string) => void;
-}
+import type { AreaDaVisaoProps } from "./types";
 
 /** Escolhe a visão. Separado do corpo da página só pra que o `return` dela
  * caiba num olhar -- quatro ternários aninhados no meio do JSX escondem a

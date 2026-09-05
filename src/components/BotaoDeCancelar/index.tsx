@@ -1,13 +1,6 @@
 import { usePedirParaFechar } from "../../contexts/DescarteContext";
 import Botao from "../Botao";
-
-interface BotaoDeCancelarProps {
-  /** Trava o botão enquanto uma gravação está em voo. `ModalDaInscricao` já
-   * fazia isso, e perder esse comportamento na migração seria regressão. */
-  desabilitado?: boolean;
-  /** O texto, quando "Cancelar" não serve. */
-  children?: string;
-}
+import type { BotaoDeCancelarProps } from "./types";
 
 /** O "Cancelar" do rodapé de um modal de formulário.
  *

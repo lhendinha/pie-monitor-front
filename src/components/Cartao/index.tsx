@@ -1,13 +1,5 @@
 import { Box, Flex, Heading } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface CartaoProps {
-  /** Sem título, o cartão não desenha cabeçalho -- é o caso do formulário
-   * de detalhe, que é só corpo. */
-  titulo?: string;
-  acoes?: ReactNode;
-  children: ReactNode;
-}
+import type { CartaoProps } from "./types";
 
 /** Cartão de conteúdo (`.card` do artifact): superfície com borda, raio
  * `lg` e sombra `sm`. Cabeçalho e corpo têm padding próprio (16px 18px).

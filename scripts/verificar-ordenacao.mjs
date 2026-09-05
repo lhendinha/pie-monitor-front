@@ -84,7 +84,12 @@ async function nomesNaTela() {
  * da tabela -- e liberava antes de a lista renderizar. As quatro checagens
  * falharam por isso, não pela ordenação, que estava certa. */
 async function conferirTela(rota, rotulo) {
-  await pagina.goto(`${APP}${rota}`);
+  /* ⚠️ Página de 50, e não a padrão de 10: as listas vêm em ordem
+     alfabética e "Zuleica" é a ÚLTIMA de propósito. Com as outras sementes
+     do volume (16 processos em 05/09/2026), ela cai na segunda página e o
+     roteiro dava timeout esperando um nome que estava certo -- só que
+     noutra página. `tamanho` é o parâmetro de `usePaginacaoDaLista`. */
+  await pagina.goto(`${APP}${rota}?tamanho=50`);
   // Espera os TRÊS aparecerem -- é o que garante que a lista terminou de
   // renderizar, sem depender de a tela usar tabela ou linhas soltas.
   for (const nome of ESPERADO) {

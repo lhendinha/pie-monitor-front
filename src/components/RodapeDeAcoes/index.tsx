@@ -1,9 +1,5 @@
 import { Flex } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface RodapeDeAcoesProps {
-  children: ReactNode;
-}
+import type { RodapeDeAcoesProps } from "./types";
 
 /** Rodapé de ações de modal ou de formulário em página
  * (`.modal-foot` / `.form-actions-foot` do artifact -- mesmo layout, dois

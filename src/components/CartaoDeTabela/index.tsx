@@ -1,9 +1,5 @@
 import { Box } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface CartaoDeTabelaProps {
-  children: ReactNode;
-}
+import type { CartaoDeTabelaProps } from "./types";
 
 /** O cartão que envolve uma tabela (`.table-card` do artifact).
  *

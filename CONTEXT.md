@@ -392,18 +392,36 @@ src/
    components/NomeDele/index.tsx`, e não entra no índice público.
 4. **O nome tem que fazer sentido onde o arquivo mora.** Tipo que sobe pra
    `types/` costuma precisar de nome novo -- ver a seção abaixo.
-5. 🔴 **Interface que NÃO são as props do componente sai do arquivo dele**
-   (03/09/2026). O `index.tsx` declara o componente e, no máximo,
-   `<NomeDaPasta>Props`. Qualquer outro tipo vai para o `types.ts` da própria
-   pasta -- ou para `src/types/` quando serve a mais de uma tela.
+5. 🔴 **Nenhum `interface` ou `type` dentro de arquivo de componente, página
+   ou contexto** (05/09/2026; até então as props podiam ficar). Tudo vai para
+   o `types.ts` da própria pasta -- `components/Abas/types.ts`,
+   `pages/AceitarConvitePage/types.ts`, e `contexts/types.ts` para os
+   provedores, que são arquivos soltos -- ou para `src/types/<domínio>.ts`
+   quando outra pasta importa. A interface de props continua se chamando
+   NomeDoComponenteProps: é o nome que ainda faz sentido fora do arquivo.
+   ⚠️ O custo, assumido: ler a assinatura de um componente abre dois
+   arquivos. O ganho é uma regra só, sem exceção, para hook, componente,
+   página e contexto -- e um guarda que não precisa de lista de permitidos.
    ⚠️ **"É privado" justifica ficar na PASTA, não no ARQUIVO.** Foi o erro que
-   uma varredura minha cometeu: achei cinco tipos dentro de `index.tsx`,
-   conferi que nenhum era exportado e concluí que estavam certos. Não estavam
-   -- `ToastContextValue`, `Aba`, `OpcaoDeFiltro` e `NoModal` saíram, e o
-   `Sessao` saiu depois, quando o guarda passou a olhar `contexts/` também.
+   uma varredura minha cometeu em 03/09/2026: achei cinco tipos dentro de
+   `index.tsx`, conferi que nenhum era exportado e concluí que estavam
+   certos. Não estavam.
    ⚠️ Guardado por `tiposForaDoIndex.test.ts`.
 6. 🔴 **Tudo que cria contexto mora em `contexts/`** (03/09/2026), sem
    exceção -- ver *"Por que o Toast virou contexto"*.
+7. 🔴 **Arquivo de hook não declara `interface` nem `type`** (05/09/2026).
+   O tipo vai para o `types.ts` da pasta -- da página ou do componente -- ou
+   para `src/types/<domínio>.ts` quando o uso é geral. E ao mover, **o nome
+   tem que fazer sentido fora do arquivo**: Janela virou
+   `JanelaDeDatasDoQuadro`, BuscaDoPainel virou `EstadoDaBuscaDoPainel`,
+   UseCepOpcoes virou `OpcoesDaConsultaDeCep`. As opções de um hook de
+   formulário (`OpcoesDoFormularioDeTarefa`) nascem no `types.ts` ao lado.
+8. 🔴 **Um hook por arquivo** (05/09/2026), e só ele: função auxiliar que não
+   é hook vai para arquivo próprio (`impedimentosDoSubgrupo.ts` ao lado de
+   `podeExcluirSubgrupo.ts`; `comOpcaoEscolhida` em `utils/opcoesEscolhidas.ts`).
+   O antigo useCatalogos virou três arquivos, e o antigo useOpcoesBuscaveis
+   virou quatro hooks e dois utils. ⚠️ Guardado por `hooksUmPorArquivo.test.ts`, que
+   cobre as duas regras.
 
 ### Por que o Toast virou contexto (03/09/2026)
 
@@ -1178,7 +1196,7 @@ de caminhar todas as páginas só para rotular tarefa na Agenda, e buscar os
 assuntos apenas dos ids que estão na tela. `staleTime` troca correção por
 desempenho; a mudança de estratégia não troca nada.
 
-`useCatalogos.test.ts` fixa a ausência, para que reintroduzir exija passar
+`catalogos.test.ts` fixa a ausência, para que reintroduzir exija passar
 pelo teste — e por esta seção.
 
 ### Prefixo de `queryKey` é contrato: dois formatos não dividem a mesma chave

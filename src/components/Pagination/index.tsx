@@ -6,21 +6,7 @@ import NumeroPagina from "./NumeroPagina";
 import SetaPagina from "./SetaPagina";
 import { numerosVisiveis } from "./numerosVisiveis";
 import { TAMANHOS_PAGINA } from "../../constants";
-
-interface PaginationProps {
-  pagina: number;
-  totalPaginas: number;
-  /** Total de itens, não da página. É o que decide se a barra aparece: com
-   * menos itens que o menor tamanho possível, não há o que paginar nem o
-   * que escolher. */
-  total: number;
-  tamanhoPagina: number;
-  onMudarPagina: (pagina: number) => void;
-  onMudarTamanho: (tamanho: number) => void;
-  /** Opções do "Por página". O padrão serve às listagens; o detalhe do
-   * processo usa passos menores porque cada item ali é alto. */
-  tamanhos?: readonly number[];
-}
+import type { PaginationProps } from "./types";
 
 /** Paginação real -- cada número é endereçável direto, então dá pra pular pra
  * qualquer página sem ter visitado as anteriores.

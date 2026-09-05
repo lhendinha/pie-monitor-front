@@ -2,11 +2,7 @@ import { Text } from "@chakra-ui/react";
 
 import { estadoDoAchado, etiquetaDoAchado } from "../../../../utils/importacao";
 import { CORES_DA_ETIQUETA_DE_SITUACAO } from "../../constants";
-import type { ProcessoEncontrado } from "../../../../types";
-
-interface EtiquetaDeSituacaoProps {
-  processo: ProcessoEncontrado;
-}
+import type { EtiquetaDeSituacaoProps } from "./types";
 
 /** A pílula da coluna "Situação" da prévia da importação. */
 export default function EtiquetaDeSituacao({ processo }: EtiquetaDeSituacaoProps) {

@@ -2,11 +2,7 @@ import { Table, Text } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
 import { mascararCpfCnpj, mascararTelefone } from "../../../../utils";
-import type { Cliente } from "../../../../types";
-
-interface LinhaClienteProps {
-  cliente: Cliente;
-}
+import type { LinhaClienteProps } from "./types";
 
 /** Pessoa física ou jurídica, pelo tamanho do documento -- 11 dígitos é
  * CPF, 14 é CNPJ. Sem documento não dá pra afirmar nem uma coisa nem

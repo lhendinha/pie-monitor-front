@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Botao, CartaoDeTabela, EstadoDeErro, EstadoVazio, Esqueleto, Etiqueta, ModalDeConfirmacao, Pagination, Tabela } from "../../../../components";
 import { useToast } from "../../../../contexts/ToastContext";
 import { TAMANHO_PAGINA_PADRAO } from "../../../../constants";
-import { useTodosOsSubgrupos } from "../../../../hooks/useCatalogos";
+import { useTodosOsSubgrupos } from "../../../../hooks/useTodosOsSubgrupos";
 import {
   atualizarConfiguracoesDoGrupo,
   lerConfiguracoesDoGrupo,

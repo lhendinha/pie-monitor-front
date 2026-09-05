@@ -1,13 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  listarOpcoesProcesso,
-  listarSubgrupos,
-  listarTodosOsMembrosDoGrupo,
-} from "../services";
+import { listarSubgrupos } from "../services";
 import { todasAsPaginas } from "../utils/paginacao";
 import { qk } from "../services/queryKeys";
-import type { Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from "../types";
+import type { Subgrupo } from "../types";
 
 /** Os catálogos do sistema, cada um com UMA função de busca.
  *
@@ -55,47 +51,14 @@ import type { Membro, OpcaoProcesso, Subgrupo, TipoOpcaoProcesso } from "../type
  * das listas daqui que cresce sem limite de verdade. Os três consumidores
  * viraram busca: a coluna da tabela lê `cliente_nomes` (que vem no próprio
  * processo), e os dois seletores pedem a primeira página quando abrem
- * (`useOpcoesBuscaveis`, `CampoDeClientes`).
+ * (`useClientesBuscaveis`, `CampoDeClientes`).
  *
  * Os hooks que sobraram continuam percorrendo todas as páginas de propósito:
  * subgrupo e opção de processo são cadastro de escritório, medido em 8 e 88
  * itens em produção -- lá a caminhada é UMA requisição. */
-
 export function useTodosOsSubgrupos() {
   return useQuery({
     queryKey: qk.todosOsSubgrupos(),
     queryFn: () => todasAsPaginas<Subgrupo>(listarSubgrupos, "subgrupos"),
-  });
-}
-
-export function useOpcoesDeProcesso(tipo: TipoOpcaoProcesso) {
-  return useQuery({
-    queryKey: qk.todasAsOpcoes(tipo),
-    queryFn: () => todasAsPaginas<OpcaoProcesso>((o) => listarOpcoesProcesso(tipo, o), "opcoes"),
-  });
-}
-
-export function useTodosOsMembros(habilitado = true) {
-  return useQuery({
-    queryKey: qk.todosOsMembros(),
-    /* 🔴 `queryFn` guarda a resposta INTEIRA; `select` é que expõe o array.
-     *
-     * A versão anterior desembrulhava dentro do `queryFn`, então o cache
-     * ficava com `Membro[]` -- enquanto os três consumidores vivos dessa
-     * mesma chave (SinoDeNotificacoes, AtendimentosPage, MembrosDoSubgrupo)
-     * usam `listarTodosOsMembrosDoGrupo` direto e guardam `{ membros }`.
-     *
-     * Duas formas na mesma chave é exatamente o defeito que este módulo
-     * existe pra eliminar: o React Query deduplica por chave e roda o
-     * `queryFn` de quem montar primeiro, então quem lesse `.membros` de um
-     * array -- ou iterasse um objeto -- dependia da ordem de montagem.
-     * Ninguém usa este hook ainda; o primeiro que usasse reintroduziria o
-     * problema.
-     *
-     * Com `select`, o cache é idêntico ao dos outros e a transformação
-     * acontece só na saída deste hook. */
-    queryFn: listarTodosOsMembrosDoGrupo,
-    select: (d): Membro[] => d.membros,
-    enabled: habilitado,
   });
 }

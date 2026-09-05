@@ -27,7 +27,7 @@ import CabecalhoAtendimentos from "./components/CabecalhoAtendimentos";
 import LinhaDeAtendimento from "./components/LinhaDeAtendimento";
 import NovoAtendimentoForm from "./components/NovoAtendimentoForm";
 import { STATUS_TODOS, statusParaApi } from "./constants";
-import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import type {
   RespostaDeAtendimentosPaginada,
 } from "../../types/respostas";

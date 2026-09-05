@@ -1,12 +1,5 @@
 import { Box, Stack, Text } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface EstadoVazioProps {
-  mensagem: string;
-  /** Um botão pra sair do vazio -- "Limpar filtros", "Limpar busca". Só faz
-   * sentido quando a lista está vazia POR causa de um filtro. */
-  acao?: ReactNode;
-}
+import type { EstadoVazioProps } from "./types";
 
 /** O que aparece no lugar da lista quando não há nada (`.empty-state` do
  * artifact): 34px 10px, centralizado, texto de 13px em `slate-2`.

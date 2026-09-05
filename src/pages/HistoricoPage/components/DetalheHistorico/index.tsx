@@ -14,14 +14,10 @@ import { detalhesProcesso } from "../../../../services";
 import { qk } from "../../../../services/queryKeys";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
 import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
-import type { HistoricoItem } from "../../../../types";
 import type {
   RespostaDeDetalhesDoProcesso,
 } from "../../../../types/respostas";
-
-interface DetalheHistoricoProps {
-  item: HistoricoItem;
-}
+import type { DetalheHistoricoProps } from "./types";
 
 /** O detalhe de UM envio.
  *

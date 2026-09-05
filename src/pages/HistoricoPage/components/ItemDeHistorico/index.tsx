@@ -3,16 +3,7 @@ import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 import { Etiqueta, EtiquetasDeSubgrupo, Ponto } from "../../../../components";
 import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
-import type { HistoricoItem } from "../../../../types";
-
-interface ItemDeHistoricoProps {
-  /** Traduz `subgrupos_notificados` nos nomes que a pessoa PODE ver,
-   * descartando os demais. Vem da página -- uma consulta para a lista
-   * inteira, não uma por item. */
-  subgruposVisiveis: (ids: string[] | undefined) => string[];
-  item: HistoricoItem;
-  onAbrir: (item: HistoricoItem) => void;
-}
+import type { ItemDeHistoricoProps } from "./types";
 
 /** Um envio na lista do histórico (`.hist-item` do artifact).
  *

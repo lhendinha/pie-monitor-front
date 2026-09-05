@@ -3,13 +3,7 @@ import { useState } from "react";
 
 import { Avatar, Botao, IconeEnviar } from "../../../../components";
 import { getApelido, getEmail } from "../../../../services";
-
-interface NovoRegistroProps {
-  enviando: boolean;
-  /** Resolve quando o registro FOI gravado, rejeita se falhou -- é o que
-   * diz ao campo se ele pode se limpar. */
-  onEnviar: (texto: string) => Promise<unknown>;
-}
+import type { NovoRegistroProps } from "./types";
 
 /** O campo de escrever no fim da linha do tempo (`.tl-new` do artifact).
  *

@@ -33,20 +33,12 @@ import { qk } from "../../../../services/queryKeys";
 import { calcularOrdemAposMover } from "../../../../utils";
 import FormularioNovaOpcao from "../FormularioNovaOpcao";
 import LinhaDeOpcao from "../LinhaDeOpcao";
-import type { OpcaoProcesso, TipoOpcaoProcesso } from "../../../../types";
+import type { OpcaoProcesso } from "../../../../types";
 import type { RenomearOpcao } from "../../types";
 import type {
   RespostaDeOpcoesPaginada,
 } from "../../../../types/respostas";
-
-interface OpcoesListaProps {
-  tipo: TipoOpcaoProcesso;
-  /** "Fases" / "Situações", pras mensagens de erro. */
-  titulo: string;
-  /** "fase" / "situação" -- vira "Nova fase" no campo e "Desativar fase" no
-   * diálogo. */
-  nomeSingular: string;
-}
+import type { OpcoesListaProps } from "./types";
 
 /** CRUD de uma lista (Fases OU Situações).
  *

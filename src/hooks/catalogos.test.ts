@@ -21,9 +21,9 @@ describe("catálogos compartilham chave E forma", () => {
     /* ⚠️ `import.meta.glob` do Vite, não `node:fs` -- o projeto não tem
      * `@types/node`, e a versão anterior passava no vitest mas quebrava o
      * `tsc -b` do `yarn build`. */
-    const fonte = (import.meta.glob("./useCatalogos.ts", {
+    const fonte = (import.meta.glob("./useTodosOsMembros.ts", {
       query: "?raw", import: "default", eager: true,
-    }) as Record<string, string>)["./useCatalogos.ts"];
+    }) as Record<string, string>)["./useTodosOsMembros.ts"];
     const bloco = fonte.slice(fonte.indexOf("export function useTodosOsMembros"));
     const corpo = bloco.slice(0, bloco.indexOf("\n}"));
 
@@ -86,16 +86,19 @@ describe("catálogos não têm staleTime", () => {
    * caminhar todas as páginas pra rotular tarefa.
    */
   it("nenhum catálogo declara staleTime", async () => {
-    const fonte = (
-      import.meta.glob("./useCatalogos.ts", {
-        query: "?raw",
-        import: "default",
-        eager: true,
-      }) as Record<string, string>
-    )["./useCatalogos.ts"];
+    /* Os três catálogos, um por arquivo desde 05/09/2026 (regra 8 da seção 3
+       do CONTEXT.md). */
+    const fontes = import.meta.glob("./{useTodosOsSubgrupos,useOpcoesDeProcesso,useTodosOsMembros}.ts", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    expect(Object.keys(fontes)).toHaveLength(3);
 
-    // Ignora o bloco de comentário que explica a ausência.
-    const semComentarios = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-    expect(semComentarios).not.toContain("staleTime");
+    for (const [arquivo, fonte] of Object.entries(fontes)) {
+      // Ignora o bloco de comentário que explica a ausência.
+      const semComentarios = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+      expect(semComentarios, arquivo).not.toContain("staleTime");
+    }
   });
 });

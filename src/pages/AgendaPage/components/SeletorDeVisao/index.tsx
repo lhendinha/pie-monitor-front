@@ -5,17 +5,7 @@ import { OpcaoDeLinha, PilulaDeFiltro } from "../../../../components";
 import { PAINEL } from "../../../../theme/painelFiltro";
 import { VISOES, rotuloDaVisao } from "../../constants";
 import type { VisaoDaAgenda } from "../../types";
-
-interface SeletorDeVisaoProps {
-  visao: VisaoDaAgenda;
-  onMudar: (visao: VisaoDaAgenda) => void;
-  /** No modo "Atrasadas" a lista ignora o calendário, então trocar de visão
-   * não teria efeito -- e uma pílula que não faz nada parece quebrada. */
-  desabilitado?: boolean;
-  /** Vira `title`: quem passa o mouse descobre POR QUE está desabilitada.
-   * Controle desabilitado sem explicação é o pior dos dois. */
-  motivo?: string;
-}
+import type { SeletorDeVisaoProps } from "./types";
 
 /** A pílula que troca a visão da Agenda (`#agenda-view-btn` do artifact).
  *

@@ -20,3 +20,7 @@ export const ESPERA_DA_BUSCA_MS = 300;
  * servidor já tinha achado e mandado.
  */
 export const PRIMEIRA_PAGINA_DE_OPCOES = 50;
+
+/** O pedido de primeira página que as pílulas buscáveis fazem, pronto pra
+ * espalhar nos parâmetros da chamada. */
+export const PAGINA_DE_OPCOES = { tamanhoPagina: PRIMEIRA_PAGINA_DE_OPCOES };

@@ -2,10 +2,7 @@ import { Flex } from "@chakra-ui/react";
 
 import MenuUsuario from "../MenuUsuario";
 import SinoDeNotificacoes from "./SinoDeNotificacoes";
-
-interface TopbarProps {
-  onSair: () => void;
-}
+import type { TopbarProps } from "./types";
 
 /** Barra superior da área autenticada (`.topbar` do artifact): 60px de
  * altura, divisória de 1px embaixo e as ações encostadas à direita.

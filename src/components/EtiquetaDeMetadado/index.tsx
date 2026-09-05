@@ -1,9 +1,5 @@
 import { Flex } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface EtiquetaDeMetadadoProps {
-  children: ReactNode;
-}
+import type { EtiquetaDeMetadadoProps } from "./types";
 
 /** Etiqueta de metadado (`.meta-chip` do artifact): pílula discreta em cima
  * do fundo da página, usada para subgrupo, situação e fase no cabeçalho de

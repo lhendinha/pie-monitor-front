@@ -12,56 +12,7 @@ import { OpcaoComCheckbox } from "./OpcaoComCheckbox";
 import { ResumoSelecionados } from "./ResumoSelecionados";
 import { useBuscaDoPainel } from "./useBuscaDoPainel";
 import type { OpcaoDeSelect } from "../../types";
-
-interface MultiSelectProps {
-  id?: string;
-  opcoes: OpcaoDeSelect[];
-  selecionados: string[];
-  onMudar: (valores: string[]) => void;
-  placeholder?: string;
-  /** "chip" desenha o controle como a pílula de filtro do artifact.
-   *
-   * O rótulo mostra a seleção -- é o `ResumoSelecionados` (ValueContainer
-   * já existente no projeto) que troca as tags padrão por texto: um nome
-   * quando é um só, "N selecionados" quando são muitos. É por isso que o
-   * artifact não precisa de chips removíveis embaixo da barra. */
-  variante?: "padrao" | "chip";
-  /** As opções ainda estão vindo.
-   *
-   * Lista vazia significa duas coisas -- "não existe nenhuma" e "ainda não
-   * chegou" -- e um seletor vazio e clicável faz a pessoa concluir a
-   * primeira. Aqui ele fica travado e o texto diz o que está acontecendo,
-   * em vez de mentir por omissão.
-   *
-   * ⚠️ Com `onBuscar` o controle NÃO é travado: ali é ABRIR que dispara a
-   * busca, e uma pílula travada enquanto carrega nunca sairia do lugar. */
-  carregando?: boolean;
-  /** Ver `Select`: digitar para filtrar, **ligado por padrão**. */
-  permitirBusca?: boolean;
-  /** Ver `Select`: idem, mas quem filtra é o SERVIDOR -- pra lista que pode
-   * crescer sem limite (cliente, subgrupo, pessoa). */
-  onBuscar?: (termo: string) => void;
-  placeholderBusca?: string;
-  erro?: boolean;
-  onTentarDeNovo?: () => void;
-  /** O X que limpa sem abrir o painel.
-   *
-   * ⚠️ Aqui ele NÃO passa pelo rascunho: limpar tudo é a única ação do
-   * painel que se aplica sozinha. Exigir "Aplicar" depois de um botão que
-   * diz "limpar" seria pedir confirmação de um gesto que já é explícito --
-   * e ele existe justamente pra não ter que abrir o painel. */
-  permitirLimpar?: boolean;
-  /** Não dá para mexer AGORA -- uma gravação desta linha está em voo.
-   *
-   * 🔴 Separado de `carregando`, e não reusando aquele: `carregando` troca o
-   * placeholder por "Carregando…", que seria mentira durante um salvamento.
-   * Dois estados diferentes com a mesma prop é como a tela passa a informar
-   * errado sem nada ficar vermelho.
-   *
-   * ⚠️ Espelha o `desabilitado` que o `Select` de valor único já tem: a
-   * ausência dele aqui era assimetria, não decisão. */
-  desabilitado?: boolean;
-}
+import type { MultiSelectProps } from "./types";
 
 /** Dropdown fechado com checkboxes -- mesmo visual do `Select` de valor
  * único, mas permitindo múltipla seleção. */

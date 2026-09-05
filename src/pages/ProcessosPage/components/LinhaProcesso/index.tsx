@@ -3,15 +3,7 @@ import { Table, Text } from "@chakra-ui/react";
 import { formatarData, formatarDataHoraAmPm, mascararNumeroProcesso } from "../../../../utils";
 import { CelulaComSub, EtiquetasDeSubgrupo } from "../../../../components";
 import type { Processo } from "../../../../types";
-
-interface LinhaProcessoProps {
-  processo: Processo;
-  subgrupoNome: (id: string) => string;
-  clientesNomes: (p: Processo) => string;
-  faseRotulo: (id?: string | null) => string;
-  situacaoRotulo: (id?: string | null) => string;
-  onAbrir: (p: Processo) => void;
-}
+import type { LinhaProcessoProps } from "./types";
 
 /** Uma linha da tabela de processos, nas 6 colunas do artifact.
  *

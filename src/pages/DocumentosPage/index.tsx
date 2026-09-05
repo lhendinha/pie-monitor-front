@@ -21,7 +21,7 @@ import {
   Select,
   Tabela,
 } from "../../components";
-import { useSubgruposBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
 import { listarDocumentos } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";

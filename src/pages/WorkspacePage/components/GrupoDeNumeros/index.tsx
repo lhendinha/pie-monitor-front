@@ -2,15 +2,7 @@ import { Box } from "@chakra-ui/react";
 
 import { Rotulo } from "../../../../components";
 import LinhaDoResumo from "../LinhaDoResumo";
-import type { NumeroDoResumo } from "../../types";
-
-interface GrupoDeNumerosProps {
-  rotulo: string;
-  numeros: NumeroDoResumo[];
-  /** O primeiro grupo não afasta do topo -- o cabeçalho do cartão já
-   * separa. */
-  primeiro?: boolean;
-}
+import type { GrupoDeNumerosProps } from "./types";
 
 /** Um bloco nomeado do "Resumo rápido" ("Precisa de atenção", "Panorama").
  *

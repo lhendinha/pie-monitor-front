@@ -9,20 +9,9 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { apenasDigitos, mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../CamposProcesso";
-import type { Subgrupo } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../types";
 import { TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO } from "../../../../constants";
-
-
-interface NovoProcessoFormProps {
-  subgrupos: Subgrupo[];
-  /** Distingue "ainda não chegou" de "não existe nenhum". Sem isto o modal
-   * abria afirmando "Crie um subgrupo primeiro" durante o carregamento --
-   * uma frase falsa pra quem tem subgrupos, e pior que não dizer nada. */
-  carregandoSubgrupos?: boolean;
-  onCadastrado: () => void;
-  onFechar: () => void;
-}
+import type { NovoProcessoFormProps } from "./types";
 
 export default function NovoProcessoForm({
   subgrupos,

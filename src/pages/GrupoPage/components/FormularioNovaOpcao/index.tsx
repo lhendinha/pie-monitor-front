@@ -2,14 +2,7 @@ import { Flex, Input, Text } from "@chakra-ui/react";
 import { useState, type FormEvent } from "react";
 
 import { Botao, IconePlus } from "../../../../components";
-
-interface FormularioNovaOpcaoProps {
-  /** "fase" ou "situação", no singular -- vira o placeholder ("Nova fase"). */
-  nomeSingular: string;
-  enviando: boolean;
-  erro?: string;
-  onCriar: (rotulo: string) => void;
-}
+import type { FormularioNovaOpcaoProps } from "./types";
 
 /** Criar opção é a PRIMEIRA LINHA da lista, dentro do mesmo cartão -- como
  * no artifact, e como em Subgrupos. Fora dele viraria um formulário solto

@@ -1,19 +1,8 @@
 import { Button } from "@chakra-ui/react";
-import type { ButtonProps } from "@chakra-ui/react";
 import { forwardRef } from "react";
-import type { ReactNode } from "react";
 
 import { PILULA, coresPilula } from "../../theme/pilula";
-
-/** ⚠️ Estende `ButtonProps` porque o componente já faz spread de `...resto`
- * no `Button` -- a tipagem não declarava isso, então passar `onClick` (ou
- * qualquer atributo de botão) era erro de compilação num componente que
- * aceitava perfeitamente em runtime. */
-interface PilulaDeFiltroProps extends ButtonProps {
-  /** Muda a cor: filtro escolhido fica em azul claro, como no artifact. */
-  ativo: boolean;
-  children: ReactNode;
-}
+import type { PilulaDeFiltroProps } from "./types";
 
 /** A pílula da barra de filtros (`.chip-btn` do artifact).
  *

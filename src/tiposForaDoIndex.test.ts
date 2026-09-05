@@ -1,93 +1,52 @@
 import { describe, expect, it } from "vitest";
 
-/** Interface que não é as props do componente NÃO mora no `index.tsx`.
+/** Nenhum `interface` ou `type` dentro de arquivo de componente, página ou
+ * contexto -- nem as props.
  *
- * 🔴 A regra do projeto, escrita em `CONTEXT.md` ("alcance decide o
- * destino") e explicitada em 03/09/2026: o `index.tsx` declara o componente
- * e, no máximo, as props DELE. Qualquer outro tipo vai para o `types.ts` da
- * própria pasta -- ou para `src/types/` quando serve a mais de uma tela.
+ * 🔴 A regra 5 da seção 3 do `CONTEXT.md`, na forma de 05/09/2026: tudo vai
+ * para o `types.ts` da própria pasta (`contexts/types.ts` para os
+ * provedores) ou para `src/types/` quando outra pasta importa. Até então
+ * a interface de props podia ficar no arquivo, e este guarda mantinha uma
+ * lista de permitidos; a lista era o ponto fraco -- um `*Props` a mais de um
+ * componente que não existe passava.
  *
- * ⚠️ **Este guarda existe porque a varredura manual errou.** Ao procurar
- * componentes fora do lugar eu achei cinco tipos em `index.tsx`, conferi que
- * eram privados e não exportados, e concluí que estavam "certos onde
- * estão" -- o critério errado. Privado justifica ficar na PASTA, não no
- * arquivo do componente. Foram quatro correções: `ToastContextValue`, `Aba`,
- * `OpcaoDeFiltro` e `NoModal`.
+ * ⚠️ **Este guarda existe porque a varredura manual errou.** Em 03/09/2026 eu
+ * achei cinco tipos em `index.tsx`, conferi que eram privados e não
+ * exportados, e concluí que estavam "certos onde estão" -- o critério errado.
+ * Privado justifica ficar na PASTA, não no arquivo do componente.
  *
- * ⚠️ **O que continua permitido, e por quê:**
- * - `<NomeDaPasta>Props` -- é o contrato do componente, e separá-lo do
- *   componente obrigaria a abrir dois arquivos para ler uma assinatura;
- * - `<OutroComponenteDoArquivo>Props` -- um arquivo pode legitimamente ter
- *   dois componentes quando um é casca do outro (`ToastProvider` ao lado do
- *   `useToast`), e cada um leva as próprias props.
+ * ⚠️ Cobre TODO `.tsx` de `src/`, não só os `index.tsx`: a primeira versão
+ * varria só os índices e deixou passar o `Sessao` de `contexts/SessaoContext.tsx`.
  */
-
-/* ⚠️ `index.tsx` E `contexts/*.tsx`. A primeira versão varria só os `index`,
-   e por isso deixou passar o `Sessao` do `SessaoContext.tsx` -- que é um
-   arquivo solto, não uma pasta com índice. O guarda tem de cobrir todo lugar
-   onde a regra vale, e não só a forma mais comum. */
-const ARQUIVOS = {
-  ...(import.meta.glob("/src/**/index.tsx", {
-    eager: true, query: "?raw", import: "default",
-  }) as Record<string, string>),
-  ...(import.meta.glob("/src/contexts/*.tsx", {
-    eager: true, query: "?raw", import: "default",
-  }) as Record<string, string>),
-};
+const ARQUIVOS = import.meta.glob("/src/**/*.tsx", {
+  eager: true, query: "?raw", import: "default",
+}) as Record<string, string>;
 
 /** Tipos e interfaces declarados no topo do arquivo. */
 function tiposDeclarados(fonte: string): string[] {
   return [...fonte.matchAll(/^(?:export )?(?:interface|type) (\w+)/gm)].map((m) => m[1]);
 }
 
-/** Componentes de topo -- é o que decide quais `*Props` são legítimos. */
-function componentes(fonte: string): string[] {
-  return [...fonte.matchAll(/^(?:export default |export )?function ([A-Z]\w*)\s*\(/gm)].map(
-    (m) => m[1],
-  );
-}
+describe("tipos fora dos arquivos de componente, página e contexto", () => {
+  const arquivos = Object.entries(ARQUIVOS).filter(([caminho]) => !caminho.includes(".test."));
 
-describe("tipos fora do index.tsx", () => {
   it("varre a árvore de verdade -- senão o guarda passaria vazio", () => {
-    expect(Object.keys(ARQUIVOS).length).toBeGreaterThan(80);
+    expect(arquivos.length).toBeGreaterThan(150);
   });
 
-  it("🔴 nenhum `index.tsx` declara tipo que não sejam as props de um componente dele", () => {
-    const infratores: string[] = [];
-
-    for (const [caminho, fonte] of Object.entries(ARQUIVOS)) {
-      if (caminho.includes(".test.")) continue;
-      const partes = caminho.split("/");
-      /* Em pasta com índice, quem nomeia é a PASTA; em arquivo solto
-         (`contexts/SessaoContext.tsx`), é o próprio arquivo. */
-      const base = partes[partes.length - 1] === "index.tsx"
-        ? partes[partes.length - 2]
-        : partes[partes.length - 1].replace(".tsx", "");
-      const permitidos = new Set([
-        `${base}Props`,
-        ...componentes(fonte).map((c) => `${c}Props`),
-      ]);
-
-      for (const tipo of tiposDeclarados(fonte)) {
-        if (!permitidos.has(tipo)) {
-          infratores.push(`${caminho.replace("/src/", "")} -> ${tipo}`);
-        }
-      }
-    }
-
+  it("🔴 nenhum `.tsx` declara `interface` ou `type` -- nem as props", () => {
+    const infratores = arquivos
+      .filter(([, fonte]) => tiposDeclarados(fonte).length > 0)
+      .map(([caminho, fonte]) => `${caminho.replace("/src/", "")} -> ${tiposDeclarados(fonte).join(", ")}`);
     expect(infratores).toEqual([]);
   });
 
-  it("⚠️ e o guarda REPROVA quando o tipo não é props -- senão não guarda nada", () => {
-    /* A mutação embutida: sem isto, um `permitidos` grande demais faria o
-       teste acima passar com qualquer coisa. */
+  it("⚠️ e o guarda REPROVA até as props -- senão não guarda nada", () => {
     const fonte = `
-interface CoisaQualquer { a: string }
+interface MeuComponenteProps { a: string }
+type Modo = "um" | "dois";
 export default function MeuComponente() { return null }
 `;
-    const permitidos = new Set(["MeuComponenteProps"]);
-    const fora = tiposDeclarados(fonte).filter((t) => !permitidos.has(t));
-
-    expect(fora).toEqual(["CoisaQualquer"]);
+    expect(tiposDeclarados(fonte)).toEqual(["MeuComponenteProps", "Modo"]);
   });
 });

@@ -2,12 +2,7 @@ import { Flex } from "@chakra-ui/react";
 
 import { BotaoNu } from "../BotaoNu";
 import { IconeAlerta, IconeCheck } from "../Icons";
-import type { ToastItem } from "../../types";
-
-interface AvisoProps {
-  item: ToastItem;
-  onFechar: () => void;
-}
+import type { AvisoProps } from "./types";
 
 /** Um aviso (`.toast` do artifact): pílula escura com o ícone colorido à
  * esquerda.

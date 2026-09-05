@@ -1,7 +1,7 @@
 /** Os dois filtros novos do Histórico, em Chrome de verdade.
  *
  *   1) cd ../api && yarn offline
- *   2) python <scratchpad>/semear_historico.py   -- ver o cenário abaixo
+ *   2) .venv/bin/python scripts/offline/semear_historico.py   -- na pasta api
  *   3) VITE_API_URL=http://localhost:8099 VITE_WS_URL=ws://localhost:8098 \
  *        yarn dev --port 5174 --strictPort
  *   4) node scripts/verificar-filtros-do-historico.mjs
@@ -131,7 +131,23 @@ await pagina.waitForTimeout(900);
 const semFiltro = await mostrando();
 conferir(semFiltro.filtrados > 0, "há histórico para filtrar", `${semFiltro.filtrados} na página`);
 
-/* ⚠️ A ÚLTIMA linha fica de fora, e não é conveniência: `ItemDeHistorico`
+// ── Filtro 1: o número do processo ───────────────────────────────────────
+const campo = pagina.getByLabel("Buscar por número do processo");
+conferir(await campo.isVisible().catch(() => false), "o campo de número aparece na barra");
+
+const caraNoHistorico = await caraDoCampo("Buscar por número do processo");
+conferir(caraNoHistorico?.temLupa === true, "o campo tem a lupa por dentro");
+
+await campo.fill(PROCESSO_A);
+await pagina.waitForTimeout(1200);
+
+/* ⚠️ A altura se mede na lista FILTRADA pelo processo A, e não na tela de
+   abertura: o volume do offline tem envios de outras sementes sem órgão nem
+   tipo de comunicação (`semear_resumo.py`), que medem 98px contra os 118px
+   dos completos -- diferença de CONTEÚDO, não da etiqueta. Os envios de A
+   têm a mesma forma e etiquetas de dois subgrupos, que é o que se quer medir.
+
+   ⚠️ A ÚLTIMA linha fica de fora, e não é conveniência: `ItemDeHistorico`
    tem `_last={{ borderBottomWidth: 0 }}`, então ela mede 1px a menos POR
    DESENHO. Medindo todas, o roteiro acusava "117, 118" como se a etiqueta
    tivesse estourado a altura -- e a linha com DUAS etiquetas media os mesmos
@@ -142,16 +158,6 @@ conferir(
   "as linhas têm altura uniforme com a etiqueta de subgrupo",
   `${alturas.length} linhas, ${[...new Set(alturas)].join(", ")}px`,
 );
-
-// ── Filtro 1: o número do processo ───────────────────────────────────────
-const campo = pagina.getByLabel("Buscar por número do processo");
-conferir(await campo.isVisible().catch(() => false), "o campo de número aparece na barra");
-
-const caraNoHistorico = await caraDoCampo("Buscar por número do processo");
-conferir(caraNoHistorico?.temLupa === true, "o campo tem a lupa por dentro");
-
-await campo.fill(PROCESSO_A);
-await pagina.waitForTimeout(1200);
 
 const porNumero = await mostrando();
 const urlNumero = new URL(pagina.url());

@@ -2,13 +2,7 @@ import { Box, Flex, Text } from "@chakra-ui/react";
 
 import { Avatar } from "../../../../components";
 import { formatarDataHora } from "../../../../utils";
-import type { RegistroDeAtendimento } from "../../../../types";
-
-interface LinhaDoTempoProps {
-  registros: RegistroDeAtendimento[];
-  /** Apelido de quem escreveu. O registro guarda só o e-mail, e quem
-   * resolve o nome é a página. */
-}
+import type { LinhaDoTempoProps } from "./types";
 
 /** A linha do tempo do atendimento (`.timeline` do artifact).
  *

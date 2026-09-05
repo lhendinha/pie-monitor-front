@@ -10,12 +10,7 @@ import { apenasDigitos, emailValido, mascararCpfCnpj, mascararTelefone } from ".
 import { useGuardaDeDescarte } from "../../../../hooks/useGuardaDeDescarte";
 import { ENDERECO_VAZIO, TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
 import type { EnderecoDoCliente } from "../../../../types";
-
-interface NovoClienteFormProps {
-  onCadastrado: () => void;
-  onFechar: () => void;
-}
-
+import type { NovoClienteFormProps } from "./types";
 
 export default function NovoClienteForm({ onCadastrado, onFechar }: NovoClienteFormProps) {
   /** Liga o botão do rodapé ao `<form>` do corpo pelo atributo `form` --

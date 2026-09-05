@@ -11,16 +11,10 @@ import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import { listarProcessos } from "../../../../services";
 import { OPCAO_LINHA } from "../../../../theme/painelFiltro";
 import { mascararNumeroProcesso } from "../../../../utils";
-import type { ProcessoEscolhido } from "../../types";
 import type {
   RespostaDeProcessos,
 } from "../../../../types/respostas";
-
-interface CampoDeProcessoProps {
-  id: string;
-  valor: ProcessoEscolhido | null;
-  onMudar: (escolhido: ProcessoEscolhido | null) => void;
-}
+import type { CampoDeProcessoProps } from "./types";
 
 /** Busca de processo com escolha ÚNICA (o `af-proc-*` do artifact).
  *

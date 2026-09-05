@@ -1,12 +1,6 @@
 import { Box, Input } from "@chakra-ui/react";
 import { useEffect, useRef } from "react";
-
-interface CampoDeBuscaDoPainelProps {
-  valor: string;
-  onMudar: (valor: string) => void;
-  placeholder: string;
-  onEscape: () => void;
-}
+import type { CampoDeBuscaDoPainelProps } from "./types";
 
 /** A caixa de digitar, no TOPO DO PAINEL -- não dentro da pílula.
  *

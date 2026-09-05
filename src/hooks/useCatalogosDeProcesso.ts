@@ -1,6 +1,7 @@
 
 import { useToastOnQueryError } from "../services/queryClient";
-import { useOpcoesDeProcesso, useTodosOsSubgrupos } from "./useCatalogos";
+import { useOpcoesDeProcesso } from "./useOpcoesDeProcesso";
+import { useTodosOsSubgrupos } from "./useTodosOsSubgrupos";
 import type { OpcaoProcesso } from "../types";
 import type { ComClientes } from "../types";
 

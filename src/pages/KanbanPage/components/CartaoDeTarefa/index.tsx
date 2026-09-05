@@ -5,14 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Avatar, EtiquetaDePrazo } from "../../../../components";
 import { mascararNumeroProcesso } from "../../../../utils";
 import { CORES_DA_PRIORIDADE } from "../../constants";
-import type { Tarefa } from "../../../../types";
-
-interface CartaoDeTarefaProps {
-  tarefa: Tarefa;
-  /** Apelido de quem é responsável -- a tarefa guarda só o e-mail. */
-  responsavel?: string;
-  onAbrir: (tarefa: Tarefa) => void;
-}
+import type { CartaoDeTarefaProps } from "./types";
 
 /** Um cartão do quadro (`.kcard` do artifact).
  *

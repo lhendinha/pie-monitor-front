@@ -48,3 +48,21 @@ export interface RenomearColuna {
   id: string;
   nome: string;
 }
+
+/** A janela de datas que o quadro pede ao servidor (`data_de`/`data_ate`). */
+export interface JanelaDeDatasDoQuadro {
+  /** Vazias = "Todos os períodos", e aí vem o subgrupo inteiro. */
+  dataDe?: string;
+  dataAte?: string;
+}
+
+export interface KanbanPageProps {
+  /** A tarefa que o link do lembrete de prazo aponta
+   * (`/tarefas/:subgrupoId/:tarefaId`).
+   *
+   * Abre o quadro DELA e o modal dela, já carregado. Sem isto o link caía
+   * no `<Navigate to="/" />` e a pessoa era jogada na Área de trabalho, sem
+   * a tarefa e sem explicação -- e esse endereço já sai por e-mail desde
+   * 21/08, com o formato correto de propósito, esperando esta rota. */
+  tarefaDoLink?: TarefaDoLink;
+}

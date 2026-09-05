@@ -4,14 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 import { BotaoNu, IconeCheck, IconePlus } from "../../../../components";
 import CartaoDeTarefa from "../CartaoDeTarefa";
-import type { ColunaDoQuadro as Coluna, Tarefa } from "../../../../types";
-
-interface ColunaDoQuadroProps {
-  coluna: Coluna;
-  tarefas: Tarefa[];
-  onAbrirTarefa: (tarefa: Tarefa) => void;
-  onNovaTarefa: (colunaId: string) => void;
-}
+import type { ColunaDoQuadroProps } from "./types";
 
 /** Uma coluna do quadro (`.kcol` do artifact).
  *

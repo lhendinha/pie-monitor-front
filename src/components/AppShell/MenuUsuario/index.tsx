@@ -8,11 +8,7 @@ import Avatar from "../../Avatar";
 import { BotaoNu } from "../../BotaoNu";
 import IconeChevron from "../../Icons/IconeChevron";
 import { OPCAO_DE_MENU, PAINEL_DE_MENU } from "../../../theme/menu";
-
-
-interface MenuUsuarioProps {
-  onSair: () => void;
-}
+import type { MenuUsuarioProps } from "./types";
 
 /** Chip do usuário na topbar, abrindo menu com "Meu perfil" e "Sair".
  *

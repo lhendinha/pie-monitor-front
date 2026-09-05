@@ -1,13 +1,7 @@
 import { Botao, EstadoVazio, Tabela } from "../../../../components";
 import { COLUNAS_CLIENTES } from "../../constants";
 import LinhaCliente from "../LinhaCliente";
-import type { Cliente } from "../../../../types";
-
-interface TabelaClientesProps {
-  clientes: Cliente[];
-  busca: string;
-  onLimparBusca: () => void;
-}
+import type { TabelaClientesProps } from "./types";
 
 /** A tabela de clientes, nas 4 colunas do artifact. */
 export default function TabelaClientes({ clientes, busca, onLimparBusca }: TabelaClientesProps) {

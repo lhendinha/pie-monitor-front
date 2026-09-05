@@ -5,10 +5,7 @@ import { Botao, BotaoDeLink, Campo, CartaoDeAutenticacao, Faixa } from "../../co
 import { useToast } from "../../contexts/ToastContext";
 import { solicitarRecuperacaoSenha } from "../../services";
 import { emailValido } from "../../utils";
-
-interface EsqueciSenhaPageProps {
-  onVoltar: () => void;
-}
+import type { EsqueciSenhaPageProps } from "./types";
 
 export default function EsqueciSenhaPage({ onVoltar }: EsqueciSenhaPageProps) {
   const [email, setEmail] = useState("");

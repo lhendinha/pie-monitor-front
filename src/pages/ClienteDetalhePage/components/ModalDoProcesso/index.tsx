@@ -2,17 +2,7 @@ import { Stack, Text } from "@chakra-ui/react";
 
 import { Botao, CampoDeLeitura, Modal, RodapeDeAcoes } from "../../../../components";
 import { formatarData, mascararNumeroProcesso } from "../../../../utils";
-import type { Processo } from "../../../../types";
-
-interface ModalDoProcessoProps {
-  processo: Processo;
-  /** Rótulo da situação, já resolvido -- a tela é quem tem o catálogo. */
-  situacao: string;
-  /** Rótulo da fase, idem. */
-  fase: string;
-  onAbrirProcesso: () => void;
-  onFechar: () => void;
-}
+import type { ModalDoProcessoProps } from "./types";
 
 /** O resumo de um processo do cliente.
  *

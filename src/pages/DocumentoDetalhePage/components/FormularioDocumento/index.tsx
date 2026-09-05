@@ -17,18 +17,9 @@ import { qk } from "../../../../services/queryKeys";
 import { mascararNumeroProcesso } from "../../../../utils";
 import CartaoDoArquivo from "../CartaoDoArquivo";
 import { podeDestruirDocumento } from "../../podeDestruirDocumento";
-import type { Documento, VinculosDeRegistro } from "../../../../types";
+import type { VinculosDeRegistro } from "../../../../types";
 import type { RespostaDeMembros } from "../../../../types/respostas";
-
-interface FormularioDocumentoProps {
-  /** Traduz `subgrupo_id` em nome -- resolvido pela página. */
-  subgrupoNome: (id: string) => string;
-  /** O documento JÁ CARREGADO. Este componente não conhece estado de
-   * consulta -- ver o comentário do componente. */
-  documento: Documento;
-  onSalvo: () => void;
-  onRemover: () => void;
-}
+import type { FormularioDocumentoProps } from "./types";
 
 /** Cabeçalho + formulário de edição do documento, no molde de
  * `FormularioCliente`: o título como cabeçalho, as ações à direita da mesma

@@ -1,11 +1,7 @@
 import { Flex, Text } from "@chakra-ui/react";
 
 import { BotaoNu } from "../../../../components";
-import type { NumeroDoResumo } from "../../types";
-
-interface LinhaDoResumoProps {
-  numero: NumeroDoResumo;
-}
+import type { LinhaDoResumoProps } from "./types";
 
 const ESTILO = {
   display: "flex",

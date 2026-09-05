@@ -22,11 +22,9 @@ import TabelaProcessos from "./components/TabelaProcessos";
 import ImportarPorOab from "./components/ImportarPorOab";
 import NovoProcessoForm from "./components/NovoProcessoForm";
 import { useCatalogosDeProcesso } from "../../hooks/useCatalogosDeProcesso";
-import {
-  podeListarPessoas,
-  useClientesBuscaveis,
-  usePessoasBuscaveis,
-} from "../../hooks/useOpcoesBuscaveis";
+import { podeListarPessoas } from "../../utils/permissoes";
+import { useClientesBuscaveis } from "../../hooks/useClientesBuscaveis";
+import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
 import { useFiltrosProcessos } from "./hooks/useFiltrosProcessos";
 import type { FiltrosProcessos } from "../../types";
 import type {
@@ -65,7 +63,7 @@ export default function ProcessosPage() {
 
   const f = useFiltrosProcessos(filtrosIniciais, navegacao?.processoEmDestaque);
   const apoio = useCatalogosDeProcesso();
-  /** Não pede nada até a pílula abrir -- ver `useOpcoesBuscaveis`. */
+  /** Não pede nada até a pílula abrir -- ver `useListaBuscavel`. */
   const clientes = useClientesBuscaveis();
   /* ⚠️ `GET /grupos/membros` tem piso `manager`: pra um `user` esta lista
      chega vazia, e a pílula cai no estado de erro. As três opções fixas

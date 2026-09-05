@@ -1,16 +1,14 @@
 import { useMemo, useState } from "react";
-import { Box, Checkbox, Flex, Progress, Table, Text } from "@chakra-ui/react";
+import { Box, Flex, Progress, Text } from "@chakra-ui/react";
 
 import {
   Botao,
   BotaoNu,
   Campo,
   CampoDeResponsaveis,
-  CelulaComSub,
   Pagination,
   Tabela,
 } from "../../../../components";
-import { mascararNumeroProcesso } from "../../../../utils";
 import {
   concordar,
   preSelecionados,
@@ -22,28 +20,9 @@ import {
 import { TAMANHO_PAGINA_PADRAO } from "../../../../constants";
 import { COLUNAS_DA_PREVIA, ESTILO_DE_LINK } from "../../constants";
 import AvisoDaImportacao from "../AvisoDaImportacao";
-import CartaoDeResumo from "../CartaoDeResumo";
-import EtiquetaDeSituacao from "../EtiquetaDeSituacao";
-import type { PreviaDaImportacao as Previa } from "../../../../types";
-
-
-interface PreviaDaImportacaoProps {
-  previa: Previa;
-  subgrupoId: string;
-  /** Quem está importando. É a pré-seleção do responsável -- e o único valor
-   * seguro quando ela não é membro do subgrupo. */
-  meuEmail: string;
-  /** 🔴 Se quem importa NÃO é membro do subgrupo escolhido, o servidor recusa
-   * pô-la como responsável (`Responsável não é membro do subgrupo`) -- e um
-   * `manager`/`admin` age em subgrupo que não participa. Sem esta informação
-   * a tela pré-selecionaria alguém que a API vai negar, e a importação
-   * inteira falharia depois da busca. */
-  souMembro: boolean;
-  importando: boolean;
-  progresso: { feitos: number; total: number } | null;
-  onImportar: (numeros: string[], responsaveis: string[]) => void;
-  onVoltar: () => void;
-}
+import LinhaDaPrevia from "../LinhaDaPrevia";
+import ResumoDaPrevia from "../ResumoDaPrevia";
+import type { PreviaDaImportacaoProps } from "./types";
 
 /** A lista para conferir antes de gravar.
  *
@@ -106,65 +85,12 @@ export default function PreviaDaImportacao({
 
   return (
     <Box>
-      {/* `.resumo` do desenho: grade que se reparte sozinha, não uma fileira
-          de `flex: 1` -- com quatro cartões estreitos a diferença aparece na
-          quebra, onde o `flex` deixa um sozinho esticado na segunda linha. */}
-      <Box
-        display="grid"
-        gridTemplateColumns="repeat(auto-fit, minmax(136px, 1fr))"
-        gap="12px"
-        mb="18px"
-      >
-        <CartaoDeResumo
-          numero={previa.processos.length}
-          rotulo={concordar(previa.processos.length, "encontrado", "encontrados")}
-        />
-        {/* ⚠️ "seriam cadastrados", não "novos": o cartão responde o que
-            acontece se a pessoa confirmar, e é o número que ela confere antes
-            de clicar. "Novos" descreveria a lista; este descreve a ação.
-
-            ⚠️ E "NESTE SUBGRUPO" no fim, porque sem isso o cartão respondia
-            uma pergunta mais larga do que a que ele responde: com 21 de 23
-            já acompanhados em outro lugar, "21 seriam cadastrados" se lê
-            como "21 são novos no sistema" -- e nenhum é.
-
-            🔴 E vem ANTES do "já estão neste subgrupo", como no desenho: a
-            ordem é a da decisão -- quantos achei, quantos entram, quantos
-            não. Pôr o impedimento no meio interrompe a leitura. */}
-        {/* 🔴 Segue a SELEÇÃO, não o total de importáveis: desmarcar cinco e
-            o cartão continuar dizendo que eles "seriam cadastrados" seria
-            uma promessa que o botão logo abaixo não cumpre. */}
-        <CartaoDeResumo
-          numero={marcados.size}
-          rotulo={concordar(
-            marcados.size,
-            "seria cadastrado neste subgrupo",
-            "seriam cadastrados neste subgrupo",
-          )}
-          tom="bom"
-        />
-        <CartaoDeResumo
-          numero={jaExistem}
-          rotulo={concordar(jaExistem, "já está neste subgrupo", "já estão neste subgrupo")}
-          tom="atencao"
-        />
-        {/* 🔴 Azul, e não verde nem âmbar: verde diria "entra", âmbar diria
-            "não entra", e este número não é nem um nem outro -- é um RECORTE
-            dos que entram, para quem quiser desmarcar.
-
-            ⚠️ E "TAMBÉM" carrega a aritmética: os três primeiros somam
-            (novos + já aqui = encontrados); este é subconjunto dos novos, não
-            uma quarta parcela. */}
-        <CartaoDeResumo
-          numero={noutroSubgrupo}
-          rotulo={concordar(
-            noutroSubgrupo,
-            "também em outro subgrupo",
-            "também em outros subgrupos",
-          )}
-          tom="marca"
-        />
-      </Box>
+      <ResumoDaPrevia
+        encontrados={previa.processos.length}
+        marcados={marcados.size}
+        jaExistem={jaExistem}
+        noutroSubgrupo={noutroSubgrupo}
+      />
 
       {previa.atingiu_o_teto && (
         <AvisoDaImportacao titulo="Esta OAB tem processos demais para uma busca só.">
@@ -295,67 +221,12 @@ export default function PreviaDaImportacao({
       <Box opacity={importando ? 0.55 : 1} pointerEvents={importando ? "none" : "auto"}>
         <Tabela colunas={COLUNAS_DA_PREVIA}>
           {daPagina.map((p) => (
-            <Table.Row
+            <LinhaDaPrevia
               key={p.numero_processo}
-              /* O alvo do mouse é a linha inteira, não só a caixa -- e por
-                 isso o cursor de recusa também é dela. Mesmo padrão de
-                 `CampoDeArquivo`. */
-              cursor={p.ja_existe ? "not-allowed" : "pointer"}
-              _hover={{ bg: "bg.canvas" }}
-              /* 🔴 O clique vindo da CAIXA não passa por aqui -- `Checkbox.Root`
-                 é um `<label>`, então clicar nela já dispara o
-                 `onCheckedChange` E sobe para a linha. Com os dois marcando,
-                 a caixa "não funcionava": marcava e desmarcava no mesmo
-                 clique, e o único alvo que respondia era o resto da linha. */
-              onClick={(evento) => {
-                if (p.ja_existe) return;
-                if ((evento.target as HTMLElement).closest("label")) return;
-                alternar(p.numero_processo);
-              }}
-            >
-              {/* 🔴 `CelulaComSub` em TODAS as células, inclusive nas de uma
-                  linha só. `Table.Cell` crua não tem o padding de `.tbl td`
-                  (13px 14px) nem a divisória, e o cabeçalho tem 14px de
-                  recuo -- então o valor não nasce embaixo do título da
-                  coluna, e a divisória some no meio da linha.
-
-                  ⚠️ É o MESMO defeito que `LinhaProcesso` já registra na
-                  coluna de prazo. Segunda ocorrência: virou guarda mecânico
-                  em `celulaDeTabela.test.ts`. */}
-              <CelulaComSub
-                largura="42px"
-                principal={
-                  <Checkbox.Root
-                    checked={marcados.has(p.numero_processo)}
-                    disabled={p.ja_existe}
-                    onCheckedChange={() => alternar(p.numero_processo)}
-                    aria-label={`Importar ${p.apelido}`}
-                  >
-                    <Checkbox.HiddenInput />
-                    <Checkbox.Control />
-                  </Checkbox.Root>
-                }
-              />
-              {/* ⚠️ O já cadastrado sai esmaecido (`tr.ja-existe .apelido` no
-                  desenho): a linha continua legível, mas some do primeiro
-                  plano -- ela é a única que não vai a lugar nenhum. */}
-              <CelulaComSub
-                variante="processo"
-                principal={
-                  p.ja_existe ? (
-                    <Text as="span" color="fg.muted" fontWeight="400">
-                      {p.apelido}
-                    </Text>
-                  ) : (
-                    p.apelido
-                  )
-                }
-                sub={mascararNumeroProcesso(p.numero_processo)}
-              />
-              <CelulaComSub principal={p.tribunal || "—"} />
-              <CelulaComSub principal={<Text className="num">{p.comunicacoes}</Text>} />
-              <CelulaComSub principal={<EtiquetaDeSituacao processo={p} />} />
-            </Table.Row>
+              processo={p}
+              marcado={marcados.has(p.numero_processo)}
+              onAlternar={() => alternar(p.numero_processo)}
+            />
           ))}
         </Tabela>
 

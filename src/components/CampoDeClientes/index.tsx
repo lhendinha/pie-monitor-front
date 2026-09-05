@@ -7,22 +7,12 @@ import { IconeX } from "../Icons";
 import { ESPERA_DA_BUSCA_MS } from "../../constants/busca";
 import { Z_INDEX_CALENDARIO } from "../../constants/camadaFlutuante";
 import { useValorComEspera } from "../../hooks/useValorComEspera";
-import { useClientesBuscaveis } from "../../hooks/useOpcoesBuscaveis";
+import { useClientesBuscaveis } from "../../hooks/useClientesBuscaveis";
 import { OPCAO_LINHA } from "../../theme/painelFiltro";
 import { criarCliente, papelAtende } from "../../services";
 import { useToast } from "../../contexts/ToastContext";
 import { toastErroMutation } from "../../services/queryClient";
-
-interface CampoDeClientesProps {
-  id: string;
-  /** Ids escolhidos. */
-  valor: string[];
-  /** Nome de cada id escolhido -- a etiqueta precisa mostrar nome, e o
-   * resultado da busca some quando o termo muda. Guardado por fora pra que
-   * a etiqueta não dependa de a busca ainda estar na tela. */
-  nomes: Map<string, string>;
-  onMudar: (ids: string[], nomes: Map<string, string>) => void;
-}
+import type { CampoDeClientesProps } from "./types";
 
 /** Escolha de vários clientes, por busca.
  *
