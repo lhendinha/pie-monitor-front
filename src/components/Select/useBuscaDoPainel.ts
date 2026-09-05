@@ -61,12 +61,11 @@ export function useBuscaDoPainel(
      efeito re-dispararia a cada render do pai -- e como buscar muda o estado
      do pai, isso é um laço.
 
-     🔴 FECHAR envia termo vazio, e isso não é detalhe. A versão anterior
-     zerava `busca` ao fechar mas não avisava o pai -- então quem buscasse
-     "zzz", não achasse nada e fechasse com Esc deixava a lista do PAI
-     filtrada pra sempre. Na Agenda isso desabilitava o botão "Nova tarefa":
-     a tela passava a achar que não existe subgrupo nenhum. Reproduzido em
-     Chrome. */
+     🔴 FECHAR envia termo vazio AO PAI, e isso não é detalhe: zerar só a
+     `busca` local deixaria a lista do PAI filtrada pra sempre para quem
+     buscasse "zzz", não achasse nada e fechasse com Esc. Na Agenda isso
+     desabilitava o botão "Nova tarefa": a tela passava a achar que não
+     existe subgrupo nenhum. Reproduzido em Chrome. */
   const ultimoEnviado = useRef<string | null>(null);
   useEffect(() => {
     if (!onBuscar || !jaAbriu) return;

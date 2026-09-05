@@ -200,6 +200,49 @@ tinha:
   modo "Atrasadas" em 26/08/2026, e o servidor passou a contar "os meus"
   nos dois números de prazo no mesmo dia.
 
+## Histórias que saíram dos comentários (Fase 3 do `PLANO_ARQUIVOS_MENORES.md`, grupo 3, 05/09/2026)
+
+O que os comentários das 68 pastas de `components/` contavam, e que este
+arquivo ainda não tinha:
+
+- **`BotaoNu` nasceu na terceira vez** que um `Box as="button"` sem
+  `type="button"` submeteu um formulário por engano, em componentes
+  diferentes; o "i" de `DicaDeCampo` seria a quarta.
+- **`DicaDeCampo` abriu por hover durante um dia (30/08/2026)**: a ideia era
+  boa no papel -- quem tem mouse não deveria clicar para ler uma linha de
+  ajuda -- e na tela ficou ruim, porque o posicionador do balão intercepta o
+  ponteiro e o segundo clique acertava o balão, não o botão. Voltou a ser só
+  por clique.
+- **`CampoDeLeitura` nasceu dentro de `HistoricoPage`** e subiu para
+  `components/` em 26/08/2026, quando o modal de movimentação passou a
+  precisar do mesmo par rótulo/valor. `aria-controls` entrou nas `Abas` no
+  mesmo dia, junto com `PainelDaAba`.
+- **O bloco de endereço dizia "Endereço (opcional)" até 01/09/2026**, por
+  comparação com os campos de contato do cliente, que diziam "(opcional)" um
+  por um; os dois saíram no mesmo commit.
+- **`Esqueleto` tratava `prefers-reduced-motion` à mão** e usava o creme da
+  paleta pré-Argos (`--paper-dim`), que destoava de tudo; passou ao
+  `Skeleton` do Chakra.
+- **O comentário da pilha de modais afirmava que "nenhum chamador dispara
+  isso porque o Compiler memoiza"** -- suposição apresentada como fato; o
+  efeito passou a rodar uma vez, com `onFechar` num ref, para a pergunta
+  sobre o Compiler deixar de importar.
+- **`NomeEditavel` teve um laço**: a primeira versão guardava `rascunho` nas
+  dependências, cada tecla regravava o texto recusado, e depois de um único
+  409 Enter e clique fora descartavam o rename em silêncio; a correção do
+  laço aplicou a guarda também ao Enter, e um blip de rede deixava o nome
+  inalcançável -- daí a guarda valer só para o blur.
+- **O docstring de `Pagination` afirmou o esquema errado até 02/09/2026**
+  ("Query por intervalo de sequência, não cursor sequencial"): aquele esquema
+  foi abandonado quando buracos por exclusão deixaram itens fora de toda
+  página. Ver `api/PLANO_PAGINACAO.md`.
+- **O painel do `Select` esvaziava a lista** durante a espera (piscava a cada
+  tecla) e na falha (levava junto as opções locais, e "Sem responsável"
+  sumia porque a lista de gente falhou); a busca dentro do painel ficou
+  ligada por padrão em 28/08/2026, e foi aí que apareceu o caso do select
+  travado sem `combobox`. `useBuscaDoPainel` zerava a busca ao fechar sem
+  avisar o pai, e na Agenda isso desabilitava "Nova tarefa".
+
 ## 1) Objetivo do projeto
 
 Front-end React + TypeScript pra um sistema que monitora processos

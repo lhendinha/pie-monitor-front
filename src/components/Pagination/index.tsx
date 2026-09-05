@@ -11,13 +11,11 @@ import type { PaginationProps } from "./types";
 /** Paginação real -- cada número é endereçável direto, então dá pra pular pra
  * qualquer página sem ter visitado as anteriores.
  *
- * ⚠️ **O "como" mudou, e este texto afirmava o esquema errado até 02/09/2026.**
- * Ele dizia que "o backend faz Query por intervalo de sequência, não cursor
- * sequencial". Esse esquema foi ABANDONADO: ele dependia do contador
- * monotônico nunca decrementar, e com buracos por exclusão itens antigos
- * ficavam fora do range consultado em NENHUMA página, embora contados no
- * total. Hoje o servidor lê a partição inteira e fatia em memória -- exato, e
- * O(n) por página pedida. Ver `api/PLANO_PAGINACAO.md`.
+ * ⚠️ O servidor lê a partição inteira e fatia em memória -- exato, e O(n)
+ * por página pedida; NÃO é Query por intervalo de sequência. Aquele esquema
+ * dependia do contador monotônico nunca decrementar, e com buracos por
+ * exclusão itens antigos ficavam fora de NENHUMA página, embora contados no
+ * total. Ver `api/PLANO_PAGINACAO.md`.
  *
  * 🔴 O que este componente promete continua valendo, e é o que restringe o
  * remédio lá: números clicáveis e "X de Y" exigem posição e total EXATOS, o

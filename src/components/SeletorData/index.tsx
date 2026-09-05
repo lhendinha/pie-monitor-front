@@ -68,7 +68,7 @@ export default function SeletorData({
         startOfWeek={0}
         value={valor ? [parseDate(valor)] : []}
         /** ⚠️ `value[0].toString()`, e NÃO `valueAsString`: este último vem
-         * formatado pelo `locale` ("21/08/2026"), e o valor sai daqui pra
+         * formatado pelo `locale` (dia/mês/ano), e o valor sai daqui pra
          * API, que fala `aaaa-mm-dd`. Guardando o texto localizado, o
          * `parseDate` do render seguinte lançava
          * "Invalid ISO 8601 date string" e derrubava a tela inteira -- a

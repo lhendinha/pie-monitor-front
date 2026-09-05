@@ -19,13 +19,13 @@ import type { ModalProps } from "./types";
  *
  * ## Modal novo: a régua de revisão
  *
- * 🔴 **Tem campo que a pessoa preenche? Então `descarte={{ mudou }}`**, com o
+ * **Tem campo que a pessoa preenche? Então `descarte={{ mudou }}`**, com o
  * `mudou` vindo de `useGuardaDeDescarte`. `"semFormulario"` é só para modal de
  * LEITURA, de confirmação, de aviso e para os auxiliares que não têm campo
  * nenhum (carregando, "não há subgrupos"). O compilador obriga a declarar;
  * ele não sabe qual das duas é a certa.
  *
- * 🔴 **O "Cancelar" do rodapé é `BotaoDeCancelar`, nunca um `Botao` com
+ * ⚠️ **O "Cancelar" do rodapé é `BotaoDeCancelar`, nunca um `Botao` com
  * `onFechar`.** Os três gestos que este componente desenha -- Escape, cortina
  * e X -- já passam pela guarda; o rodapé é um `ReactNode` do chamador, e o
  * único jeito de cobri-lo é ele mesmo se ligar ao contexto. Um `Botao` cru ali
@@ -103,12 +103,8 @@ export default function Modal({ titulo, subtitulo, onFechar, descarte, largo, ro
    * ⚠️ Os chamadores passam `onFechar` de arrow INLINE -- por exemplo
    * `SubgruposPage` faz `onFechar={() => setVendoMembrosDe(null)}` num
    * wrapper que repassa pro Modal. Se essa identidade muda a cada render
-   * depende do React Compiler memoizar a arrow, e eu NÃO verifiquei essa
-   * garantia: a versão anterior deste comentário afirmava que "nenhum
-   * chamador dispara isso porque o Compiler memoiza", o que era suposição
-   * apresentada como fato.
-   *
-   * Depender de uma otimização de compilador pra manter uma invariante de
+   * depende de o React Compiler memoizar a arrow, e essa garantia NÃO foi
+   * verificada. Depender de uma otimização de compilador pra manter uma invariante de
    * ordenação é frágil de qualquer forma. Com deps vazias, a posição na
    * pilha passa a depender só de montagem e desmontagem -- que é o que ela
    * representa -- e a pergunta sobre o Compiler deixa de importar. */

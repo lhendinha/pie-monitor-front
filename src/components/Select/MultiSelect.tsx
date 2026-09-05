@@ -92,18 +92,8 @@ export function MultiSelect({
   }
 
   const { busca, mudarBusca, opcoesVisiveis, ocultos } = useBuscaDoPainel(opcoes, aberto, onBuscar);
-  /** 🔴 A falha descarta o RESULTADO REMOTO, e o motivo não é cosmético.
-   *
-   * Com `keepPreviousData`, deixar a lista anterior na tela depois de uma
-   * busca que falhou a apresenta como resposta à busca NOVA: a pessoa digita
-   * "sil", a consulta morre, e ela lê os clientes de "ang" achando que são
-   * os com "sil". Errar em silêncio é pior que não responder.
-   *
-   * ⚠️ Só no remoto. As opções LOCAIS (o "Sem responsável" do filtro de
-   * pessoas, o "Nenhuma" dos campos de fase) não vieram dessa consulta e não
-   * têm por que sumir com ela -- foi o defeito da primeira versão, que
-   * esvaziava tudo. O aviso de falha convive com o que sobrou; ver
-   * `MenuDeFiltro`. */
+  /** 🔴 A falha descarta o RESULTADO REMOTO e mantém as opções locais -- a
+   * mesma regra, pelas mesmas razões, de `Select`. */
   const opcoesDoPainel = erro && remoto ? [] : opcoesVisiveis;
   /* Onde a caixa de digitar fica -- ver `Select`. No chip ela vai pro
      painel; no padrão é o `isSearchable` da lib, e o `ResumoSelecionados`

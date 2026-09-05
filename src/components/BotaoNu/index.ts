@@ -4,8 +4,7 @@ import { chakra } from "@chakra-ui/react";
  *
  * Existe porque `Box as="button"` **não aceita `type`** na tipagem do
  * Chakra, e botão sem `type="button"` dentro de formulário vira submit por
- * padrão do HTML -- bug silencioso e clássico. Foi preciso três vezes em
- * componentes diferentes antes de virar um lugar só.
+ * padrão do HTML -- bug silencioso e clássico.
  *
  * O reset de aparência (fundo, borda, cursor) já vem do reset por tag em
  * `theme/index.ts`; aqui sobra o que o navegador ainda injeta e que aquele

@@ -11,24 +11,17 @@ import type { DicaDeCampoProps } from "./types";
  * pessoas nunca vê -- e esta existe justamente para evitar um erro de
  * preenchimento.
  *
- * 🔴 **Só por CLIQUE -- hover foi TENTADO e removido em 30/08/2026.**
- *
- * A ideia era boa no papel: quem tem mouse não deveria clicar para ler uma
- * linha de ajuda. Na tela ficou ruim, e a medição explicou por quê. Aberto por
- * hover, o balão fica ancorado logo abaixo do "i" e o **posicionador dele
- * intercepta o ponteiro**: o segundo clique acertava o balão, não o botão --
- * o Playwright registrou literalmente *"positioner subtree intercepts pointer
- * events"*. Na prática, o balão abria sozinho ao passar o mouse e depois
- * resistia a fechar.
- *
- * ⚠️ Não vale tentar de novo sem resolver isso: hover que abre um elemento
+ * ⚠️ **Só por CLIQUE, nunca por hover.** Aberto por hover, o balão fica
+ * ancorado logo abaixo do "i" e o **posicionador dele intercepta o
+ * ponteiro**: o segundo clique acerta o balão, não o botão (o Playwright
+ * registra *"positioner subtree intercepts pointer events"*), e o balão abre
+ * sozinho ao passar o mouse e resiste a fechar. Hover que abre um elemento
  * por cima do próprio gatilho briga com o clique por definição.
+ * ➡️ `CONTEXT.md`, "Histórias que saíram dos comentários", grupo 3.
  *
  * ⚠️ O gatilho é `BotaoNu`, e não `Box as="button"`: aquele não aceita `type`
  * na tipagem do Chakra, e botão sem `type="button"` dentro de formulário vira
- * SUBMIT por padrão do HTML -- clicar no "i" enviaria o formulário. O
- * docstring de `BotaoNu` conta que isso foi preciso três vezes antes de virar
- * um lugar só; esta seria a quarta.
+ * SUBMIT por padrão do HTML -- clicar no "i" enviaria o formulário.
  */
 export default function DicaDeCampo({ rotulo, children }: DicaDeCampoProps) {
   return (

@@ -10,8 +10,8 @@ import type { AbasProps } from "./types";
  * `role="tablist"` e `aria-selected` são o que faz o leitor de tela anunciar
  * "aba 2 de 5" em vez de ler cinco botões soltos.
  *
- * ⚠️ `aria-controls` entrou em 26/08/2026, junto com `PainelDaAba`. Sem ele
- * o leitor anuncia as abas mas não sabe QUAL painel cada uma comanda -- e
+ * ⚠️ `aria-controls`, junto com `PainelDaAba`: sem ele o leitor anuncia as
+ * abas mas não sabe QUAL painel cada uma comanda -- e
  * quem navega por teclado não tem como pular da aba pro conteúdo dela. Os
  * ids saem de `utils/abas`, compartilhados com o painel.
  */

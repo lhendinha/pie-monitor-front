@@ -23,8 +23,7 @@ const FONTES = import.meta.glob("/src/**/*.{ts,tsx}", {
  * cobre tudo dentro dela. */
 const JA_LIMPOS = [
   "types/",
-  "components/ModalDeTarefa/",
-  "components/ModalDeDocumento/",
+  "components/",
   "pages/",
 ];
 
