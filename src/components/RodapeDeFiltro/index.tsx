@@ -2,18 +2,7 @@ import { Flex } from "@chakra-ui/react";
 
 import Botao from "../Botao";
 import { RODAPE } from "../../theme/painelFiltro";
-
-interface RodapeDeFiltroProps {
-  /** "Cancelar" no painel de situação/fase, "Limpar datas" no de datas --
-   * é a única diferença entre os dois rodapés do artifact. */
-  rotuloSecundario: string;
-  onSecundario: () => void;
-  onAplicar: () => void;
-  /** Trava o "Aplicar" enquanto a escolha não fecha -- intervalo pela
-   * metade ou invertido. Quem usa isto tem que dizer NA TELA o que falta:
-   * botão apagado sem explicação faz a pessoa procurar o motivo. */
-  aplicarDesabilitado?: boolean;
-}
+import type { RodapeDeFiltroProps } from "./types";
 
 /** Rodapé `.filter-actions` do artifact: divisória em cima, botões à
  * direita.

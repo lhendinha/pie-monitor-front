@@ -1,6 +1,4 @@
-interface IconeEnviarProps {
-  tamanho?: number;
-}
+import type { IconeEnviarProps } from "./types";
 
 /** Avião de papel (`ICO.send` do artifact): envia o que está escrito no
  * campo ao lado -- o registro novo do atendimento.

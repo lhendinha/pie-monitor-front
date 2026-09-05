@@ -1,11 +1,5 @@
 import { Box } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface AreaAtualizandoProps {
-  /** Os dados na tela são os ANTERIORES, e os novos estão vindo. */
-  atualizando: boolean;
-  children: ReactNode;
-}
+import type { AreaAtualizandoProps } from "./types";
 
 /** Envolve uma lista que está sendo trocada, mantendo o conteúdo antigo
  * visível e apagado.

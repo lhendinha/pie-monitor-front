@@ -24,29 +24,9 @@ import {
   TIPOS_DE_ENVIO,
   TIPO_DE_ENVIO_PADRAO,
 } from "./constants";
-import type { DeepLinkHistorico, HistoricoItem } from "../../types";
+import type { HistoricoItem } from "../../types";
 import type { RespostaDeHistoricoPaginada, RespostaDeTotal } from "../../types/respostas";
-
-interface HistoricoPageProps {
-  deepLink?: DeepLinkHistorico | null;
-  /** Com que filtro a tela abre, quando quem navegou até aqui já sabe.
-   *
-   * Vem da Área de trabalho: "Envios com falha" cruza os dois tipos, então
-   * ela manda `""` (todos). Sem isso, o clique caía em Movimentações e o
-   * número da tela não batia com o número clicado. Só vale na PRIMEIRA
-   * montagem -- depois quem manda é o filtro da própria tela. */
-  tipoEnvioInicial?: string;
-  /** Idem, pros dois filtros que a home aciona.
-   *
-   * "Envios com falha" manda `{ tipoEnvio: "", apenasComFalha: true }` -- a
-   * falha cruza os dois tipos. "Movimentações (N dias)" manda
-   * `{ tipoEnvio: "movimentacao", dias: DIAS_DA_JANELA_RECENTE }`. Sem eles,
-   * o clique abria uma lista MAIOR que o número clicado: medido em
-   * 26/08/2026, 2 contra 6 e 3 contra 4. */
-  apenasComFalhaInicial?: boolean;
-  diasInicial?: number;
-  onDeepLinkConsumido?: () => void;
-}
+import type { HistoricoPageProps } from "./types";
 
 /** Histórico dos e-mails que o sistema mandou.
  *
@@ -147,7 +127,6 @@ export default function HistoricoPage({
   const historico = query.data?.historico || [];
   const total = query.data?.total ?? 0;
   const totalPaginas = query.data?.total_paginas ?? 0;
-
 
   /** Total sem filtro nenhum -- é o "de Y" da contagem. Uma página de
    * tamanho 1: só o `total` do envelope interessa, e o React Query mantém

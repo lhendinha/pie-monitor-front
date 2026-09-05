@@ -1,10 +1,5 @@
 import { BotaoNu } from "../../BotaoNu";
-
-interface SetaPaginaProps {
-  direcao: "anterior" | "proxima";
-  desabilitado: boolean;
-  onClick: () => void;
-}
+import type { SetaPaginaProps } from "./types";
 
 /** Seta de página (`.pagination-seta` do artifact): quadrado de 30px com
  * borda, glifo de 16px. */

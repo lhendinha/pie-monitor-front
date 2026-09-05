@@ -1,21 +1,7 @@
 import { Switch, Table } from "@chakra-ui/react";
 
 import { BotaoNu, BotaoQuadrado, EtiquetasDeSubgrupo, IconeLixeira } from "../../../../components";
-import type { InscricaoAvulsa, Subgrupo } from "../../../../types";
-
-interface LinhaDaInscricaoProps {
-  inscricao: InscricaoAvulsa;
-  /** Os subgrupos do grupo -- para traduzir os ids do destino em NOMES. Piso
-   * `admin` na aba, e `listarSubgrupos` devolve todos para `admin`+. */
-  subgrupos: Subgrupo[];
-  /** Uma gravação DESTA linha está em voo. Por linha, e não pela lista toda:
-   * numa lista de 50, travar tudo esconde qual delas está mudando. */
-  emAndamento: boolean;
-  /** Abre o modal com esta inscrição -- é lá que o destino se escolhe. */
-  onAbrir: () => void;
-  onDesligar: () => void;
-  onRemover: () => void;
-}
+import type { LinhaDaInscricaoProps } from "./types";
 
 /** Uma inscrição avulsa na tabela: interruptor, destinos e remover.
  *

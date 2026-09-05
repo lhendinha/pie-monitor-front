@@ -6,17 +6,10 @@ import { DIAS_DA_SEMANA_CURTOS } from "../../constants";
 import { CORES_DA_PRIORIDADE } from "../../../../constants";
 import { inicioDaSemana, somarDias } from "../../periodoDaAgenda";
 import { paraIso } from "../../../../utils/calendario";
-import type { Tarefa } from "../../../../types";
+import type { VisaoPorSemanaProps } from "./types";
 
 /** Quantas tarefas cabem num cartão de dia antes do "+N mais". */
 const TAREFAS_VISIVEIS = 3;
-
-interface VisaoPorSemanaProps {
-  data: Date;
-  isoDeHoje: string;
-  porDia: Map<string, Tarefa[]>;
-  onEscolherDia: (iso: string) => void;
-}
 
 /** A faixa de 7 dias (`.week-strip` do artifact).
  *

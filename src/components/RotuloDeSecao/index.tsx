@@ -1,11 +1,5 @@
 import { Text } from "@chakra-ui/react";
-
-interface RotuloDeSecaoProps {
-  /** Primeiro da lista não desenha a linha de cima -- ela existe pra
-   * SEPARAR seções, e antes da primeira não há o que separar. */
-  primeiro?: boolean;
-  children: string;
-}
+import type { RotuloDeSecaoProps } from "./types";
 
 /** Divisor nomeado dentro de um formulário (`.section-label` do artifact):
  * 13px/800 com uma linha fina acima.

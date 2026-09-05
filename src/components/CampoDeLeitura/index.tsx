@@ -1,14 +1,9 @@
 import { Stack } from "@chakra-ui/react";
-import type { ReactNode } from "react";
 
 /* Irmão importado direto, e não pelo índice de `components`: este
    componente É exportado por aquele índice. */
 import { Rotulo } from "../Rotulo";
-
-interface CampoDeLeituraProps {
-  rotulo: string;
-  children: ReactNode;
-}
+import type { CampoDeLeituraProps } from "./types";
 
 /** Rótulo e valor, como o `.field` do artifact -- mas de LEITURA, sem
  * controle.

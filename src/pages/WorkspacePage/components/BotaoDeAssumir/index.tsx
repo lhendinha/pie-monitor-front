@@ -1,10 +1,5 @@
 import { BotaoNu, IconePlus } from "../../../../components";
-
-interface BotaoDeAssumirProps {
-  rotulo: string;
-  desabilitado?: boolean;
-  onAssumir: () => void;
-}
+import type { BotaoDeAssumirProps } from "./types";
 
 /** Assumir uma tarefa sem dono (`.avatar-empty` do artifact).
  *

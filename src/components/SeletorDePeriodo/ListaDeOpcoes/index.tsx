@@ -7,6 +7,7 @@ import {
 } from "../../../constants/periodos";
 import type { OpcaoDeMenu } from "../../../types";
 import { DIVISORIA, OPCAO_LINHA } from "../../../theme/painelFiltro";
+import type { ListaDeOpcoesProps } from "./types";
 
 /** `.period-opt` do artifact. `chakra.button` e não `<button>` solto: com
  * `preflight: false` o botão do navegador vem cinza, com borda e fonte
@@ -45,12 +46,6 @@ const Divisoria = chakra(Box, {
     margin: DIVISORIA.margem,
   },
 });
-
-interface ListaDeOpcoesProps {
-  selecionado: string;
-  onEscolher: (id: string) => void;
-  onAbrirPersonalizado: () => void;
-}
 
 /** As opções fixas do filtro de período, nos três blocos do artifact.
  *

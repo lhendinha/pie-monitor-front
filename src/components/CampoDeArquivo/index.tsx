@@ -4,17 +4,7 @@ import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { BotaoNu } from "../BotaoNu";
 import { IconeX } from "../Icons";
 import { TAMANHO_MAXIMO_DE_ARQUIVO, formatarTamanho } from "../../constants/documento";
-
-interface CampoDeArquivoProps {
-  id: string;
-  /** O escolhido, ou `null`. Quem guarda é quem usa -- o campo não tem
-   * estado próprio do arquivo, só do arrasto. */
-  valor: File | null;
-  onMudar: (arquivo: File | null) => void;
-  /** Trava tudo enquanto o envio está em voo: trocar o arquivo no meio
-   * deixaria a tela mostrando um nome e o servidor recebendo outro. */
-  desabilitado?: boolean;
-}
+import type { CampoDeArquivoProps } from "./types";
 
 /** A área de escolher um arquivo: clique ou arrasto.
  *

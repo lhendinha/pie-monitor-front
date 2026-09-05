@@ -1,16 +1,8 @@
 import { Box } from "@chakra-ui/react";
 import { forwardRef } from "react";
-import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
-
-interface BotaoDeIconeProps {
-  rotulo: string;
-  /** Ponto vermelho de "tem coisa nova", como no artifact. */
-  comAviso?: boolean;
-  onClick?: () => void;
-  children: ReactNode;
-}
+import type { BotaoDeIconeProps } from "./types";
 
 /** Botão redondo só com ícone da barra superior (`.icon-btn` do artifact):
  * 34px, sem borda, cinza, e fundo suave no hover.

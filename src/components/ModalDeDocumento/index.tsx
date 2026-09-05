@@ -20,20 +20,7 @@ import {
   TIPOS_DE_DOCUMENTO,
 } from "../../constants";
 import { useFormularioDeDocumento } from "./useFormularioDeDocumento";
-import type { ClientesIniciaisDoDocumento, VinculosDeRegistro } from "../../types";
-
-interface ModalDeDocumentoProps {
-  /** Subgrupo em que o modal ABRE. Depois disso quem manda é o seletor.
-   * Vazio quando o modal veio da tela geral, que não tem subgrupo em mãos. */
-  subgrupoInicial?: string;
-  /** Vínculos já preenchidos -- é o que faz "Adicionar documento" de dentro
-   * de um processo nascer com aquele processo escolhido. */
-  vinculosIniciais?: Partial<VinculosDeRegistro>;
-  /** A aba do cliente abre o modal com ele dentro. */
-  clientesIniciais?: ClientesIniciaisDoDocumento;
-  onSalvo: () => void;
-  onFechar: () => void;
-}
+import type { ModalDeDocumentoProps } from "./types";
 
 /** Adicionar documento: arquivo enviado ou link.
  *

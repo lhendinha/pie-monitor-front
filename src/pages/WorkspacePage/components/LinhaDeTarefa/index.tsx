@@ -1,21 +1,8 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
-import type { ReactNode } from "react";
 
 import { EtiquetaDePrazo, EtiquetasDeSubgrupo } from "../../../../components";
 import { mascararNumeroProcesso } from "../../../../utils";
-import type { Tarefa } from "../../../../types";
-
-interface LinhaDeTarefaProps {
-  tarefa: Tarefa;
-  /** Ação à esquerda: o círculo de concluir. */
-  acao?: ReactNode;
-  /** O que aparece na posição do responsável, logo antes do prazo: as
-   * iniciais de quem é dono, ou o avatar vazio que assume a tarefa. */
-  responsavel?: ReactNode;
-  /** Nome do subgrupo da tarefa. Resolvido pela PÁGINA -- uma consulta para a
-   * lista inteira, não uma por linha. */
-  subgrupoNome: string;
-}
+import type { LinhaDeTarefaProps } from "./types";
 
 /** Uma tarefa numa lista da Área de trabalho (`.task-row` do artifact).
  *

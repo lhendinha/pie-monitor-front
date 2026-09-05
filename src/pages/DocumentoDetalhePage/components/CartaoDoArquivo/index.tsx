@@ -12,16 +12,7 @@ import {
   substituirArquivo,
 } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
-import type { Documento } from "../../../../types";
-
-interface CartaoDoArquivoProps {
-  documento: Documento;
-  /** Trocar o arquivo APAGA o antigo, então segue a mesma régua do excluir
-   * -- ver `podeDestruirDocumento`. Quem decide é a página; aqui só se
-   * obedece, pra a regra não ficar escrita em dois lugares. */
-  podeSubstituir: boolean;
-  onSubstituido: () => void;
-}
+import type { CartaoDoArquivoProps } from "./types";
 
 /** O arquivo (ou o link) do documento: o que ele é, e como chegar nele.
  *

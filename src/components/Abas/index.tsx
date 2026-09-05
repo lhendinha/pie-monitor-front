@@ -2,17 +2,7 @@ import { Flex } from "@chakra-ui/react";
 
 import { idDaAba, idDoPainel } from "../../utils/abas";
 import { BotaoNu } from "../BotaoNu";
-import type { Aba } from "./types";
-
-
-interface AbasProps<T extends string> {
-  abas: Aba<T>[];
-  ativa: T;
-  onMudar: (id: T) => void;
-  /** Prefixo dos `id`/`aria-controls`, pra duas listas de abas na mesma
-   * página não colidirem. Combina com o `grupo` do `PainelDaAba`. */
-  grupo: string;
-}
+import type { AbasProps } from "./types";
 
 /** Navegação por abas (`.tabs-row` do artifact): sublinhado de 2px na ativa,
  * sobre uma divisória de 1px que atravessa a linha inteira.

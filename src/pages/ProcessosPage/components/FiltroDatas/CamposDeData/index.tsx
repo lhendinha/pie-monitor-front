@@ -2,16 +2,7 @@ import { Box } from "@chakra-ui/react";
 
 import { Rotulo, SeletorData } from "../../../../../components";
 import { COLUNA_DATAS } from "../../../../../theme/painelFiltro";
-
-interface CamposDeDataProps {
-  verificar: string;
-  prazo: string;
-  onVerificar: (iso: string) => void;
-  onPrazo: (iso: string) => void;
-  /** Qual calendário está aberto -- no máximo um. */
-  calendario: "verificar" | "prazo" | null;
-  onCalendario: (qual: "verificar" | "prazo", aberto: boolean) => void;
-}
+import type { CamposDeDataProps } from "./types";
 
 /** Os dois campos de data do painel, com seus rótulos.
  *

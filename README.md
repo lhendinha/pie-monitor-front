@@ -773,7 +773,10 @@ compartilhado -- `RECURSO` virou `CAMINHO_POR_TIPO_DE_OPCAO`, `Envelope` virou
 **Onde um arquivo novo mora**, em quatro regras:
 
 1. Componente e página viram **pasta com `index.tsx`**. Constante, tipo,
-   helper e hook são **arquivo solto**.
+   helper e hook são **arquivo solto**. E **nenhum `interface`/`type` dentro
+   do `index.tsx`, de hook ou de contexto** -- nem as props: vão para o
+   `types.ts` da própria pasta (`contexts/types.ts` para os provedores), ou
+   para `src/types/` quando outra pasta importa. Um hook por arquivo.
 2. **Alcance decide.** Serve a mais de uma página? Sobe pra `types/`,
    `constants/`, `utils/` ou `hooks/`. É de uma página só? Fica na pasta
    dela (`constants.ts`, `types.ts`, helpers ao lado do `index.tsx`).
@@ -789,7 +792,7 @@ Exemplo de página completa:
 AgendaPage/
   index.tsx  index.test.tsx
   constants.ts                 -- VISOES, DIAS_DA_LISTA, PONTOS_POR_CELULA
-  types.ts                     -- VisaoDaAgenda, FiltrosDaAgenda (privados daqui)
+  types.ts                     -- AgendaPageProps, VisaoDaAgenda, FiltrosDaAgenda (privados daqui)
   periodoDaAgenda.ts  periodoDaAgenda.test.ts
   tarefasPorDia.ts    tarefasPorDia.test.ts
   hooks/useTarefasDaAgenda.ts  hooks/useAssuntosDasTarefas.ts …

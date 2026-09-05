@@ -1,12 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
 
 import { papelAtende } from "../../services";
-import type { Papel } from "../../types";
-
-interface RotaPorPapelProps {
-  /** Papel a partir do qual a rota é acessível. */
-  minimo: Papel;
-}
+import type { RotaPorPapelProps } from "./types";
 
 /** Portão por PAPEL, complementando o `RotaProtegida`, que só olha se há
  * sessão.

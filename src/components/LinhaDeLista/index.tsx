@@ -1,14 +1,5 @@
 import { Flex } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface LinhaDeListaProps {
-  /** Ícone que abre a linha, à esquerda de tudo. */
-  icone?: ReactNode;
-  /** Ações à direita (renomear, remover), empurradas pela margem
-   * automática -- ficam coladas na borda mesmo com o conteúdo curto. */
-  acoes?: ReactNode;
-  children: ReactNode;
-}
+import type { LinhaDeListaProps } from "./types";
 
 /** Uma linha de lista dentro de um cartão (`.subgrupo-row` do artifact):
  * tudo em UMA linha horizontal -- ícone, conteúdo, ações -- com divisória

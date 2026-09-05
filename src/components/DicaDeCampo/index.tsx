@@ -1,14 +1,7 @@
 import { Popover, Portal } from "@chakra-ui/react";
-import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
-
-interface DicaDeCampoProps {
-  /** O que o botão anuncia para leitor de tela. Não é o texto da dica: é a
-   * pergunta que ela responde ("Por que o nome completo importa"). */
-  rotulo: string;
-  children: ReactNode;
-}
+import type { DicaDeCampoProps } from "./types";
 
 /** O "i" ao lado do rótulo de um campo, com a explicação atrás.
  *

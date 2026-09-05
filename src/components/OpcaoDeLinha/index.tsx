@@ -1,13 +1,7 @@
-import type { ReactNode } from "react";
 
 import { BotaoNu } from "../BotaoNu";
 import { OPCAO_LINHA } from "../../theme/painelFiltro";
-
-interface OpcaoDeLinhaProps {
-  ativa: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}
+import type { OpcaoDeLinhaProps } from "./types";
 
 /** Linha de opção que ocupa a largura toda do painel (`.period-opt`).
  *

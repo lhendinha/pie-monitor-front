@@ -10,11 +10,7 @@ import {
   TAMANHOS_MOVIMENTACOES,
 } from "../../constants";
 import ModalDeMovimentacao from "../ModalDeMovimentacao";
-import type { Comunicacao } from "../../../../types";
-
-interface MovimentacoesProps {
-  comunicacoes: Comunicacao[];
-}
+import type { MovimentacoesProps } from "./types";
 
 /** O que o robô coletou no PJe para este processo.
  *

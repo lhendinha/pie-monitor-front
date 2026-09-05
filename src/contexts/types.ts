@@ -1,7 +1,7 @@
+import type { ReactNode } from "react";
+
 /** O que o `useToast()` entrega a quem chama.
- *
- * Fora do `index.tsx` pela regra do projeto: interface que não é as props do
- * componente mora em `types.ts` da própria pasta. */
+ */
 export interface ToastContextValue {
   erro: (mensagem: string) => void;
   sucesso: (mensagem: string) => void;
@@ -12,3 +12,18 @@ export interface ToastContextValue {
  * Aqui e não dentro do `SessaoContext.tsx` pela mesma regra: interface que
  * não são as props do componente sai do arquivo dele. */
 export type Sessao = ReturnType<typeof import("../hooks/useSessao").useSessao>;
+
+export interface ProvedorDeDescarteProps {
+  /** O `pedirParaFechar` do `Modal` -- a função JÁ guardada, não o
+   * `onFechar` cru. */
+  pedirParaFechar: () => void;
+  children: ReactNode;
+}
+
+export interface SessaoProviderProps {
+  children: ReactNode;
+}
+
+export interface ToastProviderProps {
+  children: ReactNode;
+}

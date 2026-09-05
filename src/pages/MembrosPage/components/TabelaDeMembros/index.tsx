@@ -1,15 +1,7 @@
 import { EstadoVazio, Tabela } from "../../../../components";
 import { COLUNAS_MEMBROS, COLUNA_DE_ACOES } from "../../constants";
 import LinhaDeMembro from "../LinhaDeMembro";
-import type { Membro } from "../../../../types";
-
-interface TabelaDeMembrosProps {
-  membros: Membro[];
-  /** id do subgrupo -> nome. `membro.subgrupos` traz ids, e id não diz nada
-   * pra quem lê. */
-  podeEditar: boolean;
-  onEditar: (m: Membro) => void;
-}
+import type { TabelaDeMembrosProps } from "./types";
 
 /** A tabela de pessoas do grupo, nas 4 colunas do artifact. */
 export default function TabelaDeMembros({ membros, podeEditar, onEditar }: TabelaDeMembrosProps) {

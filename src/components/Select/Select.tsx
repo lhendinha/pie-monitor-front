@@ -12,70 +12,7 @@ import { MenuDeFiltro } from "./MenuDeFiltro";
 import { SetaDoSelect } from "./SetaDoSelect";
 import { useBuscaDoPainel } from "./useBuscaDoPainel";
 import type { OpcaoDeSelect } from "../../types";
-
-interface SelectProps {
-  id?: string;
-  opcoes: OpcaoDeSelect[];
-  valor: string;
-  onMudar: (valor: string) => void;
-  placeholder?: string;
-  /** Ver `MultiSelect` -- mesma variante, pro filtro de valor único.
-   *
-   * Aqui o painel NÃO tem rodapé: escolher já aplica, porque com valor
-   * único não existe "montar uma seleção" pra confirmar depois. O
-   * `placeholder` vira a linha "Todos os X" no topo, que é como o artifact
-   * oferece o "sem filtro" -- por isso a lista de opções não precisa (nem
-   * deve) trazer uma opção de valor vazio. */
-  variante?: "padrao" | "chip";
-  compacto?: boolean;
-  /** Largura fixa quando o contexto exige (72px no "Por página" do
-   * artifact). Sem ela o controle acompanha o container. */
-  largura?: string;
-  /** Campo que existe pra ser LIDO, não escolhido -- o subgrupo de uma
-   * tarefa já criada, por exemplo, que faz parte da chave e não muda.
-   * Mostrar desabilitado diz onde a coisa está; esconder deixaria a pessoa
-   * sem saber. */
-  desabilitado?: boolean;
-  /** As opções ainda estão vindo.
-   *
-   * Trava o controle e troca o texto por "Carregando…". Sem isto, um select
-   * de lista vazia é indistinguível de "não há nenhuma opção" -- e o de
-   * Fase/Situação chega a oferecer só "Nenhuma", que é uma resposta errada
-   * enquanto a lista não chegou.
-   *
-   * A mensagem é genérica de propósito: enumerar o que está vindo obriga a
-   * reescrever a frase toda vez que a tela ganha outra consulta.
-   *
-   * ⚠️ Com `onBuscar` o controle NÃO é travado: ali é ABRIR que dispara a
-   * busca, e uma pílula travada enquanto carrega nunca sairia do lugar. */
-  carregando?: boolean;
-  /** Digitar para filtrar. **Ligado por padrão** (28/08/2026): é o
-   * comportamento esperado de qualquer seletor do sistema, e listas curtas
-   * hoje crescem amanhã -- fase e situação são cadastráveis, subgrupo e
-   * pessoa também.
-   *
-   * ⚠️ Onde a lista é FECHADA e minúscula (papel, tamanho de página,
-   * prioridade), a caixa de digitar não atrapalha: ela filtra o que já está
-   * ali e não cobra nada de quem prefere clicar.
-   *
-   * ⚠️ Desligue com `permitirBusca={false}` só quando digitar não puder
-   * ajudar -- e escreva o porquê no lugar. */
-  permitirBusca?: boolean;
-  /** Idem, mas quem filtra é o SERVIDOR -- pra lista que pode crescer sem
-   * limite (cliente, subgrupo, pessoa). Recebe o termo já com espera entre
-   * teclas; o pai devolve a próxima lista em `opcoes`. */
-  onBuscar?: (termo: string) => void;
-  placeholderBusca?: string;
-  /** A busca falhou. O painel troca a lista pela falha e por "Tentar de
-   * novo" -- ver `FalhaDoPainel`. */
-  erro?: boolean;
-  onTentarDeNovo?: () => void;
-  /** O X que limpa sem abrir o painel. */
-  permitirLimpar?: boolean;
-  /** Ver `ExtrasDoMenu.comOpcaoTodas` -- desliga a linha "Todas as X" pro
-   * seletor que ESCOLHE em vez de filtrar. */
-  comOpcaoTodas?: boolean;
-}
+import type { SelectProps } from "./types";
 
 /** Substitui o `<select>` nativo -- mesmo visual do `Select`/`MultiSelect`,
  * valor único. */

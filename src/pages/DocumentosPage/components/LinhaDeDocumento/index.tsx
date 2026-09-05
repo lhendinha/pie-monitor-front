@@ -4,15 +4,7 @@ import { CelulaComSub, EtiquetasDeSubgrupo } from "../../../../components";
 import { rotuloDoTipo } from "../../../../constants";
 import { formatarDataDeInstante, mascararNumeroProcesso } from "../../../../utils";
 import type { Documento } from "../../../../types";
-
-interface LinhaDeDocumentoProps {
-  documento: Documento;
-  /** Traduz `subgrupo_id` em nome. Vem da PÁGINA, e não de um
-   * `useNomeDeSubgrupo()` aqui dentro: o hook por linha seria uma assinatura
-   * de query por documento da página. Mesmo arranjo de `LinhaProcesso`. */
-  subgrupoNome: (id: string) => string;
-  onAbrir: (documento: Documento) => void;
-}
+import type { LinhaDeDocumentoProps } from "./types";
 
 /** A que este documento pertence, numa frase curta.
  *

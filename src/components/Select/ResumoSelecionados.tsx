@@ -2,13 +2,7 @@ import { components } from "react-select";
 import type { GroupBase, ValueContainerProps } from "react-select";
 import { rotuloResumo } from "../../utils/select";
 import type { OpcaoDeSelect } from "../../types";
-
-/** Extras que `MultiSelect`/`Select` passam por `selectProps` -- o caminho
- * que o react-select oferece pra levar dado até um componente substituído.
- * Mesmo padrão de `MenuDeFiltro`. */
-interface ExtrasDoResumo {
-  ehPilula?: boolean;
-}
+import type { ExtrasDoResumo } from "./types";
 
 /** Substitui as tags/chips padrão do modo múltiplo por um resumo textual
  * ("N selecionados"), igual ao `MultiSelect` custom que esse componente

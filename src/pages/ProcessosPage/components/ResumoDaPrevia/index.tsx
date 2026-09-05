@@ -2,14 +2,7 @@ import { Box } from "@chakra-ui/react";
 
 import { concordar } from "../../../../utils/importacao";
 import CartaoDeResumo from "../CartaoDeResumo";
-
-interface ResumoDaPreviaProps {
-  encontrados: number;
-  /** Os marcados AGORA -- é o que o segundo cartão conta. */
-  marcados: number;
-  jaExistem: number;
-  noutroSubgrupo: number;
-}
+import type { ResumoDaPreviaProps } from "./types";
 
 /** Os quatro cartões que abrem a prévia da importação: quantos achei,
  * quantos entram, quantos não, e o recorte dos que também estão noutro

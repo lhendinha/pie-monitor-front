@@ -4,14 +4,7 @@ import { BotaoNu } from "../../../../components";
 
 import { DIAS_DA_SEMANA_CURTOS, PONTOS_POR_CELULA } from "../../constants";
 import { gradeDoMes } from "../../../../utils/calendario";
-import type { Tarefa } from "../../../../types";
-
-interface VisaoPorMesProps {
-  data: Date;
-  isoDeHoje: string;
-  porDia: Map<string, Tarefa[]>;
-  onEscolherDia: (iso: string) => void;
-}
+import type { VisaoPorMesProps } from "./types";
 
 /** A grade do mês (`.month-grid` do artifact): 7 colunas × 6 semanas.
  *

@@ -1,12 +1,5 @@
 import { Box } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface FaixaProps {
-  tom: "ok" | "aviso";
-  /** Alinha à esquerda quando o texto é uma frase, e não um selo. */
-  aEsquerda?: boolean;
-  children: ReactNode;
-}
+import type { FaixaProps } from "./types";
 
 /** Faixa colorida de recado (`.gate-banner` do artifact): fundo do tom,
  * texto na cor ESCURECIDA dele, 13.5px/700.

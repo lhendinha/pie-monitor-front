@@ -1,10 +1,5 @@
 import { BotaoNu } from "../../BotaoNu";
-
-interface NumeroPaginaProps {
-  numero: number;
-  atual: boolean;
-  onClick: () => void;
-}
+import type { NumeroPaginaProps } from "./types";
 
 /** Número de página (`.pagination-numero` do artifact): sem borda, fonte
  * mono, e o atual em cheio na cor da marca. */

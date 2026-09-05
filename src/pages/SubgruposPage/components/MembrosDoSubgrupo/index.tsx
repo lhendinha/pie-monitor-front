@@ -14,16 +14,11 @@ import {
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { contar, emailValido } from "../../../../utils";
-import type { Subgrupo } from "../../../../types";
 import type {
   RespostaDeMembroAdicionado,
   RespostaDeMembros,
 } from "../../../../types/respostas";
-
-interface MembrosDoSubgrupoProps {
-  subgrupo: Subgrupo;
-  onFechar: () => void;
-}
+import type { MembrosDoSubgrupoProps } from "./types";
 
 /** Quem está neste subgrupo, com o campo de adicionar no rodapé.
  *

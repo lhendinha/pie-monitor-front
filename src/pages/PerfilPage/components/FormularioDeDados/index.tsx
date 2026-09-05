@@ -10,10 +10,7 @@ import { toastErroMutation } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { TAMANHO_MAXIMO_DO_APELIDO } from "../../../../constants";
 import DadosDaConta from "../DadosDaConta";
-
-interface FormularioDeDadosProps {
-  onAlterarSenha: () => void;
-}
+import type { FormularioDeDadosProps } from "./types";
 
 /** Aba "Meus dados": quem eu sou e como entro.
  *

@@ -526,6 +526,14 @@ novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
 compila sob as opções do projeto; o `printer` do TypeScript apaga o
 `{/* */}` do JSX com `removeComments`.
 
+**v6 (05/09/2026, ainda na Fase 2)**: a regra dos tipos foi estendida pelo
+usuário a componente, página e contexto, SEM a exceção das props: as 163
+interfaces de props saíram dos `.tsx` para o `types.ts` da própria pasta
+(`contexts/types.ts` para os três provedores), por script, com os imports que
+cada uma usa. O guarda `tiposForaDoIndex.test.ts` perdeu a lista de
+permitidos e passou a cobrir todo `.tsx`. Custo assumido e escrito na regra 5
+do `CONTEXT.md`: a assinatura de um componente se lê em dois arquivos.
+
 **v5 (05/09/2026, Fase 2)**: a HistoricoPage tinha 244 linhas de código,
 abaixo do sinal, e mesmo assim ganhou o hook do link (o corte era limpo);
 o cabeçalho de filtros dela ficou. Duas regras novas do usuário entraram no

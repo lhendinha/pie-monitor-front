@@ -9,18 +9,9 @@ import { camposAlterados } from "../../../../utils/processos";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { mascararNumeroProcesso } from "../../../../utils";
 import CamposProcesso from "../../../ProcessosPage/components/CamposProcesso";
-import type { Processo } from "../../../../types";
 import type { CamposOpcionaisProcesso } from "../../../../types";
 import { TAMANHO_MAXIMO_DO_APELIDO_DE_PROCESSO } from "../../../../constants";
-
-interface FormularioProcessoProps {
-  processo: Processo;
-  subgrupoNome: string;
-  faseRotulo: string;
-  situacaoRotulo: string;
-  onSalvo: () => void;
-  onRemover: () => void;
-}
+import type { FormularioProcessoProps } from "./types";
 
 /** Cabeçalho + formulário de edição do processo, como no artifact: o número
  * em mono com as etiquetas embaixo, as ações no canto direito da MESMA

@@ -3,23 +3,7 @@ import { Box } from "@chakra-ui/react";
 import { Cartao } from "../../../../components";
 import LinhaDeTarefa from "../LinhaDeTarefa";
 import { rotuloDoDia } from "../../periodoDaAgenda";
-import type { Tarefa } from "../../../../types";
-
-interface ListaDeUmDiaProps {
-  data: Date;
-  tarefas: Tarefa[];
-  assuntoDoAtendimento: (id: string) => string | undefined;
-  /** Repassado à linha -- a página resolve, esta visão só entrega. */
-  subgrupoNome: (id: string) => string;
-  onAbrir: (tarefa: Tarefa) => void;
-  /** Desenha a data no cabeçalho.
-   *
-   * ⚠️ DIVERGE do artifact na visão "Por dia": lá o mesmo rótulo aparece na
-   * barra de datas E no cabeçalho do cartão, a 40px um do outro. Na visão em
-   * lista o cabeçalho é necessário (são vários dias empilhados); na de um
-   * dia só, é a mesma frase duas vezes. */
-  comData?: boolean;
-}
+import type { ListaDeUmDiaProps } from "./types";
 
 /** Um cartão com as tarefas de UM dia: cabeçalho com a data e as linhas.
  *

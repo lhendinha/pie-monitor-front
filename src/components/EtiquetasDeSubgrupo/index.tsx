@@ -1,6 +1,7 @@
 import { Flex, Text } from "@chakra-ui/react";
 
 import Etiqueta from "../Etiqueta";
+import type { EtiquetasDeSubgrupoProps } from "./types";
 
 /** As cores da etiqueta de subgrupo (`.etq-neutra` do artifact).
  *
@@ -15,12 +16,6 @@ const CORES = {
 
 /** Acima disto a célula mostra a CONTAGEM em vez dos nomes. */
 const TETO_DE_NOMES = 2;
-
-interface EtiquetasDeSubgrupoProps {
-  /** Os nomes já resolvidos. Id cru é aceitável aqui -- é o que sobra quando
-   * o subgrupo foi apagado, e mostrar algo é melhor que a etiqueta sumir. */
-  nomes: string[];
-}
 
 /** Os subgrupos de uma linha de tabela: até dois mostra os nomes, de três em
  * diante mostra quantos são.

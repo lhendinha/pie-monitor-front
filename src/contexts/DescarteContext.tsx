@@ -1,13 +1,7 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext } from "react";
+import type { ProvedorDeDescarteProps } from "./types";
 
 const Contexto = createContext<(() => void) | null>(null);
-
-interface ProvedorDeDescarteProps {
-  /** O `pedirParaFechar` do `Modal` -- a função JÁ guardada, não o
-   * `onFechar` cru. */
-  pedirParaFechar: () => void;
-  children: ReactNode;
-}
 
 /** Publica, para dentro do modal, o pedido de fechar que passa pela guarda.
  *

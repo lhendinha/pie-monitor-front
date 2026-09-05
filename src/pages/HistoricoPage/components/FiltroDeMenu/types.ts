@@ -1,7 +1,6 @@
 /** Uma opção do menu de filtro do Histórico.
  *
- * Fora do `index.tsx` pela regra do projeto. Privada desta pasta: quem a usa
- * é só o `FiltroDeMenu`. */
+ * Privada desta pasta: quem a usa é só o `FiltroDeMenu`. */
 export interface OpcaoDeFiltro<T> {
   /** Identidade não vazia da opção.
    *
@@ -11,4 +10,12 @@ export interface OpcaoDeFiltro<T> {
   id: string;
   valor: T;
   rotulo: string;
+}
+
+export interface FiltroDeMenuProps<T> {
+  /** A PRIMEIRA opção é a neutra ("Todos ..."): é comparando com ela que a
+   * pílula sabe se está filtrando. */
+  opcoes: readonly OpcaoDeFiltro<T>[];
+  valor: T;
+  onMudar: (valor: T) => void;
 }

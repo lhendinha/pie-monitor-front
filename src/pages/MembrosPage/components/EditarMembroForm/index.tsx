@@ -6,20 +6,8 @@ import { ESCOLHA_UM_SUBGRUPO, FALHOU_AO_CONFERIR_SUBGRUPOS, HIERARQUIA_PAPEIS, N
 import InterruptorDaImportacao from "../../../PerfilPage/components/InterruptorDaImportacao";
 import { DicaDeCampo } from "../../../../components";
 import { useFormularioDeMembro } from "./useFormularioDeMembro";
-import type { Grupo, Membro, Papel } from "../../../../types";
-
-interface EditarMembroFormProps {
-  membro: Membro;
-  grupos: Grupo[];
-  /** Só o operador da plataforma move gente entre grupos e cria
-   * `super_admin`. Para `admin`, o campo Grupo fica travado no próprio e o
-   * seletor de papel para em `admin`.
-   *
-   * ⚠️ Travar na tela é conveniência: o servidor recusa igual. */
-  podeMoverEntreGrupos: boolean;
-  onAtualizado: () => void;
-  onFechar: () => void;
-}
+import type { Papel } from "../../../../types";
+import type { EditarMembroFormProps } from "./types";
 
 export default function EditarMembroForm({
   membro, grupos, podeMoverEntreGrupos, onAtualizado, onFechar,

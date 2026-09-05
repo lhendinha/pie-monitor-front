@@ -7,16 +7,9 @@ import { useToast } from "../../../../contexts/ToastContext";
 import { atualizarCliente } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { apenasDigitos, emailValido, mascararCep, mascararCpfCnpj, mascararTelefone } from "../../../../utils";
-import type { Cliente, EnderecoDoCliente } from "../../../../types";
+import type { EnderecoDoCliente } from "../../../../types";
 import { TAMANHO_MAXIMO_DO_NOME_DE_CLIENTE } from "../../../../constants";
-
-interface FormularioClienteProps {
-  cliente: Cliente;
-  podeEditar: boolean;
-  podeExcluir: boolean;
-  onSalvo: () => void;
-  onRemover: () => void;
-}
+import type { FormularioClienteProps } from "./types";
 
 /** Cabeçalho + formulário de edição do cliente, como no artifact: o nome
  * como título, as ações à direita da mesma linha, e os campos num cartão.

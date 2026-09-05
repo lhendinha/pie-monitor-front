@@ -1,10 +1,5 @@
 import { BotaoNu, IconeCheck } from "../../../../components";
-
-interface BotaoDeConcluirProps {
-  rotulo: string;
-  desabilitado?: boolean;
-  onConcluir: () => void;
-}
+import type { BotaoDeConcluirProps } from "./types";
 
 /** O círculo de concluir, à esquerda da tarefa (`.task-check` do artifact).
  *

@@ -34,13 +34,7 @@ import LinhaDeColuna from "../LinhaDeColuna";
 import type { ColunaDoQuadro } from "../../../../types";
 import type { RenomearColuna } from "../../types";
 import { TAMANHO_MAXIMO_DE_NOME } from "../../../../constants";
-
-interface ModalDoQuadroProps {
-  subgrupoId: string;
-  subgrupoNome: string;
-  colunas: ColunaDoQuadro[];
-  onFechar: () => void;
-}
+import type { ModalDoQuadroProps } from "./types";
 
 /** "Editar quadro" -- criar, renomear, reordenar, marcar conclusão e
  * remover coluna. Piso `admin` no servidor e no botão que abre isto.

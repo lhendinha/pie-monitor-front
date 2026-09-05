@@ -6,13 +6,7 @@ import { SELETOR_CALENDARIO } from "../../../../constants/camadaFlutuante";
 import { PAINEL } from "../../../../theme/painelFiltro";
 import { contar } from "../../../../utils";
 import CamposDeData from "./CamposDeData";
-import type { DatasDoFiltro } from "../../types";
-
-interface FiltroDatasProps {
-  dataVerificarAte: string;
-  prazoFinalAte: string;
-  onMudar: (parcial: DatasDoFiltro) => void;
-}
+import type { FiltroDatasProps } from "./types";
 
 /** As duas datas atrás de um chip só, como no artifact.
  *

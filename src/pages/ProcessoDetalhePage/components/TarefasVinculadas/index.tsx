@@ -14,10 +14,7 @@ import { useToastOnQueryError } from "../../../../services/queryClient";
 import { formatarData } from "../../../../utils";
 import { useTarefasDoProcesso } from "../../hooks/useTarefasDoProcesso";
 import type { Tarefa } from "../../../../types";
-
-interface TarefasVinculadasProps {
-  numeroProcesso: string;
-}
+import type { TarefasVinculadasProps } from "./types";
 
 /** As tarefas abertas neste processo.
  *

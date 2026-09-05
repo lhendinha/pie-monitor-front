@@ -1,6 +1,4 @@
-interface IconeChevronProps {
-  tamanho?: number;
-}
+import type { IconeChevronProps } from "./types";
 
 /** Seta do select (`.csel-trigger svg` do artifact): 15px, traço 2.
  * Quem abre o menu gira 180°. */

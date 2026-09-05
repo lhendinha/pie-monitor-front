@@ -1,7 +1,6 @@
 import { Box, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import type { ReactNode } from "react";
 
 import {
   AreaAtualizando,
@@ -18,21 +17,10 @@ import { contar } from "../../../../utils";
 import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import LinhaDeTarefa from "../LinhaDeTarefa";
 import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants";
-import type { Tarefa } from "../../../../types";
-import type { FiltroDoCard } from "../../types";
 import type {
   RespostaDeTarefasPaginada,
 } from "../../../../types/respostas";
-
-interface CardDeTarefasProps {
-  titulo: string;
-  /** Filtro que define o card. `responsavel: "eu"` ou
-   * `semResponsavel: true` -- os dois já resolvidos no servidor. */
-  filtro: FiltroDoCard;
-  vazio: string;
-  acao?: (tarefa: Tarefa) => ReactNode;
-  responsavel?: (tarefa: Tarefa) => ReactNode;
-}
+import type { CardDeTarefasProps } from "./types";
 
 /** Um card de lista de tarefas da Área de trabalho.
  *

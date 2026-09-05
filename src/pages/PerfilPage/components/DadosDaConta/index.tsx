@@ -3,10 +3,7 @@ import { Flex } from "@chakra-ui/react";
 
 import { BotaoDeLink, Campo, CampoComCadeado } from "../../../../components";
 import { getEmail } from "../../../../services";
-
-interface DadosDaContaProps {
-  onAlterarSenha: () => void;
-}
+import type { DadosDaContaProps } from "./types";
 
 /** O que a pessoa NÃO edita nesta aba: o e-mail e a senha.
  *

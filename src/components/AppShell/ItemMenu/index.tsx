@@ -1,12 +1,8 @@
 import { Box, HStack, Text } from "@chakra-ui/react";
 import { NavLink } from "react-router-dom";
 
-import type { ItemNavegacao } from "../../../types";
 import { ICONES_MENU } from "../icones";
-
-interface ItemMenuProps {
-  item: ItemNavegacao;
-}
+import type { ItemMenuProps } from "./types";
 
 /** Um item do menu lateral.
  *

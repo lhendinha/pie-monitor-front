@@ -2,16 +2,7 @@ import { Menu, Portal } from "@chakra-ui/react";
 
 import { PilulaDeFiltro } from "../../../../components";
 import { OPCAO_DE_MENU, OPCAO_DE_MENU_ATIVA, PAINEL_DE_MENU } from "../../../../theme/menu";
-import type { OpcaoDeFiltro } from "./types";
-
-
-interface FiltroDeMenuProps<T> {
-  /** A PRIMEIRA opção é a neutra ("Todos ..."): é comparando com ela que a
-   * pílula sabe se está filtrando. */
-  opcoes: readonly OpcaoDeFiltro<T>[];
-  valor: T;
-  onMudar: (valor: T) => void;
-}
+import type { FiltroDeMenuProps } from "./types";
 
 /** Pílula de filtro com menu, no formato do Histórico.
  *

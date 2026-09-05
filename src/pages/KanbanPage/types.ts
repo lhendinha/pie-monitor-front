@@ -55,3 +55,14 @@ export interface JanelaDeDatasDoQuadro {
   dataDe?: string;
   dataAte?: string;
 }
+
+export interface KanbanPageProps {
+  /** A tarefa que o link do lembrete de prazo aponta
+   * (`/tarefas/:subgrupoId/:tarefaId`).
+   *
+   * Abre o quadro DELA e o modal dela, já carregado. Sem isto o link caía
+   * no `<Navigate to="/" />` e a pessoa era jogada na Área de trabalho, sem
+   * a tarefa e sem explicação -- e esse endereço já sai por e-mail desde
+   * 21/08, com o formato correto de propósito, esperando esta rota. */
+  tarefaDoLink?: TarefaDoLink;
+}

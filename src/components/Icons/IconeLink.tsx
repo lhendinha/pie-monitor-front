@@ -1,6 +1,4 @@
-interface IconeLinkProps {
-  tamanho?: number;
-}
+import type { IconeLinkProps } from "./types";
 
 /** Elo de corrente (`ICO.link` do artifact): marca o que está VINCULADO a
  * outra coisa -- o processo no cabeçalho do atendimento.

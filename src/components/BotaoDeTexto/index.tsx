@@ -1,10 +1,5 @@
 import { Button } from "@chakra-ui/react";
-import type { ReactNode } from "react";
-
-interface BotaoDeTextoProps {
-  onClick: () => void;
-  children: ReactNode;
-}
+import type { BotaoDeTextoProps } from "./types";
 
 /** Botão sem moldura, na cor da marca (`.btn-text` do artifact). Usado no
  * "← Voltar" das telas de detalhe. */

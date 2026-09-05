@@ -11,13 +11,7 @@ import { resumoDaImportacao } from "../../../../utils/importacao";
 import AvisoDaImportacao from "../AvisoDaImportacao";
 import FormularioDeOab from "../FormularioDeOab";
 import PreviaDaImportacao from "../PreviaDaImportacao";
-
-interface ImportarPorOabProps {
-  subgrupos: { subgrupo_id: string; nome: string }[];
-  onFechar: () => void;
-  /** Chamado quando algo entrou de fato -- a listagem precisa recarregar. */
-  onImportou: () => void;
-}
+import type { ImportarPorOabProps } from "./types";
 
 /** As duas etapas da importação, com a decisão humana no meio.
  *

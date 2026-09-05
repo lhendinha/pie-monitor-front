@@ -3,13 +3,7 @@ import { Checkbox, Table, Text } from "@chakra-ui/react";
 import { CelulaComSub } from "../../../../components";
 import { mascararNumeroProcesso } from "../../../../utils";
 import EtiquetaDeSituacao from "../EtiquetaDeSituacao";
-import type { ProcessoEncontrado } from "../../../../types";
-
-interface LinhaDaPreviaProps {
-  processo: ProcessoEncontrado;
-  marcado: boolean;
-  onAlternar: () => void;
-}
+import type { LinhaDaPreviaProps } from "./types";
 
 /** Uma linha da tabela da prévia: a caixa de marcar, o processo, o tribunal,
  * as comunicações e a situação. */

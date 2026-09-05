@@ -14,20 +14,12 @@ import {
 } from "../../constants/vinculoDeRegistro";
 import EtiquetaDeVinculo from "../EtiquetaDeVinculo";
 import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
-import type { Vinculo, VinculosDeRegistro } from "../../types";
+import type { Vinculo } from "../../types";
 import type {
   RespostaDeAtendimentosResumidos,
   RespostaDeProcessos,
 } from "../../types/respostas";
-
-interface VinculoDeRegistroProps {
-  valor: VinculosDeRegistro;
-  onMudar: (vinculos: VinculosDeRegistro) => void;
-  /** `id` do input, pro `Campo` que o rotula. Cada tela dá o seu -- duas
-   * instâncias na mesma página com o mesmo `id` fariam o rótulo de uma
-   * focar o campo da outra. */
-  id?: string;
-}
+import type { VinculoDeRegistroProps } from "./types";
 
 /** "Processo ou atendimento vinculado": uma busca que enxerga os DOIS.
  *

@@ -10,13 +10,7 @@ import {
   Select,
 } from "../../../../components";
 import { STATUS_DE_ATENDIMENTO } from "../../../../constants/atendimento";
-import type { Atendimento } from "../../../../types";
-
-interface FormularioAtendimentoProps {
-  atendimento: Atendimento;
-  salvando: boolean;
-  onSalvar: (campos: { assunto: string; status: string; responsaveis: string[] }) => void;
-}
+import type { FormularioAtendimentoProps } from "./types";
 
 /** A aba **Detalhes**: o que o atendimento É, editável.
  *

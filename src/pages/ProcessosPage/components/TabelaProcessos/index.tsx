@@ -1,18 +1,7 @@
 import { Botao, EstadoVazio, Tabela } from "../../../../components";
 import { COLUNAS_PROCESSOS } from "../../constants";
 import LinhaProcesso from "../LinhaProcesso";
-import type { Processo } from "../../../../types";
-
-interface TabelaProcessosProps {
-  processos: Processo[];
-  filtroAtivo: boolean;
-  onLimparFiltros: () => void;
-  subgrupoNome: (id: string) => string;
-  clientesNomes: (p: Processo) => string;
-  faseRotulo: (id?: string | null) => string;
-  situacaoRotulo: (id?: string | null) => string;
-  onAbrir: (p: Processo) => void;
-}
+import type { TabelaProcessosProps } from "./types";
 
 /** A tabela de processos, nas 6 colunas do artifact. */
 export default function TabelaProcessos({

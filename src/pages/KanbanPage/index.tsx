@@ -19,11 +19,11 @@ import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type { RespostaDoQuadro } from "../../types/respostas";
 import type { Tarefa } from "../../types";
-import type { TarefaDoLink } from "./types";
 import { podeListarPessoas } from "../../utils/permissoes";
 import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
 import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { useUltimoSubgrupo } from "../../hooks/useUltimoSubgrupo";
+import type { KanbanPageProps } from "./types";
 
 /** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
  * (`PERIODS = { kanban: 'mes' }`).
@@ -47,17 +47,6 @@ const FILTROS_VAZIOS = {
   pessoa: "todas",
   busca: "",
 };
-
-interface KanbanPageProps {
-  /** A tarefa que o link do lembrete de prazo aponta
-   * (`/tarefas/:subgrupoId/:tarefaId`).
-   *
-   * Abre o quadro DELA e o modal dela, já carregado. Sem isto o link caía
-   * no `<Navigate to="/" />` e a pessoa era jogada na Área de trabalho, sem
-   * a tarefa e sem explicação -- e esse endereço já sai por e-mail desde
-   * 21/08, com o formato correto de propósito, esperando esta rota. */
-  tarefaDoLink?: TarefaDoLink;
-}
 
 /** Gestão kanban.
  *
