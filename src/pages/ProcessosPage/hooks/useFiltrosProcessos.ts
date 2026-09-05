@@ -3,7 +3,7 @@ import { useParametrosDaUrl } from "../../../hooks/useParametrosDaUrl";
 import { lerParametroDaUrl } from "../../../utils/parametrosDaUrl";
 
 import { useValorComEspera } from "../../../hooks/useValorComEspera";
-import { FILTROS_PROCESSOS_VAZIOS, RESPONSAVEL_EU, SEM_RESPONSAVEL } from "../constants";
+import { RESPONSAVEL_EU, SEM_RESPONSAVEL } from "../constants";
 import { getEmail } from "../../../services";
 import { temFiltroAtivo } from "../../../services/api/processos";
 import type { FiltrosProcessos } from "../../../types";
@@ -123,9 +123,39 @@ export function useFiltrosProcessos(
     filtroAtivo: temFiltroAtivo(filtros),
     aplicados,
     mudar: aplicar,
-    limpar: () => {
-      aplicar(FILTROS_PROCESSOS_VAZIOS);
-      setBuscaInput("");
-    },
+    limpar,
   };
+
+  /* 🔴 UMA escrita, filtros E busca juntos. Eram duas -- `aplicar(VAZIOS)` e
+     depois `setBuscaInput("")` -- e a segunda partia da URL de ANTES da
+     primeira (`setSearchParams` funcional recebe os parâmetros do render, não
+     os da escrita anterior): só a busca saía, e a data ficava. Medido em
+     produção em 04/09/2026: "1 DATA" acesa, "Mostrando 0 de 29", e o botão
+     sem efeito. É a armadilha que `useParametrosDaUrl` descreve, dentro do
+     hook que a cita.
+
+     ⚠️ APAGA as chaves em vez de escrever vazio, para a URL voltar limpa --
+     exceto as que têm valor INICIAL (o atalho da Área de trabalho e o link do
+     e-mail): apagar devolveria o padrão, e "limpar" traria o filtro de volta.
+     Essas recebem `""` explícito. */
+  function limpar() {
+    const iniciaisPorChave: Record<string, string | undefined> = {
+      cliente: iniciais?.clienteId,
+      cliente_nome: iniciais?.clienteNome,
+      subgrupo: iniciais?.subgrupoId,
+      verificar_ate: iniciais?.dataVerificarAte,
+      prazo_ate: iniciais?.prazoFinalAte,
+      responsavel: iniciais?.responsavelId,
+      busca: buscaInicial,
+    };
+    const escreve: Record<string, string> = {};
+    /* Lista não tem "vazio explícito" na URL: apagar é o único jeito, e o
+       atalho da Área de trabalho nunca manda fase nem situação. */
+    const apaga = ["pagina", "fase", "situacao"];
+    for (const [chave, inicial] of Object.entries(iniciaisPorChave)) {
+      if (inicial) escreve[chave] = "";
+      else apaga.push(chave);
+    }
+    atualizar(escreve, { tambemApaga: apaga });
+  }
 }
