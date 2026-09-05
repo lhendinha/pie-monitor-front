@@ -7,6 +7,7 @@ import type {
   ProgressoDaImportacao,
   ResultadoDaImportacao,
   EtapaDaImportacao,
+  ContagemDaImportacao,
 } from "../types";
 
 export function useImportacaoPorOab(subgrupoId: string) {
@@ -14,7 +15,7 @@ export function useImportacaoPorOab(subgrupoId: string) {
   const [previa, setPrevia] = useState<PreviaDaImportacao | null>(null);
   const [resultado, setResultado] = useState<ResultadoDaImportacao | null>(null);
   const [erro, setErro] = useState("");
-  const [progresso, setProgresso] = useState<{ feitos: number; total: number } | null>(null);
+  const [progresso, setProgresso] = useState<ContagemDaImportacao | null>(null);
 
   /** 🔴 A barra ouve o canal SEMPRE, não só durante a gravação.
    *
