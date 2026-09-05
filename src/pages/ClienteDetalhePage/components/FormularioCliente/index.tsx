@@ -18,10 +18,9 @@ import type { FormularioClienteProps } from "./types";
  * a exclusão abaixo disso. Mostrar um botão que a API vai negar é pior que
  * não mostrar.
  *
- * 🔴 E EDITAR só pra `manager`+, pela mesma razão -- que este arquivo
- * enunciava no parágrafo acima e não aplicava a si mesmo. `PATCH /clientes`
- * é `manager`; os campos vinham habilitados e o "Salvar" clicável pra
- * qualquer um, e o 403 só aparecia depois de a pessoa digitar tudo.
+ * E EDITAR só pra `manager`+, pela mesma razão: `PATCH /clientes` é
+ * `manager`, e campos habilitados pra qualquer um dariam o 403 só depois de a
+ * pessoa digitar tudo.
  *
  * ⚠️ Campos em `readOnly`, não escondidos nem desabilitados: `GET /clientes`
  * é `user`, então quem não pode gravar ainda tem direito a VER o que está
@@ -35,7 +34,7 @@ import type { FormularioClienteProps } from "./types";
  * edição não pode custar a leitura, que é a única coisa que sobrou pra
  * quem está vendo.
  *
- * 🔴 E por isso `handleSubmit` também confere: campo `readOnly` continua
+ * ⚠️ E por isso `handleSubmit` também confere: campo `readOnly` continua
  * participando do formulário (o `disabled` não participava), então esconder
  * o botão não basta como guarda -- só como aviso.
  */

@@ -25,16 +25,7 @@ const JA_LIMPOS = [
   "types/",
   "components/ModalDeTarefa/",
   "components/ModalDeDocumento/",
-  "pages/MembrosPage/components/EditarMembroForm/",
-  "pages/ProcessosPage/components/PreviaDaImportacao/",
-  "pages/ProcessosPage/components/LinhaDaPrevia/",
-  "pages/ProcessosPage/components/ResumoDaPrevia/",
-  "pages/KanbanPage/index.tsx",
-  "pages/KanbanPage/types.ts",
-  "pages/KanbanPage/hooks/",
-  "pages/HistoricoPage/index.tsx",
-  "pages/HistoricoPage/types.ts",
-  "pages/HistoricoPage/hooks/",
+  "pages/",
 ];
 
 /** Testes, tipos de ambiente e o setup não são prosa do produto. */

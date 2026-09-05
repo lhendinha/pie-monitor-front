@@ -14,22 +14,19 @@ import type { FormularioAtendimentoProps } from "./types";
 
 /** A aba **Detalhes**: o que o atendimento É, editável.
  *
- * 🔴 **Existe porque o status virou campo de formulário.** Ele morava num
- * `Select` solto no cabeçalho, ao lado do botão de excluir -- um controle que
- * salvava sozinho, sem "Salvar", enquanto o assunto não tinha onde ser
- * editado. Campo se edita em formulário; a aba é o que tornou isso possível.
+ * O status é campo de formulário, e não um `Select` solto no cabeçalho que
+ * salva sozinho: campo se edita em formulário, e a aba é o que torna isso
+ * possível.
  *
  * ⚠️ O botão só habilita quando algo MUDOU. Sem isso, "Salvar" num formulário
  * intocado manda um PATCH que reenviaria a mesma lista de responsáveis -- e o
  * servidor compara antes de notificar, mas a requisição à toa continua sendo à
  * toa.
  *
- * 🔴 **E quando o assunto tem texto.** Até 01/09/2026 só `mesmos` decidia:
- * apagar o assunto CONTAVA como mudança, então o Salvar acendia, a pessoa
- * clicava e a recusa vinha do servidor -- que exige o assunto tanto ao criar
- * quanto ao editar. Nada se perdia; o que havia era uma ida ao servidor para
- * ouvir um "não" que a tela já sabia. `NovoAtendimentoForm` sempre barrou
- * antes, e agora as duas telas dizem a mesma coisa.
+ * 🔴 **E só quando o assunto tem texto.** Apagar o assunto não conta como
+ * mudança: se contasse, o Salvar acenderia e a recusa viria do servidor, que
+ * exige o assunto tanto ao criar quanto ao editar. É a mesma barreira de
+ * `NovoAtendimentoForm`, e as duas telas dizem a mesma coisa.
  */
 export default function FormularioAtendimento({
   atendimento,

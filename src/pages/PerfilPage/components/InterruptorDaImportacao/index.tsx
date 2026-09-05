@@ -12,8 +12,7 @@ import type { InterruptorDaImportacaoProps } from "./types";
  *
  * ⚠️ **O seletor só aparece com MAIS DE UM subgrupo.** Com um só, o destino é
  * óbvio e um seletor de uma opção é ruído -- mas a regra continua valendo por
- * baixo: liga, e o destino é aquele. Quem escolheu isso foi o usuário, em
- * 30/08/2026.
+ * baixo: liga, e o destino é aquele.
  *
  * ⚠️ **Um destino, embora o contrato seja lista.** O campo é `string[]` porque
  * a lista de avulsas do grupo permite vários -- lá um admin cadastra inscrição

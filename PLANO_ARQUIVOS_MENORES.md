@@ -454,7 +454,16 @@ sob o título *"Histórias que saíram dos comentários"*, por área.
 
 ## Fase 3 -- prosa: a decisão fica, o diário sai
 
-**Status: grupo 1 EXECUTADO em 05/09/2026** (branch `fase-3-prosa-grupo-1`:
+**Status: grupos 1 e 2 EXECUTADOS em 05/09/2026.** Grupo 2 (branch
+`fase-3-prosa-grupo-2`, as 21 páginas com componentes e hooks, 211
+arquivos): a varredura achou 28 arquivos com defeito -- 10 blocos com dois
+ou três 🔴, 19 datas soltas, dois `eslint-disable` datados, um docstring
+com linhas sem `*` -- e onze histórias entraram no `CONTEXT.md` antes de
+sair. `JA_LIMPOS` passou a cobrir `pages/` inteiro; a prova por arquivo (um
+lote por arquivo, para os nomes iguais de componente e tipo não colidirem)
+deu `OK` nos 211; suíte com **1.456** testes.
+
+**Status do grupo 1 (05/09/2026)** (branch `fase-3-prosa-grupo-1`:
 os 36 arquivos de `types/`, dos seis componentes da Fase 2 e dos hooks e
 componentes que saíram deles). O que a leitura fez:
 

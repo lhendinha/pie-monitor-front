@@ -30,10 +30,9 @@ import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
  * O par (subgrupo, id) vem da URL porque é a chave primária -- o
  * atendimento não é endereçável só pelo id.
  *
- * 🔴 **Ganhou abas em 26/08/2026.** Era a linha do tempo direto, sem `Abas`,
- * enquanto processo e cliente já se dividiam assim -- e Documentos entrou
- * como aba nas três. Manter esta tela sem abas faria o mesmo conteúdo ser
- * procurado em dois lugares diferentes conforme a tela.
+ * 🔴 Tem abas como processo e cliente: uma tela de detalhe sem abas ao lado
+ * de duas com abas faria o mesmo conteúdo ser procurado em dois lugares
+ * diferentes conforme a tela.
  */
 export default function AtendimentoDetalhePage() {
   const subgrupoNome = useNomeDeSubgrupo();
@@ -193,16 +192,10 @@ export default function AtendimentoDetalhePage() {
           </Flex>
         </Box>
 
-        {/* 🔴 O `Select` de status SAIU daqui em 26/08/2026 e virou campo da
-            aba **Detalhes**.
-
-            Ele era um controle que salvava sozinho, sem "Salvar", plantado ao
-            lado do botão de excluir -- enquanto o assunto não tinha onde ser
-            editado. Status é campo, e campo se edita em formulário; a aba é o
-            que tornou isso possível.
-
-            A ETIQUETA de status continua no cabeçalho: ela informa, e é o que
-            se quer ver de relance ao abrir. */}
+        {/* O status se edita na aba **Detalhes**, e não num `Select` aqui: status
+            é campo, e campo se edita em formulário. A ETIQUETA de status fica
+            no cabeçalho: ela informa, e é o que se quer ver de relance ao
+            abrir. */}
 
         {/* 🔴 Lixeira + a palavra "Excluir", como em `FormularioProcesso` --
             que já escreve o porquê: *"só o texto não distingue a ação

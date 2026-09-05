@@ -13,19 +13,18 @@ import type { ModalDeMovimentacaoProps } from "./types";
 
 /** Os detalhes de UMA movimentação.
  *
- * 🔴 Existe porque a lista deixou de trazer o texto do tribunal (ver
+ * 🔴 Existe porque a lista NÃO traz o texto do tribunal (ver
  * `ItemDeMovimentacao`): cinco publicações inteiras empilhadas, cada uma
  * num bloco rolável de 200px, tornavam a lista impercorrível -- e o teor
  * que interessa é sempre o de UM item. Tem endereço próprio na URL
  * (`?comunicacao=`), então dá pra mandar pra alguém e sobrevive a um F5.
  *
- * ⚠️ **Não leva pro documento no tribunal.** Houve um "Abrir o documento no
- * tribunal" aqui, lendo o campo `link` -- removido a pedido, em 26/08/2026.
- * O teor da publicação é o que se lê pra saber o que aconteceu, e a peça no
- * site do tribunal é uma porta pra FORA do sistema: em 7 dos 71 links
- * medidos ela nem abria (6 devolviam 403 e 1 apontava pra um host da rede
- * interna do TST, vazado no dado do PJe). O campo continua chegando da API e
- * guardado, caso um dia sirva pra outra coisa.
+ * ⚠️ **Não leva pro documento no tribunal.** O teor da publicação é o que se
+ * lê pra saber o que aconteceu, e a peça no site do tribunal é uma porta pra
+ * FORA do sistema: em 7 dos 71 links medidos em 26/08/2026 ela nem abria (6
+ * devolviam 403 e 1 apontava pra um host da rede interna do TST, vazado no
+ * dado do PJe). O campo `link` continua chegando da API e guardado, caso um
+ * dia sirva pra outra coisa.
  *
  * ⚠️ **Não é o "Detalhes do envio" do Histórico, e a diferença é o assunto.**
  * Lá se olha uma NOTIFICAÇÃO -- quem recebeu, se entregou; aqui, a

@@ -145,8 +145,8 @@ export default function Movimentacoes({ comunicacoes }: MovimentacoesProps) {
              lá diria "não foi possível localizar", que soa como falha e não
              como "nunca existiu".
 
-             `undefined` (resposta de API anterior a 26/08/2026) também não
-             oferece: não saber não é motivo pra prometer. */
+             `undefined` (resposta antiga da API) também não oferece: não
+             saber não é motivo pra prometer. */
           onVerOEnvio={
             aberta.tem_envio
               ? () =>

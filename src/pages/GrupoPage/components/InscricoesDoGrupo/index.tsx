@@ -27,7 +27,7 @@ import type { NoModal } from "./types";
 
 /** Sub-aba "Inscrições na OAB": as inscrições do GRUPO.
  *
- * 🔴 **Cada mexida grava sozinha**, como Fases e Situações -- e não um
+ * **Cada mexida grava sozinha**, como Fases e Situações -- e não um
  * "Salvar" para a lista toda. A tela nunca mostra estado não salvo, e uma
  * inscrição que o tribunal recusa derruba só a própria adição em vez das 50.
  *

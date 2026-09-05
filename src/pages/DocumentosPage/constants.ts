@@ -9,7 +9,7 @@ export const COLUNAS_DE_DOCUMENTOS = [
   "Documento",
   "Tipo",
   "Vínculo",
-  /* 🔴 Logo DEPOIS de "Vínculo", e não no fim (02/09/2026): o subgrupo
+  /* 🔴 Logo DEPOIS de "Vínculo", e não no fim: o subgrupo
      qualifica o vínculo -- "Vínculo" diz a que processo o documento pertence,
      e o subgrupo diz de onde esse processo é. Qualificador longe do que ele
      qualifica obriga o olho a atravessar a linha e voltar, que é o oposto do

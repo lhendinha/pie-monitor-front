@@ -24,11 +24,10 @@ import InterruptorDaImportacao from "../InterruptorDaImportacao";
  * não conhece o campo do nome, então não há como mandá-lo por engano num
  * PATCH que o servidor trataria como "sobrescreve".
  *
- * 🔴 **Os dois num "Salvar" só**, e não em dois botões: cadastrar a OAB e
+ * ⚠️ **Os dois num "Salvar" só**, e não em dois botões: cadastrar a OAB e
  * ligar a importação é UMA intenção ("quero que o sistema traga meus
- * processos"), e o servidor aceita as duas coisas no mesmo PATCH -- conferido
- * em produção em 31/08/2026. Separar obrigaria a salvar duas vezes para um
- * pedido só.
+ * processos"), e o servidor aceita as duas coisas no mesmo PATCH. Separar
+ * obrigaria a salvar duas vezes para um pedido só.
  */
 export default function FormularioDaInscricao() {
   const [numeroOab, setNumeroOab] = useState("");
@@ -48,7 +47,7 @@ export default function FormularioDaInscricao() {
      querer apagaria a inscrição de quem já tem. */
   useEffect(() => {
     if (query.data) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito (decidido em 03/09/2026)
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito, ver o eslint.config.js
       setNumeroOab(query.data.numero_oab ?? "");
       setUfOab(query.data.uf_oab ?? "");
       setLigada(query.data.importacao_automatica);
@@ -170,22 +169,18 @@ export default function FormularioDaInscricao() {
         </Campo>
       </LinhaDeCampos>
 
-      {/* 🔴 Diz o que a inscrição FAZ, e não por que os dois campos andam
-          juntos. A versão anterior explicava que a mesma numeração existe nas
-          27 seccionais -- para um público de ADVOGADOS, que é justamente quem
-          já sabe disso. Quem preencher só um recebe o erro no campo certo; o
-          apoio permanente é melhor gasto com o que não é óbvio.
+      {/* Diz o que a inscrição FAZ, e não por que os dois campos andam
+          juntos: o público é de ADVOGADOS, que sabem que a mesma numeração
+          existe nas 27 seccionais. Quem preencher só um recebe o erro no
+          campo certo; o apoio permanente é melhor gasto com o que não é
+          óbvio.
 
           ⚠️ "Movimentações" é o termo que o produto já usa com o usuário (a
           aba do processo, o cartão, o subtítulo do Histórico). "Publicações"
           ou "intimações" criariam um segundo nome para a mesma coisa.
 
           ⚠️ E é verdade HOJE, não promessa: a varredura por OAB lê esta
-          inscrição e roda três vezes ao dia.
-
-          ✅ E a segunda frase entrou: o interruptor da Fase 1b existe desde
-          31/08/2026, então "o interruptor abaixo é outra coisa" já cita um
-          controle presente. O comentário guardou a frase até aqui. */}
+          inscrição e roda três vezes ao dia. */}
       <Box mt="-8px" fontSize="11.5px" color="fg.subtle">
         Com a inscrição cadastrada, o sistema acompanha as movimentações que o tribunal
         publicar para ela — o interruptor abaixo é outra coisa.

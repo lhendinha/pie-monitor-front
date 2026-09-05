@@ -142,6 +142,64 @@ que este arquivo ainda não tinha:
   arquivos"). Os dois saíram nas Fases 1 e 3; a regra que sobrou está no
   docstring do índice.
 
+## Histórias que saíram dos comentários (Fase 3 do `PLANO_ARQUIVOS_MENORES.md`, grupo 2, 05/09/2026)
+
+O que os comentários das 21 páginas contavam, e que este arquivo ainda não
+tinha:
+
+- **O detalhe de atendimento não tinha abas até 26/08/2026** -- era a linha
+  do tempo direto, enquanto processo e cliente já se dividiam assim.
+  Documentos entrou como aba nas três, e "Detalhes" entrou em SEGUNDO de
+  propósito (abrir um atendimento é para ler a conversa). No mesmo dia o
+  `Select` de status saiu do cabeçalho, onde salvava sozinho ao lado do
+  botão de excluir, e virou campo da aba Detalhes; e desde 01/09/2026
+  apagar o assunto não conta como mudança, porque o servidor recusa assunto
+  vazio e a tela ia ao servidor só para ouvir um "não" que já sabia.
+- **Editar cliente era clicável para qualquer um**: o arquivo enunciava "não
+  mostrar botão que a API vai negar" e não aplicava a si mesmo -- `PATCH
+  /clientes` é `manager`, e o 403 só aparecia depois de a pessoa digitar
+  tudo.
+- **As linhas de "Processos do cliente" e de "Tarefas vinculadas" eram texto
+  morto até 26/08/2026**: vinte números mascarados sem link, três tarefas
+  que não se abriam. O filtro `processo_numero` de `GET /tarefas` nasceu em
+  22/08/2026 para a segunda lista.
+- **O cabeçalho de Clientes** avisava "Mostrando 10 de 120 clientes -- refine
+  a busca" na tela normal, sem busca; o aviso passou a valer só com busca e
+  só com a tabela já correspondendo ao termo.
+- **`FiltroDeMenu` nasceu de `FiltroDeTipo`**, generalizado em 26/08/2026
+  quando o Histórico ganhou os filtros de falha e período.
+- **`PATCH /grupos/membros/{email}` baixou de `super_admin` para `admin`
+  em 31/08/2026**, quando a inscrição da OAB entrou no modal de editar
+  membro. E a invalidação das notificações ao editar um membro trocou de
+  motivo em 25/08/2026: antes o sino traduzia e-mail em apelido com o cache
+  de membros; desde então o nome vem assado em `autor_nome`, e sem
+  invalidar o sino mostraria o nome antigo até o foco voltar.
+- **O perfil tem duas abas desde 30/08/2026**, divididas por assunto -- e o
+  seletor de destino da importação só aparece com mais de um subgrupo, por
+  escolha do usuário no mesmo dia. Salvar OAB e interruptor num "Salvar"
+  só foi conferido em produção em 31/08/2026. O texto de apoio da inscrição
+  deixou de explicar que a mesma numeração existe nas 27 seccionais (o
+  público é de advogados) e ganhou a frase sobre o interruptor quando ele
+  passou a existir; "Um apelido não bate." saiu do apoio do nome em
+  31/08/2026, por soar como reprimenda.
+- **O detalhe da movimentação teve um "Abrir o documento no tribunal"**,
+  removido a pedido em 26/08/2026 -- mesma história de `Comunicacao.link`,
+  no grupo 1.
+- **O subgrupo na linha de Processos virou etiqueta em 02/09/2026**: era o
+  único lugar que já mostrava o subgrupo, de um jeito próprio, enquanto
+  Membros e Inscrições usavam `EtiquetasDeSubgrupo`. Em Documentos a coluna
+  entrou logo depois de "Vínculo" no mesmo dia.
+- **A etiqueta "removido" da prévia é vermelha desde 30/08/2026**, e a
+  objeção contra o vermelho (sugerir impedimento num estado marcável) caiu
+  na mesma conversa em que ficou decidido que os removidos não vêm
+  pré-marcados. A coluna Responsável da listagem foi ACRESCENTADA em
+  26/08/2026 sem tirar "Última movimentação", que a demonstração tinha
+  substituído para caber.
+- **O número de atrasadas da Área de trabalho passou um tempo sem link**,
+  porque toda visão da Agenda era limitada por janela; a Agenda ganhou o
+  modo "Atrasadas" em 26/08/2026, e o servidor passou a contar "os meus"
+  nos dois números de prazo no mesmo dia.
+
 ## 1) Objetivo do projeto
 
 Front-end React + TypeScript pra um sistema que monitora processos

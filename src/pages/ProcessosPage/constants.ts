@@ -19,13 +19,12 @@ export const COLUNAS_PROCESSOS = [
   "Situação",
   "Última movimentação",
   "Prazo final",
-  // 🔴 ACRESCENTADA em 26/08/2026 -- nada saiu.
+  // 🔴 Sete colunas: Responsável ENTROU e "Última movimentação" ficou.
   //
-  // A demonstração da feature tinha posto Responsável no lugar de "Última
-  // movimentação", pra caber. Medido depois: os 10 processos de produção têm
-  // `ultima_mov_tipo`, `ultima_mov_data` e `ultima_verificacao` preenchidos --
-  // e aquela coluna é o ÚNICO lugar onde se percebe, pro acervo inteiro, que
-  // a verificação parou (na tela do processo vê-se um; aqui, todos).
+  // Medido em 26/08/2026: os 10 processos de produção têm `ultima_mov_tipo`,
+  // `ultima_mov_data` e `ultima_verificacao` preenchidos -- e aquela coluna é
+  // o ÚNICO lugar onde se percebe, pro acervo inteiro, que a verificação
+  // parou (na tela do processo vê-se um; aqui, todos).
   //
   // `Tabela` já rola dentro do próprio container (`Table.ScrollArea`), então
   // a sétima não faz a PÁGINA rolar de lado.
@@ -112,14 +111,11 @@ export const CORES_DA_ETIQUETA_DE_SITUACAO: Record<
        processo está -- este é sobre uma DECISÃO que alguém tomou;
      - o âmbar é do único que TRAVA.
 
-     🔴 **Vermelho, escolhido em 30/08/2026 -- e a objeção contra ele CAIU
-     junto com a decisão irmã.** Eu havia argumentado que vermelho sugere
-     impedimento num estado que continua marcável. Isso valia enquanto o
-     processo vinha PRÉ-MARCADO; na mesma conversa ficou decidido que os
-     removidos não vêm marcados (ver `preSelecionados`), e aí o vermelho
-     passa a dizer exatamente o que a tela faz: o padrão é não trazer de
-     volta. As duas decisões se sustentam mutuamente -- mexer numa sem a
-     outra devolve a incoerência.
+     ⚠️ **Vermelho porque os removidos NÃO vêm pré-marcados** (ver
+     `preSelecionados`): vermelho sugeriria impedimento num estado que
+     continua marcável, mas com o padrão sendo não trazer de volta ele diz
+     exatamente o que a tela faz. As duas decisões se sustentam mutuamente --
+     mexer numa sem a outra devolve a incoerência.
 
      ⚠️ Contraste MEDIDO, não presumido: `bad.dark` (#b93a44) sobre
      `bad.tint` (#fbe9ea) dá **4,78:1** -- passa AA (4,5), e é o mais
