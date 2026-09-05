@@ -53,8 +53,8 @@ export function formatarDataHora(iso?: string): string {
   }
 }
 
-/** Formata um ISO 8601 como dd/mm/aaaa hh:mmAM|PM (ex: 14/08/2026 12:13PM),
- * já convertido pro fuso horário local do navegador. `hourCycle: "h12"`
+/** Formata um ISO 8601 como dd/mm/aaaa hh:mmAM|PM (a hora como 12:13PM), já
+ * convertido pro fuso horário local do navegador. `hourCycle: "h12"`
  * (em vez de `hour12: true`) evita um bug do ICU em pt-BR que mostra "00"
  * ao meio-dia. Devolve a string original se não conseguir interpretar. */
 export function formatarDataHoraAmPm(iso?: string): string {

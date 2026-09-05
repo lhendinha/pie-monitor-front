@@ -49,7 +49,7 @@ export function selecionaveis(processos: ProcessoEncontrado[]): string[] {
 /** Quais processos já vêm MARCADOS quando a prévia abre.
  *
  * 🔴 **Tudo que dá para importar, MENOS o que este subgrupo já apagou de
- * propósito** -- decidido em 30/08/2026.
+ * propósito.**
  *
  * A diferença entre esta e `selecionaveis` é a diferença entre *poder* e
  * *querer*: quem apagou um processo tomou uma decisão, e o padrão da tela
@@ -130,7 +130,7 @@ export function resumoDaImportacao(r: {
  * 4. "removido antes";
  * 5. "novo".
  *
- * 🔴 **O quarto é o único que NÃO é excludente com "novo"** -- e é por isso
+ * ⚠️ **O quarto é o único que NÃO é excludente com "novo"** -- e é por isso
  * que ele fica logo acima dele. Um processo removido antes não está em
  * subgrupo nenhum, que é exatamente a definição de novo; sem esta posição ele
  * apareceria como novo e a pessoa o reimportaria sem saber que já o tinha

@@ -7,9 +7,9 @@ import type {
   RespostaDeMensagem,
 } from "../types/respostas";
 
-/** 🔴 O prefixo `pje-monitor-` fica, e o produto chama-se Argos desde
- * 25/08/2026. Não é resíduo do rename: é a chave sob a qual a sessão de cada
- * pessoa JÁ está gravada no navegador dela.
+/** 🔴 O prefixo `pje-monitor-` fica, embora o produto se chame Argos. Não é
+ * resíduo do rename: é a chave sob a qual a sessão de cada pessoa JÁ está
+ * gravada no navegador dela.
  *
  * Renomear não migra nada -- o valor antigo continua lá, órfão, e o código
  * passa a ler uma chave vazia. O efeito é que TODO MUNDO é deslogado no

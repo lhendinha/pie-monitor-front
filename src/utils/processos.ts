@@ -8,15 +8,12 @@ import { mesmoValor } from "./iguais";
 
 /** O corpo com os campos que quem chama REALMENTE tem.
  *
- * 🔴 **Campo ausente é OMITIDO, não zerado** (28/08/2026). Antes esta função
- * escrevia `campos.clienteIds || []` e `campos.observacoes || ""` para todos
- * os nove, sempre -- então o "PATCH" era sobrescrita total, e qualquer campo
- * que o formulário esquecesse de carregar era APAGADO ao salvar.
- *
- * Não é hipótese: foi assim que a edição de processo passou a mandar
- * `responsaveis: []` em todo salvamento, porque o formulário nunca semeou
- * esse campo. Do lado do servidor isso batia num 400, o que ao menos era
- * barulhento; com `cliente_ids` teria apagado calado.
+ * 🔴 **Campo ausente é OMITIDO, não zerado.** Escrever `campos.clienteIds ||
+ * []` e `campos.observacoes || ""` para todos os nove faria do "PATCH" uma
+ * sobrescrita total: qualquer campo que o formulário esquecesse de carregar
+ * seria APAGADO ao salvar -- com `responsaveis` o servidor ao menos recusa
+ * com 400; com `cliente_ids` apagaria calado.
+ * ➡️ `CONTEXT.md`, "Histórias que saíram dos comentários", grupo 4.
  *
  * ⚠️ A convenção do servidor é a de PATCH parcial: `None` (campo ausente) =
  * "não enviei, não toque"; valor presente = "grave isto", inclusive vazio.

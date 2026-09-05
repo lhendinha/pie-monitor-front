@@ -13,14 +13,10 @@ import type { EnderecoDoCliente } from "../types";
  * menos que uma rota.
  *
  * ⚠️ Em ordem ALFABÉTICA, que é como se procura uma sigla numa lista de 27
- * -- não por região nem por população.
- *
- * 🔴 **E ela NÃO estava, apesar de esta linha afirmar que sim.** Doze das 27
- * posições vinham na ordem do IBGE (por região): `AP` antes de `AM`, `PR`
- * antes de `PE`, `SP` antes de `SE`. Quase-alfabético é pior que qualquer das
- * duas ordens -- o olho segue o alfabeto e tropeça exatamente onde ela quebra.
- * Corrigido em 01/09/2026, com o guarda abaixo para a afirmação parar de
- * depender de quem lê.
+ * -- não por região nem por população. Quase-alfabético (a ordem do IBGE,
+ * por região: `AP` antes de `AM`) é pior que qualquer das duas ordens: o olho
+ * segue o alfabeto e tropeça exatamente onde ela quebra. ➡️ O guarda abaixo
+ * afirma a ordem, para ela não depender de quem lê.
  *
  * ⚠️ O gêmeo da API é `frozenset`, então lá a ordem não existe -- só o
  * conjunto. Reordenar aqui não pode dessincronizar nada.

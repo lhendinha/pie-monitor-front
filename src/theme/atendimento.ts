@@ -2,17 +2,12 @@ import type { ButtonProps } from "@chakra-ui/react";
 
 /** Cores da etiqueta de status do atendimento (`.status-*` do artifact).
  *
- * **"Em andamento" em âmbar, "Fechado" em azul da marca** (26/08/2026).
- *
- * 🔴 O texto aqui dizia o contrário -- *"o que está aberto pede atenção, o
- * fechado só precisa ser reconhecível"* --, e o mapa pintava "Em andamento"
- * de azul e "Fechado" de cinza. A inversão troca o que cada cor SIGNIFICA:
- * o âmbar passa a ser o "pede atenção" (atendimento aberto é trabalho em
- * curso, que ainda vai voltar), e o azul marca o resolvido.
- *
- * ⚠️ O docstring foi reescrito junto de propósito. Trocar o mapa e deixar a
- * explicação velha faria o arquivo explicar exatamente o oposto do que faz
- * -- e é o comentário que a próxima pessoa lê antes do código.
+ * 🔴 **"Em andamento" em âmbar, "Fechado" em azul da marca.** O âmbar é o
+ * "pede atenção" (atendimento aberto é trabalho em curso, que ainda vai
+ * voltar), e o azul marca o resolvido. Pintar o aberto de azul e o fechado
+ * de cinza inverte o que cada cor SIGNIFICA -- e o mapa e este texto têm de
+ * mudar juntos, porque é o comentário que a próxima pessoa lê antes do
+ * código.
  *
  * ⚠️ **`status.warn.text`, não `status.warn`.** A `Etiqueta` é 11px/800, ou
  * seja texto pequeno: a cor cheia sobre o tint dá 3,00:1 e reprova em AA.

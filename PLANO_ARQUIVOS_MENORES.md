@@ -454,7 +454,15 @@ sob o título *"Histórias que saíram dos comentários"*, por área.
 
 ## Fase 3 -- prosa: a decisão fica, o diário sai
 
-**Status: grupos 1, 2 e 3 EXECUTADOS em 05/09/2026.** Grupo 3 (branch
+**Status: EXECUTADA em 05/09/2026, os quatro grupos.** Grupo 4 (branch
+`fase-3-prosa-grupo-4`: `hooks/`, `utils/`, `services/`, `constants/`,
+`contexts/`, `routes/`, `theme/`, `App.tsx` e `main.tsx`, 121 arquivos): 19
+arquivos com defeito -- nove blocos com dois 🔴, onze datas soltas, uma lista
+de UFs cujo docstring contava a própria correção -- e doze histórias no
+`CONTEXT.md`. `JA_LIMPOS` virou `src/` inteiro: o guarda roda em **559**
+arquivos, e o medidor diz **0 blocos com mais de um 🔴** (eram 20) e 15
+linhas com data, todas ao lado de "medido". Prova por arquivo `OK` nos 121;
+suíte com **1.765** testes. Grupo 3 (branch
 `fase-3-prosa-grupo-3`, as 68 pastas de `components/`, 188 arquivos): 17
 arquivos com defeito -- dois blocos com dois ou três 🔴, oito datas soltas,
 onze "a primeira versão"/"a versão anterior" -- e nove histórias no
@@ -563,6 +571,14 @@ mesma"; o guarda de prosa exclui testes, `.d.ts` e o setup. Conferido de
 novo: os 87 tipos da tabela, sem falta nem repetição; `export type *`
 compila sob as opções do projeto; o `printer` do TypeScript apaga o
 `{/* */}` do JSX com `removeComments`.
+
+**v8 (05/09/2026, Fase 3 concluída)**: o guarda de prosa cobre `src/`
+inteiro, e a régua "data só na mesma frase que medi" deixou 15 datas no
+código, todas medidas. A prova por AST rodou por arquivo em todos os grupos
+depois do 1, por causa dos nomes iguais de componente e tipo. O que o plano
+não previu: o `SeletorData` e o `date.ts` citavam datas como EXEMPLO de
+formato -- o guarda não distingue exemplo de diário, e os exemplos viraram
+"dia/mês/ano".
 
 **v7 (05/09/2026, Fase 3, grupo 1)**: a régua do guarda ficou "data só na
 mesma frase que medi", igual à da API; o medidor de movimentação acusa

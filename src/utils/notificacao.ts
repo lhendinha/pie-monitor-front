@@ -173,13 +173,9 @@ export function destinoDaNotificacao(n: Notificacao): string | null {
   /* 🔴 A atribuição em massa abre a listagem FILTRADA, e não um processo.
    *
    * "201 processos atribuídos a você" não tem um alvo -- por isso chega sem
-   * `alvo_id`. O destino certo sempre foi a lista filtrada por responsável, e
-   * isto ficou PENDENTE por um obstáculo concreto: esta função devolve uma
-   * STRING de rota, e os filtros de Processos viajavam por `state` de
-   * navegação, que não cabe numa string.
-   *
-   * ✅ O obstáculo caiu em 28/08/2026, quando o estado das listagens foi para
-   * a URL: `?responsavel=…` passou a ser endereço.
+   * `alvo_id`. O destino é a lista filtrada por responsável, e isso só é
+   * possível porque os filtros de Processos moram na URL: esta função
+   * devolve uma STRING de rota, e `?responsavel=…` é endereço.
    *
    * ⚠️ O subgrupo entra junto quando existe: a atribuição aconteceu DENTRO de
    * um, e sem ele a lista traria os processos da pessoa em todos os

@@ -12,20 +12,15 @@ import { describe, expect, it } from "vitest";
  * palavra "medido". E as duas formas que existem em `src/` contam:
  * `dd/mm/aaaa` e `mm/aaaa`.
  *
- * ➡️ Fase 3 do `PLANO_ARQUIVOS_MENORES.md`: `JA_LIMPOS` cresce a cada grupo,
- * e no último vira `src/` inteiro.
+ * ➡️ Fase 3 do `PLANO_ARQUIVOS_MENORES.md`: `JA_LIMPOS` cresceu a cada grupo,
+ * e no último virou `src/` inteiro.
  */
 const FONTES = import.meta.glob("/src/**/*.{ts,tsx}", {
   eager: true, query: "?raw", import: "default",
 }) as Record<string, string>;
 
-/** Pastas e arquivos já no padrão (caminho relativo a `src/`). Uma pasta
- * cobre tudo dentro dela. */
-const JA_LIMPOS = [
-  "types/",
-  "components/",
-  "pages/",
-];
+/** `src/` inteiro: a Fase 3 acabou, e todo arquivo novo nasce no padrão. */
+const JA_LIMPOS = [""];
 
 /** Testes, tipos de ambiente e o setup não são prosa do produto. */
 const FORA = /\.test\.|\.d\.ts$|^test\//;
@@ -57,7 +52,7 @@ function diario(fonte: string): string[] {
 const limpos = Object.entries(FONTES)
   .map(([caminho, fonte]) => [caminho.replace("/src/", ""), fonte] as const)
   .filter(([caminho]) => !FORA.test(caminho))
-  .filter(([caminho]) => JA_LIMPOS.some((p) => (p.endsWith("/") ? caminho.startsWith(p) : caminho === p)));
+  .filter(([caminho]) => JA_LIMPOS.some((p) => p === "" || (p.endsWith("/") ? caminho.startsWith(p) : caminho === p)));
 
 describe("prosa sem diário", () => {
   it("varre arquivos de verdade -- senão o guarda passaria vazio", () => {

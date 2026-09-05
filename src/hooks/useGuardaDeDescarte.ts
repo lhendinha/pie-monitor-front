@@ -11,7 +11,7 @@ import { mesmoValor } from "../utils";
  * quem só abriu e desistiu. Esse é o gesto mais comum de todos, e uma pergunta
  * ali ensina a clicar sem ler.
  *
- * 🔴 **A regra da projeção: passe o valor que o ENVIO mandaria.** Não o texto
+ * ⚠️ **A regra da projeção: passe o valor que o ENVIO mandaria.** Não o texto
  * cru do campo, nem o valor derivado que a tela mostra. Isso resolve três
  * armadilhas de uma vez, e as três foram medidas neste código:
  *

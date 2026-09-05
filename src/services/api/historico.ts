@@ -6,13 +6,10 @@ import type { OpcoesListarHistorico } from "../../types";
 export function listarHistorico(opcoes: OpcoesListarHistorico = {}) {
   const { numeroProcesso, subgrupoId, tipoEnvio, apenasComFalha, dias, pagina, tamanhoPagina } =
     opcoes;
-  /* 🔴 O `numeroProcesso` vai JUNTO com os outros (03/09/2026).
-   *
-   * Antes ele ia sozinho, porque o servidor desviava para um ramo próprio --
-   * sem paginação e ignorando o resto. Esse ramo virou rota separada
-   * (`historicoDoProcesso`), e aqui o número é um filtro como os demais: quem
-   * escolheu "Cível" e "últimos 7 dias" e digita um número continua com os
-   * três valendo. */
+  /* 🔴 O `numeroProcesso` vai JUNTO com os outros: aqui ele é um filtro como
+   * os demais, e quem escolheu "Cível" e "últimos 7 dias" e digita um número
+   * continua com os três valendo. O ramo do servidor que lê o número sozinho,
+   * sem paginação, é a rota separada `historicoDoProcesso`. */
   return chamar("/historico", {
     query: {
       pagina: pagina ? String(pagina) : undefined,
