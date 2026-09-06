@@ -81,6 +81,21 @@ export const cores = {
   warnDark: "#995d00",
   /** Verde escurecido, pra TEXTO. 4,82:1 sobre `goodTint`, 5,39:1 no branco. */
   goodDark: "#167953",
+
+  /* Violeta: a cor do papel `financeiro`, e a única fora do semáforo e da
+     marca. Existe porque a escala de papéis acabou -- eram quatro papéis
+     para quatro cores (marca, verde, âmbar, cinza), e o degrau novo não
+     podia reusar nenhuma sem dizer o que não é: verde é `admin`, âmbar é
+     `manager`, e vermelho significaria erro numa etiqueta que só informa.
+
+     Segue a MESMA divisão de papéis do semáforo, e foi medida igual:
+     cheia 4,41:1 sobre o tint (gráfico, reprova em texto pequeno de
+     propósito), escura 7,25:1 sobre o tint, 8,50:1 no branco e 7,92:1 no
+     canvas. Matiz idêntico entre as duas (249°). */
+  roxo: "#6d5bd0",
+  roxoTint: "#eeebfa",
+  /** Violeta escurecido, pra TEXTO. 7,25:1 sobre `roxoTint`. */
+  roxoDark: "#4b3aa8",
 } as const;
 
 export const raios = {

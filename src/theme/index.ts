@@ -69,6 +69,13 @@ export const system = createSystem(defaultConfig, {
           tint: { value: cores.badTint },
           dark: { value: cores.badDark },
         },
+        /* Fora do semáforo, mas com a mesma divisão de três papéis: só o
+           `dark` serve a texto. Ver `tokens.ts`. */
+        roxo: {
+          DEFAULT: { value: cores.roxo },
+          tint: { value: cores.roxoTint },
+          dark: { value: cores.roxoDark },
+        },
       },
       /** ⚠️ `heading` e `body` são os nomes que o Chakra já usa nas próprias
        * receitas -- sem sobrescrevê-los, todo `Heading` saía em Inter (o

@@ -1,6 +1,6 @@
 /** Quem entra e com que papel: tokens, perfil e as abas que o perfil enxerga. */
 
-export type Papel = "user" | "manager" | "admin" | "super_admin";
+export type Papel = "user" | "financeiro" | "manager" | "admin" | "super_admin";
 
 /** O corpo de `PATCH /me`, montado campo a campo.
  *
