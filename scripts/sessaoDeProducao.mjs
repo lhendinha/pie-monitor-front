@@ -64,7 +64,13 @@ export async function abrirProducaoLogado({
     aoCriarPagina?.(pagina);
     await pagina.goto(APP);
     if (await jaEntrou(pagina)) {
-      console.log("Sessão guardada reaproveitada -- nenhuma tentativa de login gasta.");
+      /* 🔴 Regrava a sessão DEPOIS de reaproveitá-la: o app renova os tokens
+         em silêncio (o refresh é rotativo), e o arquivo ficava com o par
+         antigo -- válido no navegador, morto para qualquer outro leitor. Em
+         06/09/2026 o access token do arquivo já tinha vencido e o refresh
+         dele fora invalidado pela rotação. */
+      await contexto.storageState({ path: SESSAO });
+      console.log("Sessão guardada reaproveitada e regravada -- nenhuma tentativa de login gasta.");
       return { navegador, contexto, pagina };
     }
     /* Expirou. Apaga antes de tentar a senha, senão a próxima rodada tenta
