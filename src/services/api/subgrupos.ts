@@ -7,12 +7,14 @@ import type { OpcoesListarSubgrupos } from "../../types";
  * ⚠️ O recorte de ESCOPO vem antes do filtro de texto no servidor: quem só
  * vê dois subgrupos busca dentro dos dois, nunca no grupo inteiro. */
 export function listarSubgrupos(opcoes: OpcoesListarSubgrupos = {}) {
-  const { pagina, tamanhoPagina, busca } = opcoes;
+  const { pagina, tamanhoPagina, busca, comContagens } = opcoes;
   return chamar("/subgrupos", {
     query: {
       pagina: pagina ? String(pagina) : undefined,
       tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
       busca: busca || undefined,
+      // Só vai quando pedido: a API conta membros apenas com ele na URL.
+      com_contagens: comContagens ? "true" : undefined,
     },
   });
 }

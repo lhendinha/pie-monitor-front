@@ -47,7 +47,7 @@ describe("SubgruposPage", () => {
     });
     renderComRota(<SubgruposPage />);
     expect(await screen.findByText("Cível")).toBeInTheDocument();
-    expect(mocks.listarSubgrupos).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10 });
+    expect(mocks.listarSubgrupos).toHaveBeenCalledWith({ pagina: 1, tamanhoPagina: 10, comContagens: true });
   });
 
   it("cria um subgrupo e reflete na lista via invalidateQueries", async () => {
@@ -346,7 +346,9 @@ describe("SubgruposPage", () => {
     expect(await screen.findByRole("button", { name: "Ver membros de Cível" })).toHaveTextContent(
       "1 membro",
     );
-    expect(screen.getByText("· 3 colunas")).toBeInTheDocument();
+    // 🔴 O par negativo: a API velha ainda manda `colunas`, e a linha não
+    // pode mostrá-la -- "· N colunas" saiu por decisão de produto.
+    expect(screen.queryByText(/colunas/)).not.toBeInTheDocument();
   });
 
   it("a contagem de membros abre quem está no subgrupo", async () => {

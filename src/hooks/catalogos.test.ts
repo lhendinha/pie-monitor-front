@@ -85,6 +85,30 @@ describe("catálogos não têm staleTime", () => {
    * Se um dia o volume justificar, o ajuste certo não é este: é parar de
    * caminhar todas as páginas pra rotular tarefa.
    */
+  it("🔴 nenhum seletor pede a contagem de membros -- só a aba Subgrupos paga por ela", async () => {
+    /* `comContagens` vira uma Query de membros por subgrupo na API. A aba
+       Subgrupos mostra o número; os seletores só mostram nomes, e pediam a
+       contagem sem saber -- 200 subgrupos seriam 200 Queries por seletor
+       aberto. Aqui se cobra dos dois lados: quem mostra pede, quem não
+       mostra não pede. */
+    const seletores = import.meta.glob("./{useTodosOsSubgrupos,useSubgruposBuscaveis}.ts", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    expect(Object.keys(seletores)).toHaveLength(2);
+    for (const [arquivo, fonte] of Object.entries(seletores)) {
+      const semComentarios = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+      expect(semComentarios, arquivo).not.toContain("comContagens");
+    }
+    const aba = import.meta.glob("../pages/SubgruposPage/index.tsx", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    expect(Object.values(aba)[0]).toContain("comContagens: true");
+  });
+
   it("nenhum catálogo declara staleTime", async () => {
     /* Os três catálogos, um por arquivo desde 05/09/2026 (regra 8 da seção 3
        do CONTEXT.md). */

@@ -85,6 +85,15 @@ conferir(
   "⚠️ e com o campo limpo de novo, sai direto -- o par negativo",
 );
 
+// ── Grupo > Subgrupos: só a contagem de membros na linha ──────────────────
+console.log("\n-- Grupo > Subgrupos --");
+await pagina.goto(`${APP}/grupo`);
+await pagina.getByRole("tab", { name: "Subgrupos" }).click();
+await pagina.getByRole("button", { name: /^Ver membros de / }).first().waitFor();
+const portasDeMembros = await pagina.getByRole("button", { name: /^Ver membros de / }).allInnerTexts();
+conferir(portasDeMembros.every((t) => /^\d+ membros?$/.test(t.trim())), "cada linha mostra a contagem de membros", portasDeMembros.slice(0, 3).join(" | "));
+conferir(!/\d+ colunas?/.test(await pagina.evaluate(() => document.body.innerText)), "e não mostra contagem de colunas");
+
 // ── Grupo > Membros: a coluna Subgrupo resumida ─────────────────────────
 console.log("\n-- Grupo > Membros --");
 await pagina.goto(`${APP}/grupo`);

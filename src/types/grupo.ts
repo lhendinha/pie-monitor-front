@@ -11,12 +11,11 @@ export interface Subgrupo {
    * antes do campo existir, e ausente nas rotas que devolvem subgrupo
    * enxuto. */
   criado_por?: string;
-  /** Contagens DERIVADAS, calculadas por `GET /subgrupos` só pra página
-   * pedida -- a linha mostra "N membros · N colunas". Opcionais porque
-   * outras rotas devolvem subgrupo sem elas (o seletor dos formulários,
-   * por exemplo, que só precisa de id e nome). */
+  /** Contagem DERIVADA, calculada por `GET /subgrupos` só pra página pedida
+   * e só quando `comContagens` é pedido -- a linha da aba Subgrupos mostra
+   * "N membros". Opcional porque os seletores pedem a lista sem ela (só
+   * precisam de id e nome) e outras rotas devolvem subgrupo sem ela. */
   membros?: number;
-  colunas?: number;
 }
 
 /** O que existe dentro de um subgrupo -- o que impede excluí-lo.
@@ -161,6 +160,10 @@ export interface OpcoesListarMembros {
 export interface OpcoesListarSubgrupos {
   pagina?: number;
   tamanhoPagina?: number;
+  /** Pede a contagem de membros de cada linha (`membros`). Só a aba
+   * Subgrupos manda: quem não pede, não paga -- a API deixa de consultar
+   * membros para os seletores, que nunca mostram o número. */
+  comContagens?: boolean;
   /** Filtra por nome no SERVIDOR, sem acento e sem caixa
    * (`subgrupos_service.listar_pagina`). É o que permite a pílula trazer a
    * primeira página e completar por digitação, em vez de baixar a lista

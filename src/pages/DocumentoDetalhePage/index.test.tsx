@@ -327,7 +327,7 @@ describe("quem pode destruir", () => {
   /* 🔴 Mais apertado que tarefa e atendimento de propósito: lá some uma
    * linha, aqui some o ARQUIVO -- e o bucket não tem versionamento.
    *
-   * Espelha `documentos_service._garantir_pode_destruir`. Esconder o botão
+   * Espelha `documentos_service.garantir_pode_destruir`. Esconder o botão
    * não é a proteção (quem manda é a rota); é pra não oferecer o que a API
    * vai negar -- botão que existe e falha em 403 parece defeito. */
 

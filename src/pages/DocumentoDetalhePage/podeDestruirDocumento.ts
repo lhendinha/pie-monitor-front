@@ -4,7 +4,7 @@ import type { Documento } from "../../types";
 /** Se esta pessoa pode DESTRUIR este documento -- excluir ou trocar o arquivo.
  *
  * Não é permissão de tela só: é o espelho da regra do servidor
- * (`documentos_service._garantir_pode_destruir`). `manager`+ destrói
+ * (`documentos_service.garantir_pode_destruir`). `manager`+ destrói
  * qualquer um; abaixo disso, só quem adicionou.
  *
  * 🔴 **Mais apertado que tarefa e atendimento de propósito**, e a diferença é

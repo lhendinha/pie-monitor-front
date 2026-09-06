@@ -57,6 +57,13 @@ conferir(JSON.stringify(emails) === JSON.stringify(ESPERADO), "🔴 e em ordem A
 conferir(!/g-beta|CLIENTE DO BETA/.test(await pagina.evaluate(() => document.body.innerText)), "gente de OUTRO escritório não aparece");
 conferir(problemas.length === 0, "nenhum erro de página nem resposta >= 400", problemas.join("; "));
 
+// ── Grupo > Subgrupos: a linha mostra "N membros" e NÃO mostra colunas ────
+await pagina.getByRole("tab", { name: "Subgrupos" }).click();
+await pagina.getByRole("button", { name: /^Ver membros de / }).first().waitFor({ timeout: 20_000 });
+const portas = await pagina.getByRole("button", { name: /^Ver membros de / }).allInnerTexts();
+conferir(portas.length > 0 && portas.every((t) => /^\d+ membros?$/.test(t.trim())), "🔴 cada linha de subgrupo mostra a contagem de membros", portas.slice(0, 3).join(" | "));
+conferir(!/\d+ colunas?/.test(await pagina.evaluate(() => document.body.innerText)), "🔴 e não mostra mais a contagem de colunas");
+
 await navegador.close();
 const falhas = checagens.filter((c) => !c.ok).length;
 console.log(`\n${checagens.length - falhas}/${checagens.length} checagens${falhas ? ` -- ${falhas} FALHA(S)` : " ok"}`);

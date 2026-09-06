@@ -80,9 +80,11 @@ export default function ListaDeSubgrupos({
               antes de o mouse chegar -- num toque não há hover, e quem varre
               a tela com o olho não descobre o que só aparece depois.
 
-              Só ela é clicável: "· 3 colunas" fica como texto até o quadro
-              Kanban existir, quando vira o link pro quadro. Alvo tem que ser
-              exatamente o que ele faz. */}
+              🔴 É a ÚNICA contagem da linha. "· N colunas" saiu: era igual em
+              todo subgrupo (o quadro padrão) e não abria nada -- número que
+              não decide nada é ruído, e custava uma consulta por linha. Se o
+              quadro ganhar tela própria, a porta para ele entra aqui como
+              link, não como número. */}
           <BotaoNu
             type="button"
             aria-label={`Ver membros de ${s.nome}`}
@@ -97,9 +99,6 @@ export default function ListaDeSubgrupos({
           >
             {contar(s.membros ?? 0, "membro", "membros")}
           </BotaoNu>
-          <Text fontSize="12px" color="fg.subtle">
-            · {contar(s.colunas ?? 0, "coluna", "colunas")}
-          </Text>
         </LinhaDeLista>
       ))}
     </>

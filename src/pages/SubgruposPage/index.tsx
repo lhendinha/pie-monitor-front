@@ -62,7 +62,8 @@ export default function SubgruposPage() {
        da busca. O `AreaAtualizando` em volta é que diz que o conteúdo
        visível ainda é o antigo. */
     placeholderData: keepPreviousData,
-    queryFn: () => listarSubgrupos({ pagina, tamanhoPagina }),
+    // É a única tela que mostra a contagem: só ela a pede.
+    queryFn: () => listarSubgrupos({ pagina, tamanhoPagina, comContagens: true }),
   });
   useToastOnQueryError(query.error, "Não foi possível carregar os subgrupos.");
 
