@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { cores } from "./tokens";
 import { CORES_DO_STATUS } from "./atendimento";
+import { CORES_DO_PAPEL } from "./papel";
+import { HIERARQUIA_PAPEIS } from "../constants/roles";
 
 /** Contraste WCAG 2.1 entre duas cores hexadecimais.
  *
@@ -143,6 +145,68 @@ describe("os status do atendimento (26/08/2026)", () => {
       expect(status.color).not.toBe("status.warn");
       expect(status.color).not.toBe("status.good");
       expect(status.color).not.toBe("status.bad");
+    }
+  });
+});
+
+describe("o violeta do papel `financeiro`", () => {
+  /* A cor entrou fora do semáforo e da marca, e por isso mais fácil de
+     alguém "simplificar" depois. Ela responde às MESMAS três perguntas que
+     os tons de status: escura serve a texto, cheia só a gráfico, e as duas
+     são a mesma cor em luminosidades diferentes. */
+  it("roxoDark passa em AA sobre o tint, o cartão e o canvas", () => {
+    expect(contraste(cores.roxoDark, cores.roxoTint)).toBeGreaterThanOrEqual(AA_TEXTO_PEQUENO);
+    expect(contraste(cores.roxoDark, cores.surface)).toBeGreaterThanOrEqual(AA_TEXTO_PEQUENO);
+    expect(contraste(cores.roxoDark, cores.canvas)).toBeGreaterThanOrEqual(AA_TEXTO_PEQUENO);
+  });
+
+  it("a cheia serve a GRÁFICO, não a texto -- como as do semáforo", () => {
+    const razao = contraste(cores.roxo, cores.roxoTint);
+    expect(razao).toBeGreaterThanOrEqual(AA_GRAFICO);
+    expect(razao).toBeLessThan(AA_TEXTO_PEQUENO);
+  });
+
+  it("roxoDark é o roxo ESCURECIDO -- mesmo matiz, não outra cor", () => {
+    expect(luminancia(cores.roxoDark)).toBeLessThan(luminancia(cores.roxo));
+    const matiz = (hex: string) => {
+      const h = hex.replace("#", "");
+      const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (max === min) return 0;
+      const d = max - min;
+      const graus =
+        max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return ((graus * 60) % 360 + 360) % 360;
+    };
+    const diferenca = Math.abs(matiz(cores.roxo) - matiz(cores.roxoDark));
+    expect(Math.min(diferenca, 360 - diferenca)).toBeLessThan(12);
+  });
+});
+
+describe("as etiquetas de PAPEL (o defeito que este bloco fecha)", () => {
+  /* 🔴 `CORES_DO_PAPEL` apontava `admin` e `manager` para a cor CHEIA --
+     3,12:1 e 3,00:1 numa etiqueta de 11px/800. É o mesmo defeito que criou
+     os `*Dark`, e sobreviveu porque o guarda só olhava para o mapa do
+     ATENDIMENTO: a régua estava testada num lugar e escrita em nenhum
+     outro. Agora os dois mapas passam pela mesma pergunta. */
+  it("nenhum papel usa a cor CHEIA como texto", () => {
+    for (const papel of HIERARQUIA_PAPEIS) {
+      const cor = CORES_DO_PAPEL[papel].color;
+      expect(cor).not.toBe("status.good");
+      expect(cor).not.toBe("status.warn");
+      expect(cor).not.toBe("status.bad");
+      expect(cor).not.toBe("roxo");
+    }
+  });
+
+  it("todo papel da hierarquia tem cor -- inclusive o que nascer depois", () => {
+    /* `Record<Papel, ...>` já obriga no TypeScript; isto pega o caso que o
+       tipo não vê: papel acrescentado só na constante de execução. */
+    for (const papel of HIERARQUIA_PAPEIS) {
+      expect(CORES_DO_PAPEL[papel]).toBeDefined();
+      expect(CORES_DO_PAPEL[papel].bg).toBeTruthy();
+      expect(CORES_DO_PAPEL[papel].color).toBeTruthy();
     }
   });
 });
