@@ -2194,7 +2194,7 @@ quebraria no deploy -- mesma categoria do IAM.
 
 ### 🔴 Quem pode DESTRUIR não é quem pode mexer
 
-`podeDestruirDocumento` espelha `documentos_service._garantir_pode_destruir`:
+`podeDestruirDocumento` espelha `documentos_service.garantir_pode_destruir`:
 `manager`+ destrói qualquer um, abaixo disso só quem adicionou.
 
 A régua é mais apertada que a de tarefa e atendimento **porque o que se perde
