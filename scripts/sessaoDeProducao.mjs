@@ -69,6 +69,11 @@ export async function abrirProducaoLogado({
          antigo -- válido no navegador, morto para qualquer outro leitor. Em
          06/09/2026 o access token do arquivo já tinha vencido e o refresh
          dele fora invalidado pela rotação. */
+      /* ⚠️ Só depois de a rede assentar: a tela mostra o título antes de a
+         API responder, e o app renova o token nessa primeira resposta. Gravar
+         antes disso guardava o par velho de novo (foi o que aconteceu na
+         primeira versão desta regravação, em 06/09/2026). */
+      await pagina.waitForLoadState("networkidle");
       await contexto.storageState({ path: SESSAO });
       console.log("Sessão guardada reaproveitada e regravada -- nenhuma tentativa de login gasta.");
       return { navegador, contexto, pagina };
