@@ -26,11 +26,13 @@ import { qk } from "../../../../services/queryKeys";
 import type {
   CatalogoFinanceiro,
   CategoriaFinanceira,
+  CentroDeCusto,
   ContaFinanceira,
 } from "../../../../types";
 import type { DadosDaCategoria, DadosDaConta } from "../../../../types/requisicoes";
 import { useSalvarCentro } from "../../hooks/useSalvarCentro";
 import ModalDeCategoria from "../ModalDeCategoria";
+import ModalDeCentro from "../ModalDeCentro";
 import ModalDeConta from "../ModalDeConta";
 import ListaDeCategorias from "../ListaDeCategorias";
 import ListaDeCentros from "../ListaDeCentros";
@@ -56,13 +58,18 @@ export default function ConfiguracoesFinanceiras() {
   const [categoriaNoModal, setCategoriaNoModal] =
     useState<{ categoria?: CategoriaFinanceira } | null>(null);
   const [contaNoModal, setContaNoModal] = useState<{ conta?: ContaFinanceira } | null>(null);
-  /** Qual centro está com o nome aberto. Vazio = nenhum. */
-  const [centroEmEdicao, setCentroEmEdicao] = useState("");
+  const [centroNoModal, setCentroNoModal] = useState<{ centro?: CentroDeCusto } | null>(null);
   const [erroDoModal, setErroDoModal] = useState("");
   const podeEscrever = papelAtende(PISO_PARA_ESCREVER);
   const queryClient = useQueryClient();
   const toast = useToast();
-  const salvarCentro = useSalvarCentro(() => setCentroEmEdicao(""));
+  const salvarCentro = useSalvarCentro(
+    (outro) => {
+      setErroDoModal("");
+      setCentroNoModal(outro ? { centro: undefined } : null);
+    },
+    (mensagem) => setErroDoModal(mensagem),
+  );
   const query = useQuery<CatalogoFinanceiro>({
     queryKey: qk.catalogoFinanceiro(),
     queryFn: lerCatalogoFinanceiro,
@@ -198,17 +205,14 @@ export default function ConfiguracoesFinanceiras() {
             <ListaDeCentros
               centros={catalogo.centros_de_custo}
               podeEscrever={podeEscrever}
-              centroEmEdicao={centroEmEdicao}
-              salvando={salvarCentro.isPending}
-              onAdicionar={(nome) => salvarCentro.mutate({ nome })}
-              onIniciarEdicao={setCentroEmEdicao}
-              onRenomear={(centroId, nome) =>
-                salvarCentro.mutate({
-                  nome,
-                  centro: catalogo.centros_de_custo.find((c) => c.centro_id === centroId),
-                })
-              }
-              onCancelarEdicao={() => setCentroEmEdicao("")}
+              onNovo={() => {
+                setErroDoModal("");
+                setCentroNoModal({ centro: undefined });
+              }}
+              onEditar={(centro) => {
+                setErroDoModal("");
+                setCentroNoModal({ centro });
+              }}
               onAlternarAtivo={(centro) => salvarCentro.mutate({ centro, alternar: true })}
             />
           )}
@@ -256,6 +260,19 @@ export default function ConfiguracoesFinanceiras() {
             })
           }
           onFechar={() => setCategoriaNoModal(null)}
+        />
+      )}
+
+      {centroNoModal && (
+        <ModalDeCentro
+          key={centroNoModal.centro?.centro_id ?? "novo"}
+          centro={centroNoModal.centro}
+          salvando={salvarCentro.isPending}
+          erro={erroDoModal}
+          onSalvar={(nome, outro) =>
+            salvarCentro.mutate({ nome, centro: centroNoModal.centro, outro })
+          }
+          onFechar={() => setCentroNoModal(null)}
         />
       )}
 

@@ -5,6 +5,10 @@ export interface NomeEditavelProps {
   rotuloDoCampo?: string;
   /** Em edição, o nome vira campo no lugar (`.subgrupo-name-input`). */
   editando: boolean;
+  /** Dica dentro do campo. Só faz sentido quando ele nasce VAZIO -- a linha
+   * nova do catálogo do Financeiro. No rename o nome atual já está lá, e um
+   * placeholder embaixo dele nunca apareceria. */
+  placeholder?: string;
   /** Falso pra quem não tem `admin`: aí o nome é só texto. */
   podeRenomear: boolean;
   onIniciar: () => void;

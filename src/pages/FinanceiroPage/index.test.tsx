@@ -472,7 +472,7 @@ describe("FinanceiroPage", () => {
     });
   });
 
-  describe("centro de custo, que nasce inline", () => {
+  describe("centro de custo", () => {
     async function abrirCentros() {
       montarConfiguracoes();
       await screen.findByText("Honorários");
@@ -480,51 +480,52 @@ describe("FinanceiroPage", () => {
       return screen.findByText("Cível");
     }
 
-    it("não tem botão no subcabeçalho -- o criar está no cartão", async () => {
-      /* Dois lugares para criar a mesma coisa seria a pergunta "qual dos
-         dois?" em toda visita. */
+    it("o botão de criar fica no subcabeçalho, como nas outras duas", async () => {
       await abrirCentros();
-      expect(screen.queryByRole("button", { name: /Novo centro/ })).not.toBeInTheDocument();
-      expect(screen.getByLabelText("Novo centro de custo")).toBeVisible();
+      expect(screen.getByRole("button", { name: "+ Novo centro de custo" })).toBeVisible();
     });
 
-    it("🔴 'Adicionar' nasce desabilitado, e acende com texto", async () => {
+    it("🔴 abre MODAL, igual às irmãs -- e é revisão do plano", async () => {
+      /* A auditoria tinha decidido inline ("três modais eram dois"), e valia
+         quando as três eram LISTAS. Com tabela e duas irmãs abrindo modal,
+         dois gestos diferentes na mesma tela liam como inacabado. */
       await abrirCentros();
-      const botao = screen.getByRole("button", { name: "Adicionar" });
-      expect(botao).toBeDisabled();
+      await userEvent.click(screen.getByRole("button", { name: "+ Novo centro de custo" }));
 
-      await userEvent.type(screen.getByLabelText("Novo centro de custo"), "Tributário");
-      expect(botao).toBeEnabled();
+      expect(await screen.findByRole("dialog")).toBeVisible();
+      expect(screen.getByLabelText(/Nome/)).toHaveValue("");
     });
 
-    it("cria pelo Enter, e o campo se esvazia", async () => {
+    it("nome vazio não salva, e o campo diz o que falta", async () => {
       await abrirCentros();
-      const campo = screen.getByLabelText("Novo centro de custo");
-      await userEvent.type(campo, "Tributário{Enter}");
+      await userEvent.click(screen.getByRole("button", { name: "+ Novo centro de custo" }));
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      expect(await screen.findByText("Informe o nome do centro de custo.")).toBeVisible();
+      expect(mocks.criarCentroDeCusto).not.toHaveBeenCalled();
+    });
+
+    it("salva o nome digitado", async () => {
+      await abrirCentros();
+      await userEvent.click(screen.getByRole("button", { name: "+ Novo centro de custo" }));
+      await userEvent.type(screen.getByLabelText(/Nome/), "Tributário");
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
       await waitFor(() =>
         expect(mocks.criarCentroDeCusto).toHaveBeenCalledWith({ nome: "Tributário" }),
       );
-      expect(campo).toHaveValue("");
     });
 
-    it("espaço em branco não cria nada", async () => {
+    it("renomear abre o MESMO modal, com o nome dentro", async () => {
       await abrirCentros();
-      await userEvent.type(screen.getByLabelText("Novo centro de custo"), "   {Enter}");
-      expect(mocks.criarCentroDeCusto).not.toHaveBeenCalled();
-    });
-
-    it("renomeia NO LUGAR, clicando no próprio nome", async () => {
-      /* Sem lápis: um botão ao lado faria dois gestos para a mesma coisa. */
-      await abrirCentros();
-      expect(screen.queryByRole("button", { name: "Renomear Cível" })).not.toBeInTheDocument();
-
-      /* O clique na LINHA começa o rename -- e clicar no nome também, que é o
-         que o `NomeEditavel` já fazia. */
       await userEvent.click(screen.getByText("Cível"));
-      const campo = await screen.findByLabelText("Novo nome de Cível");
+
+      expect(await screen.findByRole("dialog")).toBeVisible();
+      const campo = screen.getByLabelText(/Nome/);
+      expect(campo).toHaveValue("Cível");
       await userEvent.clear(campo);
-      await userEvent.type(campo, "Cível e Consumidor{Enter}");
+      await userEvent.type(campo, "Cível e Consumidor");
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
       await waitFor(() =>
         expect(mocks.atualizarCentroDeCusto).toHaveBeenCalledWith("ce1", {
@@ -533,12 +534,14 @@ describe("FinanceiroPage", () => {
       );
     });
 
-    it("quem não administra não vê o campo de criar nem edita o nome", async () => {
+    it("quem não administra não vê o botão nem abre pela linha", async () => {
       mocks.papelAtende.mockReturnValue(false);
       await abrirCentros();
-      expect(screen.queryByLabelText("Novo centro de custo")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "+ Novo centro de custo" }),
+      ).not.toBeInTheDocument();
       await userEvent.click(screen.getByText("Cível"));
-      expect(screen.queryByLabelText("Novo nome de Cível")).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
