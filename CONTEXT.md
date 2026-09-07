@@ -181,6 +181,12 @@ sinal visível é o hash do bundle que não muda.
 ➡️ Daí a régua: **depois de todo deploy do front, conferir que o hash do
 bundle MUDOU**, não só que a tela abre.
 
+⚠️ **E a ressalva, achada na hora de aplicar a régua:** commit que toca só
+arquivo de TESTE não muda o bundle -- teste não é importado pela entrada, o
+`vite build` não o inclui, e o hash sai idêntico de propósito. Nesses casos
+o hash não distingue "build passou" de "build falhou", e a resposta está no
+painel do Vercel. A régua vale para o que entra no pacote.
+
 ### Como o symlink nasceu, e por que o `.gitignore` não pegou
 
 ⚠️ **`node_modules/`, com barra, casa só com DIRETÓRIO.** Um symlink com
