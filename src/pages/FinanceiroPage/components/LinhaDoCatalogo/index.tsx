@@ -25,6 +25,13 @@ import type { LinhaDoCatalogoProps } from "./types";
  * O que veio de lá, porque vale para as duas, é o `& svg` de 16px: oito dos
  * ícones do projeto não trazem tamanho próprio e viram 32px sem ele.
  *
+ * ⚠️ **"Renomear", e não "Editar" -- e é divergência do artefato, assumida.**
+ * O artefato escreve "Editar" na conta e na categoria; a API aceita só o
+ * NOME no `PATCH` do catálogo, de propósito (trocar a natureza de uma
+ * categoria inverteria o sinal do que já foi lançado, e trocar o tipo de uma
+ * conta mudaria quais campos são obrigatórios num item que já existe).
+ * "Editar" prometeria um formulário que abre com um campo só.
+ *
  * ⚠️ O item inativo continua na lista, apagado. Sumir com ele esconderia que
  * ele existe -- e o nome dele continua ocupado, então quem tentasse recriá-lo
  * levaria um 409 sem entender.

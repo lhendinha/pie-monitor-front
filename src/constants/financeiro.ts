@@ -13,3 +13,20 @@
 export const NATUREZA_ENTRADA = "entrada";
 export const NATUREZA_SAIDA = "saida";
 export const NATUREZAS = [NATUREZA_ENTRADA, NATUREZA_SAIDA] as const;
+
+/** O TIPO de uma conta: o que decide se ela tem dados bancários.
+ *
+ * ⚠️ `corrente` pede banco, agência e número; `outros` (o caixa do
+ * escritório, a carteira do sócio) não tem nenhum dos três. A API valida a
+ * palavra, e o artifact esconde o bloco quando o tipo é `outros`.
+ *
+ * ⚠️ A lista já vem no formato do `Select` porque é assim que ela é usada --
+ * o rótulo é da TELA e o valor é da API, e separá-los em duas listas era
+ * onde a divergência entraria.
+ */
+export const TIPO_CONTA_CORRENTE = "corrente";
+export const TIPO_CONTA_OUTROS = "outros";
+export const TIPOS_DE_CONTA = [
+  { value: TIPO_CONTA_CORRENTE, label: "Conta corrente" },
+  { value: TIPO_CONTA_OUTROS, label: "Outros" },
+];

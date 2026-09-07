@@ -6,4 +6,7 @@ export interface ListaDeContasProps {
    * escolheu. */
   contaPadraoId: string;
   podeEscrever: boolean;
+  onNova: () => void;
+  onEditar: (conta: ContaFinanceira) => void;
+  onAlternarAtivo: (conta: ContaFinanceira) => void;
 }

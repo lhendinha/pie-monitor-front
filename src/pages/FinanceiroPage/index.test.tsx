@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   papelAtende: vi.fn(),
   criarCategoria: vi.fn(),
   atualizarCategoria: vi.fn(),
+  criarConta: vi.fn(),
+  atualizarConta: vi.fn(),
   desativarItemFinanceiro: vi.fn(),
   reativarItemFinanceiro: vi.fn(),
 }));
@@ -97,9 +99,20 @@ beforeEach(() => {
   mocks.lerCatalogoFinanceiro.mockResolvedValue(CATALOGO);
   mocks.criarCategoria.mockResolvedValue({});
   mocks.atualizarCategoria.mockResolvedValue({});
+  mocks.criarConta.mockResolvedValue({});
+  mocks.atualizarConta.mockResolvedValue({});
   mocks.desativarItemFinanceiro.mockResolvedValue({});
   mocks.reativarItemFinanceiro.mockResolvedValue({});
 });
+
+/** Abre o modal de nova conta e espera ele estar na tela. */
+async function abrirNovaConta() {
+  montarConfiguracoes();
+  await screen.findByText("Honorários");
+  await userEvent.click(screen.getByRole("button", { name: "Contas" }));
+  await userEvent.click(await screen.findByRole("button", { name: "+ Nova conta" }));
+  return screen.findByRole("dialog");
+}
 
 /** Abre o modal de nova categoria e espera ele estar na tela. */
 async function abrirNovaCategoria() {
@@ -357,6 +370,98 @@ describe("FinanceiroPage", () => {
       montarConfiguracoes();
       await screen.findByText("Honorários");
       expect(screen.queryByRole("button", { name: "+ Nova categoria" })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("modal de conta", () => {
+    it("o subcabeçalho conta as contas", async () => {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      await userEvent.click(screen.getByRole("button", { name: "Contas" }));
+      expect(await screen.findByText("Mostrando 2 de 2 contas")).toBeVisible();
+    });
+
+    it("🔴 conta corrente PEDE os dados bancários", async () => {
+      await abrirNovaConta();
+      expect(screen.getByLabelText(/Banco/)).toBeVisible();
+      expect(screen.getByLabelText(/Agência/)).toBeVisible();
+      expect(screen.getByLabelText(/Conta \(com dígito\)/)).toBeVisible();
+    });
+
+    it("🔴 e 'Outros' ESCONDE os três -- caixa não tem agência", async () => {
+      await abrirNovaConta();
+      await userEvent.click(screen.getByLabelText(/Tipo/));
+      await userEvent.click(await screen.findByRole("option", { name: "Outros" }));
+
+      expect(screen.queryByLabelText(/Banco/)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/Agência/)).not.toBeInTheDocument();
+    });
+
+    it("salva a conta corrente inteira, com o saldo em CENTAVOS", async () => {
+      await abrirNovaConta();
+      await userEvent.type(screen.getByLabelText(/Nome/), "Conta nova");
+      await userEvent.type(screen.getByLabelText(/Saldo inicial/), "1.234,56");
+      await userEvent.type(screen.getByLabelText(/Banco/), "341");
+      await userEvent.type(screen.getByLabelText(/Agência/), "0412");
+      await userEvent.type(screen.getByLabelText(/Conta \(com dígito\)/), "18335-7");
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      await waitFor(() =>
+        expect(mocks.criarConta).toHaveBeenCalledWith(
+          expect.objectContaining({
+            nome: "Conta nova",
+            tipo: "corrente",
+            saldo_inicial_centavos: 123456,
+            banco: "341",
+            agencia: "0412",
+            numero: "18335-7",
+          }),
+        ),
+      );
+    });
+
+    it("sem os obrigatórios não salva, e cada campo diz o que falta", async () => {
+      await abrirNovaConta();
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      expect(await screen.findByText("Informe o nome da conta.")).toBeVisible();
+      expect(screen.getByText("Informe o saldo em reais.")).toBeVisible();
+      expect(screen.getByText("Informe o banco.")).toBeVisible();
+      expect(mocks.criarConta).not.toHaveBeenCalled();
+    });
+
+    it("saldo que não é número não passa", async () => {
+      await abrirNovaConta();
+      await userEvent.type(screen.getByLabelText(/Nome/), "Conta nova");
+      await userEvent.type(screen.getByLabelText(/Saldo inicial/), "mil reais");
+      await userEvent.type(screen.getByLabelText(/Banco/), "341");
+      await userEvent.type(screen.getByLabelText(/Agência/), "0412");
+      await userEvent.type(screen.getByLabelText(/Conta \(com dígito\)/), "1");
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      expect(await screen.findByText("Informe o saldo em reais.")).toBeVisible();
+      expect(mocks.criarConta).not.toHaveBeenCalled();
+    });
+
+    it("🔴 renomear manda SÓ o nome -- mandar o tipo junto é 422", async () => {
+      /* Medido contra a API: o PATCH do catálogo é `RenomearItemRequest` com
+         `extra="forbid"`, e responde "tipo: Campo não reconhecido". */
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      await userEvent.click(screen.getByRole("button", { name: "Contas" }));
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Renomear Conta corrente Itaú" }),
+      );
+      const nome = await screen.findByLabelText(/Nome/);
+      await userEvent.clear(nome);
+      await userEvent.type(nome, "Itaú principal");
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      await waitFor(() =>
+        expect(mocks.atualizarConta).toHaveBeenCalledWith("c1", { nome: "Itaú principal" }),
+      );
+      expect(screen.queryByLabelText(/Tipo/)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/Saldo inicial/)).not.toBeInTheDocument();
     });
   });
 });

@@ -1,9 +1,10 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 
-import { CartaoDeTabela, Etiqueta } from "../../../../components";
-import { formatarCentavos, formatarData } from "../../../../utils";
+import { Botao, CartaoDeTabela, Etiqueta } from "../../../../components";
+import { contar, formatarCentavos, formatarData } from "../../../../utils";
 
 import LinhaDoCatalogo from "../LinhaDoCatalogo";
+import SubcabecalhoDaLista from "../SubcabecalhoDaLista";
 import type { ListaDeContasProps } from "./types";
 
 /** ⚠️ Azul da marca, e não verde: verde já significa "entrada" no
@@ -22,9 +23,18 @@ export default function ListaDeContas({
   contas,
   contaPadraoId,
   podeEscrever,
+  onNova,
+  onEditar,
+  onAlternarAtivo,
 }: ListaDeContasProps) {
   return (
-    <CartaoDeTabela>
+    <>
+      <SubcabecalhoDaLista
+        titulo="Contas"
+        contagem={`Mostrando ${contas.length} de ${contar(contas.length, "conta", "contas")}`}
+        acao={podeEscrever ? <Botao onClick={onNova}>+ Nova conta</Botao> : undefined}
+      />
+      <CartaoDeTabela>
       {contas.map((conta) => (
         <LinhaDoCatalogo
           key={conta.conta_id}
@@ -52,12 +62,12 @@ export default function ListaDeContas({
               </Text>
             </Stack>
           }
-          rotuloDeEditar="Editar"
-          onEditar={podeEscrever ? () => undefined : undefined}
-          onAlternarAtivo={podeEscrever ? () => undefined : undefined}
+          onEditar={podeEscrever ? () => onEditar(conta) : undefined}
+          onAlternarAtivo={podeEscrever ? () => onAlternarAtivo(conta) : undefined}
         />
       ))}
-    </CartaoDeTabela>
+      </CartaoDeTabela>
+    </>
   );
 }
 

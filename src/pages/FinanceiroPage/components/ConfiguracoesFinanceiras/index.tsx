@@ -12,7 +12,9 @@ import {
 import { useToast } from "../../../../contexts/ToastContext";
 import {
   atualizarCategoria,
+  atualizarConta,
   criarCategoria,
+  criarConta,
   desativarItemFinanceiro,
   lerCatalogoFinanceiro,
   papelAtende,
@@ -21,9 +23,10 @@ import {
 import { ApiError } from "../../../../services/api/client";
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import type { CatalogoFinanceiro, CategoriaFinanceira } from "../../../../types";
-import type { DadosDaCategoria } from "../../../../types/requisicoes";
+import type { CatalogoFinanceiro, CategoriaFinanceira, ContaFinanceira } from "../../../../types";
+import type { DadosDaCategoria, DadosDaConta } from "../../../../types/requisicoes";
 import ModalDeCategoria from "../ModalDeCategoria";
+import ModalDeConta from "../ModalDeConta";
 import ListaDeCategorias from "../ListaDeCategorias";
 import ListaDeCentros from "../ListaDeCentros";
 import ListaDeContas from "../ListaDeContas";
@@ -47,6 +50,7 @@ export default function ConfiguracoesFinanceiras() {
   /** `null` = fechado; `undefined` dentro dele = criando. */
   const [categoriaNoModal, setCategoriaNoModal] =
     useState<{ categoria?: CategoriaFinanceira } | null>(null);
+  const [contaNoModal, setContaNoModal] = useState<{ conta?: ContaFinanceira } | null>(null);
   const [erroDoModal, setErroDoModal] = useState("");
   const podeEscrever = papelAtende(PISO_PARA_ESCREVER);
   const queryClient = useQueryClient();
@@ -95,6 +99,37 @@ export default function ConfiguracoesFinanceiras() {
         setErroDoModal(
           err instanceof ApiError ? err.message : "Não foi possível salvar a categoria.",
         );
+      }
+    },
+  });
+
+  /** Gêmea de `salvarCategoria`, e separada dela porque os corpos são
+   * diferentes: a conta nasce com sete campos e é renomeada com um. */
+  const salvarConta = useMutation({
+    mutationFn: async (pedido: {
+      dados?: DadosDaConta;
+      conta?: ContaFinanceira;
+      alternar?: boolean;
+    }) => {
+      if (pedido.alternar && pedido.conta) {
+        const acao = pedido.conta.ativa ? desativarItemFinanceiro : reativarItemFinanceiro;
+        return acao("contas", pedido.conta.conta_id);
+      }
+      if (pedido.conta) {
+        return atualizarConta(pedido.conta.conta_id, { nome: pedido.dados!.nome });
+      }
+      return criarConta(pedido.dados!);
+    },
+    onSuccess: (_resposta, pedido) => {
+      queryClient.invalidateQueries({ queryKey: qk.catalogoFinanceiro() });
+      setErroDoModal("");
+      setContaNoModal(null);
+      toast.sucesso(pedido.alternar ? "Conta atualizada." : "Conta salva.");
+    },
+    onError: (err, pedido) => {
+      if (pedido.alternar) toastErroMutation(toast, err, "Não foi possível alterar a conta.");
+      else {
+        setErroDoModal(err instanceof ApiError ? err.message : "Não foi possível salvar a conta.");
       }
     },
   });
@@ -159,6 +194,15 @@ export default function ConfiguracoesFinanceiras() {
               contas={catalogo.contas}
               contaPadraoId={catalogo.conta_padrao_id}
               podeEscrever={podeEscrever}
+              onNova={() => {
+                setErroDoModal("");
+                setContaNoModal({ conta: undefined });
+              }}
+              onEditar={(conta) => {
+                setErroDoModal("");
+                setContaNoModal({ conta });
+              }}
+              onAlternarAtivo={(conta) => salvarConta.mutate({ conta, alternar: true })}
             />
           )}
         </>
@@ -189,6 +233,17 @@ export default function ConfiguracoesFinanceiras() {
             })
           }
           onFechar={() => setCategoriaNoModal(null)}
+        />
+      )}
+
+      {contaNoModal && (
+        <ModalDeConta
+          key={contaNoModal.conta?.conta_id ?? "nova"}
+          conta={contaNoModal.conta}
+          salvando={salvarConta.isPending}
+          erro={erroDoModal}
+          onSalvar={(dados) => salvarConta.mutate({ dados, conta: contaNoModal.conta })}
+          onFechar={() => setContaNoModal(null)}
         />
       )}
     </Stack>

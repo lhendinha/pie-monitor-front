@@ -21,10 +21,15 @@ export function criarConta(dados: DadosDaConta) {
   return chamar("/financeiro/contas", { method: "POST", body: { ...dados } });
 }
 
-/** Só o que muda. O saldo NÃO se edita por aqui: ele é mantido pela API a
- * cada baixa, e um PATCH que o reescrevesse desfaria a história em silêncio.
- * Quem precisa corrigir usa o script de reconciliação. */
-export function atualizarConta(contaId: string, campos: Partial<DadosDaConta>) {
+/** 🔴 Só o NOME, e a assinatura diz isso: o `PATCH` do catálogo é
+ * `RenomearItemRequest` com `extra="forbid"`, e mandar `tipo` junto responde
+ * **422 "tipo: Campo não reconhecido"** -- medido contra a API.
+ *
+ * `Partial<DadosDaConta>` era largo demais e convidava exatamente esse erro.
+ * O saldo, em particular, é mantido pela API a cada baixa; um PATCH que o
+ * reescrevesse desfaria a história em silêncio, e quem precisa corrigir usa
+ * o script de reconciliação. */
+export function atualizarConta(contaId: string, campos: { nome: string }) {
   return chamar(`/financeiro/contas/${contaId}`, { method: "PATCH", body: { ...campos } });
 }
 
