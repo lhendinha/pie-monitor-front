@@ -3,11 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import {
   Abas,
   CabecalhoDePagina,
-  CartaoDeTabela,
-  EstadoVazio,
   PainelDaAba,
 } from "../../components";
 import { PARAM_DA_ABA, abaValida } from "../../utils/abas";
+import AindaNaoChegou from "./components/AindaNaoChegou";
 import ConfiguracoesFinanceiras from "./components/ConfiguracoesFinanceiras";
 import { ABAS_DO_FINANCEIRO, GRUPO_DE_ABAS } from "./constants";
 import type { AbaDoFinanceiro } from "./types";
@@ -57,18 +56,24 @@ export default function FinanceiroPage() {
         onMudar={mudarAba}
       />
 
-      {ABAS_DO_FINANCEIRO.map((aba) => (
-        <PainelDaAba key={aba.id} grupo={GRUPO_DE_ABAS} id={aba.id} ativa={abaAtiva}>
-          {abaAtiva === aba.id &&
-            (aba.pendente ? (
-              <CartaoDeTabela>
-                <EstadoVazio mensagem={`${aba.rotulo} ainda não está disponível.`} />
-              </CartaoDeTabela>
-            ) : (
-              <ConfiguracoesFinanceiras />
-            ))}
-        </PainelDaAba>
-      ))}
+      {/* 🔴 Um painel por aba, cada um dizendo o que mostra -- o molde de
+          `GrupoPage`. Antes havia uma regra ("não é pendente, então é
+          Configurações"), e ela funcionava enquanto Configurações era a
+          única pronta: no dia em que Lançamentos deixou de ser pendente, a
+          aba passou a mostrar a tela de Configurações inteira. Aqui a
+          escolha está escrita, e não deduzida. */}
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="lancamentos" ativa={abaAtiva}>
+        {abaAtiva === "lancamentos" && <AindaNaoChegou rotulo="Lançamentos" />}
+      </PainelDaAba>
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="faturas" ativa={abaAtiva}>
+        {abaAtiva === "faturas" && <AindaNaoChegou rotulo="Faturas" />}
+      </PainelDaAba>
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="fluxo" ativa={abaAtiva}>
+        {abaAtiva === "fluxo" && <AindaNaoChegou rotulo="Fluxo de caixa" />}
+      </PainelDaAba>
+      <PainelDaAba grupo={GRUPO_DE_ABAS} id="configuracoes" ativa={abaAtiva}>
+        {abaAtiva === "configuracoes" && <ConfiguracoesFinanceiras />}
+      </PainelDaAba>
     </>
   );
 }

@@ -695,3 +695,33 @@ describe("FinanceiroPage", () => {
     });
   });
 });
+
+describe("cada aba mostra o SEU conteúdo", () => {
+  /** 🔴 Nenhum teste cobria isto, e o defeito passou: a página renderizava
+   * Configurações para toda aba "não pendente", o que funcionava enquanto
+   * ela era a única pronta. Marcar Lançamentos como não pendente, antes de a
+   * lista existir, fez a aba mostrar a tela de Configurações INTEIRA -- com
+   * as três tabelas do catálogo. Quem viu foi o usuário, não a suíte.
+   */
+
+  it.each([
+    ["lancamentos", "Lançamentos"],
+    ["faturas", "Faturas"],
+    ["fluxo", "Fluxo de caixa"],
+  ])("a aba pendente %s diz que ainda não chegou", async (id, rotulo) => {
+    montar(`/financeiro?aba=${id}`);
+    expect(await screen.findByText(`${rotulo} ainda não está disponível.`)).toBeInTheDocument();
+  });
+
+  it("🔴 e NÃO mostra o catálogo -- o par negativo do defeito", async () => {
+    montar("/financeiro?aba=lancamentos");
+    await screen.findByText("Lançamentos ainda não está disponível.");
+    expect(screen.queryByRole("button", { name: "+ Nova categoria" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Categoria" })).not.toBeInTheDocument();
+  });
+
+  it("só Configurações traz as três listas", async () => {
+    montarConfiguracoes();
+    expect(await screen.findByRole("button", { name: "+ Nova categoria" })).toBeInTheDocument();
+  });
+});
