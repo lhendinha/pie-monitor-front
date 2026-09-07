@@ -218,6 +218,42 @@ for (const campo of ["Nome", "Natureza", "Cor", "Agrupador"]) {
    a lista acima não é decorativa é ela sumir na EDIÇÃO -- e isso é do
    `verificar-financeiro.mjs`, que tem item para clicar. */
 await pagina.keyboard.press("Escape");
+/* ── contas e centros PAGINAM; categorias, não ─────────────────────────
+   ⚠️ Em produção contas e centros estão VAZIOS, então nada aqui depende de
+   linha: o que se confere é o endereço abrir a lista certa, e o par negativo
+   de categorias, que tem as 15 do seed -- mais que o tamanho de página. */
+console.log("\n-- Financeiro > paginação --");
+await pagina.goto(`${APP}/financeiro?aba=configuracoes&secao=contas`);
+await pagina.getByRole("columnheader", { name: "Conta", exact: true }).first().waitFor();
+conferir(true, "⚠️ `?secao=contas` abre direto na lista de contas, num F5");
+
+await pagina.goto(`${APP}/financeiro?aba=configuracoes&secao=centros`);
+await pagina.getByRole("columnheader", { name: "Centro de custo", exact: true }).first().waitFor();
+conferir(true, "e `?secao=centros` na de centros");
+
+await pagina.goto(`${APP}/financeiro?aba=configuracoes`);
+await pagina.getByRole("columnheader", { name: "Categoria", exact: true }).first().waitFor();
+const linhasDeCategorias = await pagina.locator("tbody tr").count();
+conferir(
+  linhasDeCategorias > 10,
+  `🔴 categorias mostra TODAS as ${linhasDeCategorias} linhas, acima do tamanho de página`,
+);
+conferir(
+  (await pagina.getByText("Por página").count()) === 0,
+  "🔴 e NÃO tem barra de paginação -- o agrupador não sobrevive à quebra de página",
+);
+
+/* ⚠️ E a razão disso, na tela: a filha continua colada na mãe, indentada. */
+const nomesDasCategorias = await pagina.locator("tbody tr td:first-child").allInnerTexts();
+const recuos = await pagina
+  .locator("tbody tr td:first-child > div")
+  .evaluateAll((els) => els.map((e) => parseInt(getComputedStyle(e).paddingLeft || "0", 10)));
+const iMae = nomesDasCategorias.findIndex((n) => n.startsWith("Impostos"));
+conferir(
+  iMae >= 0 && recuos[iMae + 1] >= 20,
+  `a filha vem LOGO ABAIXO da mãe, indentada -- "Impostos" na linha ${iMae + 1}`,
+);
+
 await semOpcional("Financeiro");
 
 
