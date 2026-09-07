@@ -12,6 +12,7 @@ export * from "./paginacao";
 export * from "./periodo";
 export * from "./plural";
 export * from "./prazo";
+export * from "./atendimentos";
 export * from "./processos";
 export * from "./iguais";
 export * from "./query";

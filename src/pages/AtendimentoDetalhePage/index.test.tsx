@@ -208,9 +208,14 @@ describe("aba Detalhes", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Detalhes" }));
   }
 
-  it("salva assunto, status e responsáveis num PATCH só", async () => {
+  it("salva num PATCH só, e manda SÓ o que mudou", async () => {
     /* Um PATCH por campo faria o servidor comparar e notificar três vezes o
-       que é uma edição só. */
+       que é uma edição só -- por isso o corpo é um.
+
+       🔴 E o corpo leva só o campo tocado. Reenviar o resto devolve por cima
+       o que outra pessoa mudou enquanto esta tela estava aberta, e no caso do
+       `status` chegava a IMPEDIR a edição. Mesma regra de
+       `FormularioProcesso`; ver `utils/atendimentos.ts`. */
     await abrirDetalhes();
 
     await userEvent.click(screen.getByLabelText("Status"));
@@ -219,9 +224,21 @@ describe("aba Detalhes", () => {
 
     await waitFor(() =>
       expect(mocks.atualizarAtendimento).toHaveBeenCalledWith("s1", "a1", {
-        assunto: "Revisão de contrato",
         status: "Fechado",
-        responsaveis: [],
+      }),
+    );
+  });
+
+  it("mexer só no assunto não manda o status junto", async () => {
+    await abrirDetalhes();
+
+    await userEvent.clear(screen.getByLabelText(/Assunto/));
+    await userEvent.type(screen.getByLabelText(/Assunto/), "Assunto corrigido");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() =>
+      expect(mocks.atualizarAtendimento).toHaveBeenCalledWith("s1", "a1", {
+        assunto: "Assunto corrigido",
       }),
     );
   });

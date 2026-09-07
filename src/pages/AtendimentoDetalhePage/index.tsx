@@ -21,7 +21,7 @@ import NovoRegistro from "./components/NovoRegistro";
 import { ABAS_DO_ATENDIMENTO, GRUPO_DE_ABAS } from "./constants";
 import FormularioAtendimento from "./components/FormularioAtendimento";
 import type { AbaDoAtendimento } from "./types";
-import type { Atendimento } from "../../types";
+import type { Atendimento, CamposDoAtendimento } from "../../types";
 import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 
 /** Detalhe de um atendimento: cabeçalho, linha do tempo e o campo de
@@ -84,7 +84,7 @@ export default function AtendimentoDetalhePage() {
    * três vezes o que é uma edição só.
    */
   const salvarDetalhes = useMutation({
-    mutationFn: (campos: { assunto: string; status: string; responsaveis: string[] }) =>
+    mutationFn: (campos: CamposDoAtendimento) =>
       atualizarAtendimento(subgrupoId, atendimentoId, campos),
     onSuccess: () => {
       invalidar();

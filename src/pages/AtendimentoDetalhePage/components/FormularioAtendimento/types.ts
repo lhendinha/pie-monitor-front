@@ -1,7 +1,9 @@
-import type { Atendimento } from "../../../../types";
+import type { Atendimento, CamposDoAtendimento } from "../../../../types";
 
 export interface FormularioAtendimentoProps {
   atendimento: Atendimento;
   salvando: boolean;
-  onSalvar: (campos: { assunto: string; status: string; responsaveis: string[] }) => void;
+  /** ⚠️ Só o que MUDOU, e por isso tudo é opcional. Ver
+   * `utils/atendimentos.ts`. */
+  onSalvar: (campos: CamposDoAtendimento) => void;
 }
