@@ -26,7 +26,9 @@ function rastreados(): { modo: string; caminho: string }[] {
     .split("\n")
     .filter(Boolean)
     .map((linha) => {
-      const [modo, , resto] = linha.split(/\s+/, 3);
+      // `<modo> <sha> <estágio>\t<caminho>` -- só o modo interessa, e o
+      // caminho vem depois da TABULAÇÃO (nome com espaço não se parte).
+      const [modo] = linha.split(/\s+/, 1);
       return { modo, caminho: linha.slice(linha.indexOf("\t") + 1) };
     });
 }
