@@ -165,6 +165,80 @@ saída não foi nenhuma das três que eu tinha listado. Ver a seção
 
 ➡️ O mesmo padrão do outro lado: `api/CONTEXT.md`, seção 0c.
 
+## O Financeiro na tela: o que a Fase 4 aprendeu (07/09/2026)
+
+A aba Configurações do Financeiro entrou junto com a casca da tela (menu,
+ícone, rota, quatro abas pela URL). O que segue é o que a execução mudou de
+ideia — e a lição é uma só, repetida cinco vezes.
+
+### 🔴 Dentro do sistema, a régua é a dos VIZINHOS
+
+O artefato manda no que é NOVO. Onde o projeto já resolveu o caso, o molde é
+o do vizinho — e "vizinho" é a tela ao lado, não uma parecida em outro
+canto. Cinco correções nasceram de eu ter copiado o artefato onde havia
+molde, e o usuário apontou as cinco:
+
+1. **A linha da lista** saiu com o `.linha-lista` do artefato (14px de recuo,
+   nome em 14px) ao lado das Fases, que usam `LinhaDeLista` (4px, 13,5px).
+2. **O criar do centro de custo** saiu com o `.nova` do artefato (10px de
+   gap, sem divisória) ao lado do `FormularioNovaOpcao`.
+3. **O cartão de Configurações do grupo** virou estreito como o do Perfil,
+   enquanto as abas irmãs (Convidar, Inscrições, Fases) usam largura cheia.
+   Do Perfil vale o INTERIOR — divisória recuada pelo padding, botões na
+   direita do conteúdo —, não a largura.
+4. **As três listas eram listas**, e Clientes, Processos e Membros são
+   tabelas com cabeçalho e LINHA CLICÁVEL. Viraram tabela.
+5. **O centro de custo era o único sem modal**, e ficava com dois gestos
+   diferentes dos irmãos na mesma tela.
+
+### As tabelas do catálogo
+
+⚠️ **O olho de desativar CONTINUA na linha**, e não é inconsistência:
+`Membros` faz igual — linha clicável e um botão que sobra. O clique da linha
+carrega UMA ação, e estas linhas têm duas.
+
+⚠️ **Tudo à esquerda, inclusive o saldo.** Tentei alinhá-lo à direita (os
+dígitos comparam melhor) e, para separá-lo do olho, empurrei a coluna de
+ações — duas mudanças brigando, e o cabeçalho boiando no meio da coluna. A
+coluna vazia das ações já dá a separação. O `mono` no valor é o que restou
+da ideia boa.
+
+🔴 **`IconeOlho` e `IconeOlhoCortado` não trazem tamanho próprio.** Quem
+dava os 16px era o `LinhaDeLista`; ao virar tabela, viraram 32px e a linha
+inchou. `IconeLixeira` traz — por isso a linha de inscrição nunca precisou
+da regra.
+
+🔴 **O `onKeyDown` da linha clicável só responde à própria linha**
+(`e.target !== e.currentTarget`). Sem isso ele engolia o Enter de quem
+digitava num campo DENTRO dela.
+
+### Editar é mais que renomear
+
+O `PATCH` do catálogo aceitava só `nome`, e o modal era uma caixa de
+renomear. A régua nova, em uma frase: **muda o que NÃO reescreve história.**
+
+- categoria: nome, **cor** e **agrupador**;
+- conta: nome e os **dados bancários**.
+
+🔴 Continuam recusados, por `extra="forbid"` no schema — 422 antes de chegar
+ao serviço: a **natureza** da categoria (inverteria o LADO do caixa de tudo
+lançado nela) e o **tipo**, o **início** e o **saldo inicial** da conta (o
+tipo muda quais campos são obrigatórios num item que já existe; os outros
+dois são write-once porque o saldo ATUAL é mantido a partir deles).
+
+⚠️ E o que a API recusa, a tela **não mostra**: campo cinza convida a tentar.
+
+### Duas armadilhas de tipagem que só a medição pega
+
+⚠️ `atualizarConta` aceitava `Partial<DadosDaConta>` enquanto a API só
+aceitava `nome` — o tipo largo convidava exatamente o 422 que ele deveria
+impedir. Hoje `CamposDaConta` e `CamposDaCategoria` dizem o que o `PATCH`
+aceita, e nada mais.
+
+⚠️ `natureza` estava como string solta (`=== "entrada"`) na lista de
+categorias — o defeito da seção 0c, no lugar onde ele custa dinheiro somado
+do lado errado. Virou `constants/financeiro.ts`.
+
 ## O status do atendimento travava a edição (07/09/2026)
 
 🔴 **O formulário da aba Detalhes mandava sempre os três campos**
