@@ -55,6 +55,9 @@ const conferir = (ok, nome, detalhe = "") => {
   console.log(`${ok ? "  ok  " : "FALHA "} ${nome}${detalhe ? ` -- ${detalhe}` : ""}`);
 };
 const existe = (loc) => loc.isVisible().catch(() => false);
+/* ⚠️ `exact`: "Salvar e adicionar outra" também casa com /Salvar/, e o
+   Playwright recusa o seletor ambíguo em vez de escolher um. */
+const salvar = () => pagina.getByRole("button", { name: "Salvar", exact: true });
 
 async function entrar(email) {
   await contexto.clearCookies();
@@ -171,8 +174,17 @@ console.log("\n— chefe@local.test —");
 await entrar("chefe@local.test");
 await irParaConfiguracoes();
 conferir(
-  await pagina.getByRole("button", { name: "Renomear Anuidade OAB" }).isVisible(),
-  "quem administra vê as ações de renomear",
+  await pagina.getByRole("button", { name: "Desativar Anuidade OAB" }).isVisible(),
+  "quem administra vê o olho de desativar",
+);
+conferir(
+  !(await existe(pagina.getByRole("button", { name: "Renomear Anuidade OAB" }))),
+  "🔴 e NÃO vê lápis: quem edita clica na linha, como nas outras tabelas",
+);
+/* As tabelas têm cabeçalho de coluna, como Clientes e Membros. */
+conferir(
+  await pagina.getByRole("columnheader", { name: "Categoria" }).isVisible(),
+  "a lista é TABELA, com cabeçalho de coluna",
 );
 conferir(
   !(await existe(pagina.getByText("Só quem administra o grupo pode alterar o catálogo."))),
@@ -183,7 +195,7 @@ console.log("\n— o modal de categoria —");
 await pagina.getByRole("button", { name: "+ Nova categoria" }).click();
 await pagina.getByRole("dialog").waitFor();
 conferir(true, "o modal abre");
-await pagina.getByRole("button", { name: "Salvar" }).click();
+await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
 conferir(
   await pagina.getByText("Informe o nome da categoria.").isVisible(),
   "🔴 nome vazio não salva, e o campo diz o que falta",
@@ -206,7 +218,7 @@ conferir(
 );
 
 await pagina.getByLabel(/Nome/).fill(`${MARCA} categoria`);
-await pagina.getByRole("button", { name: "Salvar" }).click();
+await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
 await pagina.getByText(`${MARCA} categoria`).waitFor();
 conferir(true, "a categoria nova aparece na lista");
 
@@ -223,29 +235,46 @@ conferir(
 );
 await pagina.getByLabel(/Nome/).fill(`${MARCA} conta`);
 await pagina.getByLabel(/Saldo inicial/).fill("1.234,56");
-await pagina.getByRole("button", { name: "Salvar" }).click();
+await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
 await pagina.getByText(`${MARCA} conta`).waitFor();
 conferir(
-  await pagina.getByText("R$ 12,34").first().isVisible(),
-  "o saldo digitado em reais aparece formatado",
+  await pagina.getByText("R$ 1.234,56").first().isVisible(),
+  "o saldo digitado vira centavos e volta formatado -- 1.234,56",
 );
 
-console.log("\n— o centro de custo, inline —");
+console.log("\n— o centro de custo —");
 await pagina.getByRole("button", { name: "Centros de custo" }).click();
-const campoCentro = pagina.getByLabel("Novo centro de custo");
-await campoCentro.waitFor();
-conferir(
-  await pagina.getByRole("button", { name: "+ Adicionar" }).isDisabled(),
-  "🔴 'Adicionar' nasce desabilitado",
-);
-await campoCentro.fill(`${MARCA} centro`);
-conferir(
-  !(await pagina.getByRole("button", { name: "+ Adicionar" }).isDisabled()),
-  "e acende com texto",
-);
-await pagina.getByRole("button", { name: "+ Adicionar" }).click();
+await pagina.getByRole("button", { name: "+ Novo centro de custo" }).click();
+await pagina.getByRole("dialog").waitFor();
+conferir(true, "🔴 abre MODAL, igual às duas irmãs -- revisão do achado 10 do plano");
+await pagina.getByLabel(/Nome/).fill(`${MARCA} centro`);
+await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
 await pagina.getByText(`${MARCA} centro`).waitFor();
-conferir(await campoCentro.inputValue() === "", "o campo se esvazia depois de criar");
+conferir(true, "o centro novo aparece na lista");
+
+console.log("\n— editar é mais que renomear —");
+await pagina.getByRole("button", { name: "Categorias" }).click();
+await pagina.getByText(`${MARCA} categoria`).click();
+await pagina.getByRole("dialog").waitFor();
+conferir(
+  await pagina.getByRole("group", { name: "Cor da categoria" }).isVisible(),
+  "o modal de EDIÇÃO traz a paleta",
+);
+conferir(
+  await pagina.getByLabel("Agrupador").isVisible(),
+  "e o agrupador",
+);
+conferir(
+  !(await existe(pagina.getByLabel(/Natureza/))),
+  "🔴 mas NÃO a natureza -- trocá-la inverteria o lado do caixa do que já foi lançado",
+);
+await pagina.getByRole("group", { name: "Cor da categoria" }).locator("button").nth(7).click();
+await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
+await pagina.waitForTimeout(1200);
+conferir(
+  !(await existe(pagina.getByRole("dialog"))),
+  "salvar a cor fecha o modal -- sem 4xx",
+);
 
 console.log("\n— a conta padrão, em Grupo —");
 await pagina.goto(APP + "/grupo");
