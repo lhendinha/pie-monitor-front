@@ -16,6 +16,7 @@ export type * from "./api";
 export type * from "./atendimento";
 export type * from "./cliente";
 export type * from "./documento";
+export type * from "./financeiro";
 export type * from "./grupo";
 export type * from "./notificacao";
 export type * from "./processo";

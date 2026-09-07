@@ -33,3 +33,26 @@ export type CamposDaColuna = {
   nome?: string;
   ordem?: number;
 };
+
+export type DadosDaConta = {
+  nome: string;
+  tipo: string;
+  inicio: string;
+  saldo_inicial_centavos: number;
+  banco?: string;
+  agencia?: string;
+  numero?: string;
+};
+
+export type DadosDaCategoria = {
+  nome: string;
+  natureza: string;
+  cor: string;
+  /** Vazio para categoria de primeiro nível. */
+  agrupador_id?: string;
+};
+
+/** Centro de custo é só o nome -- nasce inline na tela, sem modal. */
+export type DadosDoCentro = {
+  nome: string;
+};
