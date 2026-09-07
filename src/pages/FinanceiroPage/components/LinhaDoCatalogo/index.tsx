@@ -78,7 +78,12 @@ export default function LinhaDoCatalogo({
           {nome}
         </Text>
         {detalhe && (
-          <Text fontSize="12px" fontWeight="400" color="fg.muted" truncate>
+          /* ⚠️ `as="span"`, e NÃO o `<p>` padrão do `Text`: o `detalhe` é um
+             `ReactNode`, e a lista de contas manda um `Flex` (que é `div`)
+             para pôr a etiqueta "Padrão" ao lado. `<div>` dentro de `<p>` é
+             aninhamento inválido -- o React avisa no console e o navegador
+             FECHA o parágrafo sozinho, quebrando o layout da linha. */
+          <Text as="span" fontSize="12px" fontWeight="400" color="fg.muted" truncate>
             {detalhe}
           </Text>
         )}

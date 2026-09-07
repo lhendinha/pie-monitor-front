@@ -7,6 +7,8 @@ import { BotaoQuadrado } from "../BotaoQuadrado";
 import IconeCalendario from "../Icons/IconeCalendario";
 import IconeSeta from "../Icons/IconeSeta";
 import { Gatilho } from "./Gatilho";
+import { ESCONDE_A_VISTA_INATIVA, TRADUCOES_DO_CALENDARIO } from "./traducoes";
+import VistasDeMesEAno from "./VistasDeMesEAno";
 import type { SeletorDataProps } from "./types";
 
 /** Seletor de data com o calendário do Chakra (`DatePicker`).
@@ -65,6 +67,9 @@ export default function SeletorData({
         open={aberto}
         onOpenChange={(e) => onAbertura?.(e.open)}
         locale="pt-BR"
+        /** 🔴 Os rótulos de acessibilidade nascem em INGLÊS na lib -- o
+         * `locale` traduz os nomes, não eles. Ver `traducoes.ts`. */
+        translations={TRADUCOES_DO_CALENDARIO}
         startOfWeek={0}
         value={valor ? [parseDate(valor)] : []}
         /** ⚠️ `value[0].toString()`, e NÃO `valueAsString`: este último vem
@@ -112,7 +117,7 @@ export default function SeletorData({
               borderRadius="md"
               boxShadow="md"
             >
-              <DatePicker.View view="day" width="100%" minW="0">
+              <DatePicker.View view="day" width="100%" minW="0" css={ESCONDE_A_VISTA_INATIVA}>
                 <DatePicker.Context>
                   {(api) => (
                     <>
@@ -134,7 +139,10 @@ export default function SeletorData({
                         <DatePicker.ViewTrigger
                           fontSize="13px"
                           fontWeight="800"
-                          textTransform="capitalize"
+                          /* ⚠️ `::first-letter`, e NÃO `textTransform:
+                             capitalize`: o `capitalize` sobe CADA palavra e
+                             o cabeçalho saía "Setembro De 2026". */
+                          css={{ "&::first-letter": { textTransform: "uppercase" } }}
                         >
                           <DatePicker.RangeText />
                         </DatePicker.ViewTrigger>
@@ -242,6 +250,11 @@ export default function SeletorData({
                   )}
                 </DatePicker.Context>
               </DatePicker.View>
+
+              {/* 🔴 O cabeçalho de cima é um botão que TROCA de vista. Sem
+                  estas duas, clicar nele caía em `RangeError: date value is
+                  not finite` e derrubava a tela. */}
+              <VistasDeMesEAno />
             </DatePicker.Content>
           </DatePicker.Positioner>
         </Portal>
