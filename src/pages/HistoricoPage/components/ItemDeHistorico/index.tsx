@@ -1,6 +1,7 @@
 import { Box, Flex, Stack, Text } from "@chakra-ui/react";
 
 import { Etiqueta, EtiquetasDeSubgrupo, Ponto } from "../../../../components";
+import { TIPO_ENVIO_LEMBRETE } from "../../../../constants";
 import { formatarDataHora, mascararNumeroProcesso } from "../../../../utils";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
 import type { ItemDeHistoricoProps } from "./types";
@@ -23,7 +24,7 @@ export default function ItemDeHistorico({ item, subgruposVisiveis, onAbrir }: It
 
   const meta = [
     formatarDataHora(item.enviado_em),
-    item.tipo_envio === "lembrete" ? "Lembrete" : undefined,
+    item.tipo_envio === TIPO_ENVIO_LEMBRETE ? "Lembrete" : undefined,
     item.tipo_comunicacao,
     item.nome_orgao,
   ]

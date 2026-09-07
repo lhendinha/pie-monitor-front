@@ -68,6 +68,13 @@ export function atualizarAtendimento(
   atendimentoId: string,
   campos: {
     assunto?: string;
+    /** ⚠️ `string`, e NÃO `StatusDeAtendimento` -- e é uma pendência, não
+     * um descuido. O tipo derivado existe e daria a checagem do compilador
+     * aqui, que é onde o front ESCREVE; o que impede é o campo do formulário
+     * nascer de `atendimento.status`, que é `string` de propósito porque a
+     * leitura tolera status novo do servidor (ver `theme/atendimento`).
+     * Fechar isso exige decidir o que salvar quando o status lido não está
+     * no vocabulário -- normalizar seria reescrever o dado calado. */
     status?: string;
     cliente_ids?: string[];
     /** ⚠️ Lista VAZIA é recusada pelo servidor: no PATCH quem edita está na

@@ -1,3 +1,5 @@
+import { TIPO_ENVIO_LEMBRETE, TIPO_ENVIO_MOVIMENTACAO } from "../../constants";
+
 /** Os filtros de tipo do histórico.
  *
  * "Todos" primeiro: é o mais abrangente, e um menu que começa pelo geral e
@@ -10,8 +12,8 @@
  */
 export const TIPOS_DE_ENVIO = [
   { id: "todos", valor: "", rotulo: "Todos" },
-  { id: "movimentacao", valor: "movimentacao", rotulo: "Movimentações" },
-  { id: "lembrete", valor: "lembrete", rotulo: "Lembretes" },
+  { id: TIPO_ENVIO_MOVIMENTACAO, valor: TIPO_ENVIO_MOVIMENTACAO, rotulo: "Movimentações" },
+  { id: TIPO_ENVIO_LEMBRETE, valor: TIPO_ENVIO_LEMBRETE, rotulo: "Lembretes" },
 ] as const;
 
 /** A tela abre filtrada em Movimentações: é o que se olha no dia a dia.
@@ -20,7 +22,7 @@ export const TIPOS_DE_ENVIO = [
  * ⚠️ Filtro que nasce ligado precisa PARECER ligado -- senão a pessoa vê
  * uma lista incompleta achando que está vendo tudo. Daí a pílula já nascer
  * no estado ativo, e a opção escolhida ficar realçada no menu. */
-export const TIPO_DE_ENVIO_PADRAO = "movimentacao";
+export const TIPO_DE_ENVIO_PADRAO = TIPO_ENVIO_MOVIMENTACAO;
 
 
 /** As duas pílulas que a Área de trabalho aciona.
