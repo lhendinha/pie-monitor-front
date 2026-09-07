@@ -51,21 +51,21 @@ export default function LinhaDeLancamento({
            numa linha faria a tabela crescer para dizer pouco. */
         sub={[l.contraparte, l.parcela].filter(Boolean).join(" · ")}
       />
-      <Table.Cell>
+      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
         <Text fontSize="13px" truncate>{categoriaNome}</Text>
       </Table.Cell>
-      <Table.Cell>
+      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
         <Text fontSize="13px" color="fg.muted" truncate>{contaNome}</Text>
       </Table.Cell>
-      <Table.Cell>
+      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
         <Text fontSize="13px" whiteSpace="nowrap">{formatarData(l.data_vencimento)}</Text>
       </Table.Cell>
-      <Table.Cell>
+      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
         <Etiqueta cores={coresDaSituacao(l.situacao)}>
           {ROTULO_DA_SITUACAO[l.situacao] ?? l.situacao}
         </Etiqueta>
       </Table.Cell>
-      <Table.Cell>
+      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
         <Flex direction="column" align="flex-end" gap="1px">
           <Text
             fontSize="13px"
