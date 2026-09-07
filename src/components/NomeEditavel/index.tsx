@@ -15,6 +15,7 @@ export default function NomeEditavel({
   nome,
   rotuloDoCampo,
   editando,
+  placeholder,
   podeRenomear,
   onIniciar,
   onConfirmar,
@@ -124,6 +125,7 @@ export default function NomeEditavel({
     return (
       <Input
         aria-label={rotuloDoCampo || `Novo nome de ${nome}`}
+        placeholder={placeholder}
         value={rascunho}
         onChange={(e) => setRascunho(e.target.value)}
         onKeyDown={handleKeyDown}

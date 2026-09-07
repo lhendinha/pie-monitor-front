@@ -2,6 +2,10 @@ import type { ItemNavegacao } from "../types";
 
 /** Ordem e rótulos vêm do artifact de referência.
  *
+ * `Financeiro` tem piso próprio: o papel `financeiro` foi criado para ele, e
+ * quem é `user` não vê a seção nem por link direto. Fica ANTES de `Grupo`
+ * porque é seção de trabalho, e `Grupo` é a de configuração.
+ *
  * `Grupo` sai do menu pro `user` (decisão de 21/08). É só navegação: pra quem
  * é `user`, Grupo é tela de configuração que ele não administra e ocupa
  * espaço à toa. **A rota `/grupo` continua funcionando** por link direto, e
@@ -17,5 +21,6 @@ export const ITENS_NAVEGACAO: ItemNavegacao[] = [
   { caminho: "/clientes", rotulo: "Clientes", icone: "Clientes" },
   { caminho: "/documentos", rotulo: "Documentos", icone: "Documentos" },
   { caminho: "/historico", rotulo: "Histórico", icone: "Historico" },
+  { caminho: "/financeiro", rotulo: "Financeiro", icone: "Financeiro", minimo: "financeiro" },
   { caminho: "/grupo", rotulo: "Grupo", icone: "Grupo", minimo: "manager" },
 ];

@@ -6,6 +6,7 @@
  * componentes em `src/components`. */
 
 export { default as IconeHistorico } from "./IconeHistorico";
+export { default as IconeFinanceiro } from "./IconeFinanceiro";
 export { default as IconeArrastar } from "./IconeArrastar";
 
 // Ícones do menu lateral (Fase 2). `IconeHistorico` acima já servia.

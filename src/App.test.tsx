@@ -44,6 +44,7 @@ vi.mock("./pages", () => ({
   ClienteDetalhePage: () => <div>detalhe do cliente</div>,
   DocumentosPage: () => <div>tela de documentos</div>,
   DocumentoDetalhePage: () => <div>detalhe do documento</div>,
+  FinanceiroPage: () => <div>tela de financeiro</div>,
   GrupoPage: () => <div>tela de grupo</div>,
   WorkspacePage: () => <div>área de trabalho</div>,
   KanbanPage: () => <div>quadro kanban</div>,

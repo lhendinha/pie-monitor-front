@@ -33,3 +33,50 @@ export type CamposDaColuna = {
   nome?: string;
   ordem?: number;
 };
+
+export type DadosDaConta = {
+  nome: string;
+  tipo: string;
+  inicio: string;
+  saldo_inicial_centavos: number;
+  banco?: string;
+  agencia?: string;
+  numero?: string;
+};
+
+export type DadosDaCategoria = {
+  nome: string;
+  natureza: string;
+  cor: string;
+  /** Vazio para categoria de primeiro nível. */
+  agrupador_id?: string;
+};
+
+/** O que o `PATCH` da categoria aceita.
+ *
+ * 🔴 Sem `natureza`, e é a régua inteira do editar no catálogo: muda o que
+ * NÃO reescreve história. Trocar a natureza inverteria o lado do caixa de
+ * tudo lançado ali, e a API responde 422. */
+export type CamposDaCategoria = {
+  nome?: string;
+  cor?: string;
+  /** Vazio TIRA do agrupador -- é uma edição legítima, não "não enviei". */
+  agrupador_id?: string;
+};
+
+/** O que o `PATCH` da conta aceita.
+ *
+ * 🔴 Sem `tipo`, `inicio` e `saldo_inicial_centavos`: o tipo muda quais
+ * campos são obrigatórios num item que já existe, e os outros dois são
+ * write-once porque o saldo atual é mantido a partir deles. */
+export type CamposDaConta = {
+  nome?: string;
+  banco?: string;
+  agencia?: string;
+  numero?: string;
+};
+
+/** Centro de custo é só o nome. */
+export type DadosDoCentro = {
+  nome: string;
+};

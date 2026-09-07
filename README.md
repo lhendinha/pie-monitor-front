@@ -109,6 +109,7 @@ mais push, e o Vercel republica sozinho. Não há estado a migrar.
 | **Documentos** | `/documentos` | arquivos e links do escritório |
 | **Detalhe do documento** | `/documentos/:subgrupoId/:documentoId` | onde se edita, baixa, substitui e exclui |
 | Histórico | `/historico` | o que o robô enviou |
+| **Financeiro** | `/financeiro` | **abas** Lançamentos \| Faturas \| Fluxo de caixa \| Configurações |
 | Grupo | `/grupo` | **sub-abas** Subgrupos \| Membros \| Fases \| Situações \| Convidar \| Inscrições na OAB \| Configurações |
 | Perfil | `/perfil` | **abas** Meus dados \| Inscrição na OAB |
 
@@ -122,6 +123,49 @@ com as telas irmãs é de _ter_ abas, não de qual vem primeiro.
 alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
 a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 (`/grupo`, `/perfil`) usam estado local de propósito.
+
+### Financeiro: quatro abas, três ainda por vir
+
+`/financeiro` já nasce com as **quatro** abas, e três delas mostram uma frase
+dizendo que aquela parte ainda não chegou. Aparecerem mesmo vazias é de
+propósito: elas são a estrutura da tela, e escondê-las faria `/financeiro`
+parecer ser só uma tela de configuração. Quem decide é o `pendente` em
+`pages/FinanceiroPage/constants.ts`; a aba pronta é **Configurações**.
+
+⚠️ **Trocar de aba LIMPA `pagina`, `tamanho` e `busca` da URL.** As quatro
+dividem um endereço só, e as listagens guardam esse estado com as mesmas
+chaves em toda tela -- sem a limpeza, ir para a página 3 de Lançamentos e
+trocar para Faturas abriria Faturas na página 3, provavelmente vazia e sem
+nada na tela explicando por quê.
+
+⚠️ A aba vai para a **URL**, ao contrário de `/grupo`, que também está no menu
+e usa estado local. Não é exceção à régua de `utils/abas`: o critério é ser
+alcançada por LINK, e a Área de trabalho abre esta tela já filtrada.
+
+#### Configurações: três tabelas, e como se edita
+
+Categorias, contas e centros de custo. As três são **tabela com cabeçalho de
+coluna**, como Clientes, Processos e Membros -- e por isso o botão de
+adicionar fica **fora** delas, no subcabeçalho, abrindo modal. Um formulário
+antes do cabeçalho lia como se fosse de outra coisa.
+
+🔴 **Não há lápis na linha: quem edita clica na LINHA**, e cai no mesmo modal
+do adicionar. O **olho** de desativar fica na linha, porque o clique da linha
+carrega uma ação só e estas linhas têm duas -- é o que `Membros` faz.
+
+⚠️ **O modal edita o item, não só o nome.** Muda o que _não reescreve
+história_: nome, cor e agrupador na categoria; nome e dados bancários na
+conta. A `natureza` da categoria e o `tipo`, o `inicio` e o
+`saldo_inicial_centavos` da conta ficam de fora -- e a API os **recusa** com
+422 (`extra="forbid"`), com o porquê escrito em cada schema.
+
+⚠️ A linha responde a **Enter** e **espaço**, mas só quando o foco está nela
+mesma (`e.target !== e.currentTarget` sai fora). Sem essa guarda, o Enter
+digitado dentro de um editor da própria linha subia e reabria o modal.
+
+➡️ `node scripts/verificar-financeiro.mjs` — 44 checagens em Chrome de
+verdade, contra o `yarn offline` da API. É o roteiro que prova esta tela;
+o jsdom não computa CSS e não veria nem o alinhamento nem a altura da linha.
 
 ### Editar membro: quem pode, e o que fica travado
 
@@ -741,7 +785,7 @@ src/
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
   components/               -- 68 componentes gerais, cada um em pasta com seu index
-  pages/                    -- 21 páginas, cada uma em pasta com index.tsx
+  pages/                    -- 22 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
 vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)

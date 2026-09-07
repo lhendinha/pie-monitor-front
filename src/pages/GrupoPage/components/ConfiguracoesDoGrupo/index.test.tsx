@@ -7,6 +7,7 @@ import { renderComProviders } from "../../../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   lerConfiguracoesDoGrupo: vi.fn(),
+  lerCatalogoFinanceiro: vi.fn(),
   atualizarConfiguracoesDoGrupo: vi.fn(),
 }));
 
@@ -21,11 +22,30 @@ const CONFIG = {
   dias_para_arquivar_maximo: 365,
   dias_para_arquivar_padrao: 7,
   nome_tamanho_maximo: 120,
+  conta_padrao_id: "",
+  oabs_avulsas: [],
+  oabs_avulsas_maximo: 50,
+};
+
+/** ⚠️ A conta INATIVA está aqui de propósito: o servidor recusa uma conta
+ * desativada como padrão, e o select não pode oferecê-la. */
+const CATALOGO = {
+  contas: [
+    { conta_id: "c1", nome: "Conta corrente Itaú", tipo: "corrente", inicio: "2026-01-01",
+      saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: true },
+    { conta_id: "c2", nome: "Caixa antigo", tipo: "outros", inicio: "2026-01-01",
+      saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: false },
+  ],
+  categorias: [],
+  centros_de_custo: [],
+  conta_padrao_id: "",
+  cores_disponiveis: [],
 };
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.lerConfiguracoesDoGrupo.mockResolvedValue(CONFIG);
+  mocks.lerCatalogoFinanceiro.mockResolvedValue(CATALOGO);
   mocks.atualizarConfiguracoesDoGrupo.mockResolvedValue(CONFIG);
 });
 
@@ -165,4 +185,80 @@ it("o campo de dias NÃO repete o número ao lado", async () => {
 
   expect(linha).toHaveTextContent(/\bdias\b/);
   expect(linha.textContent?.match(/7/g) ?? []).toHaveLength(0);
+});
+
+
+it("a conta padrão lista só as contas ATIVAS, e o 'Nenhuma'", async () => {
+  /* 🔴 O servidor recusa conta desativada como padrão. Oferecê-la aqui seria
+     empurrar a pessoa para um 400 que a tela já sabia evitar. */
+  await montar();
+  await userEvent.click(screen.getByLabelText("Conta padrão do Financeiro"));
+
+  expect(await screen.findByRole("option", { name: "Conta corrente Itaú" })).toBeVisible();
+  expect(screen.getByRole("option", { name: "Nenhuma" })).toBeVisible();
+  expect(screen.queryByRole("option", { name: "Caixa antigo" })).not.toBeInTheDocument();
+});
+
+it("escolher a conta manda SÓ ela no PATCH", async () => {
+  /* Mandar os três sempre faria um "Salvar" da conta sobrescrever um prazo
+     que outra pessoa acabou de alterar. */
+  await montar();
+  await userEvent.click(screen.getByLabelText("Conta padrão do Financeiro"));
+  await userEvent.click(await screen.findByRole("option", { name: "Conta corrente Itaú" }));
+  await userEvent.click(salvarBtn());
+
+  await waitFor(() =>
+    expect(mocks.atualizarConfiguracoesDoGrupo).toHaveBeenCalledWith({ conta_padrao_id: "c1" }),
+  );
+});
+
+it("🔴 'Nenhuma' LIMPA a escolha, e não é ausência de envio", async () => {
+  mocks.lerConfiguracoesDoGrupo.mockResolvedValue({ ...CONFIG, conta_padrao_id: "c1" });
+  await montar();
+  await userEvent.click(screen.getByLabelText("Conta padrão do Financeiro"));
+  await userEvent.click(await screen.findByRole("option", { name: "Nenhuma" }));
+  await userEvent.click(salvarBtn());
+
+  await waitFor(() =>
+    expect(mocks.atualizarConfiguracoesDoGrupo).toHaveBeenCalledWith({ conta_padrao_id: "" }),
+  );
+});
+
+it("sem conta ativa nenhuma, o campo fica desabilitado e diz onde criar", async () => {
+  mocks.lerCatalogoFinanceiro.mockResolvedValue({ ...CATALOGO, contas: [] });
+  await montar();
+
+  expect(screen.getByLabelText("Conta padrão do Financeiro")).toBeDisabled();
+  expect(screen.getByText(/Crie uma em Financeiro/)).toBeVisible();
+});
+
+
+it("🔴 'Cancelar' devolve os três campos ao que está salvo", async () => {
+  /* Sem ele, desfazer exigia recarregar a página -- e com três campos isso
+     passou a acontecer de verdade. É o rodapé de `FormularioDaInscricao`. */
+  mocks.lerConfiguracoesDoGrupo.mockResolvedValue({ ...CONFIG, conta_padrao_id: "c1" });
+  await montar();
+
+  const nome = screen.getByLabelText(/Nome do grupo/);
+  await userEvent.clear(nome);
+  await userEvent.type(nome, "Outro nome");
+  await userEvent.click(screen.getByLabelText("Conta padrão do Financeiro"));
+  await userEvent.click(await screen.findByRole("option", { name: "Nenhuma" }));
+
+  await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+  expect(nome).toHaveValue("Silva Advogados");
+  expect(screen.getByText("Conta corrente Itaú")).toBeVisible();
+  expect(mocks.atualizarConfiguracoesDoGrupo).not.toHaveBeenCalled();
+});
+
+it("'Cancelar' fica desabilitado enquanto nada mudou", async () => {
+  await montar();
+  expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+});
+
+it("o prazo padrão é dito na DICA do prazo, não solto no rodapé", async () => {
+  /* Ao lado do "Salvar" ele não dizia mais a qual dos três campos pertencia. */
+  await montar();
+  expect(screen.getByText(/o padrão é 7 dias/)).toBeVisible();
 });

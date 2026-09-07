@@ -3,6 +3,7 @@ import {
   IconeAtendimentos,
   IconeClientes,
   IconeDocumentos,
+  IconeFinanceiro,
   IconeGrupo,
   IconeHistorico,
   IconeKanban,
@@ -29,5 +30,6 @@ export const ICONES_MENU: Record<string, ComponentType> = {
   Clientes: IconeClientes,
   Documentos: IconeDocumentos,
   Historico: IconeHistorico,
+  Financeiro: IconeFinanceiro,
   Grupo: IconeGrupo,
 };

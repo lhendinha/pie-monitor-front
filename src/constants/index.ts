@@ -19,4 +19,5 @@ export * from "./senha";
 export * from "./periodos";
 export * from "./busca";
 export * from "./documento";
+export * from "./financeiro";
 export * from "./processo";

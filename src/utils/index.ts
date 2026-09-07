@@ -1,6 +1,7 @@
 export * from "./abas";
 export * from "./calendario";
 export * from "./date";
+export * from "./dinheiro";
 export * from "./deepLink";
 export * from "./email";
 export * from "./endereco";

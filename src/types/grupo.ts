@@ -145,6 +145,13 @@ export interface ConfiguracoesDoGrupo {
    * pelo mesmo motivo dos limites acima: número repetido aqui é um segundo
    * lugar pra manter em acordo. */
   oabs_avulsas_maximo: number;
+  /** A conta do Financeiro com que todo formulário de lançamento abre.
+   *
+   * ⚠️ Mora aqui, ao lado do prazo de arquivamento, porque é o mesmo tipo de
+   * coisa: escolha do escritório inteiro, feita uma vez. A aba Contas do
+   * Financeiro só MOSTRA qual é. Vazia enquanto ninguém escolheu -- e a
+   * primeira conta criada vira a padrão sozinha. */
+  conta_padrao_id: string;
 }
 
 export interface OpcoesListarMembros {

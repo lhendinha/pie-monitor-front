@@ -41,6 +41,9 @@ export const qk = {
   atendimento: (subgrupoId: string, atendimentoId: string) =>
     ["atendimentos", "detalhe", subgrupoId, atendimentoId] as const,
   configuracoesDoGrupo: () => ["configuracoes-do-grupo"] as const,
+  /** ⚠️ Sem parâmetro, como `configuracoesDoGrupo`: o grupo vem do token,
+   * então só existe UMA resposta por sessão. */
+  catalogoFinanceiro: () => ["catalogo-financeiro"] as const,
   tarefas: (params: Record<string, unknown> = {}) => ["tarefas", params] as const,
   tarefasDoProcesso: (numeroProcesso: string) =>
     ["tarefas", "processo", numeroProcesso] as const,

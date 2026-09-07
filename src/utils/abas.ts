@@ -16,10 +16,15 @@
  * MESMO nome, e duas cópias da string são duas chances de uma virar "tab"
  * num deploy e os links da outra pararem de abrir onde deviam.
  *
- * 🔴 Nem toda tela de abas guarda na URL. `GrupoPage` e `PerfilPage` usam
- * estado local de propósito: são telas de gestão, alcançadas pelo menu. As
- * de DETALHE são alcançadas por link -- do e-mail, do Kanban, da Agenda --,
- * e um F5 que devolve a pessoa pra primeira aba ali incomoda de verdade.
+ * 🔴 Nem toda tela de abas guarda na URL. O critério é **ser alcançada por
+ * link**, e não estar no menu: `GrupoPage` e `PerfilPage` usam estado local
+ * porque só se chega nelas clicando no menu, enquanto as de DETALHE vêm de
+ * link -- do e-mail, do Kanban, da Agenda --, e um F5 que devolve a pessoa
+ * pra primeira aba ali incomoda de verdade.
+ *
+ * ⚠️ `FinanceiroPage` está no menu E guarda na URL, e não é exceção: a Área
+ * de trabalho linka para dentro dela já filtrada ("A receber atrasado" abre
+ * a lista daquele recorte), então ela cumpre o critério acima.
  */
 export const PARAM_DA_ABA = "aba";
 

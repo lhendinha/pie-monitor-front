@@ -56,6 +56,49 @@ describe("SeletorData", () => {
     await user.click(screen.getByText("10/08/2026"));
     expect(await screen.findByRole("grid")).toBeInTheDocument();
   });
+
+  /* ⚠️ Estes dois provam que a vista TROCA e que a escolha volta em ISO.
+     O que eles NÃO alcançam é se a vista velha SOME: o jsdom lê o atributo
+     `hidden` (que está correto) e não computa folha de estilo -- e era o
+     `display: flex` da receita do Chakra que ganhava do `hidden`, deixando
+     as três empilhadas. Isso é `scripts/verificar-seletor-de-data.mjs`. */
+  it("🔴 clicar no mês/ano do cabeçalho abre a vista de MESES, sem quebrar", async () => {
+    /* O cabeçalho é um botão (`ViewTrigger`) e promete trocar de vista. Só a
+       vista de DIA existia: clicar levava a máquina para `view="month"`, o
+       Chakra formatava uma data não-finita e a tela caía com
+       `RangeError: date value is not finite in DateTimeFormat format()`.
+       Achado pelo usuário no modal de conta do Financeiro, mas o defeito é
+       deste componente -- vale para toda tela que tem campo de data. */
+    const user = userEvent.setup();
+    montar("2026-08-10");
+    await user.click(screen.getByText("10/08/2026"));
+    await user.click(await screen.findByRole("button", { name: "Escolher o mês" }));
+
+    /* ⚠️ Por TEXTO, e em minúscula: as células são `div` com papel de grade,
+       como as de dia, e o pt-BR nomeia mês em minúscula -- a maiúscula da
+       tela é `::first-letter`, que não muda o texto. */
+    expect(await screen.findByText("agosto")).toBeInTheDocument();
+    expect(screen.getByText("janeiro")).toBeInTheDocument();
+  });
+
+  it("e dali dá para chegar nos ANOS, e voltar escolhendo", async () => {
+    const user = userEvent.setup();
+    const onMudar = montar("2026-08-10");
+    await user.click(screen.getByText("10/08/2026"));
+    await user.click(await screen.findByRole("button", { name: "Escolher o mês" }));
+    await user.click(await screen.findByRole("button", { name: "Escolher o ano" }));
+
+    // A vista de anos mostra a década inteira -- o intervalo aparece no
+    // cabeçalho e no rótulo da vista, daí o `getAllByText`.
+    expect((await screen.findAllByText("2020 - 2029")).length).toBeGreaterThan(0);
+    await user.click(screen.getByText("2024"));
+    // Escolher o ano volta para os meses, e escolher o mês volta para os dias.
+    await user.click(await screen.findByText("março"));
+    /* Pelo rótulo do dia, e não pelo texto "5": "5" casa com "15" e "25". E
+       de quebra o rótulo prova a tradução -- era "Choose ..." em inglês. */
+    await user.click((await screen.findAllByLabelText(/Escolher.*5 de março de 2024/))[0]);
+    expect(onMudar).toHaveBeenCalledWith("2024-03-05");
+  });
 });
 
 describe("Escape com o calendário aberto não fecha o que está atrás", () => {
