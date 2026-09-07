@@ -1951,6 +1951,36 @@ access token JWT salvo no `localStorage`, em `services/auth.ts`.
 
 ## 5) Tarefas pendentes
 
+0. 🔴 **DECISÃO DE PRODUTO PENDENTE (07/09/2026): o que salvar quando o
+   status lido não está no vocabulário.**
+
+   `atualizarAtendimento` recebe `status?: string`, e não o
+   `StatusDeAtendimento` derivado de `constants/atendimento.ts`. O tipo
+   existe e daria a checagem do compilador exatamente onde o front ESCREVE
+   -- foi tentado, e o `tsc` mostrou por que não fecha sozinho.
+
+   **A cadeia:** o campo do formulário nasce de `atendimento.status`, que é
+   `string` de propósito, porque a LEITURA tolera um status que o front
+   ainda não conhece (`theme/atendimento.ts`: *"status desconhecido não pode
+   sumir da tela nem herdar a cor de outro"*). Tipar a escrita obriga a
+   estreitar em algum ponto, e todo ponto tem um custo:
+
+   - **normalizar** para "Em andamento" ao abrir o formulário: quem editasse
+     só o assunto salvaria um status que não escolheu -- reescrita calada de
+     dado alheio, o pior dos três;
+   - **bloquear o salvar** enquanto o status for desconhecido: honesto, mas
+     prende a edição do assunto por causa de um campo que não é o assunto;
+   - **deixar passar** o valor lido: é o que acontece hoje, e por isso o tipo
+     continua `string`.
+
+   ⚠️ Hoje o caso não existe: a API valida `STATUS_DE_ATENDIMENTO` e recusa
+   qualquer outra palavra com 400. A pergunta é sobre o dia em que o servidor
+   ganhar um terceiro status -- e é aí que a decisão precisa estar tomada,
+   não depois.
+
+   ➡️ A razão também está escrita em `services/api/atendimentos.ts`, no
+   campo, e na seção 0c acima.
+
 1. Confirmar que o front em produção (Vercel) está apontando pra URL certa
    da API — a Function URL da AWS mudou várias vezes durante o
    desenvolvimento/depuração do backend; se o backend for redeployado de um
