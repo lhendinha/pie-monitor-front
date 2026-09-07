@@ -1,6 +1,12 @@
 import { Flex, Text } from "@chakra-ui/react";
 
-import { Botao, CartaoDeTabela, Tabela } from "../../../../components";
+import {
+  Botao,
+  CartaoDeTabela,
+  Esqueleto,
+  Pagination,
+  Tabela,
+} from "../../../../components";
 import { contar } from "../../../../utils";
 import { COLUNAS_DE_CENTROS } from "../../constants";
 import LinhaDoCatalogo from "../LinhaDoCatalogo";
@@ -16,10 +22,16 @@ import type { ListaDeCentrosProps } from "./types";
  * as irmãs abrindo modal, dois gestos diferentes na mesma tela liam como
  * inacabado. A história está no `CONTEXT.md`.
  *
+ * ⚠️ **Paginada como Contas**, e ao contrário de Categorias: aqui a ordem é
+ * alfabética pura, e a quebra de página não separa nada que dependa de estar
+ * junto. Ver `ConfiguracoesFinanceiras`.
+ *
  * ➡️ `index.test.tsx`.
  */
 export default function ListaDeCentros({
   centros,
+  carregando,
+  paginacao,
   podeEscrever,
   onNovo,
   onEditar,
@@ -30,39 +42,50 @@ export default function ListaDeCentros({
       <SubcabecalhoDaLista
         titulo="Centros de custo"
         contagem={`Mostrando ${centros.length} de ${contar(
-          centros.length,
+          paginacao.total,
           "centro de custo",
           "centros de custo",
         )}`}
         acao={
-          podeEscrever ? <Botao onClick={onNovo}>+ Novo centro de custo</Botao> : undefined
+          podeEscrever ? (
+            <Botao onClick={onNovo}>+ Novo centro de custo</Botao>
+          ) : undefined
         }
       />
       <CartaoDeTabela>
-        <Tabela colunas={COLUNAS_DE_CENTROS}>
-          {centros.map((centro) => (
-            <LinhaDoCatalogo
-              key={centro.centro_id}
-              nome={centro.nome}
-              ativo={centro.ativo}
-              onAbrir={podeEscrever ? () => onEditar(centro) : undefined}
-              onAlternarAtivo={podeEscrever ? () => onAlternarAtivo(centro) : undefined}
-            >
-              <Celula>
-                <Flex align="center" gap="8px" minW="0">
-                  <Text fontSize="13px" fontWeight="700" truncate>
-                    {centro.nome}
-                  </Text>
-                  {!centro.ativo && (
-                    <Text fontSize="12px" color="fg.muted">
-                      (Inativo)
-                    </Text>
-                  )}
-                </Flex>
-              </Celula>
-            </LinhaDoCatalogo>
-          ))}
-        </Tabela>
+        {carregando ? (
+          <Esqueleto linhas={4} />
+        ) : (
+          <>
+            <Tabela colunas={COLUNAS_DE_CENTROS}>
+              {centros.map((centro) => (
+                <LinhaDoCatalogo
+                  key={centro.centro_id}
+                  nome={centro.nome}
+                  ativo={centro.ativo}
+                  onAbrir={podeEscrever ? () => onEditar(centro) : undefined}
+                  onAlternarAtivo={
+                    podeEscrever ? () => onAlternarAtivo(centro) : undefined
+                  }
+                >
+                  <Celula>
+                    <Flex align="center" gap="8px" minW="0">
+                      <Text fontSize="13px" fontWeight="700" truncate>
+                        {centro.nome}
+                      </Text>
+                      {!centro.ativo && (
+                        <Text fontSize="12px" color="fg.muted">
+                          (Inativo)
+                        </Text>
+                      )}
+                    </Flex>
+                  </Celula>
+                </LinhaDoCatalogo>
+              ))}
+            </Tabela>
+            <Pagination {...paginacao} />
+          </>
+        )}
       </CartaoDeTabela>
     </>
   );

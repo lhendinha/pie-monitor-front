@@ -276,6 +276,58 @@ conferir(
   "salvar a cor fecha o modal -- sem 4xx",
 );
 
+console.log("\n— contas e centros PAGINAM, categorias não —");
+/* 🔴 A assimetria é o desenho: a ordem das categorias é hierárquica (filha
+   logo abaixo da mãe, indentada) e a quebra de página separaria as duas. As
+   outras duas são alfabéticas puras e leem o índice estreito do servidor. */
+await pagina.goto(APP + "/financeiro?aba=configuracoes&secao=contas&tamanho=10");
+await pagina.getByRole("columnheader", { name: "Conta", exact: true }).first().waitFor();
+
+/* ⚠️ Pelo NÚMERO de linhas, e não pela barra: com poucos itens o `Pagination`
+   some de propósito, e exigir a barra reprovaria um ambiente pequeno. O que
+   se confere é que a tabela nunca passa do tamanho de página. */
+const linhasDeContas = await pagina.locator("tbody tr").count();
+conferir(linhasDeContas <= 10, `a página traz no máximo 10 contas -- ${linhasDeContas}`);
+
+const dizContas = (await pagina.getByText(/Mostrando \d+ de/).first().innerText()).trim();
+const [mostradas, totalContas] = dizContas.match(/\d+/g).map(Number);
+conferir(
+  mostradas === linhasDeContas,
+  `o subcabeçalho conta as LINHAS da página, não o total -- "${dizContas}"`,
+);
+conferir(totalContas >= mostradas, "e o total é o do conjunto inteiro");
+
+/* 🔴 O endereço carrega a seção E a página: sem a seção na URL, `?pagina=2`
+   não diria de qual lista é, e um F5 cairia na página 2 de outra coisa. */
+await pagina.goto(APP + "/financeiro?aba=configuracoes&secao=centros&tamanho=10");
+await pagina.getByRole("columnheader", { name: "Centro de custo", exact: true }).first().waitFor();
+conferir(true, "⚠️ `?secao=centros` abre direto na lista de centros, num F5");
+
+/* 🔴 O par negativo do desenho: categorias NÃO tem barra de paginação, mesmo
+   com 15 linhas -- mais que o tamanho de página das outras duas. */
+await pagina.goto(APP + "/financeiro?aba=configuracoes");
+await pagina.getByRole("columnheader", { name: "Categoria", exact: true }).first().waitFor();
+const linhasDeCategorias = await pagina.locator("tbody tr").count();
+conferir(
+  linhasDeCategorias > 10,
+  `categorias mostra TODAS as ${linhasDeCategorias} linhas, acima do tamanho de página`,
+);
+conferir(
+  !(await existe(pagina.getByText("Por página"))),
+  "🔴 e não tem barra de paginação -- o agrupador não sobrevive à quebra de página",
+);
+
+/* ⚠️ E a mãe continua colada nas filhas, que é o motivo de tudo isto. */
+const nomes = await pagina.locator("tbody tr td:first-child").allInnerTexts();
+const iImpostos = nomes.findIndex((n) => n.startsWith("Impostos"));
+const recuos = await pagina
+  .locator("tbody tr td:first-child > div")
+  .evaluateAll((els) => els.map((e) => parseInt(getComputedStyle(e).paddingLeft || "0", 10)));
+conferir(
+  iImpostos >= 0 && recuos[iImpostos + 1] >= 20,
+  `a filha vem LOGO ABAIXO da mãe, indentada -- "Impostos" na linha ${iImpostos + 1}`,
+);
+
 console.log("\n— a conta padrão, em Grupo —");
 await pagina.goto(APP + "/grupo");
 await pagina.getByRole("tab", { name: "Configurações" }).click();
