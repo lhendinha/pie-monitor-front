@@ -130,6 +130,97 @@ conferir(
 );
 await semOpcional("Inscrições");
 
+// ── Financeiro: a tela que a Fase 4 subiu ───────────────────────────────
+/* ⚠️ Só o que NÃO depende de dado: o grupo de produção não tem catálogo
+   semeado (`semear_padrao` não é chamado ao criar grupo), e um roteiro que
+   só confere quando há linha é um roteiro que passa cego. O cabeçalho da
+   tabela e o modal de criar existem com a lista vazia. Clique de linha,
+   edição e alinhamento são de `verificar-financeiro.mjs`, contra o offline. */
+console.log("\n-- Financeiro --");
+await pagina.goto(`${APP}/financeiro`);
+await pagina.getByRole("tab", { name: "Configurações" }).waitFor();
+for (const aba of ["Lançamentos", "Faturas", "Fluxo de caixa", "Configurações"]) {
+  conferir((await pagina.getByRole("tab", { name: aba }).count()) === 1, `a aba "${aba}" está na tela`);
+}
+
+/* A aba pendente APARECE e diz que ainda não chegou -- clicar e não
+   acontecer nada é que seria ruim. */
+await pagina.getByRole("tab", { name: "Lançamentos" }).click();
+conferir(
+  await pagina.getByText("Lançamentos ainda não está disponível.").isVisible().catch(() => false),
+  "⚠️ a aba pendente diz que ainda não chegou, em vez de abrir vazia",
+);
+
+console.log("\n-- Financeiro > Configurações --");
+await pagina.getByRole("tab", { name: "Configurações" }).click();
+
+/* 🔴 As três listas ficam atrás de PÍLULAS -- uma por vez na tela, e não as
+   três empilhadas. Foi o que derrubou a primeira versão deste bloco, que
+   procurava os seis cabeçalhos de uma vez: `waitFor` num cabeçalho de outra
+   seção espera 30s e morre. */
+const SECOES = [
+  { pilula: "Categorias", colunas: ["Categoria", "Natureza"], botao: "+ Nova categoria" },
+  { pilula: "Centros de custo", colunas: ["Centro de custo"], botao: "+ Novo centro de custo" },
+  { pilula: "Contas", colunas: ["Conta", "Dados bancários", "Saldo atual"], botao: "+ Nova conta" },
+];
+
+const cabecalhos = async () =>
+  (await pagina.getByRole("columnheader").allInnerTexts()).map((c) => c.trim().toUpperCase());
+
+for (const secao of SECOES) {
+  await pagina.getByRole("button", { name: secao.pilula, exact: true }).click();
+  await pagina.getByRole("columnheader", { name: secao.colunas[0], exact: true }).first().waitFor();
+  const naTela = await cabecalhos();
+  /* 🔴 As três são TABELA com cabeçalho de coluna, como Clientes e Membros.
+     Um cabeçalho a menos aqui é o bundle velho no ar. */
+  for (const coluna of secao.colunas) {
+    conferir(naTela.includes(coluna.toUpperCase()), `${secao.pilula}: a coluna "${coluna}" tem cabeçalho`);
+  }
+  /* ⚠️ O par negativo, sem o qual este bloco passaria cego: as colunas das
+     OUTRAS duas seções não podem estar na tela ao mesmo tempo. */
+  const invasoras = SECOES.filter((o) => o !== secao)
+    .flatMap((o) => o.colunas)
+    .filter((c) => naTela.includes(c.toUpperCase()));
+  conferir(invasoras.length === 0, `${secao.pilula}: ⚠️ e só ela na tela -- o par negativo`);
+  /* 🔴 O botão fica FORA da tabela, no subcabeçalho -- inclusive o do centro
+     de custo, que é a revisão do achado 10 do plano. */
+  conferir(
+    (await pagina.getByRole("button", { name: secao.botao, exact: true }).count()) === 1,
+    `${secao.pilula}: "${secao.botao}" fica no subcabeçalho, fora da tabela`,
+  );
+}
+
+/* ⚠️ Continua sem GRAVAR: abrir o modal de criar e sair no Escape com os
+   campos intocados não manda requisição nenhuma nem dispara o descarte. */
+await pagina.getByRole("button", { name: "Centros de custo", exact: true }).click();
+await pagina.getByRole("button", { name: "+ Novo centro de custo", exact: true }).click();
+conferir(
+  await pagina.getByText("Novo centro de custo", { exact: true }).first().isVisible().catch(() => false),
+  "🔴 centro de custo abre MODAL, e não um campo dentro do cartão",
+);
+await pagina.keyboard.press("Escape");
+
+await pagina.getByRole("button", { name: "Categorias", exact: true }).click();
+await pagina.getByRole("button", { name: "+ Nova categoria", exact: true }).click();
+await pagina.getByText("Nova categoria", { exact: true }).first().waitFor();
+/* ⚠️ Os rótulos saem do MODAL, e com o asterisco de obrigatório tirado: ele
+   é um `<span aria-hidden>` dentro do `<label>`, entra no innerText, e um
+   `getByText` exato não casa com "Nome *". Ler do diálogo também evita casar
+   com um "Natureza" que esteja na tabela atrás. */
+const modal = pagina.locator('[role="dialog"]');
+const rotulos = (await modal.locator("label").allInnerTexts()).map((r) =>
+  r.replace(/\s*\*$/, "").trim(),
+);
+for (const campo of ["Nome", "Natureza", "Cor", "Agrupador"]) {
+  conferir(rotulos.includes(campo), `o modal da categoria tem "${campo}"`);
+}
+/* ⚠️ O par negativo do modal: na CRIAÇÃO a natureza aparece; quem prova que
+   a lista acima não é decorativa é ela sumir na EDIÇÃO -- e isso é do
+   `verificar-financeiro.mjs`, que tem item para clicar. */
+await pagina.keyboard.press("Escape");
+await semOpcional("Financeiro");
+
+
 console.log(problemas.length ? `\n${problemas.length} FALHA(S)` : "\nTudo certo em produção.");
 if (deixarAberto) {
   console.log("A janela fica aberta -- feche o Chrome quando terminar.");

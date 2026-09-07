@@ -183,9 +183,12 @@ bundle MUDOU**, não só que a tela abre.
 
 ⚠️ **E a ressalva, achada na hora de aplicar a régua:** commit que toca só
 arquivo de TESTE não muda o bundle -- teste não é importado pela entrada, o
-`vite build` não o inclui, e o hash sai idêntico de propósito. Nesses casos
-o hash não distingue "build passou" de "build falhou", e a resposta está no
-painel do Vercel. A régua vale para o que entra no pacote.
+`vite build` não o inclui, e o hash sai idêntico de propósito. **Comentário
+em arquivo de `src/` também não muda**: a minificação os remove antes do
+hash (medido em 07/09/2026 -- dois `yarn build` seguidos, só comentários
+entre eles, `index-BoEI0hbt.js` nos dois). Nesses casos o hash não distingue
+"build passou" de "build falhou", e a resposta está no painel do Vercel. A
+régua vale para o que entra no pacote.
 
 ### Como o symlink nasceu, e por que o `.gitignore` não pegou
 

@@ -10,9 +10,10 @@ import type { SubcabecalhoDaListaProps } from "./types";
  * telas. As medidas saem do artifact: 16,5px/800 no título, 11,5px apagado
  * na contagem.
  *
- * ⚠️ `acao` é opcional porque centro de custo NÃO tem botão: ele nasce de um
- * campo no topo do próprio cartão (achado 10 da auditoria do plano -- eram
- * três modais, viraram dois).
+ * ⚠️ `acao` é opcional por causa de quem só LÊ: sem permissão de escrita as
+ * três listas aparecem sem botão nenhum. As três TÊM botão -- o centro de
+ * custo também, desde que a lista virou tabela com cabeçalho (revisão do
+ * achado 10 da auditoria do plano; ver `ModalDeCentro`).
  *
  * ➡️ `pages/FinanceiroPage/index.test.tsx`.
  */
