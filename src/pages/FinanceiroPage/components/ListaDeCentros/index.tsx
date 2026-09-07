@@ -44,10 +44,10 @@ export default function ListaDeCentros({
           "centros de custo",
         )}`}
       />
-      {podeEscrever && (
-        <NovoCentroInline salvando={salvando} onAdicionar={onAdicionar} />
-      )}
       <CartaoDeTabela>
+        {podeEscrever && (
+          <NovoCentroInline salvando={salvando} onAdicionar={onAdicionar} />
+        )}
         <Tabela colunas={COLUNAS_DE_CENTROS}>
           {centros.map((centro) => (
             <LinhaDoCatalogo

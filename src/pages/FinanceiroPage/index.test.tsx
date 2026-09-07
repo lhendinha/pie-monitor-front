@@ -484,13 +484,13 @@ describe("FinanceiroPage", () => {
       /* Dois lugares para criar a mesma coisa seria a pergunta "qual dos
          dois?" em toda visita. */
       await abrirCentros();
-      expect(screen.queryByRole("button", { name: /\+ Novo centro/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Novo centro/ })).not.toBeInTheDocument();
       expect(screen.getByLabelText("Novo centro de custo")).toBeVisible();
     });
 
     it("🔴 'Adicionar' nasce desabilitado, e acende com texto", async () => {
       await abrirCentros();
-      const botao = screen.getByRole("button", { name: "+ Adicionar" });
+      const botao = screen.getByRole("button", { name: "Adicionar" });
       expect(botao).toBeDisabled();
 
       await userEvent.type(screen.getByLabelText("Novo centro de custo"), "Tributário");
