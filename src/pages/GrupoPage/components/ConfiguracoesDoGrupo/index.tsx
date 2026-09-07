@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Botao,
   Campo,
-  Cartao,
   CartaoDeTabela,
   EstadoDeErro,
   Esqueleto,
@@ -139,16 +138,17 @@ export default function ConfiguracoesDoGrupo() {
   }
 
   return (
-    /* ⚠️ **`Cartao` estreito, e não `CartaoDeTabela` de largura cheia** -- é
-       o molde de `PerfilPage`, medido nele: cartão de 660px, campos ocupando
-       a largura toda dele, e a divisória do rodapé RECUADA pelo padding do
-       cartão, alinhada com os campos. Antes daqui o formulário tinha `maxW`
-       próprio dentro de um cartão largo, e a divisória ou parava no meio do
-       nada ou colava nas bordas. */
-    <Box maxW="660px">
-      <Cartao>
-        <chakra.form onSubmit={handleSubmit}>
-          <Stack gap="0">
+    /* ⚠️ **`CartaoDeTabela` de largura cheia**, como as abas irmãs de
+       `/grupo` (Convidar, Inscrições, Fases): dentro de uma tela, a régua é
+       a dos vizinhos. O que vem do molde de `PerfilPage` é o INTERIOR -- o
+       padding do cartão, a divisória recuada por ele em vez de colada nas
+       bordas, e os botões terminando na direita do conteúdo.
+       ⚠️ Os campos param em 440px: uma linha de formulário com a largura da
+       tela é ilegível, e o cartão largo é do vizinho, não do campo. */
+    <CartaoDeTabela>
+      <chakra.form onSubmit={handleSubmit}>
+        <Box p="18px 20px">
+          <Stack gap="0" maxW="440px">
             <Campo
               rotulo="Nome do grupo"
               para="nome-do-grupo"
@@ -262,27 +262,33 @@ export default function ConfiguracoesDoGrupo() {
             campos, desfazer sem recarregar a página passou a fazer falta. */}
           </Stack>
 
-          {/* O rodapé do molde: divisória alinhada com os campos e
-              "Cancelar" fantasma à esquerda do "Salvar". */}
-          <Box mt="16px" borderTopWidth="1px" borderTopColor="border.subtle">
-            <Flex justify="flex-end" gap="10px" pt="16px">
-              <Botao
-                variante="ghost"
-                onClick={cancelar}
-                disabled={salvar.isPending || inalterado}
-              >
-                Cancelar
-              </Botao>
-              <Botao
-                type="submit"
-                disabled={invalido || inalterado || salvar.isPending}
-              >
-                {salvar.isPending ? "Salvando…" : "Salvar"}
-              </Botao>
-            </Flex>
-          </Box>
-        </chakra.form>
-      </Cartao>
-    </Box>
+          {/* O rodapé acompanha o CARTÃO, e não os 440px dos campos: a
+              divisória de uma barra curta no meio de um cartão largo lê como
+              erro de layout. */}
+          <Flex
+            justify="flex-end"
+            gap="10px"
+            mt="16px"
+            pt="16px"
+            borderTopWidth="1px"
+            borderTopColor="border.subtle"
+          >
+            <Botao
+              variante="ghost"
+              onClick={cancelar}
+              disabled={salvar.isPending || inalterado}
+            >
+              Cancelar
+            </Botao>
+            <Botao
+              type="submit"
+              disabled={invalido || inalterado || salvar.isPending}
+            >
+              {salvar.isPending ? "Salvando…" : "Salvar"}
+            </Botao>
+          </Flex>
+        </Box>
+      </chakra.form>
+    </CartaoDeTabela>
   );
 }
