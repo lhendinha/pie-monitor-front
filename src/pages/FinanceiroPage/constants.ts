@@ -30,14 +30,9 @@ export const GRUPO_DE_ABAS = "financeiro";
  * mas não tem nome. Mesma convenção de `COLUNAS_CLIENTES`.
  */
 export const COLUNAS_DE_CATEGORIAS = ["Categoria", "Natureza", ""] as const;
-export const COLUNAS_DE_CONTAS = [
-  "Conta",
-  "Dados bancários",
-  /* ⚠️ À direita, e é a única coluna do sistema assim: dinheiro se compara
-     pelos dígitos, e à esquerda "R$ 1.234,56" e "R$ 11.880,55" não alinham
-     na vírgula. O cabeçalho acompanha o valor -- header à esquerda com
-     número à direita foi o que apareceu quebrado na tela. */
-  { nome: "Saldo atual", alinhamento: "right" } as const,
-  "",
-] as const;
+/** ⚠️ O saldo fica à ESQUERDA como todo o resto: a coluna vazia das ações,
+ * à direita dele, já dá a separação -- e alinhar só esta coluna à direita
+ * deixava o cabeçalho "boiando" no meio da coluna, brigando com o valor. */
+export const COLUNAS_DE_CONTAS = ["Conta", "Dados bancários", "Saldo atual", ""] as const;
+
 export const COLUNAS_DE_CENTROS = ["Centro de custo", ""] as const;

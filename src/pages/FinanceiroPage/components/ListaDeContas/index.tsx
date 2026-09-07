@@ -1,4 +1,4 @@
-import { Flex, Stack, Text } from "@chakra-ui/react";
+import { Flex, Text } from "@chakra-ui/react";
 
 import {
   Botao,
@@ -76,12 +76,17 @@ export default function ListaDeContas({
                   {detalheDaConta(conta)}
                 </Text>
               </Celula>
-              <Celula alinhamento="right">
-                <Stack gap="0" align="flex-end">
-                  <Text fontSize="13px" fontWeight="700" fontFamily="mono">
-                    R$ {formatarCentavos(conta.saldo_centavos)}
-                  </Text>
-                </Stack>
+              <Celula>
+                {/* ⚠️ `mono` para os dígitos terem a mesma largura: mesmo à
+                    esquerda, é o que deixa duas quantias comparáveis. */}
+                <Text
+                  fontSize="13px"
+                  fontWeight="700"
+                  fontFamily="mono"
+                  whiteSpace="nowrap"
+                >
+                  R$ {formatarCentavos(conta.saldo_centavos)}
+                </Text>
               </Celula>
             </LinhaDoCatalogo>
           ))}

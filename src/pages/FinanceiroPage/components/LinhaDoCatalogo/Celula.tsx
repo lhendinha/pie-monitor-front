@@ -7,18 +7,11 @@ import type { ReactNode } from "react";
  * cada célula -- é o tipo de medida que diverge no primeiro ajuste quando
  * está escrita em nove lugares.
  */
-export default function Celula({
-  children,
-  alinhamento,
-}: {
-  children: ReactNode;
-  alinhamento?: "right";
-}) {
+export default function Celula({ children }: { children: ReactNode }) {
   return (
     <Table.Cell
       verticalAlign="middle"
       p="13px 14px"
-      textAlign={alinhamento}
       borderBottomWidth="1px"
       borderBottomColor="border.subtle"
     >
