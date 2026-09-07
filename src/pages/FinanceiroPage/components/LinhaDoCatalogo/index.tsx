@@ -61,8 +61,12 @@ export default function LinhaDoCatalogo({
     >
       {children}
       <Table.Cell
-        p="13px 14px"
-        width="56px"
+        /* ⚠️ Folga à ESQUERDA, e não à direita da coluna anterior: o saldo
+           ficava a 28px do olho e os dois liam como um bloco só. Aumentar
+           pelo lado de cá mantém cabeçalho e valor alinhados -- esta coluna
+           não tem nome, então nada se desencontra. */
+        p="13px 14px 13px 32px"
+        width="72px"
         borderBottomWidth="1px"
         borderBottomColor="border.subtle"
         /* 🔴 16px no SVG: `IconeOlho` e `IconeOlhoCortado` NÃO trazem tamanho
