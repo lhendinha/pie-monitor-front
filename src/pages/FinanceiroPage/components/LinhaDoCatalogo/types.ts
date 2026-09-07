@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
 
 export interface LinhaDoCatalogoProps {
-  /** O que a pessoa lê primeiro -- o nome do item. */
-  nome: string;
+  /** O que a pessoa lê primeiro -- o nome do item.
+   *
+   * ⚠️ `ReactNode` porque o centro de custo se renomeia NO LUGAR: ali entra
+   * um `NomeEditavel`, que vira campo sem a linha mudar de forma. Os outros
+   * dois mandam texto. */
+  nome: ReactNode;
   /** O detalhe cinza na mesma linha: banco e agência da conta, "(Inativa)",
    * "agrupador de 3 categorias". Vem pronto de quem monta a lista, porque
    * cada uma das três tem um detalhe diferente. */
@@ -23,7 +27,9 @@ export interface LinhaDoCatalogoProps {
   /** Trava só ESTA linha enquanto a chamada dela corre, e não a lista
    * inteira. */
   ocupada?: boolean;
-  /** "Renomear" na categoria e no centro, que só têm nome; "Editar" na
-   * conta, cujo modal mexe em banco, agência e número. */
+  /** "Renomear" nos três: o `PATCH` do catálogo aceita só o nome. */
   rotuloDeEditar?: string;
+  /** O nome em TEXTO, para os `aria-label` das ações, quando `nome` é um
+   * nó. Sem ele, "Renomear " ficaria sem objeto direto. */
+  nomeParaRotulo?: string;
 }

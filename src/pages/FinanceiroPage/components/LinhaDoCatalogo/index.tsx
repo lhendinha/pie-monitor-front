@@ -49,7 +49,11 @@ export default function LinhaDoCatalogo({
   onAlternarAtivo,
   ocupada = false,
   rotuloDeEditar = "Renomear",
+  nomeParaRotulo,
 }: LinhaDoCatalogoProps) {
+  /** O texto que os `aria-label` das ações usam. Vem separado porque `nome`
+   * pode ser um nó (o `NomeEditavel` do centro de custo). */
+  const rotulo = nomeParaRotulo ?? (typeof nome === "string" ? nome : "");
   return (
     <Flex
       align="center"
@@ -95,7 +99,7 @@ export default function LinhaDoCatalogo({
             <BotaoQuadrado
               type="button"
               title={rotuloDeEditar}
-              aria-label={`${rotuloDeEditar} ${nome}`}
+              aria-label={`${rotuloDeEditar} ${rotulo}`}
               disabled={ocupada}
               onClick={onEditar}
             >
@@ -107,7 +111,7 @@ export default function LinhaDoCatalogo({
               type="button"
               tom={ativo ? "perigo" : "neutro"}
               title={ativo ? "Desativar" : "Reativar"}
-              aria-label={`${ativo ? "Desativar" : "Reativar"} ${nome}`}
+              aria-label={`${ativo ? "Desativar" : "Reativar"} ${rotulo}`}
               disabled={ocupada}
               onClick={onAlternarAtivo}
             >

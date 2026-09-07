@@ -23,8 +23,13 @@ import {
 import { ApiError } from "../../../../services/api/client";
 import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import type { CatalogoFinanceiro, CategoriaFinanceira, ContaFinanceira } from "../../../../types";
+import type {
+  CatalogoFinanceiro,
+  CategoriaFinanceira,
+  ContaFinanceira,
+} from "../../../../types";
 import type { DadosDaCategoria, DadosDaConta } from "../../../../types/requisicoes";
+import { useSalvarCentro } from "../../hooks/useSalvarCentro";
 import ModalDeCategoria from "../ModalDeCategoria";
 import ModalDeConta from "../ModalDeConta";
 import ListaDeCategorias from "../ListaDeCategorias";
@@ -51,10 +56,13 @@ export default function ConfiguracoesFinanceiras() {
   const [categoriaNoModal, setCategoriaNoModal] =
     useState<{ categoria?: CategoriaFinanceira } | null>(null);
   const [contaNoModal, setContaNoModal] = useState<{ conta?: ContaFinanceira } | null>(null);
+  /** Qual centro está com o nome aberto. Vazio = nenhum. */
+  const [centroEmEdicao, setCentroEmEdicao] = useState("");
   const [erroDoModal, setErroDoModal] = useState("");
   const podeEscrever = papelAtende(PISO_PARA_ESCREVER);
   const queryClient = useQueryClient();
   const toast = useToast();
+  const salvarCentro = useSalvarCentro(() => setCentroEmEdicao(""));
   const query = useQuery<CatalogoFinanceiro>({
     queryKey: qk.catalogoFinanceiro(),
     queryFn: lerCatalogoFinanceiro,
@@ -187,7 +195,22 @@ export default function ConfiguracoesFinanceiras() {
             />
           )}
           {secao === "centros" && (
-            <ListaDeCentros centros={catalogo.centros_de_custo} podeEscrever={podeEscrever} />
+            <ListaDeCentros
+              centros={catalogo.centros_de_custo}
+              podeEscrever={podeEscrever}
+              centroEmEdicao={centroEmEdicao}
+              salvando={salvarCentro.isPending}
+              onAdicionar={(nome) => salvarCentro.mutate({ nome })}
+              onIniciarEdicao={setCentroEmEdicao}
+              onRenomear={(centroId, nome) =>
+                salvarCentro.mutate({
+                  nome,
+                  centro: catalogo.centros_de_custo.find((c) => c.centro_id === centroId),
+                })
+              }
+              onCancelarEdicao={() => setCentroEmEdicao("")}
+              onAlternarAtivo={(centro) => salvarCentro.mutate({ centro, alternar: true })}
+            />
           )}
           {secao === "contas" && (
             <ListaDeContas

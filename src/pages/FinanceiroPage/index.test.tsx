@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   atualizarCategoria: vi.fn(),
   criarConta: vi.fn(),
   atualizarConta: vi.fn(),
+  criarCentroDeCusto: vi.fn(),
+  atualizarCentroDeCusto: vi.fn(),
   desativarItemFinanceiro: vi.fn(),
   reativarItemFinanceiro: vi.fn(),
 }));
@@ -101,6 +103,8 @@ beforeEach(() => {
   mocks.atualizarCategoria.mockResolvedValue({});
   mocks.criarConta.mockResolvedValue({});
   mocks.atualizarConta.mockResolvedValue({});
+  mocks.criarCentroDeCusto.mockResolvedValue({});
+  mocks.atualizarCentroDeCusto.mockResolvedValue({});
   mocks.desativarItemFinanceiro.mockResolvedValue({});
   mocks.reativarItemFinanceiro.mockResolvedValue({});
 });
@@ -462,6 +466,74 @@ describe("FinanceiroPage", () => {
       );
       expect(screen.queryByLabelText(/Tipo/)).not.toBeInTheDocument();
       expect(screen.queryByLabelText(/Saldo inicial/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("centro de custo, que nasce inline", () => {
+    async function abrirCentros() {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      await userEvent.click(screen.getByRole("button", { name: "Centros de custo" }));
+      return screen.findByText("Cível");
+    }
+
+    it("não tem botão no subcabeçalho -- o criar está no cartão", async () => {
+      /* Dois lugares para criar a mesma coisa seria a pergunta "qual dos
+         dois?" em toda visita. */
+      await abrirCentros();
+      expect(screen.queryByRole("button", { name: /\+ Novo centro/ })).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Novo centro de custo")).toBeVisible();
+    });
+
+    it("🔴 'Adicionar' nasce desabilitado, e acende com texto", async () => {
+      await abrirCentros();
+      const botao = screen.getByRole("button", { name: "+ Adicionar" });
+      expect(botao).toBeDisabled();
+
+      await userEvent.type(screen.getByLabelText("Novo centro de custo"), "Tributário");
+      expect(botao).toBeEnabled();
+    });
+
+    it("cria pelo Enter, e o campo se esvazia", async () => {
+      await abrirCentros();
+      const campo = screen.getByLabelText("Novo centro de custo");
+      await userEvent.type(campo, "Tributário{Enter}");
+
+      await waitFor(() =>
+        expect(mocks.criarCentroDeCusto).toHaveBeenCalledWith({ nome: "Tributário" }),
+      );
+      expect(campo).toHaveValue("");
+    });
+
+    it("espaço em branco não cria nada", async () => {
+      await abrirCentros();
+      await userEvent.type(screen.getByLabelText("Novo centro de custo"), "   {Enter}");
+      expect(mocks.criarCentroDeCusto).not.toHaveBeenCalled();
+    });
+
+    it("renomeia NO LUGAR, clicando no próprio nome", async () => {
+      /* Sem lápis: um botão ao lado faria dois gestos para a mesma coisa. */
+      await abrirCentros();
+      expect(screen.queryByRole("button", { name: "Renomear Cível" })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByText("Cível"));
+      const campo = await screen.findByLabelText("Novo nome de Cível");
+      await userEvent.clear(campo);
+      await userEvent.type(campo, "Cível e Consumidor{Enter}");
+
+      await waitFor(() =>
+        expect(mocks.atualizarCentroDeCusto).toHaveBeenCalledWith("ce1", {
+          nome: "Cível e Consumidor",
+        }),
+      );
+    });
+
+    it("quem não administra não vê o campo de criar nem edita o nome", async () => {
+      mocks.papelAtende.mockReturnValue(false);
+      await abrirCentros();
+      expect(screen.queryByLabelText("Novo centro de custo")).not.toBeInTheDocument();
+      await userEvent.click(screen.getByText("Cível"));
+      expect(screen.queryByLabelText("Novo nome de Cível")).not.toBeInTheDocument();
     });
   });
 });
