@@ -9,6 +9,7 @@ export * from "./grupos";
 export * from "./cep";
 export * from "./clientes";
 export * from "./opcoesProcesso";
+export * from "./financeiro";
 export * from "./tarefas";
 export * from "./perfil";
 export * from "./quadro";

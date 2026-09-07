@@ -3,14 +3,15 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell, RotaPorPapel, RotaProtegida } from "../components";
 import { useSessaoContexto } from "../contexts/SessaoContext";
 import {
+  AgendaPage,
+  AtendimentoDetalhePage,
+  AtendimentosPage,
   ClienteDetalhePage,
   ClientesPage,
   DocumentoDetalhePage,
   DocumentosPage,
+  FinanceiroPage,
   GrupoPage,
-  AgendaPage,
-  AtendimentoDetalhePage,
-  AtendimentosPage,
   KanbanPage,
   PerfilPage,
   ProcessoDetalhePage,
@@ -85,6 +86,12 @@ export default function Rotas() {
           />
           <Route path="/perfil" element={<PerfilPage />} />
           <Route path="/historico" element={<RotaHistorico />} />
+          {/* `financeiro`, igual ao piso do item no menu lateral. O papel
+              foi criado para esta seção, e quem é `user` não entra nem
+              digitando o endereço. */}
+          <Route element={<RotaPorPapel minimo="financeiro" />}>
+            <Route path="/financeiro" element={<FinanceiroPage />} />
+          </Route>
           {/* `manager`, igual ao piso do item no menu lateral. Esconder do
               menu sem fechar a rota era cosmético: bastava digitar o
               endereço pra entrar. */}

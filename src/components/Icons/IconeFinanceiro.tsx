@@ -1,9 +1,7 @@
 /** Ícone de "Financeiro" no menu lateral. Traçado de 1.8 e `currentColor`:
  * a cor vem do estado do item (ativo/inativo), não do ícone.
  *
- * Uma carteira, e não cifrão nem gráfico: cifrão vira ruído ao lado de
- * qualquer número na tela, e gráfico é o Histórico. A carteira diz "o
- * dinheiro do escritório", que é o que a seção é. */
+ * ⚠️ O traçado é o do artefato validado, verbatim. */
 export default function IconeFinanceiro() {
   return (
     <svg
@@ -17,9 +15,8 @@ export default function IconeFinanceiro() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18a2 2 0 0 1 2 2v1" />
-      <path d="M3 7.5v9A2.5 2.5 0 0 0 5.5 19H19a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H5.5A2.5 2.5 0 0 1 3 7.5Z" />
-      <path d="M16.5 13.5h.01" />
+      <path d="M12 2v20" />
+      <path d="M16.5 6.5a4 4 0 0 0-3.5-2h-2a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-2a4 4 0 0 1-3.5-2" />
     </svg>
   );
 }

@@ -1,8 +1,8 @@
 /** O catálogo do Financeiro: contas, categorias e centros de custo.
  *
- * ⚠️ Os nomes vêm em `snake_case` porque são o que a API devolve, VERBATIM
- * -- o front não renomeia campo de resposta. Quem monta parâmetro de
- * chamada em `camelCase` é `types/index.ts`, e quem traduz é o serviço.
+ * ⚠️ Os nomes vêm como a API os devolve, VERBATIM -- o front não renomeia
+ * campo de resposta. Quem escreve parâmetro de chamada em camelCase é o
+ * índice de tipos, e quem traduz para a API é o serviço.
  *
  * ⚠️ Dinheiro é sempre `centavos` INTEIROS, nunca `number` com decimal: é a
  * mesma régua da API, e o JavaScript não tem tipo decimal. Formatar para
