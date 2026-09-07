@@ -44,6 +44,11 @@ export const qk = {
   /** ⚠️ Sem parâmetro, como `configuracoesDoGrupo`: o grupo vem do token,
    * então só existe UMA resposta por sessão. */
   catalogoFinanceiro: () => ["catalogo-financeiro"] as const,
+  /** ⚠️ Os filtros INTEIROS entram na chave: o período, o departamento e a
+   * página mudam a resposta, e uma chave que os ignorasse mostraria a lista
+   * de setembro com o filtro de outubro escolhido. */
+  lancamentos: (filtros: Record<string, unknown> = {}) => ["lancamentos", filtros] as const,
+  lancamento: (lancamentoId: string) => ["lancamento", lancamentoId] as const,
   /** ⚠️ Chaves SEPARADAS da do catálogo: são leituras diferentes, com donos
    * diferentes. Quem escreve no catálogo invalida as três -- ver
    * `ConfiguracoesFinanceiras`. */

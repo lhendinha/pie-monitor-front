@@ -16,6 +16,8 @@ import type {
   Cliente,
   ColunaDoQuadro,
   ContaFinanceira,
+  Lancamento,
+  TotaisDeLancamentos,
   Comunicacao,
   Documento,
   Grupo,
@@ -116,6 +118,12 @@ export interface RespostaDeOpcoesPaginada extends RespostaDeOpcoes, ContagemDaPa
  * abaixo da mãe) e não sobrevive à quebra de página -- a tela delas lê o
  * catálogo inteiro por `lerCatalogoFinanceiro`. */
 export interface RespostaDeContasPaginada extends RespostaDeContas, ContagemDaPagina {}
+/** A lista de lançamentos traz os TOTAIS junto -- do período inteiro, não da
+ * página. É a mesma leitura que alimenta a tabela e os três cards. */
+export interface RespostaDeLancamentos extends ContagemDaPagina {
+  lancamentos: Lancamento[];
+  totais: TotaisDeLancamentos;
+}
 export interface RespostaDeCentrosPaginada
   extends RespostaDeCentrosDeCusto,
     ContagemDaPagina {}
