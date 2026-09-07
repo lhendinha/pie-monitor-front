@@ -91,8 +91,12 @@ export default function ConfiguracoesFinanceiras() {
         return acao("categorias", pedido.categoria.categoria_id);
       }
       if (pedido.categoria) {
+        /* ⚠️ Sem `natureza`: a API responde 422 se ela vier, e o modal nem
+           a mostra na edição. Ver `CamposDaCategoria`. */
         return atualizarCategoria(pedido.categoria.categoria_id, {
           nome: pedido.dados!.nome,
+          cor: pedido.dados!.cor,
+          agrupador_id: pedido.dados!.agrupador_id ?? "",
         });
       }
       return criarCategoria(pedido.dados!);
@@ -131,7 +135,13 @@ export default function ConfiguracoesFinanceiras() {
         return acao("contas", pedido.conta.conta_id);
       }
       if (pedido.conta) {
-        return atualizarConta(pedido.conta.conta_id, { nome: pedido.dados!.nome });
+        /* ⚠️ Sem `tipo`, `inicio` nem saldo: 422. Ver `CamposDaConta`. */
+        return atualizarConta(pedido.conta.conta_id, {
+          nome: pedido.dados!.nome,
+          banco: pedido.dados!.banco ?? "",
+          agencia: pedido.dados!.agencia ?? "",
+          numero: pedido.dados!.numero ?? "",
+        });
       }
       return criarConta(pedido.dados!);
     },

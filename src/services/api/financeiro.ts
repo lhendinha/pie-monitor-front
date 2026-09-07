@@ -1,5 +1,11 @@
 import { chamar } from "./client";
-import type { DadosDaCategoria, DadosDaConta, DadosDoCentro } from "../../types/requisicoes";
+import type {
+  CamposDaCategoria,
+  CamposDaConta,
+  DadosDaCategoria,
+  DadosDaConta,
+  DadosDoCentro,
+} from "../../types/requisicoes";
 
 /** O catálogo do Financeiro: contas, categorias e centros de custo.
  *
@@ -21,15 +27,13 @@ export function criarConta(dados: DadosDaConta) {
   return chamar("/financeiro/contas", { method: "POST", body: { ...dados } });
 }
 
-/** 🔴 Só o NOME, e a assinatura diz isso: o `PATCH` do catálogo é
- * `RenomearItemRequest` com `extra="forbid"`, e mandar `tipo` junto responde
- * **422 "tipo: Campo não reconhecido"** -- medido contra a API.
+/** Nome e dados bancários -- e SÓ eles.
  *
- * `Partial<DadosDaConta>` era largo demais e convidava exatamente esse erro.
- * O saldo, em particular, é mantido pela API a cada baixa; um PATCH que o
- * reescrevesse desfaria a história em silêncio, e quem precisa corrigir usa
- * o script de reconciliação. */
-export function atualizarConta(contaId: string, campos: { nome: string }) {
+ * 🔴 `tipo`, `inicio` e `saldo_inicial_centavos` respondem **422 "Campo não
+ * reconhecido"**: o tipo muda quais campos são obrigatórios num item que já
+ * existe, e os outros dois são write-once porque o saldo ATUAL é mantido a
+ * partir deles. A assinatura diz isso para o erro não precisar acontecer. */
+export function atualizarConta(contaId: string, campos: CamposDaConta) {
   return chamar(`/financeiro/contas/${contaId}`, { method: "PATCH", body: { ...campos } });
 }
 
@@ -37,7 +41,12 @@ export function criarCategoria(dados: DadosDaCategoria) {
   return chamar("/financeiro/categorias", { method: "POST", body: { ...dados } });
 }
 
-export function atualizarCategoria(categoriaId: string, campos: { nome: string }) {
+/** Nome, cor e agrupador.
+ *
+ * 🔴 `natureza` responde **422**: trocá-la inverteria o LADO do caixa de
+ * tudo que já foi lançado nessa categoria. Quem errou desativa e cria de
+ * novo. */
+export function atualizarCategoria(categoriaId: string, campos: CamposDaCategoria) {
   return chamar(`/financeiro/categorias/${categoriaId}`, {
     method: "PATCH",
     body: { ...campos },

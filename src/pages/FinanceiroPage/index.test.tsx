@@ -352,17 +352,36 @@ describe("FinanceiroPage", () => {
       expect(screen.getByLabelText(/Nome/)).toHaveValue("Honorários");
     });
 
-    it("renomear mostra só o NOME -- natureza e cor não se editam", async () => {
-      /* Trocá-las reescreveria lançamentos já gravados: uma categoria que vira
-         de saída para entrada muda o lado do caixa de tudo que já usou ela. */
+    it("🔴 editar mostra cor e agrupador, mas NÃO a natureza", async () => {
+      /* A régua do editar no catálogo: muda o que não reescreve história.
+         Trocar a natureza inverteria o lado do caixa de tudo já lançado ali,
+         e a API responde 422 -- por isso o campo nem aparece. */
       montarConfiguracoes();
       await screen.findByText("Honorários");
       await userEvent.click(screen.getByText("Honorários"));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(screen.getByLabelText(/Nome/)).toHaveValue("Honorários");
-      expect(screen.queryByLabelText("Natureza")).not.toBeInTheDocument();
-      expect(screen.queryByLabelText("Agrupador")).not.toBeInTheDocument();
+      expect(screen.getByRole("group", { name: "Cor da categoria" })).toBeVisible();
+      expect(screen.getByLabelText("Agrupador")).toBeVisible();
+      expect(screen.queryByLabelText(/Natureza/)).not.toBeInTheDocument();
+    });
+
+    it("e salva nome, cor e agrupador de uma vez", async () => {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      await userEvent.click(screen.getByText("Honorários"));
+      await screen.findByRole("dialog");
+      await userEvent.click(screen.getByRole("button", { name: "Cor #152029" }));
+      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+      await waitFor(() =>
+        expect(mocks.atualizarCategoria).toHaveBeenCalledWith("cat1", {
+          nome: "Honorários",
+          cor: "#152029",
+          agrupador_id: "",
+        }),
+      );
     });
 
     it("desativar e reativar chamam o serviço certo", async () => {
@@ -452,96 +471,40 @@ describe("FinanceiroPage", () => {
       expect(mocks.criarConta).not.toHaveBeenCalled();
     });
 
-    it("🔴 renomear manda SÓ o nome -- mandar o tipo junto é 422", async () => {
-      /* Medido contra a API: o PATCH do catálogo é `RenomearItemRequest` com
-         `extra="forbid"`, e responde "tipo: Campo não reconhecido". */
+    it("🔴 editar mostra os bancários, mas NÃO tipo, início nem saldo", async () => {
+      /* O tipo muda quais campos são obrigatórios num item que já existe; o
+         início e o saldo inicial são write-once, porque o saldo ATUAL é
+         mantido a partir deles. A API responde 422 nos três. */
       montarConfiguracoes();
       await screen.findByText("Honorários");
       await userEvent.click(screen.getByRole("button", { name: "Contas" }));
       await userEvent.click(await screen.findByText("Conta corrente Itaú"));
-      const nome = await screen.findByLabelText(/Nome/);
-      await userEvent.clear(nome);
-      await userEvent.type(nome, "Itaú principal");
-      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
-      await waitFor(() =>
-        expect(mocks.atualizarConta).toHaveBeenCalledWith("c1", { nome: "Itaú principal" }),
-      );
+      expect(await screen.findByRole("dialog")).toBeVisible();
+      expect(screen.getByLabelText(/Banco/)).toHaveValue("341");
       expect(screen.queryByLabelText(/Tipo/)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/Início/)).not.toBeInTheDocument();
       expect(screen.queryByLabelText(/Saldo inicial/)).not.toBeInTheDocument();
     });
-  });
 
-  describe("centro de custo", () => {
-    async function abrirCentros() {
+    it("e salva nome e bancários, sem os três recusados", async () => {
       montarConfiguracoes();
       await screen.findByText("Honorários");
-      await userEvent.click(screen.getByRole("button", { name: "Centros de custo" }));
-      return screen.findByText("Cível");
-    }
-
-    it("o botão de criar fica no subcabeçalho, como nas outras duas", async () => {
-      await abrirCentros();
-      expect(screen.getByRole("button", { name: "+ Novo centro de custo" })).toBeVisible();
-    });
-
-    it("🔴 abre MODAL, igual às irmãs -- e é revisão do plano", async () => {
-      /* A auditoria tinha decidido inline ("três modais eram dois"), e valia
-         quando as três eram LISTAS. Com tabela e duas irmãs abrindo modal,
-         dois gestos diferentes na mesma tela liam como inacabado. */
-      await abrirCentros();
-      await userEvent.click(screen.getByRole("button", { name: "+ Novo centro de custo" }));
-
-      expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByLabelText(/Nome/)).toHaveValue("");
-    });
-
-    it("nome vazio não salva, e o campo diz o que falta", async () => {
-      await abrirCentros();
-      await userEvent.click(screen.getByRole("button", { name: "+ Novo centro de custo" }));
-      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
-
-      expect(await screen.findByText("Informe o nome do centro de custo.")).toBeVisible();
-      expect(mocks.criarCentroDeCusto).not.toHaveBeenCalled();
-    });
-
-    it("salva o nome digitado", async () => {
-      await abrirCentros();
-      await userEvent.click(screen.getByRole("button", { name: "+ Novo centro de custo" }));
-      await userEvent.type(screen.getByLabelText(/Nome/), "Tributário");
+      await userEvent.click(screen.getByRole("button", { name: "Contas" }));
+      await userEvent.click(await screen.findByText("Conta corrente Itaú"));
+      const banco = await screen.findByLabelText(/Banco/);
+      await userEvent.clear(banco);
+      await userEvent.type(banco, "237");
       await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
 
       await waitFor(() =>
-        expect(mocks.criarCentroDeCusto).toHaveBeenCalledWith({ nome: "Tributário" }),
-      );
-    });
-
-    it("renomear abre o MESMO modal, com o nome dentro", async () => {
-      await abrirCentros();
-      await userEvent.click(screen.getByText("Cível"));
-
-      expect(await screen.findByRole("dialog")).toBeVisible();
-      const campo = screen.getByLabelText(/Nome/);
-      expect(campo).toHaveValue("Cível");
-      await userEvent.clear(campo);
-      await userEvent.type(campo, "Cível e Consumidor");
-      await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
-
-      await waitFor(() =>
-        expect(mocks.atualizarCentroDeCusto).toHaveBeenCalledWith("ce1", {
-          nome: "Cível e Consumidor",
+        expect(mocks.atualizarConta).toHaveBeenCalledWith("c1", {
+          nome: "Conta corrente Itaú",
+          banco: "237",
+          agencia: "0412",
+          numero: "18335-7",
         }),
       );
-    });
-
-    it("quem não administra não vê o botão nem abre pela linha", async () => {
-      mocks.papelAtende.mockReturnValue(false);
-      await abrirCentros();
-      expect(
-        screen.queryByRole("button", { name: "+ Novo centro de custo" }),
-      ).not.toBeInTheDocument();
-      await userEvent.click(screen.getByText("Cível"));
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 

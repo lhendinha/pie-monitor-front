@@ -17,12 +17,12 @@ import type { ModalDeContaProps } from "./types";
 
 /** Cadastrar ou renomear uma conta.
  *
- * 🔴 **Na EDIÇÃO só o nome muda**, e o `PATCH` do catálogo aceita só ele --
- * medido: mandar `tipo` junto responde 422 "Campo não reconhecido". A razão
- * está no schema da API: trocar a conta de tipo mudaria QUAIS campos são
- * obrigatórios num item que já existe, e o saldo inicial reescreveria a
- * história de um saldo que a API mantém a cada baixa. Quem errou o cadastro
- * desativa e cria de novo.
+ * 🔴 **Na edição, nome e dados bancários.** Ficam de fora o TIPO (muda quais
+ * campos são obrigatórios num item que já existe) e o INÍCIO e o SALDO
+ * INICIAL, que são write-once porque o saldo atual é mantido a partir deles
+ * -- reescrevê-los faria a reconciliação acusar uma diferença que nunca
+ * existiu. A API responde 422 se qualquer um dos três vier, e a tela mostra
+ * a mesma régua: eles não aparecem na edição.
  *
  * ⚠️ **Os dados bancários só existem para conta CORRENTE.** É o que o
  * artifact faz (`tipo === "outros"` esconde o bloco), e é o que faz sentido:
@@ -59,9 +59,12 @@ export default function ModalDeConta({
   const semInicio = inicio.trim() === "";
   const saldoInvalido = centavos === null;
   const semDadosBancarios =
-    ehCorrente && (banco.trim() === "" || agencia.trim() === "" || numero.trim() === "");
+    ehCorrente &&
+    (banco.trim() === "" || agencia.trim() === "" || numero.trim() === "");
+  /** Na edição, início e saldo não existem no formulário -- então não podem
+   * impedir nada. O resto da régua é a mesma. */
   const impedido = editando
-    ? semNome
+    ? semNome || semDadosBancarios
     : semNome || semInicio || saldoInvalido || semDadosBancarios;
 
   const { mudou } = useGuardaDeDescarte({
@@ -86,7 +89,11 @@ export default function ModalDeConta({
       inicio,
       saldo_inicial_centavos: centavos ?? 0,
       ...(ehCorrente
-        ? { banco: banco.trim(), agencia: agencia.trim(), numero: numero.trim() }
+        ? {
+            banco: banco.trim(),
+            agencia: agencia.trim(),
+            numero: numero.trim(),
+          }
         : {}),
     });
   }
@@ -94,7 +101,7 @@ export default function ModalDeConta({
   return (
     <Modal
       descarte={{ mudou, caso: editando ? "edicao" : "criacao" }}
-      titulo={editando ? "Renomear conta" : "Nova conta"}
+      titulo={editando ? "Editar conta" : "Nova conta"}
       onFechar={onFechar}
       rodape={
         <RodapeDeFormulario salvando={salvando}>
@@ -133,91 +140,100 @@ export default function ModalDeConta({
         </Campo>
 
         {!editando && (
+          <LinhaDeCampos>
+            <Campo
+              rotulo="Início"
+              para="inicio-da-conta"
+              obrigatorio
+              erro={
+                tentou && semInicio ? "Informe a data de início." : undefined
+              }
+            >
+              <SeletorData
+                id="inicio-da-conta"
+                rotuladoPor="inicio-da-conta-rotulo"
+                valor={inicio}
+                onMudar={setInicio}
+              />
+            </Campo>
+            <Campo
+              rotulo="Saldo inicial"
+              para="saldo-da-conta"
+              obrigatorio
+              erro={
+                tentou && saldoInvalido
+                  ? "Informe o saldo em reais."
+                  : undefined
+              }
+            >
+              <Input
+                id="saldo-da-conta"
+                value={saldo}
+                onChange={(e) => setSaldo(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+              />
+            </Campo>
+          </LinhaDeCampos>
+        )}
+
+        {/* 🔴 Só para conta CORRENTE: "Caixa do escritório" não tem agência,
+            e pedir três campos que não existem é o jeito de fazer alguém
+            inventar dado. Na edição o tipo é o que está GRAVADO -- ele não
+            se troca aqui. */}
+        {ehCorrente && (
           <>
+            <Campo
+              rotulo="Banco"
+              para="banco-da-conta"
+              obrigatorio
+              erro={
+                tentou && banco.trim() === "" ? "Informe o banco." : undefined
+              }
+            >
+              <Input
+                id="banco-da-conta"
+                value={banco}
+                onChange={(e) => setBanco(e.target.value)}
+                placeholder="Código ou nome do banco"
+              />
+            </Campo>
             <LinhaDeCampos>
               <Campo
-                rotulo="Início"
-                para="inicio-da-conta"
+                rotulo="Agência"
+                para="agencia-da-conta"
                 obrigatorio
-                erro={tentou && semInicio ? "Informe a data de início." : undefined}
+                erro={
+                  tentou && agencia.trim() === ""
+                    ? "Informe a agência."
+                    : undefined
+                }
               >
-                <SeletorData
-                  id="inicio-da-conta"
-                  rotuladoPor="inicio-da-conta-rotulo"
-                  valor={inicio}
-                  onMudar={setInicio}
+                <Input
+                  id="agencia-da-conta"
+                  value={agencia}
+                  onChange={(e) => setAgencia(e.target.value)}
+                  placeholder="Nº da agência"
                 />
               </Campo>
               <Campo
-                rotulo="Saldo inicial"
-                para="saldo-da-conta"
+                rotulo="Conta (com dígito)"
+                para="numero-da-conta"
                 obrigatorio
-                erro={tentou && saldoInvalido ? "Informe o saldo em reais." : undefined}
+                erro={
+                  tentou && numero.trim() === ""
+                    ? "Informe o número da conta."
+                    : undefined
+                }
               >
                 <Input
-                  id="saldo-da-conta"
-                  value={saldo}
-                  onChange={(e) => setSaldo(e.target.value)}
-                  placeholder="0,00"
-                  inputMode="decimal"
+                  id="numero-da-conta"
+                  value={numero}
+                  onChange={(e) => setNumero(e.target.value)}
+                  placeholder="Nº da conta"
                 />
               </Campo>
             </LinhaDeCampos>
-
-            {/* 🔴 Só para conta CORRENTE: "Caixa do escritório" não tem
-                agência, e pedir três campos que não existem é o jeito de
-                fazer alguém inventar dado. */}
-            {ehCorrente && (
-              <>
-                <Campo
-                  rotulo="Banco"
-                  para="banco-da-conta"
-                  obrigatorio
-                  erro={
-                    tentou && banco.trim() === "" ? "Informe o banco." : undefined
-                  }
-                >
-                  <Input
-                    id="banco-da-conta"
-                    value={banco}
-                    onChange={(e) => setBanco(e.target.value)}
-                    placeholder="Código ou nome do banco"
-                  />
-                </Campo>
-                <LinhaDeCampos>
-                  <Campo
-                    rotulo="Agência"
-                    para="agencia-da-conta"
-                    obrigatorio
-                    erro={
-                      tentou && agencia.trim() === "" ? "Informe a agência." : undefined
-                    }
-                  >
-                    <Input
-                      id="agencia-da-conta"
-                      value={agencia}
-                      onChange={(e) => setAgencia(e.target.value)}
-                      placeholder="Nº da agência"
-                    />
-                  </Campo>
-                  <Campo
-                    rotulo="Conta (com dígito)"
-                    para="numero-da-conta"
-                    obrigatorio
-                    erro={
-                      tentou && numero.trim() === "" ? "Informe o número da conta." : undefined
-                    }
-                  >
-                    <Input
-                      id="numero-da-conta"
-                      value={numero}
-                      onChange={(e) => setNumero(e.target.value)}
-                      placeholder="Nº da conta"
-                    />
-                  </Campo>
-                </LinhaDeCampos>
-              </>
-            )}
           </>
         )}
 

@@ -21,10 +21,11 @@ const NATUREZAS = [
 
 /** Cadastrar ou renomear uma categoria.
  *
- * 🔴 **Na EDIÇÃO só o nome muda.** Natureza, cor e agrupador ficam de fora
- * porque trocá-los reescreveria lançamentos já gravados: uma categoria que
- * vira de saída para entrada muda o lado do caixa de tudo que já usou ela.
- * A API aceita só o nome no `PATCH`, e a tela mostra a mesma régua.
+ * 🔴 **Na edição, tudo menos a NATUREZA.** A régua é "muda o que não
+ * reescreve história": cor e agrupador não mexem no que já foi lançado, e a
+ * natureza mexe -- uma categoria que vira de saída para entrada inverte o
+ * lado do caixa de tudo que já usou ela. A API responde 422 se ela vier, e
+ * a tela mostra a mesma régua: o campo simplesmente não existe na edição.
  *
  * ⚠️ **O agrupador é filtrado pela NATUREZA escolhida.** Uma despesa dentro
  * de um agrupador de entrada somaria no lado errado do fluxo, e a API recusa
@@ -83,10 +84,7 @@ export default function ModalDeCategoria({
   function salvar(outra: boolean) {
     setTentou(true);
     if (semNome) return;
-    onSalvar(
-      { nome: nome.trim(), natureza, cor, agrupador_id: agrupadorId },
-      outra,
-    );
+    onSalvar({ nome: nome.trim(), natureza, cor, agrupador_id: agrupadorId }, outra);
   }
 
   function handleSubmit(e: FormEvent) {
@@ -97,7 +95,7 @@ export default function ModalDeCategoria({
   return (
     <Modal
       descarte={{ mudou, caso: editando ? "edicao" : "criacao" }}
-      titulo={editando ? "Renomear categoria" : "Nova categoria"}
+      titulo={editando ? "Editar categoria" : "Nova categoria"}
       onFechar={onFechar}
       rodape={
         <RodapeDeFormulario salvando={salvando}>
@@ -129,45 +127,44 @@ export default function ModalDeCategoria({
           />
         </Campo>
 
-        {/* 🔴 Some na edição, e não fica desabilitado: campo cinza convida a
-            tentar. O que não se muda não se mostra como se pudesse. */}
+        {/* 🔴 A natureza some na EDIÇÃO, e não fica desabilitada: campo
+            cinza convida a tentar. O que não se muda não se mostra como se
+            pudesse. */}
         {!editando && (
-          <>
-            <Campo rotulo="Natureza" para="natureza-da-categoria" obrigatorio>
-              <Select
-                id="natureza-da-categoria"
-                opcoes={NATUREZAS}
-                valor={natureza}
-                onMudar={(nova) => nova && trocarNatureza(nova)}
-              />
-            </Campo>
-
-            <Campo rotulo="Cor" para="cor-da-categoria" obrigatorio>
-              <SeletorDeCor
-                id="cor-da-categoria"
-                cores={cores}
-                escolhida={cor}
-                onEscolher={setCor}
-              />
-            </Campo>
-
-            <Campo
-              rotulo="Agrupador"
-              para="agrupador-da-categoria"
-              dica="Dentro de um agrupador, a categoria aparece recuada na lista e somada nele no fluxo de caixa."
-            >
-              <Select
-                id="agrupador-da-categoria"
-                opcoes={[
-                  { value: "", label: "Sem agrupador" },
-                  ...agrupadores.map((c) => ({ value: c.categoria_id, label: c.nome })),
-                ]}
-                valor={agrupadorId}
-                onMudar={(novo) => setAgrupadorId(novo ?? "")}
-              />
-            </Campo>
-          </>
+          <Campo rotulo="Natureza" para="natureza-da-categoria" obrigatorio>
+            <Select
+              id="natureza-da-categoria"
+              opcoes={NATUREZAS}
+              valor={natureza}
+              onMudar={(nova) => nova && trocarNatureza(nova)}
+            />
+          </Campo>
         )}
+
+        <Campo rotulo="Cor" para="cor-da-categoria" obrigatorio>
+          <SeletorDeCor
+            id="cor-da-categoria"
+            cores={cores}
+            escolhida={cor}
+            onEscolher={setCor}
+          />
+        </Campo>
+
+        <Campo
+          rotulo="Agrupador"
+          para="agrupador-da-categoria"
+          dica="Dentro de um agrupador, a categoria aparece recuada na lista e somada nele no fluxo de caixa."
+        >
+          <Select
+            id="agrupador-da-categoria"
+            opcoes={[
+              { value: "", label: "Sem agrupador" },
+              ...agrupadores.map((c) => ({ value: c.categoria_id, label: c.nome })),
+            ]}
+            valor={agrupadorId}
+            onMudar={(novo) => setAgrupadorId(novo ?? "")}
+          />
+        </Campo>
 
         {/* ⚠️ O erro da API fica no CORPO, e o modal não fecha: é o 409 de
             nome repetido, e fechar levaria embora o que a pessoa digitou. */}
