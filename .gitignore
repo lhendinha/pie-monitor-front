@@ -1,3 +1,8 @@
+# ⚠️ As DUAS formas, e a barra sozinha não basta: `node_modules/` só casa
+# com DIRETÓRIO. Um symlink chamado `node_modules` é arquivo, passa por esta
+# linha e vai parar num commit -- foi o que quebrou a build do Vercel em
+# 07/09/2026 (`yarn install` morre com EEXIST ao tentar criar o diretório).
+node_modules
 node_modules/
 dist/
 .env
