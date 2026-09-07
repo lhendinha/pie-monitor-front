@@ -120,6 +120,72 @@ conferir(
   `as linhas têm altura uniforme (${[...new Set(alturas)].join("/")}px)`,
 );
 
+// ── Financeiro: a tela que a Fase 4 subiu ───────────────────────────────
+/* ⚠️ Só o que NÃO depende de dado: o grupo de produção não tem catálogo
+   semeado (`semear_padrao` não é chamado ao criar grupo), e um roteiro que
+   só confere quando há linha é um roteiro que passa cego. O cabeçalho da
+   tabela e o modal de criar existem com a lista vazia. Clique de linha,
+   edição e alinhamento são de `verificar-financeiro.mjs`, contra o offline. */
+console.log("\n-- Financeiro --");
+await pagina.goto(`${APP}/financeiro`);
+await pagina.getByRole("tab", { name: "Configurações" }).waitFor();
+for (const aba of ["Lançamentos", "Faturas", "Fluxo de caixa", "Configurações"]) {
+  conferir((await pagina.getByRole("tab", { name: aba }).count()) === 1, `a aba "${aba}" está na tela`);
+}
+
+/* A aba pendente APARECE e diz que ainda não chegou -- clicar e não
+   acontecer nada é que seria ruim. */
+await pagina.getByRole("tab", { name: "Lançamentos" }).click();
+conferir(
+  await pagina.getByText("Lançamentos ainda não está disponível.").isVisible().catch(() => false),
+  "⚠️ a aba pendente diz que ainda não chegou, em vez de abrir vazia",
+);
+
+console.log("\n-- Financeiro > Configurações --");
+await pagina.getByRole("tab", { name: "Configurações" }).click();
+/* 🔴 As três são TABELA com cabeçalho de coluna, como Clientes e Membros.
+   Um cabeçalho a menos aqui é o bundle velho no ar. */
+for (const coluna of [
+  "Categoria",
+  "Natureza",
+  "Conta",
+  "Dados bancários",
+  "Saldo atual",
+  "Centro de custo",
+]) {
+  await pagina.getByRole("columnheader", { name: coluna, exact: true }).first().waitFor();
+  conferir(true, `a coluna "${coluna}" tem cabeçalho`);
+}
+
+/* 🔴 E os três botões ficam FORA da tabela, no subcabeçalho -- inclusive o
+   do centro de custo, que é a revisão do achado 10 do plano. */
+for (const botao of ["+ Nova categoria", "+ Nova conta", "+ Novo centro de custo"]) {
+  conferir(
+    (await pagina.getByRole("button", { name: botao, exact: true }).count()) === 1,
+    `"${botao}" fica no subcabeçalho, fora da tabela`,
+  );
+}
+
+/* ⚠️ Continua sem GRAVAR: abrir o modal de criar e sair no Escape com os
+   campos intocados não manda requisição nenhuma nem dispara o descarte. */
+await pagina.getByRole("button", { name: "+ Novo centro de custo", exact: true }).click();
+conferir(
+  await pagina.getByRole("heading", { name: "Novo centro de custo" }).isVisible().catch(() => false),
+  "🔴 centro de custo abre MODAL, e não um campo dentro do cartão",
+);
+await pagina.keyboard.press("Escape");
+
+await pagina.getByRole("button", { name: "+ Nova categoria", exact: true }).click();
+await pagina.getByRole("heading", { name: "Nova categoria" }).waitFor();
+for (const campo of ["Nome", "Natureza", "Cor", "Agrupador"]) {
+  conferir(
+    (await pagina.getByText(campo, { exact: true }).count()) >= 1,
+    `o modal da categoria tem "${campo}"`,
+  );
+}
+await pagina.keyboard.press("Escape");
+await semOpcional("Financeiro");
+
 // ── Grupo > Inscrições na OAB: a mesma régua ────────────────────────────
 console.log("\n-- Grupo > Inscrições na OAB --");
 await pagina.getByRole("tab", { name: "Inscrições na OAB" }).click();
