@@ -97,6 +97,80 @@ Docstring de módulo acima de vinte linhas, ou de definição acima de dez,
 quase sempre carrega diário ou repetição. Não vira guarda mecânico -- vira
 pergunta na revisão: *"o que aqui é regra, e o que é história?"*.
 
+## 0c) Constante nunca vira string solta (07/09/2026)
+
+🔴 **Regra.** Palavra que o SERVIDOR entende -- status, tipo, natureza,
+papel -- nunca aparece escrita à mão duas vezes. Ela nasce uma vez em
+`src/constants/`, e todo o resto importa de lá.
+
+⚠️ **Por que é grave aqui, e diferente do backend.** Lá o defeito é uma
+comparação que vira sempre falsa. Aqui ele some numa TELA: o card conta 7 e
+a lista abre vazia, e ninguém liga uma coisa à outra. O usuário achou o
+irmão disso no Financeiro (`lancamento.natureza == "saida"`), e a varredura
+do front em 07/09/2026 saiu daí.
+
+### O que o TypeScript já resolve -- e o que não
+
+| resolve | não resolve |
+|---|---|
+| `minimo: Papel` -- errar a palavra é erro de compilação | chave de `Record<string, ...>` (era o `CORES_DO_STATUS`) |
+| `tipo_envio?: "movimentacao" \| "lembrete"` no tipo da resposta | `state` de navegação (`navegar("/historico", { state: { tipoEnvio: ... } })`) |
+| campo tipado com union derivada da constante | `id`/`valor` de opção de menu, que são `string` |
+
+🔴 **Union type não aceita variável**, exatamente como o `Literal` do
+Pydantic. Quando as duas listas precisam existir, elas andam lado a lado e
+a isenção do guarda diz isso.
+
+### Onde a constante mora
+
+- **Vocabulário do servidor** vai em `src/constants/<assunto>.ts` e é
+  exportado pelo `index.ts` -- é de lá que página, tema e serviço leem.
+  `constants/atendimento.ts` e `constants/historico.ts` são os moldes.
+- **Filtro que só existe numa tela** fica na pasta da página. `STATUS_TODOS`
+  ("todos") é opção de MENU, não status: fica em
+  `pages/AtendimentosPage/constants.ts`, e é a linha divisória inteira.
+- **Rótulo é livre.** `{ id: STATUS_FECHADO, rotulo: "Fechados" }` -- o `id`
+  é contrato, o texto é escolha. Ficam lado a lado de propósito.
+
+### O guarda
+
+`src/constanteNuncaViraStringSolta.test.ts`: importa cada constante, pega o
+valor DELA (repetir a palavra no teste seria mais uma cópia solta) e varre
+`src/`. Isenção tem motivo escrito, e um teste apaga a que deixou de valer.
+
+🔴 **Só palavra DISTINTIVA entra.** "todos", "eu", "nome" são comuns demais
+para varrer por valor: o guarda viraria ruído, e ruído vira teste
+silenciado. Foi a mesma conclusão do backend, onde `RENOMEAR_OK = "ok"`
+precisou sair da lista porque `"ok"` é chave do placar de envios.
+
+### O que a varredura de 07/09/2026 achou
+
+Quatro coisas, todas em atendimento e histórico:
+
+1. `STATUS_EM_ANDAMENTO` declarado em `AtendimentosPage/constants.ts`
+   enquanto `constants/atendimento.ts` já era dono da mesma frase -- dois
+   lugares, nada cobrando que concordassem. E, duas linhas abaixo,
+   `{ id: "Fechado" }` literal ao lado do irmão que usava a constante.
+2. `theme/atendimento.ts` chaveava `CORES_DO_STATUS` pelas palavras, num
+   `Record<string, ...>`: errar a chave não dá erro, cai no
+   `COR_DE_STATUS_PADRAO` e a etiqueta perde a cor calada.
+3. `TIPOS_DE_ENVIO` e `TIPO_DE_ENVIO_PADRAO` com os valores à mão, e o
+   `ResumoRapido` mandando `tipoEnvio: "movimentacao"` no `state` da
+   navegação -- exatamente o card que abre a lista.
+4. Os dois `item.tipo_envio === "lembrete"` do Histórico.
+
+⚠️ **Uma ficou aberta, e é decisão de produto, não descuido.**
+`atualizarAtendimento` recebe `status?: string`, e não o
+`StatusDeAtendimento` derivado da constante -- que daria a checagem do
+compilador justamente onde o front ESCREVE. O que impede é o campo do
+formulário nascer de `atendimento.status`, que é `string` de propósito:
+a LEITURA tolera status novo do servidor (ver `theme/atendimento.ts`,
+"status desconhecido não pode sumir da tela"). Fechar isso exige decidir o
+que salvar quando o status lido não está no vocabulário -- normalizar para
+"Em andamento" seria reescrever o dado de alguém calado.
+
+➡️ O mesmo padrão do outro lado: `api/CONTEXT.md`, seção 0c.
+
 ## Histórias que saíram dos comentários (Fase 3 do `PLANO_ARQUIVOS_MENORES.md`, grupo 1, 05/09/2026)
 
 O padrão de prosa (seção 0b) tira o diário do código. O que os comentários

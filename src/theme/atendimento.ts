@@ -1,5 +1,7 @@
 import type { ButtonProps } from "@chakra-ui/react";
 
+import { STATUS_EM_ANDAMENTO, STATUS_FECHADO } from "../constants";
+
 /** Cores da etiqueta de status do atendimento (`.status-*` do artifact).
  *
  * 🔴 **"Em andamento" em âmbar, "Fechado" em azul da marca.** O âmbar é o
@@ -17,8 +19,8 @@ import type { ButtonProps } from "@chakra-ui/react";
  * -- que cor tem cada estado -- e as telas que mostram status leem daqui.
  */
 export const CORES_DO_STATUS: Record<string, Pick<ButtonProps, "bg" | "color">> = {
-  "Em andamento": { bg: "status.warn.bg", color: "status.warn.text" },
-  Fechado: { bg: "bg.brand.subtle", color: "brand.darker" },
+  [STATUS_EM_ANDAMENTO]: { bg: "status.warn.bg", color: "status.warn.text" },
+  [STATUS_FECHADO]: { bg: "bg.brand.subtle", color: "brand.darker" },
 };
 
 /** Status desconhecido não pode sumir da tela nem herdar a cor de outro --

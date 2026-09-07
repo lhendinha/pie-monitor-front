@@ -11,6 +11,7 @@ export * from "./subgrupos";
 export * from "./suporte";
 export * from "./prioridade";
 export * from "./atendimento";
+export * from "./historico";
 export * from "./canal";
 export * from "./notificacoes";
 export * from "./vinculoDeRegistro";

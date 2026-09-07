@@ -2,15 +2,16 @@ import { useNavigate } from "react-router-dom";
 
 import { Cartao, EstadoDeErro, Esqueleto } from "../../../../components";
 import { emDias, hojeISO } from "../../../../utils";
+/* O vocabulário do servidor vem de `constants/`, que é de todo mundo. */
+import { STATUS_EM_ANDAMENTO, TIPO_ENVIO_MOVIMENTACAO } from "../../../../constants";
 /* ⚠️ Os dois únicos imports de constante ENTRE páginas do projeto, e é
    deliberado. A regra da casa é "específico da página mora dentro dela" --
    mas este cartão navega PARA aquelas telas, e o clique tem que aplicar
    exatamente o filtro que o número contou.
-   A alternativa seria repetir `"Em andamento"` e o `7` aqui, e aí o rótulo
-   do card e o filtro do destino divergiriam no primeiro ajuste -- que é o
-   defeito que esta rodada inteira existiu pra tirar. Coupling explícito e
-   com uma fonte só é melhor que dois literais concordando por sorte. */
-import { STATUS_EM_ANDAMENTO } from "../../../AtendimentosPage/constants";
+   A alternativa seria repetir o `eu` e o `7` aqui, e aí o rótulo do card e
+   o filtro do destino divergiriam no primeiro ajuste -- que é o defeito que
+   esta rodada inteira existiu pra tirar. Coupling explícito e com uma fonte
+   só é melhor que dois literais concordando por sorte. */
 import { RESPONSAVEL_EU } from "../../../ProcessosPage/constants";
 import { DIAS_DA_JANELA_RECENTE } from "../../../HistoricoPage/constants";
 import GrupoDeNumeros from "../GrupoDeNumeros";
@@ -118,7 +119,7 @@ export default function ResumoRapido({
          movimentação de 30 dias atrás vinha junto. */
       ir: () =>
         navegar("/historico", {
-          state: { tipoEnvio: "movimentacao", dias: DIAS_DA_JANELA_RECENTE },
+          state: { tipoEnvio: TIPO_ENVIO_MOVIMENTACAO, dias: DIAS_DA_JANELA_RECENTE },
         }),
     },
   ];

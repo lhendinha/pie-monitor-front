@@ -25,7 +25,10 @@
  */
 import { chromium } from "playwright";
 
-const APP = "http://localhost:5174";
+/** ⚠️ 5174 é a porta da conferência (5173 é a de quem está trabalhando).
+ * `APP_URL` existe porque a 5174 pode já estar ocupada por um dev de outra
+ * árvore -- e conferir a tela errada é pior que não conferir. */
+const APP = process.env.APP_URL ?? "http://localhost:5174";
 const CONTA = { email: "chefe@local.test", senha: "Senha!Local1" };
 
 /** O que cada token vale, em rgb -- é assim que o `getComputedStyle` devolve. */

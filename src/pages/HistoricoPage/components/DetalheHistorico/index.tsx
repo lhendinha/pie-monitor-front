@@ -10,6 +10,7 @@ import {
   Ponto,
   TextoDaComunicacao,
 } from "../../../../components";
+import { TIPO_ENVIO_LEMBRETE } from "../../../../constants";
 import { detalhesProcesso } from "../../../../services";
 import { qk } from "../../../../services/queryKeys";
 import { CORES_DO_ENVIO } from "../../../../theme/envio";
@@ -30,7 +31,7 @@ import type { DetalheHistoricoProps } from "./types";
  */
 export default function DetalheHistorico({ item }: DetalheHistoricoProps) {
   const ehDeTarefa = Boolean(item.tarefa_id);
-  const ehLembrete = item.tipo_envio === "lembrete";
+  const ehLembrete = item.tipo_envio === TIPO_ENVIO_LEMBRETE;
   const falhou = Boolean(item.falhou);
 
   /** Consulta sempre que houver processo pra consultar, e não só quando
