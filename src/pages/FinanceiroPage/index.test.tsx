@@ -5,6 +5,9 @@ import userEvent from "@testing-library/user-event";
 
 const mocks = vi.hoisted(() => ({
   lerCatalogoFinanceiro: vi.fn(),
+  listarLancamentos: vi.fn(),
+  listarSubgrupos: vi.fn(),
+  listarClientes: vi.fn(),
   listarContas: vi.fn(),
   listarCentrosDeCusto: vi.fn(),
   papelAtende: vi.fn(),
@@ -111,6 +114,41 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.papelAtende.mockReturnValue(true);
   mocks.lerCatalogoFinanceiro.mockResolvedValue(CATALOGO);
+  mocks.listarLancamentos.mockResolvedValue({
+    lancamentos: [
+      {
+        lancamento_id: "l1",
+        tipo: "honorario",
+        descricao: "Honorários Alfa",
+        valor_centavos: 250000,
+        data_vencimento: "2026-09-20",
+        situacao: "aberto",
+        natureza: "entrada",
+        conta_id: "c1",
+        categoria_id: "cat1",
+        centro_id: "",
+        rateio: [{ subgrupo_id: "s1", valor_centavos: 250000 }],
+        cliente_id: "",
+        contraparte: "Construtora Alfa",
+        subgrupo_id: "s1",
+        numero_processo: "",
+        atendimento_id: "",
+        responsavel: "",
+        documento_numero: "",
+        parcela: "",
+        criado_por: "ana@x.com",
+        criado_em: "2026-09-01T10:00:00+00:00",
+      },
+    ],
+    totais: {
+      a_receber_centavos: 250000, a_receber_quantidade: 1,
+      a_pagar_centavos: 0, a_pagar_quantidade: 0,
+      atrasado_centavos: 0, atrasado_quantidade: 0,
+    },
+    pagina: 1, tamanho_pagina: 20, total: 1, total_paginas: 1,
+  });
+  mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+  mocks.listarClientes.mockResolvedValue({ clientes: [] });
   mocks.listarContas.mockResolvedValue(envelope("contas", CATALOGO.contas));
   mocks.listarCentrosDeCusto.mockResolvedValue(
     envelope("centros_de_custo", CATALOGO.centros_de_custo),
@@ -705,7 +743,6 @@ describe("cada aba mostra o SEU conteúdo", () => {
    */
 
   it.each([
-    ["lancamentos", "Lançamentos"],
     ["faturas", "Faturas"],
     ["fluxo", "Fluxo de caixa"],
   ])("a aba pendente %s diz que ainda não chegou", async (id, rotulo) => {
@@ -713,11 +750,16 @@ describe("cada aba mostra o SEU conteúdo", () => {
     expect(await screen.findByText(`${rotulo} ainda não está disponível.`)).toBeInTheDocument();
   });
 
-  it("🔴 e NÃO mostra o catálogo -- o par negativo do defeito", async () => {
+  it("🔴 Lançamentos mostra a LISTA, e não o catálogo -- o par negativo do defeito", async () => {
+    /* Esta aba deixou de ser pendente quando a lista e a tela de detalhe
+       existiram. É exatamente o momento em que o defeito antigo aparecia:
+       "não é pendente, então é Configurações". */
     montar("/financeiro?aba=lancamentos");
-    await screen.findByText("Lançamentos ainda não está disponível.");
+    expect(await screen.findByText("Honorários Alfa")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "+ Nova categoria" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: "Categoria" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Lançamentos ainda não está disponível."),
+    ).not.toBeInTheDocument();
   });
 
   it("só Configurações traz as três listas", async () => {

@@ -13,6 +13,7 @@ import {
   FinanceiroPage,
   GrupoPage,
   KanbanPage,
+  LancamentoDetalhePage,
   PerfilPage,
   ProcessoDetalhePage,
   ProcessosPage,
@@ -91,6 +92,13 @@ export default function Rotas() {
               digitando o endereço. */}
           <Route element={<RotaPorPapel minimo="financeiro" />}>
             <Route path="/financeiro" element={<FinanceiroPage />} />
+            {/* 🔴 Dentro do MESMO guarda de papel da lista. A tela mostra
+                valor, conta e rateio -- deixá-la fora do `financeiro` seria
+                fechar a porta e esquecer a janela. */}
+            <Route
+              path="/financeiro/lancamentos/:lancamentoId"
+              element={<LancamentoDetalhePage />}
+            />
           </Route>
           {/* `manager`, igual ao piso do item no menu lateral. Esconder do
               menu sem fechar a rota era cosmético: bastava digitar o

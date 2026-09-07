@@ -1,5 +1,5 @@
 import { chamar } from "./client";
-import type { OpcoesDePaginacao } from "../../types";
+import type { EscopoDaSerie, OpcoesDePaginacao } from "../../types";
 import type {
   CamposDoLancamento,
   DadosDaTransferencia,
@@ -85,7 +85,7 @@ export function criarTransferencia(dados: DadosDaTransferencia) {
 export function atualizarLancamento(
   lancamentoId: string,
   campos: CamposDoLancamento,
-  escopo: "este" | "futuros" = "este",
+  escopo: EscopoDaSerie = "este",
 ) {
   return chamar(`/lancamentos/${lancamentoId}`, {
     method: "PATCH",
@@ -112,6 +112,6 @@ export function reabrirLancamento(lancamentoId: string) {
 
 /** ⚠️ Nível `admin`+, ao contrário do resto do módulo: apagar dinheiro já
  * lançado é o único caminho sem volta daqui. */
-export function excluirLancamento(lancamentoId: string, escopo: "este" | "futuros" = "este") {
+export function excluirLancamento(lancamentoId: string, escopo: EscopoDaSerie = "este") {
   return chamar(`/lancamentos/${lancamentoId}`, { method: "DELETE", query: { escopo } });
 }

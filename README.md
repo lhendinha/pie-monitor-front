@@ -126,11 +126,18 @@ a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 
 ### Financeiro: quatro abas, três ainda por vir
 
-`/financeiro` já nasce com as **quatro** abas, e três delas mostram uma frase
+`/financeiro` já nasce com as **quatro** abas, e duas delas mostram uma frase
 dizendo que aquela parte ainda não chegou. Aparecerem mesmo vazias é de
 propósito: elas são a estrutura da tela, e escondê-las faria `/financeiro`
 parecer ser só uma tela de configuração. Quem decide é o `pendente` em
-`pages/FinanceiroPage/constants.ts`; a aba pronta é **Configurações**.
+`pages/FinanceiroPage/constants.ts`; as abas prontas são **Lançamentos** e
+**Configurações**.
+
+🔴 **`pendente` só diz que a aba não tem conteúdo ainda -- quem escolhe o que
+mostrar é a página, com um painel por aba.** Antes ela deduzia ("não é
+pendente, então é Configurações"), e isso funcionou enquanto Configurações era
+a única pronta: no dia em que Lançamentos virou `pendente: false`, a aba
+passou a mostrar a tela de Configurações inteira. Quem viu foi o usuário.
 
 ⚠️ **Trocar de aba LIMPA `pagina`, `tamanho` e `busca` da URL.** As quatro
 dividem um endereço só, e as listagens guardam esse estado com as mesmas
@@ -794,7 +801,7 @@ src/
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
   components/               -- 69 componentes gerais, cada um em pasta com seu index
-  pages/                    -- 22 páginas, cada uma em pasta com index.tsx
+  pages/                    -- 23 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
 vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)

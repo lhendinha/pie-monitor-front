@@ -7,6 +7,7 @@ import {
 } from "../../components";
 import { PARAM_DA_ABA, abaValida } from "../../utils/abas";
 import AindaNaoChegou from "./components/AindaNaoChegou";
+import ListaDeLancamentos from "./components/ListaDeLancamentos";
 import ConfiguracoesFinanceiras from "./components/ConfiguracoesFinanceiras";
 import { ABAS_DO_FINANCEIRO, GRUPO_DE_ABAS } from "./constants";
 import type { AbaDoFinanceiro } from "./types";
@@ -63,7 +64,7 @@ export default function FinanceiroPage() {
           aba passou a mostrar a tela de Configurações inteira. Aqui a
           escolha está escrita, e não deduzida. */}
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="lancamentos" ativa={abaAtiva}>
-        {abaAtiva === "lancamentos" && <AindaNaoChegou rotulo="Lançamentos" />}
+        {abaAtiva === "lancamentos" && <ListaDeLancamentos />}
       </PainelDaAba>
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="faturas" ativa={abaAtiva}>
         {abaAtiva === "faturas" && <AindaNaoChegou rotulo="Faturas" />}

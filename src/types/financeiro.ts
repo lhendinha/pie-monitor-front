@@ -91,6 +91,17 @@ export interface ParcelaDoRateio {
  * ⚠️ **`data_efetivacao` some da resposta quando vazia** (é chave esparsa no
  * banco). Quem pergunta se já entrou lê `situacao`, nunca a ausência do
  * campo. */
+/** Até onde uma edição ou uma exclusão alcança numa série.
+ *
+ * 🔴 Vive aqui, e não na chamada de API, porque a TELA também escolhe: o
+ * diálogo de exclusão guarda a resposta antes de chamar. Repetir a união em
+ * dois lugares deixaria os dois discordarem no dia em que a API ganhasse um
+ * terceiro escopo.
+ *
+ * ⚠️ Sem série (ou sendo o último irmão), o servidor IGNORA o escopo -- por
+ * isso a tela só oferece a escolha quando há `recorrencia_id`. */
+export type EscopoDaSerie = "este" | "futuros";
+
 export interface Lancamento {
   lancamento_id: string;
   /** `honorario`, `entrada`, `saida` ou `transferencia`. */
@@ -132,6 +143,18 @@ export interface Lancamento {
   documento_numero: string;
   /** `"2/3"` num honorário parcelado. */
   parcela: string;
+  /** Presente = o lançamento tem irmãos numa série (parcelas, repetição).
+   *
+   * 🔴 É o que faz a pergunta do Google Agenda existir: sem série não há
+   * "este e os próximos" a oferecer, e oferecer assim mesmo pediria uma
+   * escolha que não muda nada. Esparso na API -- ausente quando não há. */
+  recorrencia_id?: string;
+  /** Presente = já entrou numa fatura que o cliente recebeu.
+   *
+   * 🔴 Excluir e desfazer a baixa dão **409** aqui (`LancamentoEmFatura`):
+   * mudariam o total de um documento já emitido. A tela esconde as duas
+   * ações e diz por quê -- ver `LancamentoDetalhePage`. */
+  fatura_id?: string;
   criado_por: string;
   criado_em: string;
 }

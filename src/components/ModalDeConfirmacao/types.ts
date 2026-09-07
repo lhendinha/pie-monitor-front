@@ -5,6 +5,18 @@ export interface ModalDeConfirmacaoProps {
   /** O que vai ser removido, em uma frase. Aceita marcação porque o nome do
    * item vem em negrito no meio dela. */
   mensagem: ReactNode;
+  /** Uma escolha que a confirmação precisa fazer ANTES de confirmar --
+   * hoje, o "somente este / este e os próximos" da série de lançamentos.
+   *
+   * 🔴 Slot próprio, e não emendado em `mensagem`: aquela renderiza dentro
+   * de um `<Text>`, que é um `<p>` -- e um `<div>` dentro de `<p>` é HTML
+   * inválido, que o React reclama e o navegador desmonta sozinho, movendo
+   * a escolha para FORA do parágrafo. Aqui ela é irmã da frase, dentro do
+   * mesmo `Stack`.
+   *
+   * ⚠️ Some enquanto `verificando`: escolher o alcance de uma exclusão que
+   * ainda pode ser negada seria pedir uma decisão à toa. */
+  escolha?: ReactNode;
   /** Recado extra em faixa amarela -- consequência que a frase principal
    * não cobre. */
   aviso?: string;

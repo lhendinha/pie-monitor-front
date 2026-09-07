@@ -32,7 +32,7 @@ import {
  * compartilhados -- ver `utils/abas`. Aqui fica só o que é desta tela.
  */
 export const ABAS_DO_FINANCEIRO = [
-  { id: "lancamentos", rotulo: "Lançamentos", pendente: true },
+  { id: "lancamentos", rotulo: "Lançamentos", pendente: false },
   { id: "faturas", rotulo: "Faturas", pendente: true },
   { id: "fluxo", rotulo: "Fluxo de caixa", pendente: true },
   { id: "configuracoes", rotulo: "Configurações", pendente: false },
