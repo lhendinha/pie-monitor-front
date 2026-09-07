@@ -1,17 +1,29 @@
-import { Input, Stack, Text } from "@chakra-ui/react";
+import { Box, Input, Stack, Text } from "@chakra-ui/react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { Botao, Campo, CartaoDeTabela, EstadoDeErro, Esqueleto } from "../../../../components";
+import {
+  Botao,
+  Campo,
+  CartaoDeTabela,
+  EstadoDeErro,
+  Esqueleto,
+  RodapeDeAcoes,
+  Select,
+} from "../../../../components";
 import { useToast } from "../../../../contexts/ToastContext";
 import {
   atualizarConfiguracoesDoGrupo,
+  lerCatalogoFinanceiro,
   lerConfiguracoesDoGrupo,
 } from "../../../../services";
 import { toastErroMutation } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import { contar, unidade } from "../../../../utils";
-import type { ConfiguracoesDoGrupo as Configuracoes } from "../../../../types";
+import type {
+  CatalogoFinanceiro,
+  ConfiguracoesDoGrupo as Configuracoes,
+} from "../../../../types";
 import type { CamposDasConfiguracoes } from "../../types";
 
 /** Sub-aba "Configurações" da tela de Grupo: nome do grupo e prazo de
@@ -24,6 +36,7 @@ import type { CamposDasConfiguracoes } from "../../types";
 export default function ConfiguracoesDoGrupo() {
   const [nome, setNome] = useState("");
   const [dias, setDias] = useState("");
+  const [contaPadrao, setContaPadrao] = useState("");
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -32,6 +45,21 @@ export default function ConfiguracoesDoGrupo() {
     queryFn: () => lerConfiguracoesDoGrupo() as Promise<Configuracoes>,
   });
 
+  /** As contas do Financeiro, para o select de conta padrão.
+   *
+   * ⚠️ Consulta À PARTE, e não um campo a mais nas configurações: o catálogo
+   * é do Financeiro e tem chave própria de cache -- criar uma conta lá tem
+   * de refletir aqui sem esta tela saber disso. O piso da rota é
+   * `financeiro`, e quem chega nesta aba é `admin`, que está acima.
+   *
+   * 🔴 Só as ATIVAS entram: o servidor recusa uma conta desativada como
+   * padrão, e oferecê-la seria empurrar para um 400. */
+  const catalogo = useQuery<CatalogoFinanceiro>({
+    queryKey: qk.catalogoFinanceiro(),
+    queryFn: lerCatalogoFinanceiro,
+  });
+  const contasAtivas = (catalogo.data?.contas ?? []).filter((c) => c.ativa);
+
   /* Os campos nascem do que está salvo. Sem isto abririam vazios e um
      "Salvar" sem querer gravaria... nada, ou o mínimo. */
   useEffect(() => {
@@ -39,6 +67,7 @@ export default function ConfiguracoesDoGrupo() {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- semeadura do formulário a partir do que está salvo; o projeto usa `useEffect` pra isso de propósito, ver o eslint.config.js
       setNome(query.data.nome);
       setDias(String(query.data.dias_para_arquivar));
+      setContaPadrao(query.data.conta_padrao_id ?? "");
     }
   }, [query.data]);
 
@@ -71,7 +100,8 @@ export default function ConfiguracoesDoGrupo() {
   const config = query.data!;
 
   const nomeLimpo = nome.trim();
-  const nomeInvalido = nomeLimpo === "" || nomeLimpo.length > config.nome_tamanho_maximo;
+  const nomeInvalido =
+    nomeLimpo === "" || nomeLimpo.length > config.nome_tamanho_maximo;
 
   const numero = Number(dias);
   /* Os limites vêm do SERVIDOR junto do valor -- repeti-los aqui seria dois
@@ -86,9 +116,17 @@ export default function ConfiguracoesDoGrupo() {
      nome sobrescrever um prazo que outra pessoa acabou de alterar. */
   const nomeMudou = nomeLimpo !== config.nome;
   const diasMudou = numero !== config.dias_para_arquivar;
+  const contaMudou = contaPadrao !== (config.conta_padrao_id ?? "");
 
   const invalido = nomeInvalido || diasInvalido;
-  const inalterado = !nomeMudou && !diasMudou;
+  const inalterado = !nomeMudou && !diasMudou && !contaMudou;
+
+  /** Volta aos três campos como estão salvos. */
+  function cancelar() {
+    setNome(config.nome);
+    setDias(String(config.dias_para_arquivar));
+    setContaPadrao(config.conta_padrao_id ?? "");
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -96,12 +134,19 @@ export default function ConfiguracoesDoGrupo() {
     salvar.mutate({
       ...(nomeMudou ? { nome: nomeLimpo } : {}),
       ...(diasMudou ? { dias_para_arquivar: numero } : {}),
+      ...(contaMudou ? { conta_padrao_id: contaPadrao } : {}),
     });
   }
 
   return (
     <CartaoDeTabela>
-      <Stack as="form" onSubmit={handleSubmit} gap="0" p="18px 20px" maxW="440px">
+      <Stack
+        as="form"
+        onSubmit={handleSubmit}
+        gap="0"
+        p="18px 20px"
+        maxW="440px"
+      >
         <Campo
           rotulo="Nome do grupo"
           para="nome-do-grupo"
@@ -129,6 +174,10 @@ export default function ConfiguracoesDoGrupo() {
           />
         </Campo>
 
+        {/* 🔴 Depois do nome e ANTES do prazo não: a conta padrão é a
+            escolha mais nova e a menos usada das três, e pôr o que se mexe
+            uma vez por ano no meio do que se lê sempre atrapalha a leitura.
+            Fica por último, antes do Salvar. */}
         <Campo
           rotulo="Arquivar concluídas depois de"
           para="dias-arquivar"
@@ -143,8 +192,16 @@ export default function ConfiguracoesDoGrupo() {
           obrigatorio
           /* Diz o QUE acontece, não só o que o campo aceita: "de 1 a 365" é
              a regra, mas a consequência é o que a pessoa precisa saber. */
-          dica={`A tarefa sai da coluna de conclusão e vai pra Arquivado. Ela continua contando como concluída. De ${config.dias_para_arquivar_minimo} a ${config.dias_para_arquivar_maximo} dias.`}
-          erro={diasInvalido ? "Informe um número de dias dentro do limite." : undefined}
+          /* ⚠️ O padrão fica AQUI, na dica do campo a que ele se refere.
+             Ficava ao lado do "Salvar", de quando este formulário só tinha o
+             prazo -- com três campos, uma nota solta no rodapé não diz mais
+             a QUAL deles ela pertence. */
+          dica={`A tarefa sai da coluna de conclusão e vai pra Arquivado. Ela continua contando como concluída. De ${config.dias_para_arquivar_minimo} a ${config.dias_para_arquivar_maximo} dias, e o padrão é ${contar(config.dias_para_arquivar_padrao, "dia", "dias")}.`}
+          erro={
+            diasInvalido
+              ? "Informe um número de dias dentro do limite."
+              : undefined
+          }
         >
           <Stack direction="row" align="center" gap="10px">
             <Input
@@ -167,16 +224,53 @@ export default function ConfiguracoesDoGrupo() {
           </Stack>
         </Campo>
 
-        <Stack direction="row" gap="10px" align="center">
-          <Botao type="submit" disabled={invalido || inalterado || salvar.isPending}>
-            {salvar.isPending ? "Salvando…" : "Salvar"}
-          </Botao>
-          {/* O padrão fica dito, e não escondido no código: é a resposta
-              pra "qual era mesmo o valor normal?". */}
-          <Text fontSize="11.5px" color="fg.subtle">
-            Prazo padrão: {contar(config.dias_para_arquivar_padrao, "dia", "dias")}
-          </Text>
-        </Stack>
+        <Campo
+          rotulo="Conta padrão do Financeiro"
+          para="conta-padrao"
+          dica={
+            contasAtivas.length === 0
+              ? "Nenhuma conta ativa no Financeiro ainda. Crie uma em Financeiro › Configurações."
+              : "Com qual conta o formulário de lançamento abre. Dá para trocar em cada lançamento."
+          }
+        >
+          <Select
+            id="conta-padrao"
+            desabilitado={contasAtivas.length === 0}
+            /* ⚠️ "Nenhuma" é opção de verdade, e não ausência: é o que
+             permite LIMPAR a escolha. O servidor trata vazio como limpar,
+             e a primeira conta criada depois vira padrão sozinha. */
+            opcoes={[
+              { value: "", label: "Nenhuma" },
+              ...contasAtivas.map((c) => ({
+                value: c.conta_id,
+                label: c.nome,
+              })),
+            ]}
+            valor={contaPadrao}
+            onMudar={(nova) => setContaPadrao(nova ?? "")}
+          />
+        </Campo>
+
+        {/* O rodapé da casa: `RodapeDeAcoes` com "Cancelar" fantasma à
+            esquerda, como em `PerfilPage/FormularioDaInscricao`. Com três
+            campos, desfazer sem recarregar a página passou a fazer falta. */}
+        <Box mt="16px" borderTopWidth="1px" borderTopColor="border.subtle">
+          <RodapeDeAcoes>
+            <Botao
+              variante="ghost"
+              onClick={cancelar}
+              disabled={salvar.isPending || inalterado}
+            >
+              Cancelar
+            </Botao>
+            <Botao
+              type="submit"
+              disabled={invalido || inalterado || salvar.isPending}
+            >
+              {salvar.isPending ? "Salvando…" : "Salvar"}
+            </Botao>
+          </RodapeDeAcoes>
+        </Box>
       </Stack>
     </CartaoDeTabela>
   );

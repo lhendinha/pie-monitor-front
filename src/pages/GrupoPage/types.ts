@@ -10,6 +10,10 @@ export interface RenomearOpcao {
 export interface CamposDasConfiguracoes {
   nome?: string;
   dias_para_arquivar?: number;
+  /** A conta do Financeiro com que todo formulário de lançamento abre.
+   * Vazio LIMPA a escolha -- e a primeira conta criada depois vira padrão
+   * sozinha de novo. */
+  conta_padrao_id?: string;
 }
 
 /** Uma gravação da lista de inscrições avulsas.

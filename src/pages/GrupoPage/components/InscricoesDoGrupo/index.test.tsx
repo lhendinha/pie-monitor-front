@@ -34,6 +34,7 @@ function configuracoes(oabs: InscricaoAvulsa[], maximo = 50): ConfiguracoesDoGru
     dias_para_arquivar_padrao: 7,
     oabs_avulsas: oabs,
     oabs_avulsas_maximo: maximo,
+    conta_padrao_id: "",
   };
 }
 

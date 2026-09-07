@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   desativarOpcaoProcesso: vi.fn(),
   reativarOpcaoProcesso: vi.fn(),
   lerConfiguracoesDoGrupo: vi.fn(),
+  lerCatalogoFinanceiro: vi.fn(),
   atualizarConfiguracoesDoGrupo: vi.fn(),
 }));
 
@@ -50,6 +51,16 @@ beforeEach(() => {
     dias_para_arquivar_padrao: 7,
     oabs_avulsas: [],
     oabs_avulsas_maximo: 50,
+    conta_padrao_id: "",
+  });
+  mocks.lerCatalogoFinanceiro.mockResolvedValue({
+    contas: [
+      { conta_id: "c1", nome: "Conta corrente Itaú", tipo: "corrente", inicio: "2026-01-01",
+        saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: true },
+      { conta_id: "c2", nome: "Caixa antigo", tipo: "outros", inicio: "2026-01-01",
+        saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: false },
+    ],
+    categorias: [], centros_de_custo: [], conta_padrao_id: "", cores_disponiveis: [],
   });
   mocks.atualizarConfiguracoesDoGrupo.mockResolvedValue({});
 });
@@ -213,6 +224,7 @@ describe("GrupoPage", () => {
           { inscricao: "263/MG", importacao_automatica: false, subgrupos_destino: [] },
         ],
         oabs_avulsas_maximo: 50,
+    conta_padrao_id: "",
       });
       const user = userEvent.setup();
       renderComRota(<GrupoPage />);
