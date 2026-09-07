@@ -44,6 +44,13 @@ export const qk = {
   /** ⚠️ Sem parâmetro, como `configuracoesDoGrupo`: o grupo vem do token,
    * então só existe UMA resposta por sessão. */
   catalogoFinanceiro: () => ["catalogo-financeiro"] as const,
+  /** ⚠️ Chaves SEPARADAS da do catálogo: são leituras diferentes, com donos
+   * diferentes. Quem escreve no catálogo invalida as três -- ver
+   * `ConfiguracoesFinanceiras`. */
+  contasFinanceiras: (params: { pagina?: number; tamanhoPagina?: number } = {}) =>
+    ["contas-financeiras", params] as const,
+  centrosDeCusto: (params: { pagina?: number; tamanhoPagina?: number } = {}) =>
+    ["centros-de-custo", params] as const,
   tarefas: (params: Record<string, unknown> = {}) => ["tarefas", params] as const,
   tarefasDoProcesso: (numeroProcesso: string) =>
     ["tarefas", "processo", numeroProcesso] as const,

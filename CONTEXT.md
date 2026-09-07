@@ -4279,3 +4279,51 @@ e 4 suítes inteiras, mais uma com ordem embaralhada -- 1.188 de 1.188 em
 todas. Não há correção porque não há defeito reproduzido; inventar uma
 seria pior. Se voltar, o que registrar é a saída da rodada que falhou, não a
 memória de que falhava.
+
+## Contas e centros paginam; categorias, não (07/09/2026)
+
+A tela de Configurações do Financeiro tinha as três listas vindo de UMA
+leitura, `GET /financeiro/catalogo`. Agora contas e centros de custo têm rota
+própria e paginada, lida do índice estreito do servidor; categorias continua
+vindo inteira.
+
+🔴 **A assimetria é o desenho, e o motivo é o agrupador.** A ordem das
+categorias é hierárquica -- entradas antes de saídas, filha logo abaixo da
+mãe, indentada na tela --, e a quebra de página separa as duas. Medido no
+catálogo padrão, com 10 por página: "Impostos" termina a página 1 e DAS,
+IRRF e ISS abrem a página 2, com o recuo apontando para nada. Paginá-la
+exigiria uma chave de ordenação com natureza + mãe + nome, e **renomear uma
+mãe reescreveria a chave de todas as filhas**.
+
+⚠️ **`lerCatalogoFinanceiro` continua sendo chamado, e não é desperdício:**
+dele saem as categorias, as cores da paleta e a `conta_padrao_id` da etiqueta
+"Padrão". As duas consultas paginadas servem só as TABELAS.
+
+### O que a execução obrigou
+
+🔴 **A seção teve de ir para a URL junto com a página.** Ela era estado
+local de propósito ("são recortes de UMA tela de configuração"), e isso
+continua verdade -- o que mudou é que apareceu um segundo parâmetro que
+depende dela para significar algo. Sem `?secao=`, um F5 em `?pagina=2`
+cairia na página 2 de outra lista. E trocar de pílula **apaga** a página,
+pelo mesmo motivo que trocar de aba limpa `pagina` em `FinanceiroPage`.
+
+🔴 **A invalidação de cache virou função** (`invalidarCatalogoFinanceiro`).
+São TRÊS chaves para o mesmo dado, em três chamadores: sem uma delas, criar
+uma conta atualizava o select do lançamento e deixava a TABELA da tela com a
+lista velha -- defeito que só aparece para quem está com a tela aberta na
+hora.
+
+⚠️ **A barra some sozinha abaixo de 11 itens** (`Pagination` faz
+`if (total <= menorTamanho) return null`), e ela mesma devolve para a
+primeira página quando a atual deixa de existir. Nada disso precisou ser
+repetido por tela.
+
+⚠️ **Teste de URL se afere pelo que a API RECEBEU**, não pela string: dentro
+de `MemoryRouter` o endereço não chega ao `window.location`, e
+`expect(window.location.search).toContain(...)` passa a comparar com vazio.
+É o padrão que `ProcessosPage/index.test.tsx` já usava.
+
+➡️ A história do lado do servidor -- o índice, o prefixo do tipo na chave, e
+o teto que foi proposto e descartado -- está em `api/CONTEXT.md`, seção "O
+catálogo do Financeiro paginado".

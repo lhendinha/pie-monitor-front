@@ -9,6 +9,8 @@ import {
   EstadoVazio,
   PilulaDeFiltro,
 } from "../../../../components";
+import { useEstadoNaUrl } from "../../../../hooks/useEstadoNaUrl";
+import { usePaginacaoDaLista } from "../../../../hooks/usePaginacaoDaLista";
 import { useToast } from "../../../../contexts/ToastContext";
 import {
   atualizarCategoria,
@@ -17,11 +19,17 @@ import {
   criarConta,
   desativarItemFinanceiro,
   lerCatalogoFinanceiro,
+  listarCentrosDeCusto,
+  listarContas,
   papelAtende,
   reativarItemFinanceiro,
 } from "../../../../services";
 import { ApiError } from "../../../../services/api/client";
-import { toastErroMutation, useToastOnQueryError } from "../../../../services/queryClient";
+import {
+  invalidarCatalogoFinanceiro,
+  toastErroMutation,
+  useToastOnQueryError,
+} from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
 import type {
   CatalogoFinanceiro,
@@ -29,7 +37,14 @@ import type {
   CentroDeCusto,
   ContaFinanceira,
 } from "../../../../types";
-import type { DadosDaCategoria, DadosDaConta } from "../../../../types/requisicoes";
+import type {
+  RespostaDeCentrosPaginada,
+  RespostaDeContasPaginada,
+} from "../../../../types/respostas";
+import type {
+  DadosDaCategoria,
+  DadosDaConta,
+} from "../../../../types/requisicoes";
 import { useSalvarCentro } from "../../hooks/useSalvarCentro";
 import ModalDeCategoria from "../ModalDeCategoria";
 import ModalDeCentro from "../ModalDeCentro";
@@ -53,12 +68,33 @@ import type { SecaoDoCatalogo } from "./types";
  * ➡️ `index.test.tsx`.
  */
 export default function ConfiguracoesFinanceiras() {
-  const [secao, setSecao] = useState<SecaoDoCatalogo>("categorias");
+  /** 🔴 A seção vai para a URL agora que contas e centros PAGINAM: sem ela
+   * lá, `?pagina=2` não diria de qual lista é, e um F5 cairia na página 2 de
+   * outra coisa. Trocar de pílula APAGA a página -- a 3 de contas não existe
+   * em centros, e a tabela apareceria vazia até o `Pagination` corrigir.
+   *
+   * ⚠️ Era estado local, com a razão escrita de que "a Área de trabalho não
+   * linka para dentro deles". Continua verdade; o que mudou é que agora há
+   * um segundo parâmetro que depende deste para fazer sentido. */
+  const [secao, setSecao] = useEstadoNaUrl<SecaoDoCatalogo>(
+    "secao",
+    "categorias",
+    {
+      tambemApaga: ["pagina"],
+    },
+  );
+  const { pagina, setPagina, tamanhoPagina, setTamanhoPagina } =
+    usePaginacaoDaLista();
   /** `null` = fechado; `undefined` dentro dele = criando. */
-  const [categoriaNoModal, setCategoriaNoModal] =
-    useState<{ categoria?: CategoriaFinanceira } | null>(null);
-  const [contaNoModal, setContaNoModal] = useState<{ conta?: ContaFinanceira } | null>(null);
-  const [centroNoModal, setCentroNoModal] = useState<{ centro?: CentroDeCusto } | null>(null);
+  const [categoriaNoModal, setCategoriaNoModal] = useState<{
+    categoria?: CategoriaFinanceira;
+  } | null>(null);
+  const [contaNoModal, setContaNoModal] = useState<{
+    conta?: ContaFinanceira;
+  } | null>(null);
+  const [centroNoModal, setCentroNoModal] = useState<{
+    centro?: CentroDeCusto;
+  } | null>(null);
   const [erroDoModal, setErroDoModal] = useState("");
   const podeEscrever = papelAtende(PISO_PARA_ESCREVER);
   const queryClient = useQueryClient();
@@ -70,11 +106,42 @@ export default function ConfiguracoesFinanceiras() {
     },
     (mensagem) => setErroDoModal(mensagem),
   );
+  /** 🔴 O catálogo INTEIRO continua sendo lido, e não é desperdício: é dele
+   * que saem as categorias (que não paginam, por causa do agrupador), as
+   * cores da paleta e a `conta_padrao_id` que marca a etiqueta "Padrão". As
+   * duas consultas abaixo servem só as TABELAS que paginam. */
   const query = useQuery<CatalogoFinanceiro>({
     queryKey: qk.catalogoFinanceiro(),
     queryFn: lerCatalogoFinanceiro,
   });
-  useToastOnQueryError(query.error, "Não foi possível carregar o catálogo do Financeiro.");
+  useToastOnQueryError(
+    query.error,
+    "Não foi possível carregar o catálogo do Financeiro.",
+  );
+
+  /** ⚠️ `enabled` pela seção: montar as três de uma vez dispararia duas
+   * leituras que ninguém vai ver, e a tela mostra UMA lista por vez. */
+  const paginaDeContas = useQuery<RespostaDeContasPaginada>({
+    queryKey: qk.contasFinanceiras({ pagina, tamanhoPagina }),
+    queryFn: () => listarContas({ pagina, tamanhoPagina }),
+    enabled: secao === "contas",
+    placeholderData: (anterior) => anterior,
+  });
+  useToastOnQueryError(
+    paginaDeContas.error,
+    "Não foi possível carregar as contas.",
+  );
+
+  const paginaDeCentros = useQuery<RespostaDeCentrosPaginada>({
+    queryKey: qk.centrosDeCusto({ pagina, tamanhoPagina }),
+    queryFn: () => listarCentrosDeCusto({ pagina, tamanhoPagina }),
+    enabled: secao === "centros",
+    placeholderData: (anterior) => anterior,
+  });
+  useToastOnQueryError(
+    paginaDeCentros.error,
+    "Não foi possível carregar os centros de custo.",
+  );
 
   /** ⚠️ Uma mutação para as três ações da categoria (criar, renomear,
    * ligar/desligar): todas invalidam o MESMO catálogo, e três `useMutation`
@@ -87,7 +154,9 @@ export default function ConfiguracoesFinanceiras() {
       outra?: boolean;
     }) => {
       if (pedido.alternar && pedido.categoria) {
-        const acao = pedido.categoria.ativa ? desativarItemFinanceiro : reativarItemFinanceiro;
+        const acao = pedido.categoria.ativa
+          ? desativarItemFinanceiro
+          : reativarItemFinanceiro;
         return acao("categorias", pedido.categoria.categoria_id);
       }
       if (pedido.categoria) {
@@ -102,21 +171,26 @@ export default function ConfiguracoesFinanceiras() {
       return criarCategoria(pedido.dados!);
     },
     onSuccess: (_resposta, pedido) => {
-      queryClient.invalidateQueries({ queryKey: qk.catalogoFinanceiro() });
+      invalidarCatalogoFinanceiro(queryClient);
       setErroDoModal("");
       /* 🔴 "Salvar e adicionar outra" mantém o modal aberto e VAZIO: remontar
          com `key` novo é o que zera os campos sem o modal piscar. */
       setCategoriaNoModal(pedido.outra ? { categoria: undefined } : null);
-      toast.sucesso(pedido.alternar ? "Categoria atualizada." : "Categoria salva.");
+      toast.sucesso(
+        pedido.alternar ? "Categoria atualizada." : "Categoria salva.",
+      );
     },
     onError: (err, pedido) => {
       /* ⚠️ A mensagem do servidor (409 de nome repetido) fica NO MODAL: fechá-lo
          levaria embora o que a pessoa digitou. Quando a ação veio da linha
          (ligar/desligar), não há modal aberto -- aí é toast. */
-      if (pedido.alternar) toastErroMutation(toast, err, "Não foi possível alterar a categoria.");
+      if (pedido.alternar)
+        toastErroMutation(toast, err, "Não foi possível alterar a categoria.");
       else {
         setErroDoModal(
-          err instanceof ApiError ? err.message : "Não foi possível salvar a categoria.",
+          err instanceof ApiError
+            ? err.message
+            : "Não foi possível salvar a categoria.",
         );
       }
     },
@@ -131,7 +205,9 @@ export default function ConfiguracoesFinanceiras() {
       alternar?: boolean;
     }) => {
       if (pedido.alternar && pedido.conta) {
-        const acao = pedido.conta.ativa ? desativarItemFinanceiro : reativarItemFinanceiro;
+        const acao = pedido.conta.ativa
+          ? desativarItemFinanceiro
+          : reativarItemFinanceiro;
         return acao("contas", pedido.conta.conta_id);
       }
       if (pedido.conta) {
@@ -146,15 +222,20 @@ export default function ConfiguracoesFinanceiras() {
       return criarConta(pedido.dados!);
     },
     onSuccess: (_resposta, pedido) => {
-      queryClient.invalidateQueries({ queryKey: qk.catalogoFinanceiro() });
+      invalidarCatalogoFinanceiro(queryClient);
       setErroDoModal("");
       setContaNoModal(null);
       toast.sucesso(pedido.alternar ? "Conta atualizada." : "Conta salva.");
     },
     onError: (err, pedido) => {
-      if (pedido.alternar) toastErroMutation(toast, err, "Não foi possível alterar a conta.");
+      if (pedido.alternar)
+        toastErroMutation(toast, err, "Não foi possível alterar a conta.");
       else {
-        setErroDoModal(err instanceof ApiError ? err.message : "Não foi possível salvar a conta.");
+        setErroDoModal(
+          err instanceof ApiError
+            ? err.message
+            : "Não foi possível salvar a conta.",
+        );
       }
     },
   });
@@ -178,11 +259,32 @@ export default function ConfiguracoesFinanceiras() {
     catalogo.categorias.length === 0 &&
     catalogo.centros_de_custo.length === 0;
 
+  /** O `PaginationProps` da seção aberta.
+   *
+   * ⚠️ Enquanto a consulta não voltou, `total` e `totalPaginas` são 0: é o
+   * que impede o `Pagination` de mandar a pessoa para a página 1 no meio de
+   * uma navegação legítima (o efeito dele só age com `totalPaginas >= 1`). */
+  const paginacaoDe = (resposta?: {
+    total: number;
+    total_paginas: number;
+  }) => ({
+    pagina,
+    totalPaginas: resposta?.total_paginas ?? 0,
+    total: resposta?.total ?? 0,
+    tamanhoPagina,
+    onMudarPagina: setPagina,
+    onMudarTamanho: setTamanhoPagina,
+  });
+
   return (
     <Stack gap="14px" mt="14px">
       <Stack direction="row" gap="8px" wrap="wrap">
         {SECOES_DO_CATALOGO.map((s) => (
-          <PilulaDeFiltro key={s.id} ativo={secao === s.id} onClick={() => setSecao(s.id)}>
+          <PilulaDeFiltro
+            key={s.id}
+            ativo={secao === s.id}
+            onClick={() => setSecao(s.id)}
+          >
             {s.rotulo}
           </PilulaDeFiltro>
         ))}
@@ -213,7 +315,9 @@ export default function ConfiguracoesFinanceiras() {
           )}
           {secao === "centros" && (
             <ListaDeCentros
-              centros={catalogo.centros_de_custo}
+              centros={paginaDeCentros.data?.centros_de_custo ?? []}
+              carregando={paginaDeCentros.isPending}
+              paginacao={paginacaoDe(paginaDeCentros.data)}
               podeEscrever={podeEscrever}
               onNovo={() => {
                 setErroDoModal("");
@@ -223,12 +327,16 @@ export default function ConfiguracoesFinanceiras() {
                 setErroDoModal("");
                 setCentroNoModal({ centro });
               }}
-              onAlternarAtivo={(centro) => salvarCentro.mutate({ centro, alternar: true })}
+              onAlternarAtivo={(centro) =>
+                salvarCentro.mutate({ centro, alternar: true })
+              }
             />
           )}
           {secao === "contas" && (
             <ListaDeContas
-              contas={catalogo.contas}
+              contas={paginaDeContas.data?.contas ?? []}
+              carregando={paginaDeContas.isPending}
+              paginacao={paginacaoDe(paginaDeContas.data)}
               contaPadraoId={catalogo.conta_padrao_id}
               podeEscrever={podeEscrever}
               onNova={() => {
@@ -239,7 +347,9 @@ export default function ConfiguracoesFinanceiras() {
                 setErroDoModal("");
                 setContaNoModal({ conta });
               }}
-              onAlternarAtivo={(conta) => salvarConta.mutate({ conta, alternar: true })}
+              onAlternarAtivo={(conta) =>
+                salvarConta.mutate({ conta, alternar: true })
+              }
             />
           )}
         </>
@@ -292,7 +402,9 @@ export default function ConfiguracoesFinanceiras() {
           conta={contaNoModal.conta}
           salvando={salvarConta.isPending}
           erro={erroDoModal}
-          onSalvar={(dados) => salvarConta.mutate({ dados, conta: contaNoModal.conta })}
+          onSalvar={(dados) =>
+            salvarConta.mutate({ dados, conta: contaNoModal.conta })
+          }
           onFechar={() => setContaNoModal(null)}
         />
       )}

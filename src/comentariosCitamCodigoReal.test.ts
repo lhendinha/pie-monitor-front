@@ -51,6 +51,11 @@ const CITADO_POR_NAO_EXISTIR = new Set([
   "useTodosOsClientes", "carregandoQuadros", "mudarStatus", "ComunicacaoCard",
   "SUB_ABAS", "ALTURA_LISTA", "AT_STATUS_OPTIONS", "DadosDeDocumento",
   "ErroDaBusca", "FiltroDeTipo", "OpcaoDePeriodo", "OpcoesListarOpcoesProcesso",
+  // 🔴 Nunca existiu, e o comentário existe para dizer POR QUÊ: a ordem das
+  // categorias é hierárquica (filha logo abaixo da mãe) e não sobrevive à
+  // quebra de página. Sem a menção, alguém a escreveria por simetria com
+  // `listarContas` e `listarCentrosDeCusto`.
+  "listarCategorias",
 ]);
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));

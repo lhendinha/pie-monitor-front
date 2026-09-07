@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
+import { qk } from "./queryKeys";
 import { ApiError } from "./api";
 import { estaAutenticado } from "./auth";
 import { useToast } from "../contexts/ToastContext";
@@ -146,4 +147,25 @@ export function toastErroMutation(
     return;
   }
   toast.erro(erro instanceof ApiError ? erro.message : mensagemPadrao);
+}
+
+/** Invalida as TRÊS leituras do catálogo do Financeiro depois de escrever
+ * nele.
+ *
+ * 🔴 São três chaves para o mesmo dado, e é isso que torna esta função
+ * necessária: `catalogo-financeiro` traz as listas inteiras e alimenta os
+ * selects do lançamento; `contas-financeiras` e `centros-de-custo` são as
+ * páginas que a tela de configuração desenha. Invalidar só a primeira
+ * atualizava o select e deixava a TABELA com a lista velha -- um defeito
+ * que só aparece para quem está com a tela aberta na hora.
+ *
+ * ⚠️ Pelo PREFIXO nas duas paginadas: a chave carrega `{pagina,
+ * tamanhoPagina}`, e invalidar uma página só deixaria as outras em cache.
+ *
+ * ➡️ `pages/FinanceiroPage/index.test.tsx`.
+ */
+export function invalidarCatalogoFinanceiro(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: qk.catalogoFinanceiro() });
+  queryClient.invalidateQueries({ queryKey: ["contas-financeiras"] });
+  queryClient.invalidateQueries({ queryKey: ["centros-de-custo"] });
 }

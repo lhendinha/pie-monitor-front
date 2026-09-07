@@ -5,6 +5,8 @@ import userEvent from "@testing-library/user-event";
 
 const mocks = vi.hoisted(() => ({
   lerCatalogoFinanceiro: vi.fn(),
+  listarContas: vi.fn(),
+  listarCentrosDeCusto: vi.fn(),
   papelAtende: vi.fn(),
   criarCategoria: vi.fn(),
   atualizarCategoria: vi.fn(),
@@ -95,10 +97,24 @@ function montarConfiguracoes() {
   return montar("/financeiro?aba=configuracoes");
 }
 
+/** O envelope que a API devolve para as duas listas paginadas.
+ *
+ * 🔴 As contas e os centros NÃO vêm mais do catálogo: eles têm rota própria,
+ * paginada, lida do índice estreito. O catálogo segue trazendo as três
+ * listas porque é ele que popula os selects do lançamento -- e é por isso
+ * que o mesmo dado aparece nos dois lugares aqui. */
+function envelope(chave: string, itens: unknown[]) {
+  return { [chave]: itens, pagina: 1, tamanho_pagina: 10, total: itens.length, total_paginas: 1 };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.papelAtende.mockReturnValue(true);
   mocks.lerCatalogoFinanceiro.mockResolvedValue(CATALOGO);
+  mocks.listarContas.mockResolvedValue(envelope("contas", CATALOGO.contas));
+  mocks.listarCentrosDeCusto.mockResolvedValue(
+    envelope("centros_de_custo", CATALOGO.centros_de_custo),
+  );
   mocks.criarCategoria.mockResolvedValue({});
   mocks.atualizarCategoria.mockResolvedValue({});
   mocks.criarConta.mockResolvedValue({});
@@ -541,6 +557,141 @@ describe("FinanceiroPage", () => {
       montarConfiguracoes();
       await screen.findByText("Honorários");
       expect(screen.getByText("Honorários").closest("tr")).toHaveAttribute("tabindex", "0");
+    });
+  });
+
+  describe("contas e centros PAGINAM, categorias não", () => {
+    /** 🔴 A assimetria é o desenho, não descuido: a ordem das categorias é
+     * hierárquica (filha logo abaixo da mãe, indentada) e a quebra de página
+     * separaria as duas. Contas e centros são alfabéticos puros. */
+
+    const CONTAS_DEMAIS = Array.from({ length: 11 }, (_, i) => ({
+      ...CATALOGO.contas[0],
+      conta_id: `c-${i}`,
+      nome: `Conta ${String(i).padStart(2, "0")}`,
+    }));
+
+    function comOnzeContas() {
+      mocks.listarContas.mockImplementation(({ pagina = 1, tamanhoPagina = 10 } = {}) => {
+        const inicio = (pagina - 1) * tamanhoPagina;
+        return Promise.resolve({
+          contas: CONTAS_DEMAIS.slice(inicio, inicio + tamanhoPagina),
+          pagina,
+          tamanho_pagina: tamanhoPagina,
+          total: CONTAS_DEMAIS.length,
+          total_paginas: 2,
+        });
+      });
+    }
+
+    async function abrirContas() {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      await userEvent.click(screen.getByRole("button", { name: "Contas" }));
+    }
+
+    it("com 11 contas a barra aparece, e a página 2 traz a última", async () => {
+      comOnzeContas();
+      await abrirContas();
+      await screen.findByText("Conta 00");
+      expect(screen.getByText("Mostrando 10 de 11 contas")).toBeInTheDocument();
+
+      await userEvent.click(await screen.findByRole("button", { name: "2" }));
+      await waitFor(() => expect(screen.getByText("Conta 10")).toBeInTheDocument());
+      expect(screen.queryByText("Conta 00")).not.toBeInTheDocument();
+    });
+
+    it("⚠️ o par negativo: com 10 a barra NÃO aparece", async () => {
+      /* `Pagination` some sozinho abaixo do menor tamanho de página. Sem
+         isto, toda tela de escritório pequeno ganharia um controle que nunca
+         teria uma segunda página. */
+      mocks.listarContas.mockResolvedValue({
+        contas: CONTAS_DEMAIS.slice(0, 10),
+        pagina: 1, tamanho_pagina: 10, total: 10, total_paginas: 1,
+      });
+      await abrirContas();
+      await screen.findByText("Conta 00");
+      expect(screen.queryByRole("button", { name: "2" })).not.toBeInTheDocument();
+      expect(screen.queryByText("Por página")).not.toBeInTheDocument();
+    });
+
+    it("🔴 categorias não pede rota paginada nenhuma", async () => {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      expect(mocks.lerCatalogoFinanceiro).toHaveBeenCalled();
+      expect(mocks.listarContas).not.toHaveBeenCalled();
+      expect(mocks.listarCentrosDeCusto).not.toHaveBeenCalled();
+    });
+
+    it("⚠️ e cada pílula só busca a SUA lista", async () => {
+      await abrirContas();
+      await screen.findByText("Conta corrente Itaú");
+      expect(mocks.listarContas).toHaveBeenCalled();
+      expect(mocks.listarCentrosDeCusto).not.toHaveBeenCalled();
+    });
+
+    /* ⚠️ A URL é aferida pelo que a API RECEBEU, e não pela string: dentro de
+       `MemoryRouter` o endereço não chega ao `window.location`, e é o efeito
+       -- qual página foi pedida -- que interessa. Mesmo padrão de
+       `ProcessosPage/index.test.tsx`. */
+    it("virar a página pede a página 2 ao servidor", async () => {
+      comOnzeContas();
+      await abrirContas();
+      await screen.findByText("Conta 00");
+
+      await userEvent.click(await screen.findByRole("button", { name: "2" }));
+      await waitFor(() =>
+        expect(mocks.listarContas).toHaveBeenCalledWith(expect.objectContaining({ pagina: 2 })),
+      );
+    });
+
+    it("🔴 trocar de pílula APAGA a página", async () => {
+      /* As duas listas dividem um `?pagina=`. Sem esta limpeza, sair da
+         página 2 de contas para centros pediria centros na página 2 --
+         vazia, e sem nada na tela explicando por quê. */
+      comOnzeContas();
+      await abrirContas();
+      await userEvent.click(await screen.findByRole("button", { name: "2" }));
+      await waitFor(() =>
+        expect(mocks.listarContas).toHaveBeenCalledWith(expect.objectContaining({ pagina: 2 })),
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "Centros de custo" }));
+      await waitFor(() => expect(mocks.listarCentrosDeCusto).toHaveBeenCalled());
+      expect(mocks.listarCentrosDeCusto).not.toHaveBeenCalledWith(
+        expect.objectContaining({ pagina: 2 }),
+      );
+    });
+
+    it("⚠️ um endereço com seção e página abre direto neles", async () => {
+      comOnzeContas();
+      montar("/financeiro?aba=configuracoes&secao=contas&pagina=2");
+      await screen.findByText("Conta 10");
+      expect(screen.queryByText("Conta 00")).not.toBeInTheDocument();
+    });
+
+    it("🔴 desativar uma conta releva a PÁGINA, não só o catálogo", async () => {
+      /* São três chaves de cache para o mesmo dado. Invalidar só a do
+         catálogo atualizava o select do lançamento e deixava a TABELA da
+         tela com a lista velha -- defeito que só aparece para quem está com
+         a tela aberta na hora. Vai pela linha (o olho), que é a ação que não
+         abre modal. */
+      await abrirContas();
+      await screen.findByText("Conta corrente Itaú");
+      mocks.listarContas.mockClear();
+      mocks.lerCatalogoFinanceiro.mockClear();
+
+      await userEvent.click(screen.getAllByRole("button", { name: /Desativar/ })[0]);
+
+      await waitFor(() => expect(mocks.desativarItemFinanceiro).toHaveBeenCalled());
+      await waitFor(() => expect(mocks.listarContas).toHaveBeenCalled());
+      expect(mocks.lerCatalogoFinanceiro).toHaveBeenCalled();
+    });
+
+    it("a lista que falha avisa, e não deixa a tela em branco", async () => {
+      mocks.listarContas.mockRejectedValue(new Error("caiu"));
+      await abrirContas();
+      expect(await screen.findByText(/Não foi possível carregar as contas/)).toBeInTheDocument();
     });
   });
 });

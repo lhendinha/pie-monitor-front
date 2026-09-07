@@ -8,8 +8,7 @@ import {
   reativarItemFinanceiro,
 } from "../../../services";
 import { ApiError } from "../../../services/api/client";
-import { toastErroMutation } from "../../../services/queryClient";
-import { qk } from "../../../services/queryKeys";
+import { invalidarCatalogoFinanceiro, toastErroMutation } from "../../../services/queryClient";
 import type { CentroDeCusto } from "../../../types";
 
 /** Criar, renomear e ligar/desligar um centro de custo.
@@ -48,7 +47,7 @@ export function useSalvarCentro(
       return criarCentroDeCusto({ nome: pedido.nome! });
     },
     onSuccess: (_resposta, pedido) => {
-      queryClient.invalidateQueries({ queryKey: qk.catalogoFinanceiro() });
+      invalidarCatalogoFinanceiro(queryClient);
       aoTerminar(Boolean(pedido.outro));
       toast.sucesso(
         pedido.alternar

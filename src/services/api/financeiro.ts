@@ -1,4 +1,5 @@
 import { chamar } from "./client";
+import type { OpcoesDePaginacao } from "../../types";
 import type {
   CamposDaCategoria,
   CamposDaConta,
@@ -21,6 +22,38 @@ import type {
  */
 export function lerCatalogoFinanceiro() {
   return chamar("/financeiro/catalogo");
+}
+
+/** A página N das contas, em ordem de nome -- a TELA de configuração.
+ *
+ * 🔴 Não substitui `lerCatalogoFinanceiro`: aquele traz as três listas
+ * INTEIRAS e é o que popula os selects do formulário de lançamento. Paginar
+ * ali seria paginar um dropdown. Duas leituras, dois donos.
+ *
+ * ⚠️ No servidor isto lê o índice estreito `GrupoOrdemIndex`, e não a
+ * partição inteira -- é o mecanismo do `api/PLANO_PAGINACAO.md`.
+ */
+export function listarContas({ pagina, tamanhoPagina }: OpcoesDePaginacao = {}) {
+  return chamar("/financeiro/contas", {
+    query: {
+      pagina: pagina ? String(pagina) : undefined,
+      tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
+    },
+  });
+}
+
+/** Gêmea de `listarContas`.
+ *
+ * ⚠️ **Não existe `listarCategorias`**, e não é esquecimento: a ordem das
+ * categorias é hierárquica (filha logo abaixo da mãe, indentada na tela) e a
+ * quebra de página separaria as duas. A lista delas vem inteira. */
+export function listarCentrosDeCusto({ pagina, tamanhoPagina }: OpcoesDePaginacao = {}) {
+  return chamar("/financeiro/centros-de-custo", {
+    query: {
+      pagina: pagina ? String(pagina) : undefined,
+      tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
+    },
+  });
 }
 
 export function criarConta(dados: DadosDaConta) {

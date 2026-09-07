@@ -149,6 +149,15 @@ coluna**, como Clientes, Processos e Membros -- e por isso o botão de
 adicionar fica **fora** delas, no subcabeçalho, abrindo modal. Um formulário
 antes do cabeçalho lia como se fosse de outra coisa.
 
+🔴 **Contas e centros PAGINAM; categorias, não.** As duas primeiras têm rota
+própria (`GET /financeiro/contas`, `/financeiro/centros-de-custo`), lida do
+índice estreito, com `?secao=`, `?pagina=` e `?tamanho=` na URL. Categorias
+vem inteira porque a ordem dela é hierárquica -- filha logo abaixo da mãe,
+indentada -- e a quebra de página separaria as duas. Ver o `CONTEXT.md`.
+
+⚠️ **Trocar de pílula apaga a página**: as duas listas dividem um `?pagina=`,
+e a página 3 de contas não existe em centros.
+
 🔴 **Não há lápis na linha: quem edita clica na LINHA**, e cai no mesmo modal
 do adicionar. O **olho** de desativar fica na linha, porque o clique da linha
 carrega uma ação só e estas linhas têm duas -- é o que `Membros` faz.

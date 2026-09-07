@@ -12,8 +12,10 @@
 import type {
   Atendimento,
   AtendimentoResumido,
+  CentroDeCusto,
   Cliente,
   ColunaDoQuadro,
+  ContaFinanceira,
   Comunicacao,
   Documento,
   Grupo,
@@ -49,6 +51,14 @@ export interface RespostaDeMembros {
 
 export interface RespostaDeClientes {
   clientes: Cliente[];
+}
+
+export interface RespostaDeContas {
+  contas: ContaFinanceira[];
+}
+
+export interface RespostaDeCentrosDeCusto {
+  centros_de_custo: CentroDeCusto[];
 }
 
 export interface RespostaDeProcessos {
@@ -102,6 +112,13 @@ export interface RespostaDoQuadro {
 export interface RespostaDeSubgruposPaginada extends RespostaDeSubgrupos, ContagemDaPagina {}
 export interface RespostaDeClientesPaginada extends RespostaDeClientes, ContagemDaPagina {}
 export interface RespostaDeOpcoesPaginada extends RespostaDeOpcoes, ContagemDaPagina {}
+/** ⚠️ Não há gêmea de CATEGORIAS: a ordem delas é hierárquica (filha logo
+ * abaixo da mãe) e não sobrevive à quebra de página -- a tela delas lê o
+ * catálogo inteiro por `lerCatalogoFinanceiro`. */
+export interface RespostaDeContasPaginada extends RespostaDeContas, ContagemDaPagina {}
+export interface RespostaDeCentrosPaginada
+  extends RespostaDeCentrosDeCusto,
+    ContagemDaPagina {}
 export interface RespostaDeTarefasPaginada extends RespostaDeTarefas, ContagemDaPagina {}
 export interface RespostaDeAtendimentosPaginada
   extends RespostaDeAtendimentos,
