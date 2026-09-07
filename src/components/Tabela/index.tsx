@@ -21,27 +21,32 @@ export default function Tabela({ colunas, vazio, children }: TabelaProps) {
       <Table.Root size="sm" width="100%">
         <Table.Header>
           <Table.Row>
-            {colunas.map((coluna, i) => (
-              <Table.ColumnHeader
-                key={coluna || `acoes-${i}`}
-                /* `.tbl th` do artifact: 11px/800 em caixa alta, com
+            {colunas.map((coluna, i) => {
+              const nome = typeof coluna === "string" ? coluna : coluna.nome;
+              const alinhamento =
+                typeof coluna === "string" ? "left" : coluna.alinhamento;
+              return (
+                <Table.ColumnHeader
+                  key={nome || `acoes-${i}`}
+                  /* `.tbl th` do artifact: 11px/800 em caixa alta, com
                    divisória de 1px em `line` -- mais forte que a das linhas
                    de dados, que usam `line-soft`. */
-                fontSize="11px"
-                fontWeight="800"
-                textTransform="uppercase"
-                letterSpacing="0.04em"
-                color="fg.subtle"
-                textAlign="left"
-                whiteSpace="nowrap"
-                p="0 14px 10px"
-                borderBottomWidth="1px"
-                borderBottomStyle="solid"
-                borderBottomColor="border"
-              >
-                {coluna}
-              </Table.ColumnHeader>
-            ))}
+                  fontSize="11px"
+                  fontWeight="800"
+                  textTransform="uppercase"
+                  letterSpacing="0.04em"
+                  color="fg.subtle"
+                  textAlign={alinhamento}
+                  whiteSpace="nowrap"
+                  p="0 14px 10px"
+                  borderBottomWidth="1px"
+                  borderBottomStyle="solid"
+                  borderBottomColor="border"
+                >
+                  {nome}
+                </Table.ColumnHeader>
+              );
+            })}
           </Table.Row>
         </Table.Header>
         <Table.Body>{children}</Table.Body>

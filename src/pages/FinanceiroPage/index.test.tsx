@@ -173,7 +173,9 @@ describe("FinanceiroPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Contas" }));
     expect(await screen.findByText("Conta corrente Itaú")).toBeVisible();
-    expect(screen.getAllByText("Saldo atual")).toHaveLength(2);
+    /* ⚠️ UM "Saldo atual": virou CABEÇALHO de coluna. Antes era um rótulo
+       repetido em cada linha -- o que a tabela resolve de graça. */
+    expect(screen.getAllByText("Saldo atual")).toHaveLength(1);
     expect(screen.queryByText("Honorários")).not.toBeInTheDocument();
   });
 
@@ -209,8 +211,11 @@ describe("FinanceiroPage", () => {
   });
 
   it("mostra as ações para quem administra, sem o aviso", async () => {
+    /* 🔴 O gesto de editar é a LINHA, como nas outras tabelas do projeto: o
+       que fica na linha é o olho de desativar, porque o clique carrega uma
+       ação só e estas linhas têm duas. */
     montarConfiguracoes();
-    expect(await screen.findByRole("button", { name: "Renomear Honorários" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Desativar Honorários" })).toBeVisible();
     expect(
       screen.queryByText("Só quem administra o grupo pode alterar o catálogo."),
     ).not.toBeInTheDocument();
@@ -352,7 +357,7 @@ describe("FinanceiroPage", () => {
          de saída para entrada muda o lado do caixa de tudo que já usou ela. */
       montarConfiguracoes();
       await screen.findByText("Honorários");
-      await userEvent.click(screen.getByRole("button", { name: "Renomear Honorários" }));
+      await userEvent.click(screen.getByText("Honorários"));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(screen.getByLabelText(/Nome/)).toHaveValue("Honorários");
@@ -453,9 +458,7 @@ describe("FinanceiroPage", () => {
       montarConfiguracoes();
       await screen.findByText("Honorários");
       await userEvent.click(screen.getByRole("button", { name: "Contas" }));
-      await userEvent.click(
-        await screen.findByRole("button", { name: "Renomear Conta corrente Itaú" }),
-      );
+      await userEvent.click(await screen.findByText("Conta corrente Itaú"));
       const nome = await screen.findByLabelText(/Nome/);
       await userEvent.clear(nome);
       await userEvent.type(nome, "Itaú principal");
@@ -516,6 +519,8 @@ describe("FinanceiroPage", () => {
       await abrirCentros();
       expect(screen.queryByRole("button", { name: "Renomear Cível" })).not.toBeInTheDocument();
 
+      /* O clique na LINHA começa o rename -- e clicar no nome também, que é o
+         que o `NomeEditavel` já fazia. */
       await userEvent.click(screen.getByText("Cível"));
       const campo = await screen.findByLabelText("Novo nome de Cível");
       await userEvent.clear(campo);
@@ -534,6 +539,42 @@ describe("FinanceiroPage", () => {
       expect(screen.queryByLabelText("Novo centro de custo")).not.toBeInTheDocument();
       await userEvent.click(screen.getByText("Cível"));
       expect(screen.queryByLabelText("Novo nome de Cível")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("a tabela segue o padrão do projeto", () => {
+    it("tem cabeçalho de colunas, como Clientes e Membros", async () => {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      expect(screen.getByRole("columnheader", { name: "Categoria" })).toBeVisible();
+      expect(screen.getByRole("columnheader", { name: "Natureza" })).toBeVisible();
+    });
+
+    it("🔴 o clique no OLHO não abre o modal junto", async () => {
+      /* Sem `stopPropagation`, desativar uma categoria abriria o formulário
+         de renomeá-la por cima -- dois gestos num clique só. */
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      await userEvent.click(screen.getByRole("button", { name: "Desativar Honorários" }));
+
+      await waitFor(() => expect(mocks.desativarItemFinanceiro).toHaveBeenCalled());
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("quem não administra tem a linha SEM alvo de teclado", async () => {
+      /* Um `tabIndex` que não faz nada é pior que alvo nenhum: quem navega
+         por Tab para em cima dele e nada acontece. */
+      mocks.papelAtende.mockReturnValue(false);
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      const linha = screen.getByText("Honorários").closest("tr");
+      expect(linha).not.toHaveAttribute("tabindex");
+    });
+
+    it("e quem administra tem", async () => {
+      montarConfiguracoes();
+      await screen.findByText("Honorários");
+      expect(screen.getByText("Honorários").closest("tr")).toHaveAttribute("tabindex", "0");
     });
   });
 });

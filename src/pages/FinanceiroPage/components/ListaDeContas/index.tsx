@@ -1,21 +1,27 @@
-import { Box, Flex, Stack, Text } from "@chakra-ui/react";
+import { Flex, Stack, Text } from "@chakra-ui/react";
 
-import { Botao, CartaoDeTabela, Etiqueta } from "../../../../components";
+import {
+  Botao,
+  CartaoDeTabela,
+  Etiqueta,
+  Tabela,
+} from "../../../../components";
 import { contar, formatarCentavos, formatarData } from "../../../../utils";
-
+import { COLUNAS_DE_CONTAS } from "../../constants";
 import LinhaDoCatalogo from "../LinhaDoCatalogo";
+import Celula from "../LinhaDoCatalogo/Celula";
 import SubcabecalhoDaLista from "../SubcabecalhoDaLista";
 import type { ListaDeContasProps } from "./types";
 
-/** ⚠️ Azul da marca, e não verde: verde já significa "entrada" no
- * Financeiro, e a conta padrão não é uma entrada -- é uma escolha. */
+/** ⚠️ A conta padrão ganha etiqueta, e não negrito: negrito numa linha de
+ * lista lê como "atenção", e isto é um estado, não um aviso. */
 const CORES_DA_PADRAO = { bg: "bg.brand.subtle", color: "brand.darker" };
 
-/** Onde o dinheiro do escritório está.
+/** As contas do escritório, com o saldo atual de cada uma.
  *
- * ⚠️ O saldo mostrado é o GRAVADO, mantido pela API a cada baixa -- não é
- * somado aqui. Somar a história a cada leitura seria ilimitado, e o número
- * da tela tem de ser o mesmo que a API move.
+ * ⚠️ O saldo é o que a API MANTÉM a cada baixa, não um cálculo da tela: se
+ * a tela somasse os lançamentos, dois lugares dariam respostas diferentes no
+ * dia em que um deles esquecesse uma regra.
  *
  * ➡️ `index.test.tsx`.
  */
@@ -32,48 +38,61 @@ export default function ListaDeContas({
       <SubcabecalhoDaLista
         titulo="Contas"
         contagem={`Mostrando ${contas.length} de ${contar(contas.length, "conta", "contas")}`}
-        acao={podeEscrever ? <Botao onClick={onNova}>+ Nova conta</Botao> : undefined}
+        acao={
+          podeEscrever ? (
+            <Botao onClick={onNova}>+ Nova conta</Botao>
+          ) : undefined
+        }
       />
       <CartaoDeTabela>
-      {contas.map((conta) => (
-        <LinhaDoCatalogo
-          key={conta.conta_id}
-          nome={conta.nome}
-          ativo={conta.ativa}
-          detalhe={
-            <Flex align="center" gap="8px" minW="0">
-              <Text as="span" truncate>
-                {detalheDaConta(conta)}
-              </Text>
-              {conta.conta_id === contaPadraoId && (
-                <Box flexShrink="0" title="Escolhida em Grupo › Configurações">
-                  <Etiqueta cores={CORES_DA_PADRAO}>Padrão</Etiqueta>
-                </Box>
-              )}
-            </Flex>
-          }
-          direita={
-            <Stack align="flex-end" gap="0" mr="8px">
-              <Text fontSize="13px" fontWeight="700" color="text.strong">
-                R$ {formatarCentavos(conta.saldo_centavos)}
-              </Text>
-              <Text fontSize="11px" color="text.muted">
-                Saldo atual
-              </Text>
-            </Stack>
-          }
-          onEditar={podeEscrever ? () => onEditar(conta) : undefined}
-          onAlternarAtivo={podeEscrever ? () => onAlternarAtivo(conta) : undefined}
-        />
-      ))}
+        <Tabela colunas={COLUNAS_DE_CONTAS}>
+          {contas.map((conta) => (
+            <LinhaDoCatalogo
+              key={conta.conta_id}
+              nome={conta.nome}
+              ativo={conta.ativa}
+              onAbrir={podeEscrever ? () => onEditar(conta) : undefined}
+              onAlternarAtivo={
+                podeEscrever ? () => onAlternarAtivo(conta) : undefined
+              }
+            >
+              <Celula>
+                <Flex align="center" gap="8px" minW="0">
+                  <Text fontSize="13px" fontWeight="700" truncate>
+                    {conta.nome}
+                  </Text>
+                  {conta.conta_id === contaPadraoId && (
+                    <Flex
+                      flexShrink="0"
+                      title="Escolhida em Grupo › Configurações"
+                    >
+                      <Etiqueta cores={CORES_DA_PADRAO}>Padrão</Etiqueta>
+                    </Flex>
+                  )}
+                </Flex>
+              </Celula>
+              <Celula>
+                <Text fontSize="12px" color="fg.muted" truncate>
+                  {detalheDaConta(conta)}
+                </Text>
+              </Celula>
+              <Celula alinhamento="right">
+                <Stack gap="0" align="flex-end">
+                  <Text fontSize="13px" fontWeight="700" fontFamily="mono">
+                    R$ {formatarCentavos(conta.saldo_centavos)}
+                  </Text>
+                </Stack>
+              </Celula>
+            </LinhaDoCatalogo>
+          ))}
+        </Tabela>
       </CartaoDeTabela>
     </>
   );
 }
 
-/** Banco, agência e conta quando há; senão o tipo. Sempre com a data desde
- * quando o saldo é acompanhado -- é ela que explica um saldo inicial que não
- * bate com o extrato de hoje. */
+/** Banco, agência e conta -- ou "dinheiro em espécie" quando não há nenhum
+ * dos três, que é o caso do caixa do escritório. */
 function detalheDaConta(conta: ListaDeContasProps["contas"][number]) {
   const partes = conta.banco
     ? [
@@ -84,5 +103,7 @@ function detalheDaConta(conta: ListaDeContasProps["contas"][number]) {
     : ["dinheiro em espécie"];
   const vivas = partes.filter(Boolean);
   const desde = conta.inicio ? `desde ${formatarData(conta.inicio)}` : "";
-  return [...vivas, desde, conta.ativa ? "" : "(Inativa)"].filter(Boolean).join(" · ");
+  return [...vivas, desde, conta.ativa ? "" : "(Inativa)"]
+    .filter(Boolean)
+    .join(" · ");
 }

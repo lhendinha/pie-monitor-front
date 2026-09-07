@@ -22,3 +22,22 @@ export const ABAS_DO_FINANCEIRO = [
 
 /** O prefixo dos ids de acessibilidade que ligam cada aba ao seu painel. */
 export const GRUPO_DE_ABAS = "financeiro";
+
+/** As colunas das três tabelas do catálogo.
+ *
+ * ⚠️ A última é `""` de propósito: é a coluna das ações, que no artifact é
+ * um `<th></th>` -- o cabeçalho existe para a contagem de colunas bater,
+ * mas não tem nome. Mesma convenção de `COLUNAS_CLIENTES`.
+ */
+export const COLUNAS_DE_CATEGORIAS = ["Categoria", "Natureza", ""] as const;
+export const COLUNAS_DE_CONTAS = [
+  "Conta",
+  "Dados bancários",
+  /* ⚠️ À direita, e é a única coluna do sistema assim: dinheiro se compara
+     pelos dígitos, e à esquerda "R$ 1.234,56" e "R$ 11.880,55" não alinham
+     na vírgula. O cabeçalho acompanha o valor -- header à esquerda com
+     número à direita foi o que apareceu quebrado na tela. */
+  { nome: "Saldo atual", alinhamento: "right" } as const,
+  "",
+] as const;
+export const COLUNAS_DE_CENTROS = ["Centro de custo", ""] as const;
