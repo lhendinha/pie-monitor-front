@@ -165,6 +165,42 @@ saída não foi nenhuma das três que eu tinha listado. Ver a seção
 
 ➡️ O mesmo padrão do outro lado: `api/CONTEXT.md`, seção 0c.
 
+## Um symlink parou a publicação, e o site não mostrou nada (07/09/2026)
+
+🔴 **A build do Vercel falhou por três deploys e ninguém viu na tela.** O
+erro era `EEXIST: file already exists, mkdir '/vercel/path0/node_modules'`:
+um `node_modules` tinha ido para um commit como **symlink**, e o `yarn
+install` morre ao tentar criar o diretório em cima dele.
+
+⚠️ **Por que passou despercebido:** quando a build falha, o Vercel mantém o
+deploy anterior. O site seguiu no ar, respondendo 200, sem erro nenhum de
+console -- e a conferência de produção passou, porque estava conferindo o
+build VELHO. O sintoma não é "quebrou": é "parou de publicar", e o único
+sinal visível é o hash do bundle que não muda.
+
+➡️ Daí a régua: **depois de todo deploy do front, conferir que o hash do
+bundle MUDOU**, não só que a tela abre.
+
+### Como o symlink nasceu, e por que o `.gitignore` não pegou
+
+⚠️ **`node_modules/`, com barra, casa só com DIRETÓRIO.** Um symlink com
+esse nome é arquivo, passa pela regra e vai para o índice. Agora as duas
+formas estão no `.gitignore`, com o porquê ao lado.
+
+⚠️ **A worktree temporária foi a origem.** Apontar o `node_modules` dela
+para o da árvore principal com `ln -s` parece inofensivo e não é: o link
+acaba dentro da árvore errada, e um `git worktree remove --force` chega a
+seguir o link e apagar o `node_modules` de verdade (aconteceu duas vezes na
+mesma tarde). **Worktree do front não compartilha `node_modules` por
+symlink** -- ou se instala nela, ou não se usa worktree.
+
+🔴 **E o erro humano que deixou passar:** o `git status` foi lido com
+`grep -v node_modules` antes de um `git add -A`. Filtrar o que se está
+prestes a commitar é exatamente como uma coisa dessas entra.
+
+➡️ `src/nadaDeSymlinkNoRepo.test.ts` cobra o índice inteiro, não só um nome:
+symlink rastreado é `mode 120000`, e é isso que ele procura.
+
 ## O status do atendimento travava a edição (07/09/2026)
 
 🔴 **O formulário da aba Detalhes mandava sempre os três campos**
