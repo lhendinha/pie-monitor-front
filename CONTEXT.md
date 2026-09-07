@@ -159,17 +159,66 @@ Quatro coisas, todas em atendimento e histórico:
    navegação -- exatamente o card que abre a lista.
 4. Os dois `item.tipo_envio === "lembrete"` do Histórico.
 
-⚠️ **Uma ficou aberta, e é decisão de produto, não descuido.**
-`atualizarAtendimento` recebe `status?: string`, e não o
-`StatusDeAtendimento` derivado da constante -- que daria a checagem do
-compilador justamente onde o front ESCREVE. O que impede é o campo do
-formulário nascer de `atendimento.status`, que é `string` de propósito:
-a LEITURA tolera status novo do servidor (ver `theme/atendimento.ts`,
-"status desconhecido não pode sumir da tela"). Fechar isso exige decidir o
-que salvar quando o status lido não está no vocabulário -- normalizar para
-"Em andamento" seria reescrever o dado de alguém calado.
+✅ **A quinta, que tinha ficado aberta, foi FECHADA em 07/09/2026** -- e a
+saída não foi nenhuma das três que eu tinha listado. Ver a seção
+*"O status do atendimento travava a edição"*, logo abaixo.
 
 ➡️ O mesmo padrão do outro lado: `api/CONTEXT.md`, seção 0c.
+
+## O status do atendimento travava a edição (07/09/2026)
+
+🔴 **O formulário da aba Detalhes mandava sempre os três campos**
+(`assunto`, `status`, `responsaveis`), e a API recusa qualquer status fora
+do vocabulário com 400 *"Status inválido"*
+(`atendimentos_service`). Junte os dois: um atendimento com um status que
+este front não conhecesse ficaria **impossível de editar** -- quem tentasse
+corrigir só o assunto levaria um erro apontando um campo que não tocou, e
+perderia o que digitou.
+
+⚠️ **A leitura tolerante não cobria isso, e parecia cobrir.**
+`theme/atendimento.ts` pinta status desconhecido em vez de escondê-lo, com
+a razão escrita: *"um valor novo no servidor apareceria em branco e
+ilegível"*. Mas isso vale para MOSTRAR. Na hora de salvar, o valor tolerado
+voltava para um servidor que o recusa.
+
+### A saída não foi decidir o que salvar
+
+A pergunta parecia ser *"o que gravar quando o status lido não está no
+vocabulário?"*, e as três respostas eram ruins: normalizar reescreve dado
+alheio calado; bloquear o salvar prende a edição do assunto; deixar como
+estava é o defeito.
+
+🔴 **A resposta é não mandar o campo.** `camposAlteradosDoAtendimento`
+monta o corpo só com o que mudou, e o status desconhecido fica onde está --
+porque ninguém o tocou.
+
+⚠️ **E isso não é padrão novo: é o outlier sendo corrigido.**
+`FormularioProcesso` já fazia exatamente isso desde antes, com
+`camposAlterados` em `utils/processos.ts`, e o docstring de lá lista três
+motivos que valem igual para atendimento:
+
+1. **corrida** -- A abre a tela, B muda o status, A salva o assunto e
+   devolve o status velho por cima, sem ter tocado nele;
+2. **permissão** -- reenviar a lista de responsáveis inalterada faz o
+   servidor rodar a régua de "tirar OUTRA pessoa" à toa;
+3. **a convenção do servidor é PATCH parcial** -- campo ausente é "não
+   toque", e o front tem de honrar isso.
+
+⚠️ O `status` só entra no corpo se passar por `ehStatusDeAtendimento`. Pela
+tela não há como escolher um valor de fora -- o `Select` só oferece os dois
+--, mas quem monta o corpo é a função, e é nela que a garantia mora. Com
+isso `CamposDoAtendimento.status` é `StatusDeAtendimento` e não `string`: o
+compilador passou a cobrar onde o front ESCREVE, enquanto a LEITURA segue
+`string` e tolerante.
+
+⚠️ **O que a medição desfez, no caminho:** eu tinha previsto que um `PATCH`
+de corpo vazio daria 500. Dá **200** -- `atualizar` tem `if not alteracoes:
+return`. E o servidor já não notificava à toa: ele compara
+`alteracoes["status"] != atendimento.status` antes de avisar, e
+`avisar_mudanca_de_responsaveis` calcula entradas e saídas, que são vazias
+quando nada mudou. Mandar menos campos não mudou nenhuma notificação.
+
+➡️ `utils/atendimentos.test.ts` e `pages/AtendimentoDetalhePage/index.test.tsx`.
 
 ## Histórias que saíram dos comentários (Fase 3 do `PLANO_ARQUIVOS_MENORES.md`, grupo 1, 05/09/2026)
 
@@ -1950,36 +1999,6 @@ backend): o `papel` e `grupo_id` do usuário vêm decodificados do próprio
 access token JWT salvo no `localStorage`, em `services/auth.ts`.
 
 ## 5) Tarefas pendentes
-
-0. 🔴 **DECISÃO DE PRODUTO PENDENTE (07/09/2026): o que salvar quando o
-   status lido não está no vocabulário.**
-
-   `atualizarAtendimento` recebe `status?: string`, e não o
-   `StatusDeAtendimento` derivado de `constants/atendimento.ts`. O tipo
-   existe e daria a checagem do compilador exatamente onde o front ESCREVE
-   -- foi tentado, e o `tsc` mostrou por que não fecha sozinho.
-
-   **A cadeia:** o campo do formulário nasce de `atendimento.status`, que é
-   `string` de propósito, porque a LEITURA tolera um status que o front
-   ainda não conhece (`theme/atendimento.ts`: *"status desconhecido não pode
-   sumir da tela nem herdar a cor de outro"*). Tipar a escrita obriga a
-   estreitar em algum ponto, e todo ponto tem um custo:
-
-   - **normalizar** para "Em andamento" ao abrir o formulário: quem editasse
-     só o assunto salvaria um status que não escolheu -- reescrita calada de
-     dado alheio, o pior dos três;
-   - **bloquear o salvar** enquanto o status for desconhecido: honesto, mas
-     prende a edição do assunto por causa de um campo que não é o assunto;
-   - **deixar passar** o valor lido: é o que acontece hoje, e por isso o tipo
-     continua `string`.
-
-   ⚠️ Hoje o caso não existe: a API valida `STATUS_DE_ATENDIMENTO` e recusa
-   qualquer outra palavra com 400. A pergunta é sobre o dia em que o servidor
-   ganhar um terceiro status -- e é aí que a decisão precisa estar tomada,
-   não depois.
-
-   ➡️ A razão também está escrita em `services/api/atendimentos.ts`, no
-   campo, e na seção 0c acima.
 
 1. Confirmar que o front em produção (Vercel) está apontando pra URL certa
    da API — a Function URL da AWS mudou várias vezes durante o

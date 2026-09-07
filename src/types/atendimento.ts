@@ -101,6 +101,28 @@ export interface VinculosDeRegistro {
 
 export type StatusDeAtendimento = (typeof STATUS_DE_ATENDIMENTO)[number];
 
+/** Os três campos que a aba Detalhes edita, do jeito que o formulário os
+ * segura: `status` é `string` porque nasce de `Atendimento.status`, que a
+ * leitura deixa passar mesmo sem conhecer. */
+export interface CamposEditaveisDoAtendimento {
+  assunto: string;
+  status: string;
+  responsaveis: string[];
+}
+
+/** O corpo do `PATCH`, com tudo opcional -- campo ausente é "não toque".
+ *
+ * 🔴 `status` é `StatusDeAtendimento` e não `string`: aqui quem escreve é o
+ * front, e o servidor recusa qualquer outra palavra com 400 "Status
+ * inválido". Só chega neste tipo o que passou por `ehStatusDeAtendimento`. */
+export interface CamposDoAtendimento {
+  assunto?: string;
+  status?: StatusDeAtendimento;
+  cliente_ids?: string[];
+  responsaveis?: string[];
+  processo_numero?: string | null;
+}
+
 export interface OpcoesListarAtendimentos {
   busca?: string;
   status?: string;

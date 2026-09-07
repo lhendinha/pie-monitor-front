@@ -10,6 +10,7 @@ import {
   Select,
 } from "../../../../components";
 import { STATUS_DE_ATENDIMENTO } from "../../../../constants/atendimento";
+import { camposAlteradosDoAtendimento } from "../../../../utils";
 import type { FormularioAtendimentoProps } from "./types";
 
 /** A aba **Detalhes**: o que o atendimento É, editável.
@@ -52,7 +53,16 @@ export default function FormularioAtendimento({
           /* Barra aqui também, e não só no `disabled`: é o que
              `NovoAtendimentoForm` faz, e vale para o envio por Enter. */
           if (mesmos || semAssunto) return;
-          onSalvar({ assunto: assunto.trim(), status, responsaveis });
+          onSalvar(
+            camposAlteradosDoAtendimento(
+              {
+                assunto: atendimento.assunto,
+                status: atendimento.status,
+                responsaveis: atendimento.responsaveis ?? [],
+              },
+              { assunto: assunto.trim(), status, responsaveis },
+            ),
+          );
         }}
       >
         <Campo rotulo="Assunto" para="assunto-atendimento" obrigatorio>

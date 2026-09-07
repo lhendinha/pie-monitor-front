@@ -1,5 +1,9 @@
 import { chamar } from "./client";
-import type { OpcoesListarAtendimentos, ResumoDeAtendimento } from "../../types";
+import type {
+  CamposDoAtendimento,
+  OpcoesListarAtendimentos,
+  ResumoDeAtendimento,
+} from "../../types";
 
 /** `GET /atendimentos`, escopado aos subgrupos que a pessoa enxerga.
  *
@@ -62,26 +66,18 @@ export function criarAtendimento(dados: {
   return chamar("/atendimentos", { method: "POST", body: { ...dados } });
 }
 
-/** PATCH parcial: campo omitido não é tocado. */
+/** PATCH parcial: campo omitido não é tocado.
+ *
+ * 🔴 Quem monta o corpo é `camposAlteradosDoAtendimento`, e não a tela:
+ * mandar campo que ninguém tocou devolve por cima o que outra pessoa mudou,
+ * e no caso do `status` chegava a IMPEDIR a edição -- ver o docstring de lá.
+ *
+ * ⚠️ `responsaveis` vazio é recusado pelo servidor: no PATCH quem edita está
+ * na tela e vê o campo, então esvaziá-lo é engano. Omitir é "não enviei". */
 export function atualizarAtendimento(
   subgrupoId: string,
   atendimentoId: string,
-  campos: {
-    assunto?: string;
-    /** ⚠️ `string`, e NÃO `StatusDeAtendimento` -- e é uma pendência, não
-     * um descuido. O tipo derivado existe e daria a checagem do compilador
-     * aqui, que é onde o front ESCREVE; o que impede é o campo do formulário
-     * nascer de `atendimento.status`, que é `string` de propósito porque a
-     * leitura tolera status novo do servidor (ver `theme/atendimento`).
-     * Fechar isso exige decidir o que salvar quando o status lido não está
-     * no vocabulário -- normalizar seria reescrever o dado calado. */
-    status?: string;
-    cliente_ids?: string[];
-    /** ⚠️ Lista VAZIA é recusada pelo servidor: no PATCH quem edita está na
-     * tela e vê o campo, então esvaziá-lo é engano. Omitir é "não enviei". */
-    responsaveis?: string[];
-    processo_numero?: string | null;
-  },
+  campos: CamposDoAtendimento,
 ) {
   return chamar(`/subgrupos/${subgrupoId}/atendimentos/${atendimentoId}`, {
     method: "PATCH",
