@@ -30,3 +30,32 @@ export const TIPOS_DE_CONTA = [
   { value: TIPO_CONTA_CORRENTE, label: "Conta corrente" },
   { value: TIPO_CONTA_OUTROS, label: "Outros" },
 ];
+
+/** O TIPO de um lançamento: qual dos quatro formulários o criou.
+ *
+ * 🔴 Mesma régua da natureza, e pelo mesmo motivo: `tipo === "saida"` escrito
+ * à mão funciona hoje e vira sempre falso no dia em que a palavra mudar --
+ * e aqui isso é uma linha aparecendo do lado errado da tela.
+ *
+ * ⚠️ Honorário é uma ENTRADA com parcelas, não um lado próprio: a natureza
+ * dele é `entrada`. O tipo diz de onde ele veio, a natureza diz para onde
+ * ele soma -- e é por isso que os dois existem.
+ */
+export const TIPO_HONORARIO = "honorario";
+export const TIPO_ENTRADA = "entrada";
+export const TIPO_SAIDA = "saida";
+export const TIPO_TRANSFERENCIA = "transferencia";
+
+/** A SITUAÇÃO de um lançamento, derivada na leitura pela API.
+ *
+ * 🔴 Nunca é gravada: um "atrasado" vira "efetivado" no dia em que alguém o
+ * baixa, sem ninguém reescrever nada. A tela recebe pronta e não recalcula
+ * -- refazer a conta aqui daria duas respostas para a mesma pergunta no dia
+ * em que a régua mudasse de um lado só.
+ *
+ * ⚠️ `aberto` INCLUI `atrasado` quando usado como FILTRO: atrasado é um
+ * aberto que venceu. Como valor de um lançamento, os dois são distintos.
+ */
+export const SITUACAO_ABERTO = "aberto";
+export const SITUACAO_ATRASADO = "atrasado";
+export const SITUACAO_EFETIVADO = "efetivado";
