@@ -1,10 +1,7 @@
 import { Box, chakra } from "@chakra-ui/react";
+import { Fragment } from "react";
 
-import {
-  PERIODOS_FUTUROS,
-  PERIODOS_PASSADOS,
-  PERIODO_TODOS,
-} from "../../../constants/periodos";
+import { PERIODO_TODOS } from "../../../constants/periodos";
 import type { OpcaoDeMenu } from "../../../types";
 import { DIVISORIA, OPCAO_LINHA } from "../../../theme/painelFiltro";
 import type { ListaDeOpcoesProps } from "./types";
@@ -47,14 +44,25 @@ const Divisoria = chakra(Box, {
   },
 });
 
-/** As opções fixas do filtro de período, nos três blocos do artifact.
+/** As opções do filtro de período, em blocos separados por divisória.
  *
  * As divisórias não são enfeite: sem elas "Amanhã" e "Ontem" ficam
  * encostados numa lista corrida, e escolher o passado achando que escolheu
  * o futuro é um erro fácil de cometer e difícil de perceber -- o quadro só
  * fica vazio.
+ *
+ * 🔴 Os blocos VÊM DE FORA desde que o Financeiro passou a usar a mesma
+ * pílula com opções próprias (Este ano, Próximos 7 dias, Mês passado, sem as
+ * de dia). Antes esta lista lia `PERIODOS_FUTUROS` e `PERIODOS_PASSADOS`
+ * direto, e era isso que impedia uma segunda tela de ter as suas.
+ *
+ * ⚠️ "Todos os períodos" e "Definir período…" continuam FIXOS, em cima e
+ * embaixo: eles não são um período da lista, são o sem-limite e a porta do
+ * calendário. Deixá-los configuráveis convidaria a esquecer um dos dois.
  */
-export default function ListaDeOpcoes({ selecionado, onEscolher, onAbrirPersonalizado }: ListaDeOpcoesProps) {
+export default function ListaDeOpcoes({
+  selecionado, blocos, onEscolher, onAbrirPersonalizado,
+}: ListaDeOpcoesProps) {
   function bloco(opcoes: readonly OpcaoDeMenu[]) {
     return opcoes.map((o) => (
       <Opcao key={o.id} type="button" ativa={o.id === selecionado} onClick={() => onEscolher(o.id)}>
@@ -73,11 +81,12 @@ export default function ListaDeOpcoes({ selecionado, onEscolher, onAbrirPersonal
         Todos os períodos
       </Opcao>
 
-      <Divisoria />
-      {bloco(PERIODOS_FUTUROS)}
-
-      <Divisoria />
-      {bloco(PERIODOS_PASSADOS)}
+      {blocos.map((opcoes, i) => (
+        <Fragment key={opcoes[0]?.id ?? i}>
+          <Divisoria />
+          {bloco(opcoes)}
+        </Fragment>
+      ))}
 
       <Divisoria />
       {/* Sem estado "ativa": não é uma escolha, é a porta pro calendário. O

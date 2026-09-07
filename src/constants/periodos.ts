@@ -35,3 +35,46 @@ export const PERIODO_TODOS = "todos";
 
 /** Intervalo escolhido a dedo no calendário. */
 export const PERIODO_PERSONALIZADO = "personalizado";
+
+/** Os mesmos três blocos, com as opções que fazem sentido para DINHEIRO.
+ *
+ * 🔴 As opções de DIA do Kanban ficam de fora -- Amanhã, Ontem, Próximos 3
+ * dias. Dinheiro se conta em mês: ninguém pergunta "quanto entra amanhã",
+ * pergunta "quanto entra este mês". Uma lista com as duas coisas faria a
+ * pessoa procurar o mês entre opções de dia.
+ *
+ * ⚠️ Trocam "Próxima semana" por "Próximos 7 dias" e ganham "Este ano" e
+ * "Mês passado": a comparação com o mês anterior é a pergunta que todo
+ * escritório faz, e o ano é o horizonte do fluxo de caixa.
+ *
+ * ➡️ `SeletorDePeriodo` recebe estes blocos pela prop `blocos`; o padrão dela
+ * são os do Kanban, para o Kanban e a Agenda não mudarem.
+ */
+export const PERIODOS_DE_DINHEIRO: readonly (readonly OpcaoDeMenu[])[] = [
+  [
+    { id: "hoje", rotulo: "Hoje" },
+    { id: "semana", rotulo: "Esta semana" },
+    { id: "mes", rotulo: "Este mês" },
+    { id: "ano", rotulo: "Este ano" },
+  ],
+  [
+    { id: "prox7", rotulo: "Próximos 7 dias" },
+    { id: "prox30", rotulo: "Próximos 30 dias" },
+    { id: "proxmes", rotulo: "Próximo mês" },
+  ],
+  [
+    { id: "ult7", rotulo: "Últimos 7 dias" },
+    { id: "ult30", rotulo: "Últimos 30 dias" },
+    { id: "mespassado", rotulo: "Mês passado" },
+  ],
+];
+
+/** Os blocos do Kanban e da Agenda, como uma lista de blocos.
+ *
+ * ⚠️ Existe para o PADRÃO da prop `blocos` ter um nome: `[[...], [...]]`
+ * escrito na assinatura seria a mesma lista repetida, e mudar a do Kanban
+ * deixaria a outra para trás. */
+export const PERIODOS_DO_KANBAN: readonly (readonly OpcaoDeMenu[])[] = [
+  PERIODOS_FUTUROS,
+  PERIODOS_PASSADOS,
+];

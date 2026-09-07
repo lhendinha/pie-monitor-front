@@ -72,6 +72,24 @@ export function intervaloDoPeriodo(
     }
     case "prox3":
       return { de: hojeISO(), ate: emDias(3) };
+    // ⚠️ Os quatro abaixo são do Financeiro (`PERIODOS_DE_DINHEIRO`), e não
+    // aparecem no Kanban. Ficam aqui e não num irmão porque a régua é a
+    // mesma -- id vira intervalo --, e duas funções divergiriam no dia em
+    // que "Este mês" mudasse de definição num lugar só.
+    case "ano": {
+      const primeiro = new Date(hoje.getFullYear(), 0, 1);
+      const ultimo = new Date(hoje.getFullYear(), 11, 31);
+      return { de: paraIso(primeiro), ate: paraIso(ultimo) };
+    }
+    case "prox7":
+      return { de: hojeISO(), ate: emDias(7) };
+    case "prox30":
+      return { de: hojeISO(), ate: emDias(30) };
+    case "mespassado": {
+      const primeiro = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      const ultimo = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+      return { de: paraIso(primeiro), ate: paraIso(ultimo) };
+    }
     case "proxsemana": {
       const inicio = somandoDias(inicioDaSemana(hoje), 7);
       return { de: paraIso(inicio), ate: paraIso(somandoDias(inicio, 6)) };
@@ -94,4 +112,26 @@ export function intervaloDoPeriodo(
     default:
       return null;
   }
+}
+
+/** O mesmo período, mas em MESES (`aaaa-mm`) -- é o que o fluxo de caixa
+ * pede.
+ *
+ * 🔴 Deriva de `intervaloDoPeriodo` em vez de repetir as contas: são as
+ * mesmas opções na mesma pílula, e duas tabelas de datas divergiriam no dia
+ * em que uma delas mudasse. Aqui só se corta o dia fora.
+ *
+ * ⚠️ Um período que começa e termina no mesmo mês devolve o mês uma vez --
+ * "Hoje" no fluxo é o mês de hoje, e não um intervalo vazio.
+ *
+ * ➡️ Usado pela Fase 6 (fluxo de caixa); nasce aqui junto com os ids novos
+ * porque é a mesma peça.
+ */
+export function intervaloDeMesesDoPeriodo(
+  id: string,
+  personalizado?: IntervaloDeDatas,
+): IntervaloDeDatas | null {
+  const dias = intervaloDoPeriodo(id, personalizado);
+  if (!dias) return null;
+  return { de: dias.de.slice(0, 7), ate: dias.ate.slice(0, 7) };
 }

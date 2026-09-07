@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { intervaloDoPeriodo } from "./periodo";
+import { intervaloDeMesesDoPeriodo, intervaloDoPeriodo } from "./periodo";
 
 /** Quarta-feira, 19/08/2026. Escolhida de propósito no MEIO da semana e no
  * meio do mês: numa segunda ou no dia 1º, "esta semana" e "hoje" coincidem
@@ -75,5 +75,70 @@ describe("intervaloDoPeriodo", () => {
   it("fevereiro de ano bissexto termina no dia 29", () => {
     vi.setSystemTime(new Date(2028, 1, 10, 10, 0, 0));
     expect(intervaloDoPeriodo("mes")).toEqual({ de: "2028-02-01", ate: "2028-02-29" });
+  });
+});
+
+describe("os períodos do DINHEIRO", () => {
+  /* ⚠️ Quarta, 19/08/2026 -- o mesmo relógio congelado do resto do arquivo. */
+
+  it("'ano' é o ano de CALENDÁRIO, e não doze meses a partir de hoje", () => {
+    // 🔴 A diferença aparece justamente em agosto: "os próximos doze meses"
+    // terminaria em 2027, e o fluxo de caixa mostraria dois anos misturados.
+    expect(intervaloDoPeriodo("ano")).toEqual({ de: "2026-01-01", ate: "2026-12-31" });
+  });
+
+  it("'prox7' e 'prox30' contam a partir de HOJE, em dias", () => {
+    expect(intervaloDoPeriodo("prox7")).toEqual({ de: "2026-08-19", ate: "2026-08-26" });
+    expect(intervaloDoPeriodo("prox30")).toEqual({ de: "2026-08-19", ate: "2026-09-18" });
+  });
+
+  it("'mespassado' é o mês inteiro anterior, não os últimos 30 dias", () => {
+    /* ⚠️ É a comparação que todo escritório faz -- "quanto entrou em julho?"
+       --, e ela só responde certo com o mês FECHADO. */
+    expect(intervaloDoPeriodo("mespassado")).toEqual({ de: "2026-07-01", ate: "2026-07-31" });
+  });
+
+  it("'mespassado' em JANEIRO volta para dezembro do ano anterior", () => {
+    /* 🔴 O par que pega erro de aritmética de mês: `mes - 1` em janeiro dá
+       -1, e um cálculo ingênuo devolveria 2026-00. */
+    vi.setSystemTime(new Date(2026, 0, 15, 10, 0, 0));
+    expect(intervaloDoPeriodo("mespassado")).toEqual({ de: "2025-12-01", ate: "2025-12-31" });
+  });
+
+  it("'mespassado' em MARÇO acerta o fim de fevereiro", () => {
+    vi.setSystemTime(new Date(2026, 2, 10, 10, 0, 0));
+    expect(intervaloDoPeriodo("mespassado")).toEqual({ de: "2026-02-01", ate: "2026-02-28" });
+  });
+
+  it("⚠️ um id que o Kanban conhece e o dinheiro não continua valendo", () => {
+    /* A função é UMA para as duas telas: quem limita a lista de opções é a
+       pílula, não ela. Devolver `null` aqui esconderia um período que o
+       Kanban usa. */
+    expect(intervaloDoPeriodo("amanha")).toEqual({ de: "2026-08-20", ate: "2026-08-20" });
+  });
+});
+
+describe("intervaloDeMesesDoPeriodo", () => {
+  it("corta o dia fora, deixando aaaa-mm", () => {
+    expect(intervaloDeMesesDoPeriodo("ano")).toEqual({ de: "2026-01", ate: "2026-12" });
+  });
+
+  it("período dentro de um mês só devolve o mês uma vez", () => {
+    /* ⚠️ "Hoje" no fluxo é o MÊS de hoje: um intervalo de um dia não pode
+       virar um período vazio de meses. */
+    expect(intervaloDeMesesDoPeriodo("hoje")).toEqual({ de: "2026-08", ate: "2026-08" });
+  });
+
+  it("'todos' continua sem limite", () => {
+    expect(intervaloDeMesesDoPeriodo("todos")).toBeNull();
+  });
+
+  it("🔴 deriva do irmão em dias, e não repete a conta", () => {
+    /* Se um dia "mespassado" mudar de definição, os dois mudam juntos --
+       era a divergência entre duas tabelas de datas que este teste evita. */
+    const dias = intervaloDoPeriodo("mespassado")!;
+    expect(intervaloDeMesesDoPeriodo("mespassado")).toEqual({
+      de: dias.de.slice(0, 7), ate: dias.ate.slice(0, 7),
+    });
   });
 });
