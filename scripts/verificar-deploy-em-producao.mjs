@@ -392,6 +392,47 @@ const contorno = await pagina.evaluate(() => {
 conferir(contorno === null || contorno === "rgb(255, 255, 255)",
   "🔴 o botão de contorno é BRANCO sobre o canvas");
 
+/* ─────────────────── o Financeiro na Área de trabalho (Fase 7) ─────────── */
+console.log("\n-- Área de trabalho > Financeiro --");
+await pagina.goto(`${APP}/`);
+await pagina.getByText("Resumo rápido").waitFor();
+await pagina.waitForTimeout(2500);
+
+const naHome = await pagina.evaluate(() => {
+  /* ⚠️ DENTRO do cartão: o menu lateral também tem um "Financeiro", e a
+     caixa-alta dos rótulos vem do CSS -- comparar com "FINANCEIRO" no
+     `textContent` nunca casaria. */
+  const cartao = [...document.querySelectorAll("h3")]
+    .find((h) => h.textContent?.trim() === "Resumo rápido")?.closest("div")?.parentElement;
+  const rotulos = [...(cartao?.querySelectorAll("p") ?? [])]
+    .map((x) => x.textContent?.trim().toUpperCase());
+  const linha = (inicio) => {
+    const e = [...document.querySelectorAll("button, div")].find(
+      (x) => x.children.length === 2 && x.textContent?.startsWith(inicio));
+    return e?.textContent ?? "";
+  };
+  return {
+    ordem: rotulos.filter((r) => ["PRECISA DE ATENÇÃO", "FINANCEIRO", "PANORAMA"].includes(r ?? "")),
+    aPagar: linha("A pagar até"),
+    aReceber: linha("A receber atrasado"),
+    temCard: [...document.querySelectorAll("h3")].some((h) => h.textContent?.trim() === "Vence esta semana"),
+  };
+});
+conferir(naHome.ordem.join(" > ") === "PRECISA DE ATENÇÃO > FINANCEIRO > PANORAMA",
+  "🔴 a seção Financeiro fica ENTRE atenção e panorama");
+conferir(/A pagar até \d+ dias/.test(naHome.aPagar),
+  "🔴 o rótulo diz 'até', não 'em' -- a soma não tem limite inferior");
+conferir(/R\$/.test(naHome.aReceber), "e as linhas mostram DINHEIRO");
+conferir(naHome.temCard, 'o card "Vence esta semana" subiu');
+
+/* O clique tem de abrir a lista que gerou o número. */
+await pagina.getByRole("button", { name: /A pagar até/ }).click();
+await pagina.waitForTimeout(2500);
+conferir(pagina.url().includes("vencendo=7") && pagina.url().includes("natureza=saida"),
+  "🔴 e o clique leva `vencendo`, não um período");
+conferir((await pagina.getByText(/Vence até 7 dias/).count()) === 1,
+  "e a tela DIZ o filtro que recebeu -- ele não filtra em silêncio");
+
 console.log(problemas.length ? `\n${problemas.length} FALHA(S)` : "\nTudo certo em produção.");
 if (deixarAberto) {
   console.log("A janela fica aberta -- feche o Chrome quando terminar.");
