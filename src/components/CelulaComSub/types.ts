@@ -13,4 +13,14 @@ export interface CelulaComSubProps {
    * da prévia da importação), que sem isto ganharia a mesma fatia das
    * colunas de texto. As demais se distribuem pelo conteúdo. */
   largura?: string;
+  /** Teto de largura da célula.
+   *
+   * 🔴 Sem ele o `truncate` NÃO morde: numa tabela a coluna cresce até o
+   * conteúdo caber, e o texto nunca chega a estourar a própria caixa. É a
+   * lição que `LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO` já registra -- a tabela
+   * foi a 1170px dentro de 1130px visíveis, e a coluna VALOR saiu da tela.
+   *
+   * ⚠️ Com ele, o principal também trunca: sem isso ele quebraria em duas
+   * linhas e a altura da linha deixaria de ser uniforme. */
+  maxLargura?: string;
 }

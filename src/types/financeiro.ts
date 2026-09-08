@@ -152,6 +152,17 @@ export interface Lancamento {
   /** Quem pagou ou recebeu, quando não é um cliente do Argos. Um ou outro,
    * nunca os dois. */
   contraparte: string;
+  /** O NOME do cliente, resolvido pelo servidor -- só vem quando há
+   * `cliente_id`.
+   *
+   * 🔴 Vem pronto, e não resolvido na tela: sem ele a linha de apoio ficava
+   * vazia justamente nos honorários (que são os que têm cliente), e resolver
+   * em cada tela faria a lista e o card divergirem no dia em que uma delas
+   * esquecesse.
+   *
+   * ⚠️ Vazio quando o cliente foi apagado -- e aí a tela cai para o que já
+   * fazia, sem linha de apoio, em vez de escrever um id. */
+  cliente_nome?: string;
   /** O endereço do VÍNCULO -- é ele que acha o processo. Não confundir com o
    * `rateio`, que é a classificação. */
   subgrupo_id: string;

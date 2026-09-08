@@ -34,12 +34,17 @@ export default function LinhaDeVencimento({ lancamento, acao }: LinhaDeVenciment
         <Text fontSize="13.5px" fontWeight="700" lineClamp={1}>
           {lancamento.descricao}
         </Text>
-        {/* A contraparte é quem paga ou recebe. Vazia no lançamento sem
-            cliente nem texto -- e aí a linha fica só com a descrição, em vez
-            de uma linha de apoio em branco. */}
-        {lancamento.contraparte && (
+        {/* Quem paga ou recebe: a contraparte em texto OU o nome do cliente,
+            que o servidor já manda resolvido. Vazio nos dois quando não há
+            nem um nem outro -- e aí a linha fica só com a descrição, em vez
+            de uma linha de apoio em branco.
+
+            ⚠️ `lineClamp={1}` porque nome de empresa é longo: sem ele
+            "Construtora Alfa Empreendimentos e Participações Ltda" empurra o
+            valor e a etiqueta para fora. */}
+        {(lancamento.contraparte || lancamento.cliente_nome) && (
           <Text fontSize="12px" color="fg.subtle" lineClamp={1}>
-            {lancamento.contraparte}
+            {lancamento.contraparte || lancamento.cliente_nome}
           </Text>
         )}
       </Stack>
