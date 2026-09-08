@@ -58,6 +58,11 @@ const CITADO_POR_NAO_EXISTIR = new Set([
   // quebra de página. Sem a menção, alguém a escreveria por simetria com
   // `listarContas` e `listarCentrosDeCusto`.
   "listarCategorias",
+  // 🔴 Removido na Fase 6, quando a quarta aba deixou de ser pendente: com
+  // as quatro prontas nada mais lia o `pendente` nem montava a frase. A
+  // menção existe para dizer que os dois VOLTAM juntos se uma aba nova
+  // nascer vazia.
+  "AindaNaoChegou",
 ]);
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));

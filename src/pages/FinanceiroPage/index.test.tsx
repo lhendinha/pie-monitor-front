@@ -762,11 +762,13 @@ describe("cada aba mostra o SEU conteúdo", () => {
    * as três tabelas do catálogo. Quem viu foi o usuário, não a suíte.
    */
 
-  it.each([
-    ["fluxo", "Fluxo de caixa"],
-  ])("a aba pendente %s diz que ainda não chegou", async (id, rotulo) => {
-    montar(`/financeiro?aba=${id}`);
-    expect(await screen.findByText(`${rotulo} ainda não está disponível.`)).toBeInTheDocument();
+  it("🔴 Fluxo de caixa mostra a TABELA -- era a última aba pendente", async () => {
+    /* Com ela, o `pendente` e o `AindaNaoChegou` deixaram de ter leitor e
+       saíram. Este teste é o que garante que a aba não voltou a ser a
+       frase. */
+    montar("/financeiro?aba=fluxo");
+    expect(await screen.findByText("Exportar planilha")).toBeInTheDocument();
+    expect(screen.queryByText(/ainda não está disponível/)).not.toBeInTheDocument();
   });
 
   it("🔴 Lançamentos mostra a LISTA, e não o catálogo -- o par negativo do defeito", async () => {

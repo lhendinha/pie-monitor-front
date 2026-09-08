@@ -78,3 +78,36 @@ export const PERIODOS_DO_KANBAN: readonly (readonly OpcaoDeMenu[])[] = [
   PERIODOS_FUTUROS,
   PERIODOS_PASSADOS,
 ];
+
+/** Os blocos do FLUXO DE CAIXA, que se conta em MESES.
+ *
+ * 🔴 Lista própria, e não `PERIODOS_DE_DINHEIRO`: a tabela do fluxo tem uma
+ * COLUNA POR MÊS, e "Hoje" ou "Últimos 7 dias" viram uma coluna só -- um
+ * relatório de fluxo com uma coluna não responde a pergunta que ele existe
+ * para responder.
+ *
+ * ⚠️ O padrão é "Este ano": doze colunas é o horizonte que o escritório usa
+ * para fechar o exercício, e é o que a exportação leva para a planilha.
+ */
+export const PERIODOS_DO_FLUXO: readonly (readonly OpcaoDeMenu[])[] = [
+  [
+    { id: "esteano", rotulo: "Este ano" },
+    { id: "anopassado", rotulo: "Ano passado" },
+  ],
+  [
+    { id: "ult6meses", rotulo: "Últimos 6 meses" },
+    { id: "ult12meses", rotulo: "Últimos 12 meses" },
+  ],
+  [
+    { id: "prox6meses", rotulo: "Próximos 6 meses" },
+    { id: "prox12meses", rotulo: "Próximos 12 meses" },
+  ],
+];
+
+/** O padrão da aba de fluxo. Não é `PERIODO_TODOS`: "todos os períodos" numa
+ * tabela mensal seria uma coluna por mês desde o primeiro lançamento. */
+export const PERIODO_PADRAO_DO_FLUXO = "esteano";
+
+/** O teto do servidor (`MAXIMO_DE_MESES_DO_FLUXO`), repetido aqui para a
+ * tela recusar antes de gastar uma ida e receber um 400. */
+export const MAXIMO_DE_MESES_DO_FLUXO = 24;

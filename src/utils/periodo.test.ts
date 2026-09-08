@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { intervaloDeMesesDoPeriodo, intervaloDoPeriodo } from "./periodo";
+import { erroDoPeriodoEmMeses, intervaloDoPeriodo, intervaloEmMeses } from "./periodo";
 
 /** Quarta-feira, 19/08/2026. Escolhida de propósito no MEIO da semana e no
  * meio do mês: numa segunda ou no dia 1º, "esta semana" e "hoje" coincidem
@@ -118,27 +118,69 @@ describe("os períodos do DINHEIRO", () => {
   });
 });
 
-describe("intervaloDeMesesDoPeriodo", () => {
-  it("corta o dia fora, deixando aaaa-mm", () => {
-    expect(intervaloDeMesesDoPeriodo("ano")).toEqual({ de: "2026-01", ate: "2026-12" });
+describe("intervaloEmMeses -- o período do fluxo de caixa", () => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date("2026-09-08T12:00:00"));
   });
 
-  it("período dentro de um mês só devolve o mês uma vez", () => {
-    /* ⚠️ "Hoje" no fluxo é o MÊS de hoje: um intervalo de um dia não pode
-       virar um período vazio de meses. */
-    expect(intervaloDeMesesDoPeriodo("hoje")).toEqual({ de: "2026-08", ate: "2026-08" });
+  it("🔴 devolve MESES, e não datas -- o servidor recusa `aaaa-mm-dd` aqui", () => {
+    const intervalo = intervaloEmMeses("esteano");
+    expect(intervalo).toEqual({ de: "2026-01", ate: "2026-12" });
+    expect(intervalo?.de).not.toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
-  it("'todos' continua sem limite", () => {
-    expect(intervaloDeMesesDoPeriodo("todos")).toBeNull();
+  it("o ano passado é o ano inteiro anterior", () => {
+    expect(intervaloEmMeses("anopassado")).toEqual({ de: "2025-01", ate: "2025-12" });
   });
 
-  it("🔴 deriva do irmão em dias, e não repete a conta", () => {
-    /* Se um dia "mespassado" mudar de definição, os dois mudam juntos --
-       era a divergência entre duas tabelas de datas que este teste evita. */
-    const dias = intervaloDoPeriodo("mespassado")!;
-    expect(intervaloDeMesesDoPeriodo("mespassado")).toEqual({
-      de: dias.de.slice(0, 7), ate: dias.ate.slice(0, 7),
-    });
+  it("⚠️ 'últimos N' INCLUEM o mês corrente -- são N colunas terminando em hoje", () => {
+    /* Sem incluir, o relatório aberto no dia 1º não mostraria nada do mês
+       que está correndo. */
+    expect(intervaloEmMeses("ult6meses")).toEqual({ de: "2026-04", ate: "2026-09" });
+    expect(intervaloEmMeses("ult12meses")).toEqual({ de: "2025-10", ate: "2026-09" });
+  });
+
+  it("'próximos N' começam em hoje, pela mesma razão", () => {
+    expect(intervaloEmMeses("prox6meses")).toEqual({ de: "2026-09", ate: "2027-02" });
+    expect(intervaloEmMeses("prox12meses")).toEqual({ de: "2026-09", ate: "2027-08" });
+  });
+
+  it("o personalizado devolve o que veio, e sem ele devolve nulo", () => {
+    expect(intervaloEmMeses("personalizado", { de: "2026-03", ate: "2026-05" }))
+      .toEqual({ de: "2026-03", ate: "2026-05" });
+    expect(intervaloEmMeses("personalizado")).toBeNull();
+  });
+
+  it("⚠️ id desconhecido devolve NULO, e não um período inventado", () => {
+    /* Id de uma versão antiga guardado na URL: sem período, a API devolve o
+       ano corrente, que é o padrão dela. */
+    expect(intervaloEmMeses("ult7")).toBeNull();
+    expect(intervaloEmMeses("")).toBeNull();
+  });
+});
+
+describe("erroDoPeriodoEmMeses", () => {
+  it("período bom não tem erro", () => {
+    expect(erroDoPeriodoEmMeses({ de: "2026-01", ate: "2026-12" })).toBe("");
+    expect(erroDoPeriodoEmMeses({ de: "2026-05", ate: "2026-05" })).toBe("");
+    expect(erroDoPeriodoEmMeses(null)).toBe("");
+  });
+
+  it("🔴 recusa o invertido e o longo demais -- as DUAS regras do servidor", () => {
+    /* A tela recusa antes de pedir: ir buscar um 400 para descobrir o que
+       ela já sabe transforma uma correção em "Não foi possível carregar". */
+    expect(erroDoPeriodoEmMeses({ de: "2026-12", ate: "2026-01" }))
+      .toBe("O mês final vem antes do inicial.");
+    expect(erroDoPeriodoEmMeses({ de: "2025-01", ate: "2027-01" }))
+      .toBe("O período tem 25 meses; o máximo é 24.");
+  });
+
+  it("⚠️ exatamente 24 passa -- o teto é inclusivo, como o do servidor", () => {
+    expect(erroDoPeriodoEmMeses({ de: "2025-01", ate: "2026-12" })).toBe("");
+  });
+
+  it("ponta faltando não é erro: quem não escolheu ainda não errou", () => {
+    expect(erroDoPeriodoEmMeses({ de: "2026-01", ate: "" })).toBe("");
+    expect(erroDoPeriodoEmMeses({ de: "", ate: "2026-01" })).toBe("");
   });
 });

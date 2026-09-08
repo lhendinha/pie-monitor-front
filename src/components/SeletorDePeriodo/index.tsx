@@ -8,9 +8,10 @@ import {
   PERIODO_TODOS,
 } from "../../constants/periodos";
 import { PAINEL } from "../../theme/painelFiltro";
-import { formatarData } from "../../utils";
+import { formatarData, formatarMes } from "../../utils";
 import type { IntervaloDeDatas, OpcaoDeMenu } from "../../types";
 import { PilulaDeFiltro } from "../PilulaDeFiltro";
+import IntervaloEmMeses from "./IntervaloEmMeses";
 import IntervaloPersonalizado from "./IntervaloPersonalizado";
 import ListaDeOpcoes from "./ListaDeOpcoes";
 import type { SeletorDePeriodoProps } from "./types";
@@ -22,9 +23,11 @@ function rotuloDoPeriodo(
   periodoId: string,
   blocos: readonly (readonly OpcaoDeMenu[])[],
   intervalo?: IntervaloDeDatas,
+  emMeses = false,
 ): string {
   if (periodoId === PERIODO_PERSONALIZADO && intervalo?.de && intervalo?.ate) {
-    return `${formatarData(intervalo.de)} – ${formatarData(intervalo.ate)}`;
+    const formatar = emMeses ? formatarMes : formatarData;
+    return `${formatar(intervalo.de)} – ${formatar(intervalo.ate)}`;
   }
   // ⚠️ Procura nos blocos DESTA tela, e não numa lista fixa: com as opções
   // do Financeiro, "Este ano" não existe nas do Kanban -- e a pílula
@@ -48,6 +51,7 @@ export default function SeletorDePeriodo({
   periodoId,
   intervaloPersonalizado,
   blocos = PERIODOS_DO_KANBAN,
+  emMeses = false,
   onMudar,
 }: SeletorDePeriodoProps) {
   const [aberto, setAberto] = useState(false);
@@ -90,7 +94,7 @@ export default function SeletorDePeriodo({
     >
       <Popover.Trigger asChild>
         <PilulaDeFiltro ativo={periodoId !== PERIODO_TODOS}>
-          {rotuloDoPeriodo(periodoId, blocos, intervaloPersonalizado)}
+          {rotuloDoPeriodo(periodoId, blocos, intervaloPersonalizado, emMeses)}
         </PilulaDeFiltro>
       </Popover.Trigger>
       <Portal>
@@ -102,6 +106,13 @@ export default function SeletorDePeriodo({
                 blocos={blocos}
                 onEscolher={escolher}
                 onAbrirPersonalizado={() => setModo("personalizado")}
+              />
+            ) : emMeses ? (
+              <IntervaloEmMeses
+                de={intervaloPersonalizado?.de ?? ""}
+                ate={intervaloPersonalizado?.ate ?? ""}
+                onAplicar={aplicarIntervalo}
+                onVoltar={() => setModo("lista")}
               />
             ) : (
               <IntervaloPersonalizado

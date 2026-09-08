@@ -13,32 +13,31 @@ import {
 
 /** As quatro abas da tela.
  *
- * 🔴 `pendente` diz que a aba não tem conteúdo AINDA -- e é só isso: quem
- * escolhe o que mostrar é a PÁGINA, com um painel por aba, cada um dizendo
- * o seu conteúdo. Antes ela deduzia ("não é pendente, então é
- * Configurações"), o que funcionava enquanto Configurações era a única
- * pronta: virar `pendente: false` em Lançamentos, antes de a lista existir,
- * fez a aba mostrar a tela de Configurações inteira. Escolha escrita não
- * erra de aba; escolha deduzida erra.
- *
  * A primeira é o padrão: Lançamentos é o que responde "o que entrou e saiu",
  * e é onde se trabalha todo dia. Configurações fica por último porque se
  * mexe nela uma vez.
  *
- * ⚠️ `pendente` marca a aba cujo conteúdo ainda não existe. Ela APARECE
- * mesmo assim: as quatro abas são a estrutura da tela, e escondê-las faria
- * `/financeiro` parecer ser só uma tela de configuração. O que a pendente
- * mostra é uma frase dizendo que aquela parte ainda não chegou -- clicar e
- * não acontecer nada é que seria ruim.
+ * 🔴 **Quem escolhe o que mostrar é a PÁGINA**, com um painel por aba, cada
+ * um dizendo o seu conteúdo. Antes ela deduzia ("não é pendente, então é
+ * Configurações"), o que funcionava enquanto Configurações era a única
+ * pronta: virar `pendente: false` em Lançamentos, antes de a lista existir,
+ * fez a aba mostrar a tela de Configurações INTEIRA. Escolha escrita não
+ * erra de aba; escolha deduzida erra.
+ *
+ * ⚠️ **O `pendente` saiu na Fase 6**, junto com `AindaNaoChegou`: com as
+ * quatro abas prontas, nada mais o lia. Ele foi útil enquanto marcava a aba
+ * sem conteúdo -- as quatro apareciam de qualquer jeito, porque são a
+ * estrutura da tela, e a pendente dizia que aquela parte ainda não chegou.
+ * Uma aba nova que nasça vazia traz os dois de volta.
  *
  * ⚠️ O nome do parâmetro na URL (`?aba=`) e o `abaValida` que o lê são
  * compartilhados -- ver `utils/abas`. Aqui fica só o que é desta tela.
  */
 export const ABAS_DO_FINANCEIRO = [
-  { id: "lancamentos", rotulo: "Lançamentos", pendente: false },
-  { id: "faturas", rotulo: "Faturas", pendente: false },
-  { id: "fluxo", rotulo: "Fluxo de caixa", pendente: true },
-  { id: "configuracoes", rotulo: "Configurações", pendente: false },
+  { id: "lancamentos", rotulo: "Lançamentos" },
+  { id: "faturas", rotulo: "Faturas" },
+  { id: "fluxo", rotulo: "Fluxo de caixa" },
+  { id: "configuracoes", rotulo: "Configurações" },
 ] as const;
 
 /** O prefixo dos ids de acessibilidade que ligam cada aba ao seu painel. */
