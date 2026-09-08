@@ -143,13 +143,20 @@ for (const aba of ["Lançamentos", "Faturas", "Fluxo de caixa", "Configurações
   conferir((await pagina.getByRole("tab", { name: aba }).count()) === 1, `a aba "${aba}" está na tela`);
 }
 
-/* A aba ainda pendente APARECE e diz que não chegou -- clicar e não
-   acontecer nada é que seria ruim.
-   ⚠️ Era Lançamentos até a Fase 5; agora as pendentes são Faturas e Fluxo. */
+/* 🔴 **Nenhuma aba é mais pendente.** Esta checagem cobrava a frase "ainda
+   não está disponível" -- era Lançamentos até a Fase 5, depois Faturas e
+   Fluxo. Na Fase 6 as quatro ficaram prontas, e a asserção velha passou a
+   FALHAR em produção com tudo certo.
+
+   ⚠️ A lição vale mais que a linha: checagem que descreve um estado
+   TRANSITÓRIO ("ainda não chegou") tem prazo de validade, e quem a escreve
+   precisa deixar claro o que fazer quando ele vence. O que ficou no lugar é
+   o par negativo dela, que não vence: nenhuma aba diz isso. */
 await pagina.getByRole("tab", { name: "Faturas" }).click();
+await pagina.waitForTimeout(1500);
 conferir(
-  await pagina.getByText("Faturas ainda não está disponível.").isVisible().catch(() => false),
-  "⚠️ a aba pendente diz que ainda não chegou, em vez de abrir vazia",
+  (await pagina.getByText(/ainda não está disponível/).count()) === 0,
+  "🔴 nenhuma aba diz mais 'ainda não está disponível' -- as quatro estão prontas",
 );
 
 console.log("\n-- Financeiro > Configurações --");
@@ -324,6 +331,66 @@ await pagina.getByRole("button", { name: "Cancelar" }).click();
 /* A pílula que o card usa -- ela é a prova de que o filtro por natureza subiu. */
 conferir((await pagina.getByText("Entradas e saídas").count()) >= 1,
   "a pílula de natureza existe -- o filtro novo da API chegou à tela");
+
+/* ─────────────────────── o Financeiro completo (Fase 6) ─────────────────── */
+console.log("\n-- Financeiro > as quatro abas --");
+await pagina.goto(`${APP}/financeiro?aba=faturas`);
+await pagina.waitForTimeout(2500);
+conferir((await pagina.getByText(/ainda não está disponível/).count()) === 0,
+  "🔴 nenhuma aba diz mais que 'ainda não chegou' -- as quatro subiram");
+conferir((await pagina.getByRole("button", { name: "Emitidas" }).count()) === 1,
+  "Faturas tem as duas sub-abas");
+
+await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+await pagina.waitForTimeout(2500);
+conferir((await pagina.getByText(/Nenhuma fatura emitida|Mostrando \d+ de/).count()) >= 1,
+  "e 'Emitidas' responde -- lista ou o vazio dela");
+
+await pagina.goto(`${APP}/financeiro?aba=fluxo`);
+await pagina.waitForTimeout(3000);
+conferir((await pagina.getByRole("button", { name: /Exportar planilha/ }).count()) === 1,
+  "o Fluxo de caixa abre, com o botão de exportar");
+
+/* ⚠️ **A base de produção pode estar VAZIA**, e aí a aba mostra o estado
+   vazio no lugar da tabela -- foi exatamente o que aconteceu na primeira
+   conferência da Fase 6, e as duas checagens abaixo falharam sem nada estar
+   errado. É a mesma armadilha que a lista de Lançamentos já registra aqui:
+   asserção sobre tabela só vale quando há tabela. */
+const temTabelaDoFluxo = (await pagina.getByText("DESCRIÇÃO").count()) === 1;
+if (temTabelaDoFluxo) {
+  conferir((await pagina.getByText(/FLUXO DE CAIXA ·/).count()) === 1,
+    "🔴 e traz a legenda do artefato, dizendo até onde é fato");
+  conferir((await pagina.getByText(/REALIZADO/).count()) >= 1,
+    "e o cabeçalho da coluna diz o que ela é");
+} else {
+  conferir((await pagina.getByText(/Nenhum lançamento neste período/).count()) === 1,
+    "⚠️ sem lançamento nenhum, o fluxo DIZ isso -- e não há tabela para conferir");
+}
+
+/* 🔴 A caixa de marcar da paleta: medida, não olhada. Ela saía PRETA. */
+await pagina.goto(`${APP}/financeiro?aba=lancamentos`);
+await pagina.waitForTimeout(2500);
+const caixa = await pagina.evaluate(() => {
+  const marca = getComputedStyle(document.documentElement)
+    .getPropertyValue("--chakra-colors-fg-brand").trim();
+  const nativo = document.querySelector('input[type="checkbox"]');
+  return {
+    marca,
+    accentDoNativo: nativo ? getComputedStyle(nativo).accentColor : null,
+  };
+});
+conferir(caixa.marca === "#008fd5", "a marca continua #008fd5 em produção");
+conferir(caixa.accentDoNativo === null || caixa.accentDoNativo === "rgb(0, 143, 213)",
+  "🔴 e o checkbox nativo usa a marca -- `auto` era o azul do sistema");
+
+/* 🔴 O botão de contorno sobre o canvas: era `transparent`, saía cinza. */
+const contorno = await pagina.evaluate(() => {
+  const b = [...document.querySelectorAll("button")]
+    .find((x) => /Limpar filtros|Exportar/.test(x.textContent ?? ""));
+  return b ? getComputedStyle(b).backgroundColor : null;
+});
+conferir(contorno === null || contorno === "rgb(255, 255, 255)",
+  "🔴 o botão de contorno é BRANCO sobre o canvas");
 
 console.log(problemas.length ? `\n${problemas.length} FALHA(S)` : "\nTudo certo em produção.");
 if (deixarAberto) {
