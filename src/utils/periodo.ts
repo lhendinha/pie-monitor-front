@@ -1,8 +1,10 @@
 import {
+  MAXIMO_DE_MESES_DO_FLUXO,
   PERIODOS_DE_DINHEIRO,
   PERIODO_PERSONALIZADO,
   PERIODO_TODOS,
 } from "../constants/periodos";
+import { mesDeHoje, mesesEntre, somarMeses } from "./mes";
 import { emDias, hojeISO } from "./prazo";
 
 import type { IntervaloDeDatas } from "../types";
@@ -118,28 +120,6 @@ export function intervaloDoPeriodo(
   }
 }
 
-/** O mesmo período, mas em MESES (`aaaa-mm`) -- é o que o fluxo de caixa
- * pede.
- *
- * 🔴 Deriva de `intervaloDoPeriodo` em vez de repetir as contas: são as
- * mesmas opções na mesma pílula, e duas tabelas de datas divergiriam no dia
- * em que uma delas mudasse. Aqui só se corta o dia fora.
- *
- * ⚠️ Um período que começa e termina no mesmo mês devolve o mês uma vez --
- * "Hoje" no fluxo é o mês de hoje, e não um intervalo vazio.
- *
- * ➡️ Usado pela Fase 6 (fluxo de caixa); nasce aqui junto com os ids novos
- * porque é a mesma peça.
- */
-export function intervaloDeMesesDoPeriodo(
-  id: string,
-  personalizado?: IntervaloDeDatas,
-): IntervaloDeDatas | null {
-  const dias = intervaloDoPeriodo(id, personalizado);
-  if (!dias) return null;
-  return { de: dias.de.slice(0, 7), ate: dias.ate.slice(0, 7) };
-}
-
 /** O período escolhido em MINÚSCULAS, para caber no meio de uma frase --
  * "A receber · este mês".
  *
@@ -157,4 +137,60 @@ export function periodoPorExtenso(periodoId: string): string {
   if (periodoId === PERIODO_TODOS) return "todos os períodos";
   const achado = PERIODOS_DE_DINHEIRO.flat().find((o) => o.id === periodoId);
   return achado ? achado.rotulo.toLowerCase() : "o período escolhido";
+}
+
+/** O período do FLUXO DE CAIXA, em MESES (`aaaa-mm`).
+ *
+ * 🔴 Função própria, e não um `case` a mais em `intervaloDoPeriodo`: aquela
+ * devolve DIAS, e as duas unidades no mesmo retorno seriam duas verdades
+ * sobre o mesmo tipo -- quem chamasse errado mandaria `2026-09-01` onde o
+ * servidor espera `2026-09` e receberia um 400 sobre um campo que a tela
+ * nunca mostrou.
+ *
+ * ⚠️ "Últimos 6 meses" INCLUI o mês corrente: seis colunas terminando em
+ * hoje. Sem incluir, o relatório aberto no dia 1º não mostraria nada do mês
+ * que está correndo.
+ */
+export function intervaloEmMeses(
+  id: string,
+  personalizado?: IntervaloDeDatas,
+): IntervaloDeDatas | null {
+  if (id === PERIODO_PERSONALIZADO) return personalizado ?? null;
+  const hoje = mesDeHoje();
+  const ano = hoje.slice(0, 4);
+
+  switch (id) {
+    case "esteano":
+      return { de: `${ano}-01`, ate: `${ano}-12` };
+    case "anopassado": {
+      const passado = Number(ano) - 1;
+      return { de: `${passado}-01`, ate: `${passado}-12` };
+    }
+    case "ult6meses":
+      return { de: somarMeses(hoje, -5), ate: hoje };
+    case "ult12meses":
+      return { de: somarMeses(hoje, -11), ate: hoje };
+    case "prox6meses":
+      return { de: hoje, ate: somarMeses(hoje, 5) };
+    case "prox12meses":
+      return { de: hoje, ate: somarMeses(hoje, 11) };
+    default:
+      return null;
+  }
+}
+
+/** O que há de errado com o período escolhido -- vazio quando está bom.
+ *
+ * 🔴 A tela recusa ANTES de pedir: as duas regras são as do servidor
+ * (`fluxo_de_caixa.garantir_meses`), e ir buscar um 400 para descobrir o que
+ * a tela já sabe transforma uma correção em "Não foi possível carregar".
+ */
+export function erroDoPeriodoEmMeses(intervalo: IntervaloDeDatas | null): string {
+  if (!intervalo?.de || !intervalo?.ate) return "";
+  if (intervalo.de > intervalo.ate) return "O mês final vem antes do inicial.";
+  const quantos = mesesEntre(intervalo.de, intervalo.ate);
+  if (quantos > MAXIMO_DE_MESES_DO_FLUXO) {
+    return `O período tem ${quantos} meses; o máximo é ${MAXIMO_DE_MESES_DO_FLUXO}.`;
+  }
+  return "";
 }

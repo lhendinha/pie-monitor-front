@@ -247,3 +247,105 @@ export type FiltrosDeLancamentos = OpcoesDePaginacao & {
    * inclusive. Troca a leitura pelo índice dos abertos. */
   vencendo?: number;
 };
+
+/** O recorte da aba "Emitidas": período e página.
+ *
+ * ⚠️ O período filtra pelo VENCIMENTO da fatura, e não pela emissão -- é a
+ * data que a aba mostra e a mesma que ordena a lista. */
+export type FiltrosDeFaturas = OpcoesDePaginacao & {
+  de?: string;
+  ate?: string;
+};
+
+/** Um cliente com dinheiro a faturar. `GET /faturas/a-faturar`.
+ *
+ * 🔴 `honorarios_centavos` e `despesas_centavos` vêm SEPARADOS porque a
+ * fatura os trata diferente: o honorário é linha de cobrança, e a despesa
+ * vira um RECEBÍVEL de reembolso no valor dela -- somar as duas como se
+ * fossem a mesma coisa faria o total do documento não bater. */
+export interface ClienteAFaturar {
+  cliente_id: string;
+  cliente_nome: string;
+  honorarios_centavos: number;
+  despesas_centavos: number;
+  total_centavos: number;
+  /** Os lançamentos que entram, para o modal desmarcar um a um. */
+  lancamentos: Lancamento[];
+}
+
+/** Uma fatura emitida. `GET /faturas` e `GET /faturas/{id}`.
+ *
+ * ⚠️ Ela NÃO traz o nome do cliente -- só o id. Quem desenha resolve pelo
+ * catálogo, como a lista de lançamentos faz com categoria e conta. */
+export interface Fatura {
+  fatura_id: string;
+  /** `2026-0007` -- ano e sequência do escritório, com quatro dígitos. */
+  numero: string;
+  cliente_id: string;
+  /** Os honorários que ela cobra. */
+  lancamento_ids: string[];
+  /** As despesas que ela reembolsa -- elas NÃO são linha de cobrança. */
+  despesa_ids: string[];
+  /** O recebível de reembolso que a emissão criou, quando havia despesa. */
+  reembolso_id: string;
+  valor_total_centavos: number;
+  data_vencimento: string;
+  /** `aberta`, `paga` ou `cancelada` -- ver as constantes. */
+  situacao: string;
+  /** Preenchida só na paga. */
+  pago_em: string;
+  criado_por: string;
+  criado_em: string;
+}
+
+/** O detalhe traz os lançamentos junto, para a tabela do documento. */
+export interface FaturaComLancamentos extends Fatura {
+  lancamentos: Lancamento[];
+}
+
+/** Uma linha do fluxo de caixa: uma categoria, mês a mês. */
+export interface LinhaDoFluxo {
+  categoria_id: string;
+  nome: string;
+  /** `entrada` ou `saida` -- é o que separa os dois agrupadores da tabela. */
+  natureza: string;
+  cor: string;
+  /** Centavos por mês, na chave `aaaa-mm`. */
+  por_mes: Record<string, number>;
+  total_centavos: number;
+}
+
+/** `GET /financeiro/fluxo-de-caixa`.
+ *
+ * 🔴 **Realizado é por EFETIVAÇÃO; previsto é por VENCIMENTO.** Os dois vêm
+ * separados porque a tela precisa dos dois para não mentir: o previsto que
+ * não aconteceu está nas colunas e não está no saldo.
+ *
+ * ⚠️ `saldo_disponivel` diz se dá para desenhar a faixa de saldo: sem conta
+ * cadastrada não há de onde partir, e uma linha de saldo zerada seria uma
+ * afirmação falsa. */
+export interface FluxoDeCaixa {
+  meses: string[];
+  saldo_disponivel: boolean;
+  linhas: LinhaDoFluxo[];
+  entradas_por_mes: Record<string, number>;
+  saidas_por_mes: Record<string, number>;
+  entradas_realizadas_por_mes: Record<string, number>;
+  saidas_realizadas_por_mes: Record<string, number>;
+  entradas_previstas_por_mes: Record<string, number>;
+  saidas_previstas_por_mes: Record<string, number>;
+  transferencias_por_mes: Record<string, number>;
+  aberturas_de_conta_por_mes: Record<string, number>;
+  saldo_anterior_por_mes: Record<string, number>;
+  saldo_do_periodo_por_mes: Record<string, number>;
+  saldo_final_por_mes: Record<string, number>;
+}
+
+/** Os filtros do fluxo de caixa. As pontas são MESES (`aaaa-mm`). */
+export interface OpcoesDoFluxo {
+  de?: string;
+  ate?: string;
+  centro_id?: string;
+  conta_id?: string;
+  subgrupo_id?: string;
+}

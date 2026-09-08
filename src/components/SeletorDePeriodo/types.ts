@@ -11,5 +11,13 @@ export interface SeletorDePeriodoProps {
    * pílula, e o Financeiro é quem chegou depois com opções próprias. Prop
    * obrigatória obrigaria a tocar nas duas telas que estavam certas. */
   blocos?: readonly (readonly OpcaoDeMenu[])[];
+  /** A pílula fala em MESES (`aaaa-mm`), não em dias.
+   *
+   * 🔴 Muda DUAS coisas, e é por isso que é uma prop e não outra pílula: o
+   * rótulo do personalizado formata mês ("jan/2026 – dez/2026") e o painel
+   * de "Definir período…" oferece dois `Select` de mês no lugar do
+   * calendário. O resto -- popover, lista, blocos, foco -- é idêntico, e uma
+   * segunda pílula seria a mesma peça em dois lugares. */
+  emMeses?: boolean;
   onMudar: (periodoId: string, intervalo?: IntervaloDeDatas) => void;
 }

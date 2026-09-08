@@ -18,6 +18,8 @@ export default function MenuLateral() {
 
   return (
     <Box
+      /* Some no papel: quem imprime quer o documento, não a navegação. */
+      data-fora-da-impressao
       as="aside"
       w="236px"
       flex="0 0 236px"

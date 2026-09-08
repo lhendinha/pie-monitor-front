@@ -422,6 +422,21 @@ conferir(alinhamento.mesmaBorda, "e as duas terminam no mesmo x");
 conferir(!alinhamento.transbordou && alinhamento.dentroDaJanela,
   "a tabela não transborda -- a coluna de dinheiro fica na tela");
 
+/* 🔴 A ÚLTIMA linha não desenha divisória. Cada célula declara a borda, e
+   sem a regra do `tbody tr:last-child` ela risca o cartão e sobra um vão
+   embaixo -- que se lê como uma linha vazia. O usuário pegou na tela. */
+const divisorias = await pagina.evaluate(() => {
+  const linhas = [...document.querySelectorAll("tbody tr")];
+  return {
+    primeira: getComputedStyle(linhas[0].cells[0]).borderBottomWidth,
+    ultima: getComputedStyle(linhas[linhas.length - 1].cells[0]).borderBottomWidth,
+    quantas: linhas.length,
+  };
+});
+conferir(divisorias.ultima === "0px" && divisorias.primeira !== "0px",
+  "🔴 a ÚLTIMA linha não desenha a divisória, e as outras desenham",
+  JSON.stringify(divisorias));
+
 /* Os três cards, e o clique que filtra pela NATUREZA. */
 conferir(await existe(pagina.getByText("A receber · este mês")), "o card diz de QUANDO fala");
 /* ⚠️ SÓ o card de "A receber": subir dois níveis pega a grade com os três, e
@@ -492,6 +507,278 @@ conferir(!(await pagina.locator("#det-vencimento").isDisabled().catch(() => true
 await pagina.getByRole("button", { name: /Voltar/ }).click();
 await pagina.getByRole("row").first().waitFor();
 conferir(pagina.url().includes("aba=lancamentos"), "e Voltar devolve à lista", pagina.url());
+
+// ─────────────────────────── a aba de FATURAS (Fase 6)
+console.log("\n— Financeiro > Faturas > Emitidas —");
+await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+await pagina.getByRole("row").first().waitFor();
+await pagina.waitForTimeout(500);
+
+/* 🔴 A lista SÓ CRESCE -- paga e cancelada continuam nela --, e por isso ela
+   é paginada NO SERVIDOR. A contagem é a do total, não a das linhas: dizer
+   "10 faturas emitidas" com 14 no escritório é mentira de tela.
+
+   ⚠️ Depende de `semear_lancamentos_para_desenho.py`, que emite catorze de
+   propósito: a barra só aparece acima de dez. */
+const contagemDeFaturas = await pagina.getByText(/Mostrando .* de /).first().innerText();
+conferir(/Mostrando \d+ de \d+ faturas emitidas/.test(contagemDeFaturas),
+  "a contagem é a do TOTAL, e não a da página", contagemDeFaturas);
+
+const barra = pagina.getByRole("button", { name: "2" });
+if (await existe(barra)) {
+  const medidasDaFatura = await pagina.evaluate(() => {
+    const t = document.querySelector("table");
+    const cabecalhos = [...t.querySelectorAll("thead th")];
+    const th = cabecalhos.find((e) => e.textContent.trim() === "Valor");
+    const linhas = [...t.querySelectorAll("tbody tr")];
+    const ultima = linhas[linhas.length - 1];
+    const td = ultima.cells[cabecalhos.indexOf(th)];
+    const dir = (e) => getComputedStyle(e).textAlign;
+    return {
+      linhas: linhas.length,
+      th: dir(th), td: dir(td),
+      mesmaBorda: Math.round(th.getBoundingClientRect().right)
+        === Math.round(td.getBoundingClientRect().right),
+      transbordou: t.scrollWidth > t.parentElement.clientWidth + 1,
+      bordaDaUltima: getComputedStyle(ultima.cells[0]).borderBottomWidth,
+      bordaDaPrimeira: getComputedStyle(linhas[0].cells[0]).borderBottomWidth,
+      recuo: getComputedStyle(linhas[0].cells[0]).padding,
+      alturas: [...new Set(linhas.map((l) => Math.round(l.getBoundingClientRect().height)))],
+    };
+  });
+  conferir(medidasDaFatura.th === "right" && medidasDaFatura.td === "right"
+    && medidasDaFatura.mesmaBorda && !medidasDaFatura.transbordou,
+    "a coluna VALOR alinha à direita nos dois e a tabela não transborda",
+    JSON.stringify(medidasDaFatura));
+  conferir(medidasDaFatura.bordaDaUltima === "0px" && medidasDaFatura.bordaDaPrimeira !== "0px",
+    "a ÚLTIMA linha não desenha a divisória");
+  conferir(medidasDaFatura.recuo === "13px 14px" && medidasDaFatura.alturas.length === 1,
+    "recuo de 13px 14px e altura uniforme", `${medidasDaFatura.recuo} / ${medidasDaFatura.alturas}`);
+
+  await barra.click();
+  await pagina.waitForTimeout(800);
+  conferir(pagina.url().includes("pagina=2"), "clicar na página 2 a põe no ENDEREÇO", pagina.url());
+
+  /* 🔴 Trocar o período apaga a página: a 4ª de "todos" quase nunca existe
+     em "este mês", e o servidor devolveria uma lista vazia sem nada na tela
+     explicando por quê. */
+  await pagina.getByText("Todos os períodos").first().click();
+  await pagina.getByRole("dialog").waitFor();
+  await pagina.getByRole("dialog").getByRole("button", { name: "Este mês" }).click();
+  await pagina.waitForTimeout(800);
+  conferir(!pagina.url().includes("pagina=2"),
+    "🔴 e trocar o PERÍODO apaga a página", pagina.url());
+} else {
+  conferir(true, "menos de 11 faturas: a barra some sozinha (rode a semente de desenho)");
+}
+
+/* O par negativo da assimetria: "A faturar" é o que está aberto HOJE, e
+   encolhe conforme se cobra -- não é lista que cresça, e não pagina. */
+await pagina.goto(`${APP}/financeiro?aba=faturas`);
+await pagina.getByRole("row").first().waitFor();
+await pagina.waitForTimeout(400);
+conferir(!(await existe(pagina.getByText(/Por página/).first())),
+  "⚠️ 'A faturar' NÃO tem barra de paginação -- o par negativo");
+
+/* 🔴 A CAIXA DE MARCAR do modal de emissão, medida.
+   Ela saía preta (#18181b): o preenchimento vem de `colorPalette.solid`, o
+   projeto nunca declarou a paleta `brand`, e o Chakra caiu no cinza dele.
+   O usuário pegou olhando a tela.
+
+   ⚠️ E só se afere AQUI. A primeira correção foi na receita `checkmark`,
+   que tem exatamente as chaves certas -- mas a do `checkbox` copia as dela
+   no carregamento do módulo, e a cor na tela não mudou um pixel. Um teste
+   de unidade sobre o tema passaria verde nas duas versões. */
+await pagina.getByRole("row").nth(1).click();
+await pagina.getByText(/Emitir fatura ·/).waitFor();
+await pagina.waitForTimeout(400);
+const caixa = await pagina.evaluate(() => {
+  const c = document.querySelector('[data-scope="checkbox"][data-part="control"]');
+  const e = getComputedStyle(c);
+  const marca = getComputedStyle(document.documentElement)
+    .getPropertyValue("--chakra-colors-fg-brand").trim();
+  const paraRgb = (hex) => {
+    const h = hex.replace("#", "");
+    return `rgb(${parseInt(h.slice(0, 2), 16)}, ${parseInt(h.slice(2, 4), 16)}, ${parseInt(h.slice(4, 6), 16)})`;
+  };
+  return {
+    fundo: e.backgroundColor, borda: e.borderColor, glifo: e.color,
+    marcaEmRgb: paraRgb(marca), estado: c.getAttribute("data-state"),
+    accentDoNativo: getComputedStyle(document.querySelector('input[type="checkbox"]')).accentColor,
+  };
+});
+conferir(caixa.estado === "checked" && caixa.fundo === caixa.marcaEmRgb
+  && caixa.borda === caixa.marcaEmRgb,
+  "🔴 a caixa marcada é a cor da MARCA, e não o preto da lib", JSON.stringify(caixa));
+conferir(caixa.glifo === "rgb(255, 255, 255)", "e o tique é branco sobre ela", caixa.glifo);
+conferir(caixa.accentDoNativo === caixa.marcaEmRgb,
+  "⚠️ e o checkbox NATIVO (MultiSelect) usa a mesma marca -- `auto` seria o azul do sistema",
+  caixa.accentDoNativo);
+await pagina.getByRole("button", { name: /Cancelar/ }).click();
+
+// ─────────────────────────── o DOCUMENTO da fatura (Fase 6)
+console.log("\n— Financeiro > Fatura > documento —");
+await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+await pagina.getByRole("row").first().waitFor();
+await pagina.waitForTimeout(500);
+const emAberto = pagina.locator("tbody tr").filter({ hasText: "EM ABERTO" }).first();
+if (await existe(emAberto)) {
+  await emAberto.click();
+  await pagina.getByRole("heading", { level: 1 }).waitFor();
+  await pagina.waitForTimeout(600);
+  conferir(/\/financeiro\/faturas\//.test(pagina.url()),
+    "a linha abre o documento, e o endereço é dele", pagina.url());
+
+  const acoes = (await pagina.locator("main button").allInnerTexts()).filter(Boolean);
+  conferir(acoes.includes("Cancelar fatura") && acoes.includes("Registrar pagamento")
+    && acoes.includes("Imprimir"),
+    "a ABERTA tem os três botões", acoes.join(" | "));
+
+  /* 🔴 Dois cartões IRMÃOS, e não um dentro do outro. A tela nasceu com o
+     `CartaoDeTabela` dentro de um `Cartao`, o que desenhava moldura dentro
+     de moldura e colava os campos na borda da tabela. O usuário pegou. */
+  const cartoes = await pagina.evaluate(() => {
+    const tabela = document.querySelector("main table");
+    const daTabela = tabela.closest("[class]").parentElement;
+    return {
+      aninhado: Boolean(daTabela.closest("div")?.parentElement?.querySelector("table")
+        && daTabela.parentElement?.getAttribute("class")?.includes("card")),
+      /* A grade dos dados: duas colunas e respiro vertical. */
+      ...(() => {
+        const grade = [...document.querySelectorAll("main div")].find(
+          (e) => getComputedStyle(e).display === "grid" && e.textContent.includes("Cliente"));
+        const g = getComputedStyle(grade);
+        const rotulos = [...document.querySelectorAll("main p")]
+          .filter((r) => ["Cliente", "Vencimento"].includes(r.textContent.trim()));
+        return {
+          colunas: g.gridTemplateColumns.split(" ").length,
+          rowGap: g.rowGap,
+          ladoALado: Math.round(rotulos[0].getBoundingClientRect().top)
+            === Math.round(rotulos[1].getBoundingClientRect().top),
+        };
+      })(),
+    };
+  });
+  conferir(cartoes.colunas === 2 && cartoes.ladoALado,
+    "os dados vão em DUAS colunas", JSON.stringify(cartoes));
+  conferir(cartoes.rowGap !== "0px",
+    "🔴 e com respiro vertical -- `LinhaDeCampos` tem rowGap 0, e `CampoDeLeitura` não traz margem",
+    cartoes.rowGap);
+
+  /* 🔴 O PAPEL. Nada disto se afere em jsdom: media query não existe lá, e o
+     `emulateMedia` é o único jeito de ver o que sai da impressora. */
+  await pagina.emulateMedia({ media: "print" });
+  await pagina.waitForTimeout(300);
+  const papel = await pagina.evaluate(() => {
+    const visivel = (s) => {
+      const e = document.querySelector(s);
+      return e ? getComputedStyle(e).display !== "none" : null;
+    };
+    const grade = [...document.querySelectorAll("main div")].find(
+      (e) => getComputedStyle(e).display === "grid" && e.textContent.includes("Cliente"));
+    return {
+      menu: visivel("aside"), topo: visivel("header"), documento: visivel("table"),
+      acoesEscondidas: [...document.querySelectorAll("[data-fora-da-impressao]")]
+        .every((e) => getComputedStyle(e).display === "none"),
+      fundo: getComputedStyle(document.body).backgroundColor,
+      recuoDoMain: getComputedStyle(document.querySelector("main")).padding,
+      colunasDosDados: getComputedStyle(grade).gridTemplateColumns.split(" ").length,
+    };
+  });
+  conferir(papel.menu === false && papel.topo === false && papel.acoesEscondidas,
+    "no PAPEL somem o menu, o topo e as ações", JSON.stringify(papel));
+  conferir(papel.documento === true, "e o documento fica");
+  conferir(papel.fundo === "rgb(255, 255, 255)",
+    "🔴 o fundo do papel é BRANCO -- o `bg.canvas` do body vem depois e vencia", papel.fundo);
+  conferir(papel.recuoDoMain === "0px", "e o recuo do `main` some", papel.recuoDoMain);
+  conferir(papel.colunasDosDados === 2,
+    "🔴 e os dados seguem em DUAS colunas -- o breakpoint do Chakra é `@media screen` e desabava no papel",
+    `${papel.colunasDosDados}`);
+  await pagina.emulateMedia({ media: "screen" });
+
+  /* A paga perde os dois que mexem em dinheiro. */
+  await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+  await pagina.getByRole("row").first().waitFor();
+  await pagina.waitForTimeout(500);
+  const paga = pagina.locator("tbody tr").filter({ hasText: "PAGA" }).first();
+  if (await existe(paga)) {
+    await paga.click();
+    await pagina.getByRole("heading", { level: 1 }).waitFor();
+    await pagina.waitForTimeout(600);
+    const acoesDaPaga = (await pagina.locator("main button").allInnerTexts()).filter(Boolean);
+    conferir(!acoesDaPaga.includes("Cancelar fatura")
+      && !acoesDaPaga.includes("Registrar pagamento")
+      && acoesDaPaga.includes("Imprimir"),
+      "🔴 a PAGA fica só com Imprimir", acoesDaPaga.join(" | "));
+  }
+} else {
+  conferir(true, "nenhuma fatura em aberto na base (rode a semente de desenho)");
+}
+
+// ─────────────────────────── a aba de FLUXO DE CAIXA (Fase 6)
+console.log("\n— Financeiro > Fluxo de caixa —");
+await pagina.goto(`${APP}/financeiro?aba=fluxo`);
+await pagina.getByRole("table").waitFor();
+await pagina.waitForTimeout(700);
+
+const fluxo = await pagina.evaluate(() => {
+  const linhas = [...document.querySelectorAll("tbody tr")]
+    .map((l) => l.cells[0]?.textContent.trim());
+  const th = [...document.querySelectorAll("thead th")];
+  const corrente = th.find((c) => c.textContent.includes("REALIZADO + PREVISTO"));
+  const passada = th.find((c) => /^[A-Z]{3} \d{4}REALIZADO$/.test(c.textContent.trim()));
+  const fixa = document.querySelector("tbody th, tbody td");
+  return {
+    ordem: linhas,
+    primeiroCabecalho: th[0]?.textContent.trim(),
+    legenda: document.querySelector("table").parentElement.querySelector("p")?.textContent ?? "",
+    fundoDaPrevisao: corrente ? getComputedStyle(corrente).backgroundColor : null,
+    fundoDaRealizada: passada ? getComputedStyle(passada).backgroundColor : null,
+    colunaFixa: fixa ? getComputedStyle(fixa).position : null,
+    recuo: fixa ? getComputedStyle(fixa).padding : null,
+    /* A faixa de ENTRADAS atravessa a tabela: uma célula com colSpan. */
+    faixaAtravessa: [...document.querySelectorAll("tbody td")]
+      .some((c) => c.textContent.trim() === "ENTRADAS" && Number(c.getAttribute("colspan")) > 3),
+  };
+});
+conferir(fluxo.primeiroCabecalho === "DESCRIÇÃO",
+  "a primeira coluna se chama DESCRIÇÃO, como no artefato", fluxo.primeiroCabecalho);
+conferir(/REALIZADO ATÉ .* PREVISTO DE .* EM DIANTE/.test(fluxo.legenda),
+  "🔴 a legenda diz até onde é fato e de onde é palpite", fluxo.legenda);
+conferir(fluxo.ordem[0] === "Saldo anterior"
+  && fluxo.ordem.indexOf("ENTRADAS") < fluxo.ordem.indexOf("Total de entradas")
+  && fluxo.ordem.indexOf("Total de saídas") < fluxo.ordem.indexOf("SALDO")
+  && fluxo.ordem[fluxo.ordem.length - 1] === "Saldo final",
+  "🔴 a ordem é a da leitura: de onde parti, o que entrou, o que saiu, onde cheguei",
+  fluxo.ordem.filter((r) => r === r.toUpperCase()).join(" > "));
+conferir(fluxo.faixaAtravessa, "a faixa da seção atravessa a tabela inteira");
+conferir(fluxo.fundoDaPrevisao === "rgb(253, 241, 222)" && fluxo.fundoDaRealizada === "rgba(0, 0, 0, 0)",
+  "🔴 a coluna de PREVISÃO tem fundo âmbar e a realizada não",
+  `${fluxo.fundoDaPrevisao} x ${fluxo.fundoDaRealizada}`);
+conferir(fluxo.colunaFixa === "sticky",
+  "a primeira coluna fica na rolagem horizontal", fluxo.colunaFixa);
+conferir(fluxo.recuo === "13px 14px", "e o recuo é 13px 14px", fluxo.recuo);
+
+/* Dobrar esconde as categorias e mantém o total. */
+const antesDeDobrar = await pagina.locator("tbody tr").count();
+await pagina.getByRole("button", { name: /SAÍDAS/ }).click();
+await pagina.waitForTimeout(400);
+const depoisDeDobrar = await pagina.locator("tbody tr").count();
+conferir(depoisDeDobrar < antesDeDobrar
+  && (await existe(pagina.getByText("Total de saídas"))),
+  "🔴 dobrar SAÍDAS esconde as categorias e mantém o total",
+  `${antesDeDobrar} -> ${depoisDeDobrar}`);
+await pagina.getByRole("button", { name: /SAÍDAS/ }).click();
+
+/* O botão de exportar: branco sobre o canvas, com ícone. */
+const exportar = await pagina.evaluate(() => {
+  const b = [...document.querySelectorAll("button")].find((x) => x.textContent.includes("Exportar"));
+  return b ? { bg: getComputedStyle(b).backgroundColor, temIcone: Boolean(b.querySelector("svg")) } : null;
+});
+conferir(exportar?.bg === "rgb(255, 255, 255)",
+  "🔴 'Exportar planilha' é BRANCO -- `transparent` sobre o canvas saía cinza",
+  exportar?.bg);
+conferir(exportar?.temIcone === true, "e leva o ícone de baixar, como no artefato");
 
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();

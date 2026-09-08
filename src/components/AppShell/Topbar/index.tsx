@@ -12,6 +12,8 @@ import type { TopbarProps } from "./types";
 export default function Topbar({ onSair }: TopbarProps) {
   return (
     <Flex
+      /* Some no papel, como o menu lateral. */
+      data-fora-da-impressao
       as="header"
       align="center"
       gap="16px"

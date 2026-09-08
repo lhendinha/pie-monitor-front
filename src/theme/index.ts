@@ -198,6 +198,65 @@ export const system = createSystem(defaultConfig, {
       },
     },
 
+    /** A caixa de marcar.
+     *
+     * 🔴 **Ela nunca passava pela paleta do projeto.** O preenchimento sai
+     * de `colorPalette.solid`, e o projeto nunca declarou a paleta `brand`
+     * -- então o Chakra caía no `gray.solid` e a caixa marcada era PRETA no
+     * meio de uma tela azul. Medido no Chrome: `rgb(24,24,27)` marcada,
+     * borda `#d4d4d8` desmarcada; nenhum dos dois um token nosso.
+     *
+     * ⚠️ A cor é a da MARCA, e não o verde de `status.good`: a caixa diz
+     * "escolhido", não "deu certo" -- a mesma língua do número da página
+     * atual e da pílula de filtro ativa, que já são `fg.brand` cheio com o
+     * glifo branco.
+     *
+     * ⚠️ Só a COR muda: tamanho, raio e traço conferem com o artefato.
+     *
+     * 🔴 E vai em `slotRecipes.checkbox`, NÃO em `recipes.checkmark`. A
+     * receita do `checkmark` existe, tem exatamente estas chaves e parece o
+     * lugar certo -- mas a do `checkbox` COPIA os valores dela no carregamento
+     * do módulo (`control: checkmarkRecipe.base`), então sobrescrever o
+     * `checkmark` depois não alcança o que já foi copiado. Medido: a cor não
+     * mudou um pixel.
+     *
+     * Vai na receita e não em cada tela pelo motivo do `input` acima: são
+     * três checkboxes em três pastas (emissão de fatura, prévia da
+     * importação, repetir mensalmente), e a única forma de eles não
+     * divergirem é existirem num lugar só.
+     */
+    slotRecipes: {
+      checkbox: {
+        /* ⚠️ Obrigatório mesmo sobrescrevendo só uma slot: `SlotRecipeDefinition`
+           exige a anatomia inteira, e o `tsc -b` recusa sem ela (o `vitest`
+           não checa tipo e passava). São as cinco de `checkboxAnatomy`. */
+        slots: ["root", "label", "control", "indicator", "group"],
+        base: {
+          control: {
+            borderColor: "border",
+            /* ⚠️ A variável, não a propriedade -- a mesma armadilha do campo
+               de texto: a receita da lib emite `outline-color:
+               var(--focus-ring-color)` depois da nossa declaração. */
+            _focusVisible: { "--focus-ring-color": "{colors.fg.brand}" },
+          },
+        },
+        variants: {
+          variant: {
+            solid: {
+              control: {
+                borderColor: "border",
+                "&:is([data-state=checked], [data-state=indeterminate])": {
+                  bg: "fg.brand",
+                  borderColor: "fg.brand",
+                  color: "white",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
     /** O que os componentes consomem. A camada existe pra que uma tela peça
      * "a cor do texto secundário" e não "slate.muted" -- se o papel mudar de
      * cor, muda aqui e não em 40 arquivos.
@@ -282,6 +341,44 @@ export const system = createSystem(defaultConfig, {
   globalCss: {
     "html, body": { margin: 0, padding: 0 },
 
+    /** 🔴 O checkbox NATIVO -- o das opções do `MultiSelect` (react-select),
+     * que não passa pela receita do Chakra porque não é componente dele.
+     * Medido: `accent-color: auto`, ou seja, o azul do sistema operacional
+     * (#0075FF no macOS) ao lado do nosso #008fd5. Dois azuis quase iguais
+     * na mesma tela é pior que um azul só.
+     *
+     * ⚠️ Pega também o `Checkbox.HiddenInput`, e é inócuo: ele é invisível,
+     * quem desenha é a `control`. */
+    'input[type="checkbox"]': { accentColor: "fg.brand" },
+
+    /** A impressão. Hoje ela serve a UMA tela -- o documento da fatura --, e
+     * é o botão "Imprimir" dela que a aciona (`window.print()`).
+     *
+     * 🔴 Esconde por ATRIBUTO, e não por seletor de componente: a moldura do
+     * app (`AppShell`, `MenuLateral`, `Topbar`) e as ações da tela levam
+     * `data-fora-da-impressao`, e é isso que some. Um seletor por classe
+     * gerada do Chakra quebraria no dia em que a classe mudasse, sem erro
+     * nenhum -- e ninguém imprime dentro de uma suíte de testes.
+     *
+     * ⚠️ O `!important` é necessário: as classes do Chakra chegam com a
+     * mesma especificidade, e sem ele o menu lateral continuaria no papel.
+     *
+     * ⚠️ O seletor leva a media query junto, e não o contrário -- a mesma
+     * régua do `*` logo abaixo, e a tipagem do `globalCss` cobra: seletor
+     * dentro de condição é `TS2353`. */
+    "[data-fora-da-impressao]": {
+      "@media print": { display: "none !important" },
+    },
+    /* Recuo zero: a tela desenha 26px 32px 60px de folga -- no papel, isso
+       é margem dobrada, porque a impressora já tem a dela. */
+    main: {
+      "@media print": { padding: "0 !important", maxWidth: "none !important" },
+    },
+    /* Linha do documento não se parte ao meio entre duas páginas. */
+    tr: {
+      "@media print": { pageBreakInside: "avoid", breakInside: "avoid" },
+    },
+
     body: {
       fontFamily: "ui",
       fontSize: tipografia.tamanhoBase,
@@ -292,6 +389,12 @@ export const system = createSystem(defaultConfig, {
        * aplicação herdar o azul-escuro da paleta antiga por semanas. */
       bg: "bg.canvas",
       color: "fg",
+      /* 🔴 O branco do papel vai AQUI, e não numa chave `html, body` lá em
+         cima: as duas regras têm a mesma especificidade, a última vence, e
+         esta é a última -- medido, o papel saía com o cinza de `bg.canvas`
+         de fundo. (Uma segunda chave `html, body` no mesmo literal também
+         seria `TS1117`.) */
+      "@media print": { bg: "white" },
       /* ⚠️ Sem isto o texto sai mais grosso que o do artifact no macOS --
          diferença pequena e visível lado a lado. A tipagem do Chakra não
          conhece a propriedade (prefixada e fora do padrão), daí o cast. */

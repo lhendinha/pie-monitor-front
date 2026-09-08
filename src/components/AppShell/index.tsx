@@ -7,11 +7,19 @@ import type { AppShellProps } from "./types";
 
 /** Moldura do app autenticado: faixa da marca, menu lateral e a área de
  * conteúdo, que o router preenche via `<Outlet />`.
+ *
+ * ⚠️ **A moldura leva `data-fora-da-impressao`** -- a faixa aqui, e o menu e
+ * a barra do topo cada um na PRÓPRIA raiz. Envolvê-los num `Box` aqui seria
+ * mais curto e estaria errado: os dois são filhos diretos do flex (`flex: 0
+ * 0 236px` no menu), e o invólucro passaria a ser o filho, deslocando o
+ * menu. Quem imprime uma tela do Argos quer o documento, não a moldura; a
+ * regra que a esconde é uma só, no `@media print` do tema.
  */
 export default function AppShell({ onSair }: AppShellProps) {
   return (
     <>
       <Box
+        data-fora-da-impressao
         position="fixed"
         top="0"
         left="0"

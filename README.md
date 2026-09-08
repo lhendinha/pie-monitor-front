@@ -126,18 +126,28 @@ a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 
 ### Financeiro: quatro abas, duas ainda por vir
 
-`/financeiro` já nasce com as **quatro** abas, e duas delas mostram uma frase
-dizendo que aquela parte ainda não chegou. Aparecerem mesmo vazias é de
-propósito: elas são a estrutura da tela, e escondê-las faria `/financeiro`
-parecer ser só uma tela de configuração. Quem decide é o `pendente` em
-`pages/FinanceiroPage/constants.ts`; as abas prontas são **Lançamentos** e
-**Configurações**.
+`/financeiro` tem **quatro** abas, e desde 08/09/2026 as quatro estão
+prontas: **Lançamentos**, **Faturas** (A faturar | Emitidas), **Fluxo de
+caixa** e **Configurações**. Mais duas telas de detalhe, cada uma com
+endereço próprio dentro do mesmo guarda de papel:
+`/financeiro/lancamentos/:id` e `/financeiro/faturas/:id`.
 
-🔴 **`pendente` só diz que a aba não tem conteúdo ainda -- quem escolhe o que
-mostrar é a página, com um painel por aba.** Antes ela deduzia ("não é
-pendente, então é Configurações"), e isso funcionou enquanto Configurações era
-a única pronta: no dia em que Lançamentos virou `pendente: false`, a aba
-passou a mostrar a tela de Configurações inteira. Quem viu foi o usuário.
+🔴 **Quem escolhe o que cada aba mostra é a página, com um painel por aba.**
+Antes ela deduzia ("não é pendente, então é Configurações"), e isso funcionou
+enquanto Configurações era a única pronta: no dia em que Lançamentos virou
+`pendente: false`, a aba passou a mostrar a tela de Configurações inteira.
+Quem viu foi o usuário. O `pendente` e o `AindaNaoChegou` saíram quando a
+quarta aba ficou pronta -- nada mais os lia --, e voltam juntos se uma aba
+nova nascer vazia.
+
+⚠️ **"Emitidas" é paginada no servidor; "A faturar" não.** A assimetria é a
+mesma da pílula de período: "a faturar" é o que está aberto HOJE e encolhe
+conforme se cobra; "emitidas" nunca perde uma linha, porque fatura paga e
+cancelada ficam na lista.
+
+⚠️ **O documento da fatura é imprimível** (`window.print()`), e quem esconde
+a moldura é uma regra `@media print` no tema com `data-fora-da-impressao` no
+`AppShell`, no menu, na barra do topo e nas ações da tela.
 
 ⚠️ **Trocar de aba LIMPA `pagina`, `tamanho` e `busca` da URL.** As quatro
 dividem um endereço só, e as listagens guardam esse estado com as mesmas
@@ -833,7 +843,7 @@ src/
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
   components/               -- 69 componentes gerais, cada um em pasta com seu index
-  pages/                    -- 23 páginas, cada uma em pasta com index.tsx
+  pages/                    -- 24 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
 vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)

@@ -13,32 +13,31 @@ import {
 
 /** As quatro abas da tela.
  *
- * 🔴 `pendente` diz que a aba não tem conteúdo AINDA -- e é só isso: quem
- * escolhe o que mostrar é a PÁGINA, com um painel por aba, cada um dizendo
- * o seu conteúdo. Antes ela deduzia ("não é pendente, então é
- * Configurações"), o que funcionava enquanto Configurações era a única
- * pronta: virar `pendente: false` em Lançamentos, antes de a lista existir,
- * fez a aba mostrar a tela de Configurações inteira. Escolha escrita não
- * erra de aba; escolha deduzida erra.
- *
  * A primeira é o padrão: Lançamentos é o que responde "o que entrou e saiu",
  * e é onde se trabalha todo dia. Configurações fica por último porque se
  * mexe nela uma vez.
  *
- * ⚠️ `pendente` marca a aba cujo conteúdo ainda não existe. Ela APARECE
- * mesmo assim: as quatro abas são a estrutura da tela, e escondê-las faria
- * `/financeiro` parecer ser só uma tela de configuração. O que a pendente
- * mostra é uma frase dizendo que aquela parte ainda não chegou -- clicar e
- * não acontecer nada é que seria ruim.
+ * 🔴 **Quem escolhe o que mostrar é a PÁGINA**, com um painel por aba, cada
+ * um dizendo o seu conteúdo. Antes ela deduzia ("não é pendente, então é
+ * Configurações"), o que funcionava enquanto Configurações era a única
+ * pronta: virar `pendente: false` em Lançamentos, antes de a lista existir,
+ * fez a aba mostrar a tela de Configurações INTEIRA. Escolha escrita não
+ * erra de aba; escolha deduzida erra.
+ *
+ * ⚠️ **O `pendente` saiu na Fase 6**, junto com `AindaNaoChegou`: com as
+ * quatro abas prontas, nada mais o lia. Ele foi útil enquanto marcava a aba
+ * sem conteúdo -- as quatro apareciam de qualquer jeito, porque são a
+ * estrutura da tela, e a pendente dizia que aquela parte ainda não chegou.
+ * Uma aba nova que nasça vazia traz os dois de volta.
  *
  * ⚠️ O nome do parâmetro na URL (`?aba=`) e o `abaValida` que o lê são
  * compartilhados -- ver `utils/abas`. Aqui fica só o que é desta tela.
  */
 export const ABAS_DO_FINANCEIRO = [
-  { id: "lancamentos", rotulo: "Lançamentos", pendente: false },
-  { id: "faturas", rotulo: "Faturas", pendente: true },
-  { id: "fluxo", rotulo: "Fluxo de caixa", pendente: true },
-  { id: "configuracoes", rotulo: "Configurações", pendente: false },
+  { id: "lancamentos", rotulo: "Lançamentos" },
+  { id: "faturas", rotulo: "Faturas" },
+  { id: "fluxo", rotulo: "Fluxo de caixa" },
+  { id: "configuracoes", rotulo: "Configurações" },
 ] as const;
 
 /** O prefixo dos ids de acessibilidade que ligam cada aba ao seu painel. */
@@ -218,3 +217,51 @@ export const SITUACOES_DA_SAIDA = [
  * podem crescer sem limite. Descrição não entra: ela é a coluna principal, e
  * é dela que sobra o espaço. */
 export const LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO = "200px";
+
+/** As duas seções da aba Faturas, em pílula.
+ *
+ * ⚠️ Pílula e não sub-aba, pela mesma razão do catálogo: são dois recortes
+ * de UMA tela, e sub-aba dentro de aba dá dois níveis de navegação na mesma
+ * página. "A faturar" vem primeiro porque é a que pede ação -- "Emitidas" é
+ * consulta.
+ */
+export const SECOES_DE_FATURAS = [
+  { id: "a-faturar", rotulo: "A faturar" },
+  { id: "emitidas", rotulo: "Emitidas" },
+] as const;
+
+export const COLUNAS_A_FATURAR = [
+  "Cliente",
+  { rotulo: "Honorários", aDireita: true },
+  { rotulo: "Despesas", aDireita: true },
+  { rotulo: "Total", aDireita: true },
+] as const;
+
+export const COLUNAS_DE_FATURAS = [
+  "Número",
+  "Cliente",
+  "Vencimento",
+  "Pagamento",
+  { rotulo: "Valor", aDireita: true },
+  "Situação",
+] as const;
+
+/** As colunas do documento da fatura -- o que ela cobra, linha a linha.
+ *
+ * ⚠️ Sem "Situação": dentro de uma fatura, a situação de cada linha não é
+ * escolha de ninguém -- pagar a fatura efetiva todas as abertas de uma vez.
+ * O que a linha precisa dizer é o que é e quanto vale. */
+export const COLUNAS_DO_DOCUMENTO = [
+  "Lançamento",
+  "Vencimento",
+  { rotulo: "Valor", aDireita: true },
+] as const;
+
+/** As colunas da prévia da emissão. A primeira é a caixa de marcar, e o
+ * cabeçalho dela é vazio -- como o `<th style="width:36px">` do artefato. */
+export const COLUNAS_DA_EMISSAO = [
+  "",
+  "Lançamento",
+  "Vencimento",
+  { rotulo: "Valor", aDireita: true },
+] as const;

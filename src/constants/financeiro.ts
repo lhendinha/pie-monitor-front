@@ -81,3 +81,18 @@ export const MAXIMO_DE_DEPARTAMENTOS_NO_RATEIO = 20;
  * 🔴 Doze, e FIXO -- não é campo. É o horizonte que o fluxo de caixa
  * enxerga; acabou, a pessoa marca de novo no último. */
 export const MESES_DA_RECORRENCIA = 12;
+
+/** A SITUAÇÃO de uma fatura.
+ *
+ * 🔴 `aberta` nasce; `paga` e `cancelada` são finais -- nenhuma das duas
+ * volta atrás. É por isso que a tela esconde os botões nas duas últimas em
+ * vez de deixá-los falhar. */
+export const FATURA_ABERTA = "aberta";
+export const FATURA_PAGA = "paga";
+export const FATURA_CANCELADA = "cancelada";
+
+/** Quantos meses o fluxo de caixa aceita de uma vez.
+ *
+ * ⚠️ Vinte e quatro colunas já é uma tabela que rola; acima disso a tela
+ * pede mais do que alguém lê, e o servidor recusa. */
+export const MAXIMO_DE_MESES_NO_FLUXO = 24;

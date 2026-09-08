@@ -5,12 +5,17 @@ import { describe, expect, it } from "vitest";
 import { renderComProviders } from "../../test/queryTestUtils";
 import Tabela from ".";
 
-function montar(colunas: readonly (string | { rotulo: string; aDireita?: boolean })[]) {
+function montar(
+  colunas: readonly (string | { rotulo: string; aDireita?: boolean })[],
+  linhas = 1,
+) {
   return renderComProviders(
     <Tabela colunas={colunas}>
-      <Table.Row>
-        <Table.Cell>uma linha</Table.Cell>
-      </Table.Row>
+      {Array.from({ length: linhas }, (_, i) => (
+        <Table.Row key={i}>
+          <Table.Cell>linha {i + 1}</Table.Cell>
+        </Table.Row>
+      ))}
     </Tabela>,
   );
 }
@@ -35,9 +40,15 @@ describe("cabeçalho", () => {
     expect(screen.getAllByRole("columnheader")).toHaveLength(3);
   });
 
-  /* ⚠️ O ALINHAMENTO em si não se afere aqui: `textAlign` vira classe do
-     Chakra, e o jsdom não resolve o CSS dele -- um `toHaveStyle` passaria
-     verde com a regra ausente. Quem confere é o roteiro de Chrome
-     (`verificar-financeiro.mjs`), comparando `th` e `td` da coluna de
-     dinheiro. */
+  /* ⚠️ Duas coisas NÃO se aferem aqui, e as duas pela mesma razão -- o jsdom
+     não resolve o CSS do Chakra, e um `toHaveStyle` passaria verde com a
+     regra ausente:
+
+     - o ALINHAMENTO da coluna de dinheiro (`textAlign`);
+     - a divisória que a ÚLTIMA linha NÃO desenha (`tbody tr:last-child`),
+       sem a qual ela risca o cartão e sobra um vão que se lê como linha
+       vazia -- o usuário viu isso na tabela de faturas.
+
+     Quem confere as duas é o roteiro de Chrome (`verificar-financeiro.mjs`),
+     medindo `getComputedStyle` da primeira e da última linha. */
 });

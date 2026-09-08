@@ -4430,3 +4430,103 @@ a terceira página -- quebrando o próprio roteiro. Quem limpa agora é
 
 ➡️ A história do servidor -- o filtro por natureza, a reancoragem e as duas
 chaves derivadas -- está em `api/CONTEXT.md`.
+
+## O Financeiro completo: faturas, o documento e o fluxo (08/09/2026)
+
+A Fase 6 fechou as quatro abas. O que vale guardar não é a lista de telas --
+é o que a execução achou.
+
+### A caixa de marcar nunca passava pela paleta
+
+Ela saía **preta**. O preenchimento do `Checkbox.Control` vem de
+`colorPalette.solid`, o projeto nunca declarou a paleta `brand`, e o Chakra
+caía no `gray.solid` dele. Medido no Chrome: `rgb(24,24,27)` marcada, borda
+`#d4d4d8` desmarcada -- **nenhum dos dois um token nosso**. Nunca foi
+escolha; foi o default da lib passando batido em três telas.
+
+🔴 **A correção vai em `slotRecipes.checkbox`, NÃO em `recipes.checkmark`.**
+A receita do `checkmark` existe, tem exatamente as chaves certas e parece o
+lugar -- mas a do `checkbox` **copia** os valores dela no carregamento do
+módulo (`control: checkmarkRecipe.base`). Foi a primeira tentativa, e a cor
+na tela não mudou um pixel. Um teste de unidade sobre o tema passaria verde
+nas duas versões; quem pega é a medição em Chrome.
+
+⚠️ O checkbox **nativo** das opções do `MultiSelect` (react-select) não passa
+por receita nenhuma: estava em `accent-color: auto`, o azul do sistema
+operacional ao lado do nosso. Uma linha no `globalCss` resolve.
+
+### Botão de contorno sobre o canvas saía cinza
+
+`ghost` e `perigoContorno` eram `bg: transparent`. Dentro de modal e cartão
+isso é branco; **sobre o canvas (`#f5f7f9`) é cinza**, ao lado das pílulas
+brancas. Agora os dois são `bg.surface` -- nas telas em que já eram brancos,
+zero pixel de diferença.
+
+### A impressão é do projeto, não da tela
+
+O botão "Imprimir" da fatura chama `window.print()`, e quem esconde a moldura
+é uma regra `@media print` no tema mais `data-fora-da-impressao` no
+`AppShell`, no `MenuLateral`, na `Topbar` e nas ações da tela. **Duas coisas
+só o papel revelou**, as duas medidas com `emulateMedia`:
+
+1. o branco declarado em `html, body` **perdia** para o `bg.canvas` do
+   `body`, que vem depois no mesmo `globalCss` -- a folha saía cinza;
+2. o breakpoint do Chakra é `@media screen`, então a grade dos dados
+   **desabava para uma coluna** na impressão (medido: `544px 544px` na tela,
+   `1402px` no papel). A media query da grade passou a ser crua.
+
+⚠️ E `auto-fit` + `minmax`, a primeira tentativa de resolver (2), foi pior:
+num cartão de 1100px ele cabe QUATRO colunas, e os quatro campos saíam numa
+fila só.
+
+### `LinhaDeCampos` + `CampoDeLeitura` = pares colados
+
+`LinhaDeCampos` tem `rowGap: 0` **de propósito**: quem espaça na vertical lá
+é a margem do `Campo`. O `CampoDeLeitura` não tem margem nenhuma, e nenhuma
+tela tinha juntado os dois antes -- o detalhe da fatura foi o primeiro, e os
+pares saíram grudados. Quem precisa dos dois monta a própria grade.
+
+⚠️ Junto com isso: `CartaoDeTabela` **já é** cartão. Envolvê-lo num `Cartao`
+desenha moldura dentro de moldura. Os dois são irmãos.
+
+### Três escritas na URL no mesmo gesto apagam umas às outras
+
+`mudarPeriodo` do fluxo escrevia `periodo`, `de` e `ate` com três
+`useEstadoNaUrl` seguidos. Cada `setSearchParams` **navega na hora**, a
+partir da MESMA URL: o último apagava o `periodo`, e escolher outro recorte
+não mudava nada. É a armadilha que o docstring de `useParametrosDaUrl` já
+descrevia -- e a lição é que ela vale para o hook de UM valor também, não só
+para duas chamadas do mecanismo.
+
+### A tabela do fluxo saiu errada e foi refeita contra o artefato
+
+A primeira versão era coerente consigo mesma e divergia do artefato em
+**estrutura**: saldos empilhados no pé, totais na própria faixa da seção
+(antes das categorias que eles somam), cabeçalho de uma linha, realce só do
+mês corrente. O artefato tem outra ordem, e ela é a da leitura: **de onde
+parti** (saldo anterior, primeira linha), o que entrou, o total disso, o que
+saiu, o total disso, e onde cheguei.
+
+🔴 A distinção entre **fato e palpite** aparece três vezes de propósito: a
+legenda do topo ("REALIZADO ATÉ AGOSTO DE 2026, PREVISTO DE SETEMBRO EM
+DIANTE"), o subtítulo de cada coluna, e o fundo âmbar das colunas de
+previsão. Um relatório em que não se sabe o que já é fato não serve para
+decidir nada.
+
+⚠️ **"Dobrar o agrupador" não era possível como o plano escreveu**, e isso se
+descobriu MEDINDO a resposta antes de desenhar: a API entrega "por categoria
+(agrupador somando as filhas)" -- `Impostos` chega com o total do DAS, e as
+filhas não são linha nenhuma. O que dobra são as seções.
+
+⚠️ O guarda de `13px 14px` passou a excluir a célula com `colSpan`, e a
+exceção é **estrutural**, com par negativo: a medida existe para o valor
+nascer sob o título da SUA coluna, e uma faixa que atravessa a tabela não tem
+coluna sob a qual alinhar.
+
+⚠️ **Uma divergência do artefato, mantida a pedido:** os números seguem em
+`mono`, como nas outras tabelas do projeto.
+
+### `pendente` e `AindaNaoChegou` saíram
+
+Com as quatro abas prontas, nada mais lia o flag nem montava a frase. Eles
+voltam juntos se uma aba nova nascer vazia -- está escrito na constante.
