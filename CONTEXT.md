@@ -33,6 +33,22 @@ Nenhuma edição de código é feita direto na `main`. O fluxo, sem exceção:
    commit próprio (`CONTEXT.md`, `README.md`, o próprio plano com status e
    o que a execução achou). Um plano sem essas três partes está incompleto
    antes de começar.
+7. 🔴 **Todo plano termina com uma conferência PONTA A PONTA em produção,
+   num GRUPO DE TESTE** (08/09/2026, dito pelo usuário ao fechar o
+   `PLANO_FINANCEIRO.md`). Não é a conferência de deploy
+   (`verificar-deploy-em-producao.mjs`), que abre as telas e lê rótulos.
+   Esta **usa o sistema**: cria o dado pela tela, percorre o fluxo inteiro,
+   confere o resultado onde ele aparece, e **apaga tudo**.
+
+   ⚠️ **Num grupo de teste, nunca no escritório real.** A conta de produção é
+   `super_admin` de um escritório com dado de verdade. O grupo se funda pela
+   API (rota administrativa) e se apaga por
+   `scripts/apagar_grupo_de_conferencia.py`, no repositório da API.
+
+   🔴 **Por que ela existe:** a conferência de deploy não pega nada quando a
+   base está VAZIA. No Financeiro, todas as telas de produção passaram
+   verdes mostrando o estado vazio -- e a primeira vez que alguém lançar
+   dinheiro lá será a primeira vez que aquelas telas verão dado.
 
 ⚠️ **O que a `main` recebe direto**: só documento (`CONTEXT.md`, `README.md`)
 que não altera código nem teste.
@@ -2522,6 +2538,20 @@ derrubaram a ideia na implementação:
 O padrão do sistema já era dois campos lado a lado: `NovoAtendimentoForm` põe
 `CampoDeProcesso` e `CampoDeClientes` separados. Um teste em
 `ModalDeTarefa/index.test.tsx` trava que a tela de tarefa não mudou.
+
+⚠️ **Duas pendências que a conferência ponta a ponta em produção achou**
+(08/09/2026, honorário criado pela tela) e que só aparecem usando o sistema:
+
+1. **Escolher um ATENDIMENTO como vínculo não sugere o cliente**, embora a
+   dica do campo prometa *"Sugere o cliente e o departamento"*. Só `processo`
+   carrega `clienteIds` em `VinculoDeRegistro`. Ou o atendimento passa a
+   carregar o cliente, ou a dica para de prometer.
+2. **O modal de honorário EXIGE processo ou atendimento; a API não.**
+   `POST /lancamentos` aceita o honorário sem vínculo nenhum. Decidir de que
+   lado fica a regra -- e o outro lado segue.
+
+As duas estão na tabela de pendências do `CONTEXT.md` da API, seção
+"O Financeiro, de ponta a ponta".
 
 ### O formulário tem seletor de Subgrupo, que a referência não tem
 
