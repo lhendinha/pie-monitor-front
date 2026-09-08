@@ -124,7 +124,7 @@ alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
 a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 (`/grupo`, `/perfil`) usam estado local de propósito.
 
-### Financeiro: quatro abas, três ainda por vir
+### Financeiro: quatro abas, duas ainda por vir
 
 `/financeiro` já nasce com as **quatro** abas, e duas delas mostram uma frase
 dizendo que aquela parte ainda não chegou. Aparecerem mesmo vazias é de
@@ -148,6 +148,38 @@ nada na tela explicando por quê.
 ⚠️ A aba vai para a **URL**, ao contrário de `/grupo`, que também está no menu
 e usa estado local. Não é exceção à régua de `utils/abas`: o critério é ser
 alcançada por LINK, e a Área de trabalho abre esta tela já filtrada.
+
+#### Lançamentos
+
+A lista tem três cards de total, seis pílulas de filtro e a tabela. O botão
+**+ Novo lançamento** abre um menu com as quatro portas -- honorário, outra
+entrada, saída e transferência --, cada uma com a frase que diz o que é.
+
+🔴 **Os cards filtram por NATUREZA, não por tipo.** "A receber" soma
+honorário E entrada; filtrar por `tipo=entrada` derrubava os honorários, e o
+número que a pessoa clicava sumia no clique. Por isso existe a pílula "Tudo
+que entra / Tudo que sai", com palavras deliberadamente diferentes das do
+filtro de TIPO -- que oferece os quatro tipos, e onde "Entradas" quer dizer
+outra coisa.
+
+🔴 **Dar baixa e excluir vivem no DETALHE, não na linha.** As duas mexem no
+saldo de uma conta, e um clique de raspão numa tabela de vinte linhas é
+barato demais para isso. A linha inteira abre o detalhe, por clique ou por
+Enter.
+
+⚠️ **Cada botão do detalhe só aparece quando o servidor aceitaria**:
+transferência não efetiva nem reabre (400), lançamento em fatura não reabre
+nem se exclui (409), e excluir é `admin`+. O subtítulo diz o motivo no lugar
+do botão que não veio.
+
+⚠️ **O departamento é obrigatório e pode ser DIVIDIDO** ("Dividir entre
+departamentos"). Um departamento só é um rateio de uma linha -- a mesma
+forma, não um caso especial --, e o campo diz quanto FALTA distribuir em vez
+de só avisar que a soma não bate.
+
+⚠️ **Editar o vencimento de uma parcela pergunta até onde vai**, com o número
+de irmãs em aberto, e as seguintes são REANCORADAS a partir da data nova --
+o comportamento do Google Agenda. Sem irmã à frente, a pergunta não aparece.
 
 #### Configurações: três tabelas, e como se edita
 
