@@ -59,3 +59,25 @@ export const TIPO_TRANSFERENCIA = "transferencia";
 export const SITUACAO_ABERTO = "aberto";
 export const SITUACAO_ATRASADO = "atrasado";
 export const SITUACAO_EFETIVADO = "efetivado";
+
+/** Quantas PARCELAS um honorário pode ter (`MAXIMO_DE_PARCELAS` na API).
+ *
+ * ⚠️ 60 é cinco anos: cruzar isso é erro de digitação, não um acordo real.
+ * Cada parcela é um lançamento próprio, então o número também é quantos
+ * itens um clique cria. Quem decide continua sendo o servidor -- ver
+ * `constants/limites.ts`. */
+export const MAXIMO_DE_PARCELAS = 60;
+
+/** Quantos DEPARTAMENTOS cabem no rateio de um lançamento
+ * (`MAXIMO_DE_DEPARTAMENTOS_NO_RATEIO` na API).
+ *
+ * ⚠️ Três ou quatro é normal; vinte é engano de quem preencheu ou defeito de
+ * tela. O campo para de oferecer "Adicionar departamento" aqui. */
+export const MAXIMO_DE_DEPARTAMENTOS_NO_RATEIO = 20;
+
+/** Quantos meses uma entrada ou saída marcada como "Repetir mensalmente"
+ * cria de uma vez (`MESES_DA_RECORRENCIA` na API).
+ *
+ * 🔴 Doze, e FIXO -- não é campo. É o horizonte que o fluxo de caixa
+ * enxerga; acabou, a pessoa marca de novo no último. */
+export const MESES_DA_RECORRENCIA = 12;

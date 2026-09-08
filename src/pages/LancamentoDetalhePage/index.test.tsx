@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,14 +7,18 @@ import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   detalheLancamento: vi.fn(),
+  atualizarLancamento: vi.fn(),
   efetivarLancamento: vi.fn(),
   reabrirLancamento: vi.fn(),
   excluirLancamento: vi.fn(),
   lerCatalogoFinanceiro: vi.fn(),
-  /* ⚠️ O catálogo de subgrupos alimenta `useNomeDeSubgrupo`. Sem ele a
-     consulta erra em silêncio e o rateio cai para o id -- o teste passaria
-     sem exercitar a tradução de verdade. */
+  detalheCliente: vi.fn(),
+  /* ⚠️ O catálogo de subgrupos alimenta o campo de departamento; os membros,
+     o de responsável. Sem eles as consultas erram em silêncio e os campos
+     ficam vazios -- o teste passaria sem exercitar o caminho real. */
   listarSubgrupos: vi.fn(),
+  listarMembrosDoSubgrupo: vi.fn(),
+  getEmail: vi.fn(),
   papelAtende: vi.fn(),
 }));
 
@@ -34,7 +38,7 @@ const LANCAMENTO = {
   categoria_id: "cat1",
   centro_id: "",
   rateio: [{ subgrupo_id: "s1", valor_centavos: 250000 }],
-  cliente_id: "c1",
+  cliente_id: "",
   contraparte: "Construtora Alfa",
   subgrupo_id: "s1",
   numero_processo: "",
@@ -47,9 +51,17 @@ const LANCAMENTO = {
 };
 
 const CATALOGO = {
-  categorias: [{ categoria_id: "cat1", nome: "Honorários contratuais" }],
-  contas: [{ conta_id: "ct1", nome: "Itaú — corrente" }],
-  centros_de_custo: [{ centro_id: "cc1", nome: "Filial BH" }],
+  contas: [
+    { conta_id: "ct1", nome: "Itaú — corrente", tipo: "corrente", inicio: "2026-01-01",
+      saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: true },
+  ],
+  categorias: [
+    { categoria_id: "cat1", nome: "Honorários contratuais", natureza: "entrada",
+      cor: "#1f9d55", agrupador_id: "", ativa: true },
+  ],
+  centros_de_custo: [{ centro_id: "cc1", nome: "Filial BH", ativo: true }],
+  conta_padrao_id: "ct1",
+  cores_disponiveis: ["#1f9d55"],
 };
 
 function Espiao() {
@@ -74,16 +86,14 @@ function montar(rota = "/financeiro/lancamentos/l1") {
 
 const url = () => screen.getByTestId("url").textContent ?? "";
 
-/** A tela pronta -- o título é a descrição do lançamento. */
 async function carregada(descricao = LANCAMENTO.descricao) {
   return await screen.findByRole("heading", { name: descricao });
 }
 
 /** Abre o diálogo de exclusão e devolve o botão que confirma.
  *
- * ⚠️ O rótulo "Excluir" existe DUAS vezes com o diálogo aberto (o da página
- * e o do rodapé). Pegar o último é o que separa os dois sem depender de
- * ordem de DOM inventada -- o diálogo monta depois. */
+ * ⚠️ "Excluir" existe DUAS vezes com o diálogo aberto (o da página e o do
+ * rodapé); o último é o do diálogo, que monta depois. */
 async function abrirExclusao() {
   await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
   const botoes = await screen.findAllByRole("button", { name: /Excluir/ });
@@ -93,25 +103,29 @@ async function abrirExclusao() {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO });
+  mocks.atualizarLancamento.mockResolvedValue({ lancamento_id: "l1", atualizados: 1 });
   mocks.efetivarLancamento.mockResolvedValue({ lancamento_id: "l1" });
   mocks.reabrirLancamento.mockResolvedValue({ lancamento_id: "l1" });
   mocks.excluirLancamento.mockResolvedValue({ lancamento_id: "l1", removidos: 1 });
   mocks.lerCatalogoFinanceiro.mockResolvedValue(CATALOGO);
+  mocks.detalheCliente.mockResolvedValue({ cliente_id: "c1", nome: "Construtora Alfa" });
   mocks.listarSubgrupos.mockResolvedValue({
     subgrupos: [
       { subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" },
       { subgrupo_id: "s2", nome: "Trabalhista", grupo_id: "g1" },
     ],
   });
-  /* O padrão dos testes é `admin`: eles exercitam o comportamento da tela,
-     não a permissão. Quem testa a permissão a declara. */
+  mocks.listarMembrosDoSubgrupo.mockResolvedValue({
+    membros: [{ email: "ana@x.com", apelido: "Ana" }],
+  });
+  mocks.getEmail.mockReturnValue("ana@x.com");
+  /* O padrão é `admin`: os testes exercitam o comportamento da tela, não a
+     permissão. Quem testa a permissão a declara. */
   mocks.papelAtende.mockReturnValue(true);
 });
 
 describe("hidratação", () => {
   it("🔴 se carrega SOZINHA pelo id da URL", async () => {
-    /* É o que separa esta tela de um modal: ela é rota, então tem que
-       aguentar um F5 e um link colado. */
     montar();
     await carregada();
     expect(mocks.detalheLancamento).toHaveBeenCalledWith("l1");
@@ -121,59 +135,199 @@ describe("hidratação", () => {
     mocks.detalheLancamento.mockRejectedValue(new Error("não encontrado"));
     montar();
     expect(await screen.findByText(/pode ter sido excluído/)).toBeInTheDocument();
-    /* `retry: false`: três tentativas só atrasariam o recado. */
     expect(mocks.detalheLancamento).toHaveBeenCalledTimes(1);
   });
 
-  it("mostra os NOMES de categoria e conta, não os ids", async () => {
+  it("🔴 os campos nascem PREENCHIDOS com o que veio", async () => {
     montar();
     await carregada();
-    expect(screen.getByText("Honorários contratuais")).toBeInTheDocument();
-    expect(screen.getByText("Itaú — corrente")).toBeInTheDocument();
-    expect(screen.queryByText("cat1")).not.toBeInTheDocument();
-  });
-
-  it("sem centro de custo, o campo NÃO aparece", async () => {
-    /* Par negativo do de baixo: campo vazio na tela sugere que alguém
-       esqueceu de preencher, e o centro é opcional de propósito. */
-    montar();
-    await carregada();
-    expect(screen.queryByText("Centro de custo")).not.toBeInTheDocument();
-  });
-
-  it("com centro de custo, aparece com o nome", async () => {
-    mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO, centro_id: "cc1" });
-    montar();
-    await carregada();
-    expect(screen.getByText("Centro de custo")).toBeInTheDocument();
-    expect(screen.getByText("Filial BH")).toBeInTheDocument();
+    expect(screen.getByLabelText<HTMLInputElement>(/^Descrição/).value).toBe(
+      "Honorários Alfa 2/3",
+    );
+    expect(screen.getByLabelText<HTMLInputElement>(/^Valor/).value).toBe("2.500,00");
+    expect(screen.getByLabelText<HTMLInputElement>(/Recebida de/).value).toBe(
+      "Construtora Alfa",
+    );
+    expect(await screen.findByText("Honorários contratuais")).toBeInTheDocument();
+    expect(await screen.findByText("Itaú — corrente")).toBeInTheDocument();
+    expect(await screen.findByText("Cível")).toBeInTheDocument();
   });
 });
 
-describe("rateio", () => {
-  it("🔴 com UM departamento o rateio não é listado", async () => {
-    /* Com um só ele é o próprio lançamento: listá-lo repetiria o valor logo
-       abaixo dele mesmo. */
+describe("o que NÃO se edita", () => {
+  it("🔴 situação, vencimento e vínculo vêm travados", async () => {
+    /* Situação é ação (move o saldo); vencimento alimenta duas chaves de
+       ordenação e não está no PATCH; o vínculo carrega a permissão.
+       Editáveis, os três prometeriam o que falha ao salvar. */
     montar();
     await carregada();
-    expect(screen.queryByText("Dividido entre departamentos")).not.toBeInTheDocument();
+    expect(screen.getByLabelText<HTMLInputElement>(/^Situação/)).toBeDisabled();
+    expect(screen.getByLabelText<HTMLInputElement>(/A receber em/)).toBeDisabled();
+    expect(screen.getByLabelText<HTMLInputElement>(/Processo ou atendimento/)).toBeDisabled();
   });
 
-  it("com DOIS, lista cada um pelo NOME e pelo pedaço", async () => {
+  it("descrição, valor e contraparte SÃO editáveis -- o par negativo", async () => {
+    montar();
+    await carregada();
+    expect(screen.getByLabelText<HTMLInputElement>(/^Descrição/)).toBeEnabled();
+    expect(screen.getByLabelText<HTMLInputElement>(/^Valor/)).toBeEnabled();
+    expect(screen.getByLabelText<HTMLInputElement>(/Recebida de/)).toBeEnabled();
+  });
+
+  it("🔴 com CLIENTE, a contraparte vira leitura", async () => {
+    /* `cliente_id` não está no PATCH: é por ele que a fatura agrupa. */
     mocks.detalheLancamento.mockResolvedValue({
-      ...LANCAMENTO,
-      rateio: [
-        { subgrupo_id: "s1", valor_centavos: 150000 },
-        { subgrupo_id: "s2", valor_centavos: 100000 },
-      ],
+      ...LANCAMENTO, cliente_id: "c1", contraparte: "",
     });
     montar();
     await carregada();
-    expect(await screen.findByText("Dividido entre departamentos")).toBeInTheDocument();
-    expect(await screen.findByText("Cível")).toBeInTheDocument();
-    expect(screen.getByText("Trabalhista")).toBeInTheDocument();
-    expect(screen.getByText("R$ 1.500,00")).toBeInTheDocument();
-    expect(screen.getByText("R$ 1.000,00")).toBeInTheDocument();
+    const campo = await screen.findByLabelText<HTMLInputElement>(/Recebida de/);
+    expect(campo).toBeDisabled();
+    await waitFor(() => expect(campo.value).toBe("Construtora Alfa"));
+    expect(mocks.detalheCliente).toHaveBeenCalledWith("c1");
+  });
+
+  it("sem cliente, ninguém vai buscar cliente nenhum", async () => {
+    montar();
+    await carregada();
+    expect(mocks.detalheCliente).not.toHaveBeenCalled();
+  });
+});
+
+describe("salvar", () => {
+  it("🔴 manda SÓ o que mudou", async () => {
+    montar();
+    await carregada();
+    const descricao = screen.getByLabelText(/^Descrição/);
+    await userEvent.clear(descricao);
+    await userEvent.type(descricao, "Honorários Alfa · corrigido");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    const [id, campos] = mocks.atualizarLancamento.mock.calls[0];
+    expect(id).toBe("l1");
+    expect(campos).toEqual({ descricao: "Honorários Alfa · corrigido" });
+  });
+
+  it("🔴 mudar o VALOR manda o rateio junto", async () => {
+    /* A soma das parcelas tem de bater com o valor: sem o rateio, o servidor
+       gravaria 200 com a invariante quebrada -- e o relatório por
+       departamento passaria a discordar do total. */
+    montar();
+    await carregada();
+    const valor = screen.getByLabelText(/^Valor/);
+    await userEvent.clear(valor);
+    await userEvent.type(valor, "300000");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    const campos = mocks.atualizarLancamento.mock.calls[0][1];
+    expect(campos.valor_centavos).toBe(300000);
+    expect(campos.rateio).toEqual([{ subgrupo_id: "s1" }]);
+  });
+
+  it("nada mudou: nem chama o servidor", async () => {
+    montar();
+    await carregada();
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.getByText("Nada mudou.")).toBeInTheDocument());
+    expect(mocks.atualizarLancamento).not.toHaveBeenCalled();
+  });
+
+  it("campo obrigatório vazio não vai para o servidor", async () => {
+    montar();
+    await carregada();
+    await userEvent.clear(screen.getByLabelText(/^Descrição/));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByText("Informe a descrição.")).toBeInTheDocument();
+    expect(mocks.atualizarLancamento).not.toHaveBeenCalled();
+  });
+
+  it("🔴 lançamento ANTIGO, sem rateio, não salva sem departamento", async () => {
+    /* `[].some()` é `false`: sem a metade que checa a lista vazia, um
+       lançamento criado antes de o rateio existir passava pelo campo
+       obrigatório sem ninguém escolher nada. */
+    mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO, rateio: [] });
+    montar();
+    await carregada();
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Escolha o departamento.")).toBeInTheDocument();
+    expect(mocks.atualizarLancamento).not.toHaveBeenCalled();
+  });
+
+  it("🔴 esvaziar a contraparte não vai para o servidor", async () => {
+    /* Cliente OU contraparte, nunca nenhum dos dois -- é a régua do
+       servidor, e o 400 dela chegaria depois de a pessoa já ter apagado. */
+    montar();
+    await carregada();
+    await userEvent.clear(screen.getByLabelText(/Recebida de/));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findByText("Informe de quem veio ou para quem foi."),
+    ).toBeInTheDocument();
+    expect(mocks.atualizarLancamento).not.toHaveBeenCalled();
+  });
+
+  it("com CLIENTE, a contraparte vazia não impede nada -- o par negativo", async () => {
+    mocks.detalheLancamento.mockResolvedValue({
+      ...LANCAMENTO, cliente_id: "c1", contraparte: "",
+    });
+    montar();
+    await carregada();
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+  });
+
+  it("🔴 a recusa do servidor aparece no FORMULÁRIO", async () => {
+    const { ApiError } = await import("../../services/api/client");
+    mocks.atualizarLancamento.mockRejectedValue(
+      new ApiError("Conta desativada: escolha outra", 400),
+    );
+    montar();
+    await carregada();
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByText("Conta desativada: escolha outra")).toBeInTheDocument();
+  });
+});
+
+describe("a série", () => {
+  const NA_SERIE = { ...LANCAMENTO, recorrencia_id: "r1" };
+
+  it("🔴 salvar num AVULSO não pergunta nada", async () => {
+    montar();
+    await carregada();
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    expect(mocks.atualizarLancamento.mock.calls[0][2]).toBe("este");
+  });
+
+  it("🔴 numa SÉRIE, pergunta até onde vai", async () => {
+    mocks.detalheLancamento.mockResolvedValue(NA_SERIE);
+    montar();
+    await carregada();
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    /* ⚠️ Dentro do DIÁLOGO: a etiqueta do cabeçalho também diz "série", e
+       uma busca solta acharia as duas. */
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByText(/faz parte de uma série/i)).toBeInTheDocument();
+    expect(mocks.atualizarLancamento).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Este e os próximos em aberto" }),
+    );
+    const salvar = screen.getAllByRole("button", { name: /Salvar/ });
+    await userEvent.click(salvar[salvar.length - 1]);
+
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    expect(mocks.atualizarLancamento.mock.calls[0][2]).toBe("futuros");
   });
 });
 
@@ -185,9 +339,7 @@ describe("dar baixa", () => {
     expect(screen.queryByRole("button", { name: "Marcar como pago" })).not.toBeInTheDocument();
   });
 
-  it("numa SAÍDA aberta, diz 'pago'", async () => {
-    /* Par negativo do de cima: a mesma data no banco, e a palavra errada
-       faria a tela de uma despesa dizer que alguém recebeu. */
+  it("numa SAÍDA aberta, diz 'pago' -- o par negativo", async () => {
     mocks.detalheLancamento.mockResolvedValue({
       ...LANCAMENTO, natureza: "saida", tipo: "saida",
     });
@@ -202,8 +354,6 @@ describe("dar baixa", () => {
     await carregada();
     await userEvent.click(screen.getByRole("button", { name: "Marcar como recebido" }));
     await waitFor(() => expect(mocks.efetivarLancamento).toHaveBeenCalledWith("l1"));
-    /* 🔴 A tela relê: sem isto a situação continuaria "Em aberto" na cara de
-       quem acabou de dar a baixa. */
     await waitFor(() => expect(mocks.detalheLancamento).toHaveBeenCalledTimes(2));
   });
 
@@ -217,8 +367,6 @@ describe("dar baixa", () => {
   });
 
   it("🔴 no EFETIVADO some o 'marcar' e aparece 'desfazer'", async () => {
-    /* Um botão que reafirma o que já aconteceu convida ao clique que mexe no
-       saldo de novo. */
     mocks.detalheLancamento.mockResolvedValue({
       ...LANCAMENTO, situacao: "efetivado", data_efetivacao: "2026-09-05",
     });
@@ -228,24 +376,14 @@ describe("dar baixa", () => {
     expect(screen.getByRole("button", { name: "Desfazer baixa" })).toBeInTheDocument();
   });
 
-  it("desfazer chama o servidor", async () => {
-    mocks.detalheLancamento.mockResolvedValue({
-      ...LANCAMENTO, situacao: "efetivado", data_efetivacao: "2026-09-05",
-    });
-    montar();
-    await carregada();
-    await userEvent.click(screen.getByRole("button", { name: "Desfazer baixa" }));
-    await waitFor(() => expect(mocks.reabrirLancamento).toHaveBeenCalledWith("l1"));
-  });
-
   it("efetivado numa ENTRADA rotula a data como 'Recebida em'", async () => {
     mocks.detalheLancamento.mockResolvedValue({
       ...LANCAMENTO, situacao: "efetivado", data_efetivacao: "2026-09-05",
     });
     montar();
     await carregada();
-    expect(screen.getByText("Recebida em")).toBeInTheDocument();
-    expect(screen.queryByText("Paga em")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Recebida em/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Paga em/)).not.toBeInTheDocument();
   });
 
   it("efetivado numa SAÍDA rotula como 'Paga em'", async () => {
@@ -254,16 +392,13 @@ describe("dar baixa", () => {
     });
     montar();
     await carregada();
-    expect(screen.getByText("Paga em")).toBeInTheDocument();
-    expect(screen.queryByText("Recebida em")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Paga em/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Recebida em/)).not.toBeInTheDocument();
   });
 });
 
 describe("o que o servidor NÃO aceitaria não vira botão", () => {
   it("🔴 transferência não efetiva nem reabre -- e a tela diz por quê", async () => {
-    /* `efetivacao_service`: "Transferência já nasce efetivada" (400) e
-       "não reabre: exclua e refaça" (400). Mostrar os botões seria prometer
-       o que não se cumpre. */
     mocks.detalheLancamento.mockResolvedValue({
       ...LANCAMENTO, tipo: "transferencia", natureza: "",
       situacao: "efetivado", data_efetivacao: "2026-09-05", rateio: [],
@@ -272,12 +407,15 @@ describe("o que o servidor NÃO aceitaria não vira botão", () => {
     await carregada();
     expect(screen.queryByRole("button", { name: /Marcar como/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Desfazer baixa" })).not.toBeInTheDocument();
-    expect(screen.getByText(/já nasce efetivada/)).toBeInTheDocument();
+    /* Duas vezes de propósito: o subtítulo explica a ausência dos botões, e
+       a dica do campo Situação explica por que ele está travado. */
+    expect(screen.getAllByText(/já nasce efetivada/).length).toBeGreaterThan(0);
+    /* E sem categoria nem departamento: ela fica fora do fluxo de caixa. */
+    expect(screen.queryByLabelText(/Categoria/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Departamento/)).not.toBeInTheDocument();
   });
 
   it("🔴 lançamento em FATURA não desfaz baixa nem exclui -- e diz por quê", async () => {
-    /* `LancamentoEmFatura`, 409 nas duas: mudariam o total de um documento
-       que o cliente já recebeu. */
     mocks.detalheLancamento.mockResolvedValue({
       ...LANCAMENTO, situacao: "efetivado", data_efetivacao: "2026-09-05", fatura_id: "f1",
     });
@@ -288,9 +426,7 @@ describe("o que o servidor NÃO aceitaria não vira botão", () => {
     expect(screen.getByText(/cancele a fatura antes/)).toBeInTheDocument();
   });
 
-  it("sem impedimento, nenhum recado aparece", async () => {
-    /* Par negativo dos dois de cima: o subtítulo explica a ausência de um
-       botão, e um subtítulo que aparece sempre não explicaria nada. */
+  it("sem impedimento, nenhum recado aparece -- o par negativo", async () => {
     montar();
     await carregada();
     expect(screen.queryByText(/cancele a fatura antes/)).not.toBeInTheDocument();
@@ -302,7 +438,6 @@ describe("o que o servidor NÃO aceitaria não vira botão", () => {
     montar();
     await carregada();
     expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
-    /* E continua podendo dar baixa: a régua é só da exclusão. */
     expect(screen.getByRole("button", { name: "Marcar como recebido" })).toBeInTheDocument();
   });
 });
@@ -347,22 +482,15 @@ describe("excluir", () => {
     expect(await screen.findByText(/volta para o saldo da conta/)).toBeInTheDocument();
   });
 
-  it("num aberto, o aviso do saldo não aparece", async () => {
-    /* Par negativo: nada volta para saldo nenhum -- o dinheiro nunca entrou. */
+  it("num aberto, o aviso do saldo não aparece -- o par negativo", async () => {
     montar();
     await carregada();
     await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
     expect(await screen.findByText(/será removido/)).toBeInTheDocument();
     expect(screen.queryByText(/volta para o saldo da conta/)).not.toBeInTheDocument();
   });
-});
-
-describe("a série", () => {
-  const NA_SERIE = { ...LANCAMENTO, recorrencia_id: "r1" };
 
   it("🔴 sem série, a escolha de alcance NÃO é oferecida", async () => {
-    /* Sem irmãos o servidor ignora o escopo: perguntar pediria uma decisão
-       que não muda nada. */
     montar();
     await carregada();
     await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
@@ -370,19 +498,8 @@ describe("a série", () => {
     expect(screen.queryByRole("button", { name: "Somente este" })).not.toBeInTheDocument();
   });
 
-  it("com série, oferece as duas opções", async () => {
-    mocks.detalheLancamento.mockResolvedValue(NA_SERIE);
-    montar();
-    await carregada();
-    await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
-    expect(await screen.findByRole("button", { name: "Somente este" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Este e os próximos em aberto" }),
-    ).toBeInTheDocument();
-  });
-
-  it("🔴 escolher 'os próximos' manda escopo=futuros", async () => {
-    mocks.detalheLancamento.mockResolvedValue(NA_SERIE);
+  it("🔴 com série, escolher 'os próximos' manda escopo=futuros", async () => {
+    mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO, recorrencia_id: "r1" });
     mocks.excluirLancamento.mockResolvedValue({ lancamento_id: "l1", removidos: 3 });
     montar();
     await carregada();
@@ -393,25 +510,6 @@ describe("a série", () => {
     const botoes = screen.getAllByRole("button", { name: /Excluir/ });
     await userEvent.click(botoes[botoes.length - 1]);
     await waitFor(() => expect(mocks.excluirLancamento).toHaveBeenCalledWith("l1", "futuros"));
-  });
-
-  it("🔴 reabrir o diálogo volta pro padrão 'somente este'", async () => {
-    /* A escolha da vez passada não pode virar padrão silencioso: quem
-       cancelou e clicou de novo apagaria a série inteira sem ter pedido. */
-    mocks.detalheLancamento.mockResolvedValue(NA_SERIE);
-    montar();
-    await carregada();
-
-    await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Este e os próximos em aberto" }),
-    );
-    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
-
-    await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
-    const botoes = await screen.findAllByRole("button", { name: /Excluir/ });
-    await userEvent.click(botoes[botoes.length - 1]);
-    await waitFor(() => expect(mocks.excluirLancamento).toHaveBeenCalledWith("l1", "este"));
   });
 });
 

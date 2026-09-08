@@ -26,6 +26,12 @@ export type FiltrosDeLancamentos = OpcoesDePaginacao & {
   de?: string;
   ate?: string;
   tipo?: string;
+  /** `entrada` ou `saida` -- a NATUREZA, derivada do tipo.
+   *
+   * 🔴 Não é o mesmo que `tipo`: "a receber" são honorário e entrada, os
+   * dois de natureza `entrada`. Filtrar por `tipo=entrada` derruba os
+   * honorários -- é o que o card dos totais fazia. */
+  natureza?: string;
   situacao?: string;
   conta_id?: string;
   categoria_id?: string;

@@ -1,4 +1,7 @@
+import type { OpcaoDeNovoLancamento } from "./components/MenuDeNovoLancamento/types";
 import {
+  NATUREZA_ENTRADA,
+  NATUREZA_SAIDA,
   SITUACAO_ABERTO,
   SITUACAO_ATRASADO,
   SITUACAO_EFETIVADO,
@@ -67,7 +70,10 @@ export const COLUNAS_DE_LANCAMENTOS = [
   "Conta",
   "Vencimento",
   "Situação",
-  "Valor",
+  /* 🔴 À direita, como a célula: o número é alinhado à direita para duas
+     quantias serem comparáveis na vertical, e um cabeçalho à esquerda fica
+     pendurado longe da coluna que nomeia. É `th.direita` no artefato. */
+  { rotulo: "Valor", aDireita: true },
 ] as const;
 
 /** O filtro de tipo, na barra.
@@ -75,6 +81,22 @@ export const COLUNAS_DE_LANCAMENTOS = [
  * ⚠️ "Todos" é `""` e não um id próprio: é o que a API entende por "sem
  * filtro", e um valor inventado viraria um `?tipo=todos` que não casa com
  * lançamento nenhum. */
+/** O filtro de NATUREZA -- o lado do dinheiro, seja qual for o tipo.
+ *
+ * 🔴 Existe separado de `OPCOES_DE_TIPO` porque responde outra pergunta:
+ * "tudo que entra" são honorários E entradas, e nenhuma opção de tipo diz
+ * isso. É o filtro que os cards de totais aplicam.
+ *
+ * ⚠️ As palavras são deliberadamente OUTRAS ("tudo que entra", e não
+ * "entradas"): a pílula de tipo já tem uma opção chamada "Entradas", que é o
+ * tipo `entrada` sozinho. Duas pílulas mostrando a mesma palavra com
+ * recortes diferentes seria pior que não ter a segunda. */
+export const OPCOES_DE_NATUREZA = [
+  { id: "", rotulo: "Entradas e saídas" },
+  { id: NATUREZA_ENTRADA, rotulo: "Tudo que entra" },
+  { id: NATUREZA_SAIDA, rotulo: "Tudo que sai" },
+] as const;
+
 export const OPCOES_DE_TIPO = [
   { id: "", rotulo: "Todos os tipos" },
   { id: TIPO_HONORARIO, rotulo: "Honorários" },
@@ -105,3 +127,61 @@ export const ROTULO_DA_SITUACAO: Record<string, string> = {
   [SITUACAO_ATRASADO]: "Atrasado",
   [SITUACAO_EFETIVADO]: "Efetivado",
 };
+
+/** O "Tipo" do formulário de entrada e de saída -- e ele NÃO é o `tipo` do
+ * lançamento.
+ *
+ * 🔴 Para a API, toda entrada é `entrada` e toda saída é `saida`. Este
+ * campo existe por duas razões, as duas do artefato: levar quem abriu o
+ * formulário errado para o de honorário, e dizer se o dinheiro é de um
+ * CLIENTE -- que é o que troca o campo de contraparte pelo de cliente, e o
+ * que faz a despesa entrar na fatura dele.
+ *
+ * ⚠️ `honorario` não é uma forma: é uma porta. Escolhê-lo fecha este modal e
+ * abre o de honorário, que tem processo, cliente e parcelas. */
+export const FORMA_AVULSA = "avulsa";
+export const FORMA_DE_CLIENTE = "cliente";
+export const FORMA_HONORARIO = "honorario";
+
+export const FORMAS_DA_ENTRADA = [
+  { value: FORMA_AVULSA, label: "Entrada avulsa" },
+  { value: FORMA_DE_CLIENTE, label: "Adiantamento de despesa" },
+  { value: FORMA_HONORARIO, label: "Honorário" },
+];
+
+export const FORMAS_DA_SAIDA = [
+  { value: FORMA_AVULSA, label: "Saída avulsa" },
+  { value: FORMA_DE_CLIENTE, label: "Despesa de cliente" },
+];
+
+/** As quatro portas do botão "+ Novo lançamento", na ordem e com as frases
+ * do artefato.
+ *
+ * ⚠️ "Outra entrada", e não "Entrada": o nome existe em contraste com
+ * Honorário, que é a entrada mais comum e tem porta própria logo acima. */
+export const OPCOES_DE_NOVO_LANCAMENTO: OpcaoDeNovoLancamento[] = [
+  {
+    forma: TIPO_HONORARIO,
+    rotulo: "Honorário",
+    descricao: "A receber de um cliente, por processo ou atendimento",
+    tom: "bom",
+  },
+  {
+    forma: TIPO_ENTRADA,
+    rotulo: "Outra entrada",
+    descricao: "Adiantamento de despesa, rendimento, reembolso",
+    tom: "marca",
+  },
+  {
+    forma: TIPO_SAIDA,
+    rotulo: "Saída",
+    descricao: "Despesa do escritório ou de um cliente",
+    tom: "ruim",
+  },
+  {
+    forma: TIPO_TRANSFERENCIA,
+    rotulo: "Transferência",
+    descricao: "Entre duas contas do escritório",
+    tom: "neutro",
+  },
+];

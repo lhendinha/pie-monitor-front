@@ -89,6 +89,25 @@ export interface Vinculo {
   id: string;
   rotulo: string;
   detalhe?: string;
+  /** 🔴 O subgrupo de onde o item veio -- e não é enfeite: o lançamento
+   * MANDA `subgrupo_id` junto do vínculo, e sem ele a API responde "Vínculo
+   * sem subgrupo". Antes só o `detalhe` (texto) carregava o subgrupo, para
+   * a segunda linha da opção; o texto não serve para mandar de volta.
+   *
+   * ⚠️ Opcional porque um `Vinculo` guardado antes desta versão não o tem. */
+  subgrupoId?: string;
+  /** Os clientes do PROCESSO, para o formulário sugerir a contraparte.
+   *
+   * ⚠️ Só o processo tem: `AtendimentoResumido` não devolve cliente, e
+   * inventar um a partir do assunto seria adivinhação. */
+  clienteIds?: string[];
+  /** O NOME de cada cliente, na mesma ordem de `clienteIds`.
+   *
+   * 🔴 Sem ele, sugerir o cliente pelo processo deixava o campo VAZIO: o
+   * select desenha o rótulo procurando o id entre as opções carregadas, e a
+   * lista de clientes só é buscada quando alguém abre o painel. O id estava
+   * escolhido e a tela não mostrava nada. */
+  clienteNomes?: string[];
 }
 
 /** Os dois slots do campo de vínculo. Um por tipo, nunca uma lista -- é

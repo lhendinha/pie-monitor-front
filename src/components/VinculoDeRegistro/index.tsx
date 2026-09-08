@@ -94,20 +94,26 @@ export default function VinculoDeRegistro({
            de contrato" não dizem sozinhos de onde vieram. Também não dizem de
            qual SUBGRUPO, e esta busca atravessa todos os seus.
 
-           ⚠️ Sem campo novo no tipo `Vinculo`: `detalhe` é o único que a
-           opção exibe (conferido -- nada mais o consome), e o objeto escolhido
-           é guardado com ele. */
+           ⚠️ O `detalhe` é o único que a OPÇÃO exibe, e continua sendo. Mas
+           `subgrupoId` e `clienteIds` viajam junto desde o Financeiro: o
+           lançamento manda o subgrupo ao servidor (sem ele, "Vínculo sem
+           subgrupo") e sugere o cliente do processo escolhido. Texto de
+           tela não serve para nenhuma das duas coisas. */
         ...(processos.processos ?? []).slice(0, RESULTADOS_POR_TIPO).map((p) => ({
           tipo: "processo" as const,
           id: p.numero_processo,
           rotulo: mascararNumeroProcesso(p.numero_processo),
           detalhe: [p.apelido, subgrupoNome(p.subgrupo_id)].filter(Boolean).join(" · "),
+          subgrupoId: p.subgrupo_id,
+          clienteIds: p.cliente_ids ?? [],
+          clienteNomes: p.cliente_nomes ?? [],
         })),
         ...(atendimentos.atendimentos ?? []).slice(0, RESULTADOS_POR_TIPO).map((a) => ({
           tipo: "atendimento" as const,
           id: a.atendimento_id,
           rotulo: a.assunto,
           detalhe: [a.status, subgrupoNome(a.subgrupo_id)].filter(Boolean).join(" · "),
+          subgrupoId: a.subgrupo_id,
         })),
       ];
     },

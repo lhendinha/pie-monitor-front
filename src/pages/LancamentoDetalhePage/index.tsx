@@ -10,6 +10,8 @@ import {
   CartaoDeTabela,
   Esqueleto,
   EstadoDeErro,
+  Etiqueta,
+  EtiquetaDeMetadado,
   IconeSeta,
   ModalDeConfirmacao,
   OpcaoDeLinha,
@@ -20,9 +22,10 @@ import {
   TIPO_TRANSFERENCIA,
 } from "../../constants";
 import { useToast } from "../../contexts/ToastContext";
-import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 import {
+  atualizarLancamento,
+  detalheCliente,
   detalheLancamento,
   efetivarLancamento,
   excluirLancamento,
@@ -30,51 +33,55 @@ import {
   papelAtende,
   reabrirLancamento,
 } from "../../services";
-import { toastErroMutation } from "../../services/queryClient";
+import { ApiError } from "../../services/api/client";
+import { invalidarCatalogoFinanceiro, toastErroMutation } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
-import type { CatalogoFinanceiro, EscopoDaSerie, Lancamento } from "../../types";
-import DadosDoLancamento from "./components/DadosDoLancamento";
+import { coresDaSituacao } from "../../theme/lancamento";
+import { ROTULO_DA_SITUACAO } from "../FinanceiroPage/constants";
+import type { CatalogoFinanceiro, Cliente, EscopoDaSerie, Lancamento } from "../../types";
+import type { CamposDoLancamento } from "../../types/requisicoes";
+import FormularioDoLancamento from "./components/FormularioDoLancamento";
 
-/** A tela de um lançamento: o que ele é, e as ações que mexem em dinheiro.
+/** A tela de um lançamento: o que ele é, o que dá para corrigir nele, e as
+ * duas ações que mexem em dinheiro.
  *
  * É ROTA, e não modal, pela mesma razão do detalhe de documento: precisa
- * sobreviver a um F5 e a um link colado.
+ * aguentar um F5 e um link colado -- a Área de trabalho aponta para cá.
  *
  * 🔴 **Dar baixa e excluir vivem AQUI, e não na linha da lista.** As duas
  * mexem no saldo de uma conta, e um clique de raspão numa tabela de vinte
- * linhas é barato demais para isso. Aqui a pessoa já está olhando para o
- * lançamento inteiro -- valor, conta, rateio -- antes de confirmar.
+ * linhas é barato demais para isso.
  *
- * 🔴 **Cada botão só aparece quando o servidor aceitaria.** As três regras
- * vêm de `efetivacao_service` e foram lidas lá, não supostas:
+ * 🔴 **Cada botão só aparece quando o servidor aceitaria** -- as três regras
+ * foram lidas em `efetivacao_service`, não supostas: transferência não
+ * efetiva nem reabre (400); lançamento em fatura não reabre nem se exclui
+ * (409); excluir é `admin`+. O subtítulo diz o motivo no lugar do botão que
+ * não veio.
  *
- * - transferência não efetiva ("já nasce efetivada") nem reabre -> 400;
- * - lançamento em fatura não reabre nem se exclui -> 409;
- * - excluir é `admin`+.
- *
- * Mostrar o botão e deixar o toast explicar depois seria prometer o que não
- * se cumpre -- a mesma régua do resto do sistema. O subtítulo diz o motivo
- * no lugar do botão que não veio.
+ * ⚠️ **Sem as abas "Detalhes | Fatura" do artefato**: a segunda mostra a
+ * fatura do lançamento, que é a Fase 6. Uma aba sozinha não é aba, e uma
+ * segunda aba vazia repetiria o erro que a aba Lançamentos já cometeu.
  *
  * ➡️ `index.test.tsx`.
  */
 export default function LancamentoDetalhePage() {
   const { lancamentoId = "" } = useParams();
-  /* ⚠️ Volta no HISTÓRICO -- é o que preserva os filtros e a página da
-     lista de onde a pessoa veio. Ver `useVoltarParaLista`. */
+  /* ⚠️ Volta no HISTÓRICO -- é o que preserva os filtros e a página da lista
+     de onde a pessoa veio. Ver `useVoltarParaLista`. */
   const voltar = useVoltarParaLista("/financeiro?aba=lancamentos");
   const queryClient = useQueryClient();
   const toast = useToast();
-  const nomeDeSubgrupo = useNomeDeSubgrupo();
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [confirmandoSalvar, setConfirmandoSalvar] = useState<CamposDoLancamento | null>(null);
   const [escopo, setEscopo] = useState<EscopoDaSerie>("este");
+  const [erroDoFormulario, setErroDoFormulario] = useState("");
 
   const query = useQuery<Lancamento>({
     queryKey: qk.lancamento(lancamentoId),
     queryFn: () => detalheLancamento(lancamentoId),
     enabled: Boolean(lancamentoId),
-    /* ⚠️ Link velho aponta para lançamento excluído. Retentar um 404 três
-       vezes só atrasa o recado em alguns segundos. */
+    /* ⚠️ Link velho aponta para lançamento excluído: retentar um 404 três
+       vezes só atrasa o recado. */
     retry: false,
   });
 
@@ -83,20 +90,56 @@ export default function LancamentoDetalhePage() {
     queryFn: lerCatalogoFinanceiro,
   });
 
-  /** 🔴 Derruba as LISTAS e o catálogo junto, não só este lançamento: dar
-   * baixa move o saldo da conta, e o saldo aparece na aba Configurações e
-   * nos cartões de totais. Invalidar só o detalhe deixaria o número velho
-   * nas outras telas até alguém recarregar. */
+  const clienteId = query.data?.cliente_id ?? "";
+  /* ⚠️ Pelo ID, e não pela busca: `listarClientes({busca})` procura no NOME,
+     e o lançamento guarda só o id -- a busca por um id devolveria vazio e o
+     campo mostraria o id cru.
+     ⚠️ Só quando HÁ cliente: a maioria dos lançamentos tem contraparte em
+     texto, e uma consulta por tela para nada é uma consulta a mais. */
+  const cliente = useQuery<Cliente>({
+    queryKey: qk.detalheCliente(clienteId),
+    queryFn: () => detalheCliente(clienteId) as Promise<Cliente>,
+    enabled: Boolean(clienteId),
+    retry: false,
+  });
+
+  /** 🔴 Derruba as LISTAS e o catálogo junto: dar baixa move o saldo da
+   * conta, e o saldo aparece na aba Configurações e nos cartões de totais.
+   * Invalidar só o detalhe deixaria o número velho nas outras telas. */
   function invalidarDinheiro() {
     queryClient.invalidateQueries({ queryKey: ["lancamentos"] });
-    queryClient.invalidateQueries({ queryKey: qk.catalogoFinanceiro() });
+    invalidarCatalogoFinanceiro(queryClient);
   }
+
+  function releEEspalha() {
+    queryClient.invalidateQueries({ queryKey: qk.lancamento(lancamentoId) });
+    invalidarDinheiro();
+  }
+
+  const salvar = useMutation({
+    mutationFn: (v: { campos: CamposDoLancamento; escopo: EscopoDaSerie }) =>
+      atualizarLancamento(lancamentoId, v.campos, v.escopo),
+    onSuccess: () => {
+      releEEspalha();
+      setErroDoFormulario("");
+      setConfirmandoSalvar(null);
+      toast.sucesso("Lançamento salvo.");
+    },
+    /* A recusa vai para o FORMULÁRIO: ela fala de um campo que está na tela
+       ("Conta desativada: escolha outra"), e um toast leva o recado embora
+       antes de a pessoa achar o campo. */
+    onError: (err) => {
+      setConfirmandoSalvar(null);
+      setErroDoFormulario(
+        err instanceof ApiError ? err.message : "Não foi possível salvar o lançamento.",
+      );
+    },
+  });
 
   const efetivar = useMutation({
     mutationFn: () => efetivarLancamento(lancamentoId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.lancamento(lancamentoId) });
-      invalidarDinheiro();
+      releEEspalha();
       toast.sucesso("Baixa registrada.");
     },
     onError: (err) => toastErroMutation(toast, err, "Não foi possível registrar a baixa."),
@@ -105,8 +148,7 @@ export default function LancamentoDetalhePage() {
   const reabrir = useMutation({
     mutationFn: () => reabrirLancamento(lancamentoId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.lancamento(lancamentoId) });
-      invalidarDinheiro();
+      releEEspalha();
       toast.sucesso("Baixa desfeita.");
     },
     onError: (err) => toastErroMutation(toast, err, "Não foi possível desfazer a baixa."),
@@ -118,8 +160,7 @@ export default function LancamentoDetalhePage() {
       invalidarDinheiro();
       /* ⚠️ O número vem do SERVIDOR: quem entrou numa fatura entre a leitura
          e o clique não é apagado, e `escopo=futuros` pode remover menos do
-         que a lista mostrava. Dizer "3 excluídos" por conta própria seria
-         inventar. */
+         que a tela mostrava. */
       const quantos = resposta?.removidos ?? 1;
       toast.sucesso(quantos > 1 ? `${quantos} lançamentos excluídos.` : "Lançamento excluído.");
       voltar();
@@ -171,13 +212,30 @@ export default function LancamentoDetalhePage() {
   const podeDarBaixa = !eTransferencia && !efetivado;
   const podeDesfazer = !eTransferencia && efetivado && !emFatura;
 
-  /** O motivo de a tela não oferecer o que a pessoa espera. Vazio quando
-   * não há motivo -- e aí o subtítulo é o de sempre. */
+  /** O motivo de a tela não oferecer o que a pessoa espera. Vazio quando não
+   * há motivo -- e aí o subtítulo não aparece. */
   const impedimento = emFatura
     ? "Está numa fatura: cancele a fatura antes de desfazer a baixa ou excluir."
     : eTransferencia
       ? "Transferência já nasce efetivada; para corrigir, exclua e refaça."
       : "";
+
+  /** 🔴 A pergunta do Google Agenda ao SALVAR, e só numa série: sem irmãos o
+   * servidor ignora o escopo, e perguntar pediria uma decisão que não muda
+   * nada. Num avulso, salva direto. */
+  function pedirParaSalvar(campos: CamposDoLancamento) {
+    setErroDoFormulario("");
+    if (Object.keys(campos).length === 0) {
+      toast.sucesso("Nada mudou.");
+      return;
+    }
+    if (naSerie) {
+      setEscopo("este");
+      setConfirmandoSalvar(campos);
+      return;
+    }
+    salvar.mutate({ campos, escopo: "este" });
+  }
 
   return (
     <Box>
@@ -188,19 +246,6 @@ export default function LancamentoDetalhePage() {
         subtitulo={impedimento || undefined}
         acoes={
           <Flex gap="8px" wrap="wrap">
-            {podeDarBaixa && (
-              <Botao onClick={() => efetivar.mutate()} disabled={efetivar.isPending}>
-                {eEntrada ? "Marcar como recebido" : "Marcar como pago"}
-              </Botao>
-            )}
-            {/* 🔴 "Desfazer" no lugar de "Marcar como…", nunca os dois: um
-                botão que reafirma o que já aconteceu convida ao clique que
-                mexe no saldo de novo. */}
-            {podeDesfazer && (
-              <Botao variante="ghost" onClick={() => reabrir.mutate()} disabled={reabrir.isPending}>
-                Desfazer baixa
-              </Botao>
-            )}
             {podeExcluir && (
               <Botao
                 variante="perigoContorno"
@@ -214,17 +259,73 @@ export default function LancamentoDetalhePage() {
                 Excluir
               </Botao>
             )}
+            {podeDarBaixa && (
+              <Botao
+                variante="ghost"
+                onClick={() => efetivar.mutate()}
+                disabled={efetivar.isPending}
+              >
+                {eEntrada ? "Marcar como recebido" : "Marcar como pago"}
+              </Botao>
+            )}
+            {/* 🔴 "Desfazer" no lugar de "Marcar como…", nunca os dois: um
+                botão que reafirma o que já aconteceu convida ao clique que
+                mexe no saldo de novo. */}
+            {podeDesfazer && (
+              <Botao variante="ghost" onClick={() => reabrir.mutate()} disabled={reabrir.isPending}>
+                Desfazer baixa
+              </Botao>
+            )}
+            <Botao type="submit" form="form-do-lancamento" disabled={salvar.isPending}>
+              {salvar.isPending ? "Salvando…" : "Salvar"}
+            </Botao>
           </Flex>
         }
       />
 
+      <Flex gap="6px" wrap="wrap" mb="14px">
+        <Etiqueta cores={coresDaSituacao(lancamento.situacao)}>
+          {ROTULO_DA_SITUACAO[lancamento.situacao] ?? lancamento.situacao}
+        </Etiqueta>
+        {lancamento.parcela && (
+          <EtiquetaDeMetadado>Parcela {lancamento.parcela}</EtiquetaDeMetadado>
+        )}
+        {naSerie && <EtiquetaDeMetadado>Faz parte de uma série</EtiquetaDeMetadado>}
+      </Flex>
+
       <CartaoDeTabela>
-        <DadosDoLancamento
+        <FormularioDoLancamento
           lancamento={lancamento}
           catalogo={catalogo.data}
-          nomeDoDepartamento={nomeDeSubgrupo}
+          nomeDoCliente={cliente.data?.nome ?? ""}
+          erro={erroDoFormulario}
+          onSalvar={pedirParaSalvar}
         />
       </CartaoDeTabela>
+
+      {confirmandoSalvar && (
+        <ModalDeConfirmacao
+          titulo="Salvar alteração"
+          /* Reversível: editar não destrói nada, e a lixeira com o "não pode
+             ser desfeita" assustaria à toa. */
+          reversivel
+          rotulo="Salvar"
+          mensagem="Este lançamento faz parte de uma série. Até onde a alteração vai?"
+          escolha={
+            <Box>
+              <OpcaoDeLinha ativa={escopo === "este"} onClick={() => setEscopo("este")}>
+                Somente este
+              </OpcaoDeLinha>
+              <OpcaoDeLinha ativa={escopo === "futuros"} onClick={() => setEscopo("futuros")}>
+                Este e os próximos em aberto
+              </OpcaoDeLinha>
+            </Box>
+          }
+          confirmando={salvar.isPending}
+          onConfirmar={() => salvar.mutate({ campos: confirmandoSalvar, escopo })}
+          onFechar={() => setConfirmandoSalvar(null)}
+        />
+      )}
 
       {confirmandoExclusao && (
         <ModalDeConfirmacao
@@ -234,9 +335,6 @@ export default function LancamentoDetalhePage() {
               O lançamento <strong>{lancamento.descricao}</strong> será removido.
             </>
           }
-          /* 🔴 A pergunta do Google Agenda, e SÓ quando há série: sem irmãos
-             o servidor ignora o escopo, e oferecer a escolha pediria uma
-             decisão que não muda nada. */
           escolha={
             naSerie ? (
               <Box>
@@ -249,10 +347,9 @@ export default function LancamentoDetalhePage() {
               </Box>
             ) : undefined
           }
-          /* 🔴 O aviso fala do DINHEIRO, não só de "não dá para desfazer":
-             num efetivado, excluir devolve o valor ao saldo da conta -- e
-             quem confirma precisa saber disso antes, não depois de estranhar
-             o extrato. */
+          /* 🔴 O aviso fala do DINHEIRO: num efetivado, excluir devolve o
+             valor ao saldo da conta -- e quem confirma precisa saber disso
+             antes, não depois de estranhar o extrato. */
           aviso={
             efetivado
               ? "Este lançamento já foi baixado: o valor volta para o saldo da conta."

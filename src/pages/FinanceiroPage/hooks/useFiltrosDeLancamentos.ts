@@ -65,6 +65,7 @@ export function useFiltrosDeLancamentos() {
     periodoId,
     intervaloPersonalizado: de && ate ? { de, ate } : undefined,
     tipo: lerParametroDaUrl(params, "tipo", ""),
+    natureza: lerParametroDaUrl(params, "natureza", ""),
     situacao: lerParametroDaUrl(params, "situacao", ""),
     contaId: lerParametroDaUrl(params, "conta", ""),
     departamentoIds: lerParametroDaUrl(params, "departamento", [] as string[]),
@@ -91,6 +92,7 @@ export function useFiltrosDeLancamentos() {
         escrever.ate = intervaloNovo?.ate ?? "";
       }
       if (mudanca.tipo !== undefined) escrever.tipo = mudanca.tipo;
+      if (mudanca.natureza !== undefined) escrever.natureza = mudanca.natureza;
       if (mudanca.situacao !== undefined) escrever.situacao = mudanca.situacao;
       if (mudanca.contaId !== undefined) escrever.conta = mudanca.contaId;
       if (mudanca.departamentoIds !== undefined) escrever.departamento = mudanca.departamentoIds;

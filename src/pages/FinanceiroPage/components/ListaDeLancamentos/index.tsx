@@ -53,6 +53,7 @@ export default function ListaDeLancamentos() {
     de: intervalo?.de,
     ate: intervalo?.ate,
     tipo: filtros.tipo || undefined,
+    natureza: filtros.natureza || undefined,
     situacao: filtros.situacao || undefined,
     conta_id: filtros.contaId || undefined,
     /* ⚠️ A API aceita UM departamento por vez. Com vários escolhidos, manda
@@ -90,7 +91,10 @@ export default function ListaDeLancamentos() {
         <CartoesDeTotais
           totais={query.data.totais}
           periodo={rotuloDoPeriodo(filtros.periodoId)}
-          onFiltrar={(situacao, tipo) => mudar({ situacao, tipo })}
+          /* ⚠️ Zera o `tipo` junto: o card fala em natureza, e um
+              `tipo=saida` que tivesse sobrado da pílula cruzaria com
+              "a receber" e devolveria lista vazia. */
+          onFiltrar={(situacao, natureza) => mudar({ situacao, natureza, tipo: "" })}
         />
       )}
 

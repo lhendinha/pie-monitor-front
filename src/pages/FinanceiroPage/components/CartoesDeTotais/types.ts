@@ -5,6 +5,9 @@ export interface CartoesDeTotaisProps {
   /** O rótulo do período escolhido, para o card dizer DE QUANDO ele fala
    * ("A receber · este mês"). Sem ele, três números sem recorte. */
   periodo: string;
-  /** Clicar num card estreita a lista para aquele recorte. */
-  onFiltrar: (situacao: string, tipo: string) => void;
+  /** Clicar num card estreita a lista para aquele recorte.
+   *
+   * 🔴 O segundo argumento é a NATUREZA (`entrada`/`saida`), não o tipo:
+   * "a receber" são honorário e entrada juntos. Ver o componente. */
+  onFiltrar: (situacao: string, natureza: string) => void;
 }

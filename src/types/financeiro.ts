@@ -82,6 +82,22 @@ export interface ParcelaDoRateio {
   valor_centavos: number;
 }
 
+/** A mesma parcela do lado de quem ESCREVE -- no formulário e no corpo da
+ * requisição.
+ *
+ * 🔴 `valor_centavos` é opcional aqui, e obrigatório na leitura acima: com
+ * UMA linha o valor só pode ser o do lançamento, e o schema da API a aceita
+ * sem ele de propósito. Mandar o número de novo faria a tela dizer a mesma
+ * coisa duas vezes, com um 400 esperando o dia em que as duas discordassem.
+ * Com duas linhas ou mais, todas trazem o seu.
+ *
+ * ⚠️ Tipo com nome, e não objeto solto dentro de `DadosDoLancamento`: o
+ * formulário segura exatamente esta forma antes de enviá-la. */
+export interface ParcelaParaEnviar {
+  subgrupo_id: string;
+  valor_centavos?: number;
+}
+
 /** Uma linha do dinheiro: honorário, entrada, saída ou transferência.
  *
  * ⚠️ **Só os campos que a tela usa.** A resposta traz também `grupo_id`,

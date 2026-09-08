@@ -3,7 +3,7 @@ import { Flex } from "@chakra-ui/react";
 import { CampoDeBusca, MultiSelect, Select, SeletorDePeriodo } from "../../../../components";
 import { PERIODOS_DE_DINHEIRO } from "../../../../constants";
 import { comOpcoesEscolhidas } from "../../../../utils/opcoesEscolhidas";
-import { OPCOES_DE_SITUACAO, OPCOES_DE_TIPO } from "../../constants";
+import { OPCOES_DE_NATUREZA, OPCOES_DE_SITUACAO, OPCOES_DE_TIPO } from "../../constants";
 import type { FiltrosDeLancamentosProps } from "./types";
 
 /** A barra de filtros da lista de lançamentos.
@@ -48,6 +48,22 @@ export default function FiltrosDeLancamentos({
         opcoes={OPCOES_DE_TIPO.filter((o) => o.id).map((o) => ({ value: o.id, label: o.rotulo }))}
         valor={filtros.tipo}
         onMudar={(tipo) => onMudar({ tipo: tipo ?? "" })}
+        permitirLimpar
+      />
+
+      {/* 🔴 Depois do tipo, e com palavras próprias: é o filtro que os CARDS
+          aplicam ("a receber" = tudo que entra e ainda não entrou). Sem esta
+          pílula, clicar num card estreitaria a lista sem nada na tela
+          dizendo por quê -- e sem como desfazer. */}
+      <Select
+        variante="chip"
+        placeholder="Entradas e saídas"
+        opcoes={OPCOES_DE_NATUREZA.filter((o) => o.id).map((o) => ({
+          value: o.id,
+          label: o.rotulo,
+        }))}
+        valor={filtros.natureza}
+        onMudar={(natureza) => onMudar({ natureza: natureza ?? "" })}
         permitirLimpar
       />
 

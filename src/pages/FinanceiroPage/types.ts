@@ -1,3 +1,9 @@
+import type {
+  TIPO_ENTRADA,
+  TIPO_HONORARIO,
+  TIPO_SAIDA,
+  TIPO_TRANSFERENCIA,
+} from "../../constants";
 import type { IntervaloDeDatas } from "../../types";
 import type { ABAS_DO_FINANCEIRO } from "./constants";
 
@@ -19,6 +25,12 @@ export interface FiltrosDaListaDeLancamentos {
   periodoId: string;
   intervaloPersonalizado?: IntervaloDeDatas;
   tipo: string;
+  /** `entrada` ou `saida` -- o recorte dos CARDS.
+   *
+   * 🔴 Separado de `tipo` de propósito: a pílula de tipo oferece os quatro
+   * tipos (honorário, entrada, saída, transferência), e "a receber" não é
+   * nenhum deles -- é a natureza, que junta honorário e entrada. */
+  natureza: string;
   situacao: string;
   contaId: string;
   departamentoIds: string[];
@@ -27,3 +39,14 @@ export interface FiltrosDaListaDeLancamentos {
   departamentoNomes: Record<string, string>;
   busca: string;
 }
+
+/** Qual dos quatro formulários de lançamento está aberto -- ou nenhum.
+ *
+ * ⚠️ São os mesmos quatro `tipo` da API (`TIPO_HONORARIO` e irmãos), e não
+ * um vocabulário paralelo: a porta escolhida no menu É o tipo do lançamento
+ * que vai nascer. */
+export type FormaDeLancamento =
+  | typeof TIPO_HONORARIO
+  | typeof TIPO_ENTRADA
+  | typeof TIPO_SAIDA
+  | typeof TIPO_TRANSFERENCIA;

@@ -1,6 +1,11 @@
 import { SimpleGrid, Text, chakra } from "@chakra-ui/react";
 
-import { SITUACAO_ABERTO, SITUACAO_ATRASADO, TIPO_ENTRADA, TIPO_SAIDA } from "../../../../constants";
+import {
+  NATUREZA_ENTRADA,
+  NATUREZA_SAIDA,
+  SITUACAO_ABERTO,
+  SITUACAO_ATRASADO,
+} from "../../../../constants";
 import { contar, formatarCentavos } from "../../../../utils";
 import type { CartoesDeTotaisProps } from "./types";
 
@@ -42,7 +47,12 @@ export default function CartoesDeTotais({ totais, periodo, onFiltrar }: CartoesD
       quantos: totais.a_receber_quantidade,
       cor: "status.good.text",
       situacao: SITUACAO_ABERTO,
-      tipo: TIPO_ENTRADA,
+      /* 🔴 NATUREZA, e não tipo. "A receber" soma honorário E entrada -- os
+         dois têm natureza `entrada` --, e filtrar por `tipo=entrada`
+         derrubava os honorários: medido na base local, o card de R$ 7.300,00
+         em 3 lançamentos abria uma lista de R$ 3.200,00 em 1. O número
+         clicado sumia no clique. */
+      natureza: NATUREZA_ENTRADA,
     },
     {
       rotulo: "A pagar",
@@ -50,24 +60,24 @@ export default function CartoesDeTotais({ totais, periodo, onFiltrar }: CartoesD
       quantos: totais.a_pagar_quantidade,
       cor: "status.bad.text",
       situacao: SITUACAO_ABERTO,
-      tipo: TIPO_SAIDA,
+      natureza: NATUREZA_SAIDA,
     },
     {
-      /* 🔴 Atrasado NÃO filtra por tipo: são os dois lados juntos, e é essa
-         a pergunta -- "o que já devia ter acontecido e não aconteceu". */
+      /* 🔴 Atrasado NÃO filtra por natureza: são os dois lados juntos, e é
+         essa a pergunta -- "o que já devia ter acontecido e não aconteceu". */
       rotulo: "Atrasado",
       centavos: totais.atrasado_centavos,
       quantos: totais.atrasado_quantidade,
       cor: "status.bad.text",
       situacao: SITUACAO_ATRASADO,
-      tipo: "",
+      natureza: "",
     },
   ];
 
   return (
     <SimpleGrid columns={{ base: 1, sm: 3 }} gap="10px" mb="14px">
       {cartoes.map((c) => (
-        <Cartao key={c.rotulo} type="button" onClick={() => onFiltrar(c.situacao, c.tipo)}>
+        <Cartao key={c.rotulo} type="button" onClick={() => onFiltrar(c.situacao, c.natureza)}>
           <Text
             fontSize="21px"
             fontWeight="800"

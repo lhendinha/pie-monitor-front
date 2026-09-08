@@ -129,13 +129,39 @@ describe("ListaDeLancamentos", () => {
     await waitFor(() => expect(pedido().subgrupo_id).toBe("trab"));
   });
 
-  it("clicar num card estreita a lista para aquele recorte", async () => {
+  it("🔴 clicar num card filtra por NATUREZA, e não por tipo", async () => {
+    /* "A receber" soma honorário E entrada. Filtrando por `tipo=entrada`, o
+       card de R$ 7.300,00 em 3 lançamentos abria uma lista de R$ 3.200,00 em
+       1 -- medido na base local. O número clicado sumia no clique. */
     const user = userEvent.setup();
     montar();
     await screen.findByText(/A receber · este mês/);
     await user.click(screen.getByRole("button", { name: /A receber/ }));
     await waitFor(() => expect(pedido().situacao).toBe("aberto"));
-    expect(pedido().tipo).toBe("entrada");
+    expect(pedido().natureza).toBe("entrada");
+    expect(pedido().tipo).toBeUndefined();
+  });
+
+  it("🔴 e ZERA o tipo que estava escolhido na pílula", async () => {
+    /* Par negativo do de cima: `tipo=saida` da pílula cruzado com "tudo que
+       entra" devolveria lista vazia -- dois filtros que se anulam, sem nada
+       na tela dizendo isso. */
+    const user = userEvent.setup();
+    montar("/financeiro?aba=lancamentos&tipo=saida");
+    await screen.findByText(/A receber · este mês/);
+    await user.click(screen.getByRole("button", { name: /A receber/ }));
+    await waitFor(() => expect(pedido().natureza).toBe("entrada"));
+    expect(pedido().tipo).toBeUndefined();
+  });
+
+  it("o card de atrasados não escolhe lado nenhum", async () => {
+    /* "O que já devia ter acontecido e não aconteceu" são os dois lados. */
+    const user = userEvent.setup();
+    montar();
+    await screen.findByText(/Atrasado · este mês/);
+    await user.click(screen.getByRole("button", { name: /Atrasado/ }));
+    await waitFor(() => expect(pedido().situacao).toBe("atrasado"));
+    expect(pedido().natureza).toBeUndefined();
   });
 
   it("lista vazia diz que não há nada no período", async () => {

@@ -65,7 +65,16 @@ export default function LinhaDeLancamento({
           {ROTULO_DA_SITUACAO[l.situacao] ?? l.situacao}
         </Etiqueta>
       </Table.Cell>
-      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
+      {/* 🔴 `textAlign` na CÉLULA, e não só o `Flex` que empurra o conteúdo:
+          é `td.direita` no artefato, e é o que faz o cabeçalho da coluna e o
+          número dela ficarem no mesmo eixo. O cabeçalho é
+          `{ rotulo: "Valor", aDireita: true }` em `COLUNAS_DE_LANCAMENTOS`. */}
+      <Table.Cell
+        p="13px 14px"
+        textAlign="right"
+        borderBottomWidth="1px"
+        borderBottomColor="border.subtle"
+      >
         <Flex direction="column" align="flex-end" gap="1px">
           <Text
             fontSize="13px"

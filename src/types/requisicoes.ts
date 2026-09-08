@@ -5,6 +5,8 @@
  * formato do corpo é contrato com o servidor, não detalhe de quem
  * apresenta.
  */
+import type { ParcelaParaEnviar } from "./financeiro";
+
 
 /** A edição de membro manda todos os campos juntos: a rota substitui o
  * conjunto, não faz merge.
@@ -98,7 +100,7 @@ export type DadosDoLancamento = {
   data_vencimento: string;
   conta_id: string;
   categoria_id: string;
-  rateio: { subgrupo_id: string; valor_centavos?: number }[];
+  rateio: ParcelaParaEnviar[];
   centro_id?: string;
   cliente_id?: string;
   contraparte?: string;
@@ -142,7 +144,7 @@ export type CamposDoLancamento = {
   conta_id?: string;
   categoria_id?: string;
   centro_id?: string;
-  rateio?: { subgrupo_id: string; valor_centavos?: number }[];
+  rateio?: ParcelaParaEnviar[];
   cliente_id?: string;
   contraparte?: string;
   responsavel?: string;
