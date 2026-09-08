@@ -156,6 +156,34 @@ describe("hidratação", () => {
   });
 });
 
+describe("as etiquetas do cabeçalho", () => {
+  it("🔴 a PARCELA não vira etiqueta: o título já a carrega", async () => {
+    /* O servidor escreve "· 2/3" no fim da descrição, e a descrição é o
+       título. "Parcela 2/3" ao lado repetia o número na mesma dobra. */
+    montar();
+    await carregada();
+    expect(screen.queryByText(/^Parcela /)).not.toBeInTheDocument();
+  });
+
+  it("na REPETIÇÃO mensal, a etiqueta de série aparece", async () => {
+    /* Ela tem irmãos e NÃO tem numeração ("o mesmo aluguel todo mês"), então
+       é o único sinal de que existe série. */
+    mocks.detalheLancamento.mockResolvedValue({
+      ...LANCAMENTO, parcela: "", recorrencia_id: "r1", descricao: "Aluguel",
+    });
+    montar();
+    await carregada("Aluguel");
+    expect(screen.getByText("Faz parte de uma série")).toBeInTheDocument();
+  });
+
+  it("na PARCELA, não -- o par negativo", async () => {
+    mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO, recorrencia_id: "r1" });
+    montar();
+    await carregada();
+    expect(screen.queryByText("Faz parte de uma série")).not.toBeInTheDocument();
+  });
+});
+
 describe("o que NÃO se edita", () => {
   it("🔴 situação e vínculo vêm travados", async () => {
     /* Situação é ação (move o saldo, e quem a muda é "Marcar como

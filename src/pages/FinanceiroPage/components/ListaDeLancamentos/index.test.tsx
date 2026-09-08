@@ -15,8 +15,12 @@ import { renderComProviders } from "../../../../test/queryTestUtils";
 import ListaDeLancamentos from ".";
 
 const CATALOGO = {
-  contas: [{ conta_id: "c1", nome: "Itaú", tipo: "corrente", inicio: "2026-01-01",
-             saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: true }],
+  contas: [
+    { conta_id: "c1", nome: "Itaú", tipo: "corrente", inicio: "2026-01-01",
+      saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: true },
+    { conta_id: "c2", nome: "Caixa", tipo: "outros", inicio: "2026-01-01",
+      saldo_inicial_centavos: 0, saldo_centavos: 0, ativa: true },
+  ],
   categorias: [{ categoria_id: "cat1", nome: "Honorários", natureza: "entrada",
                  cor: "#1f9d55", agrupador_id: "", ativa: true }],
   centros_de_custo: [],
@@ -162,6 +166,37 @@ describe("ListaDeLancamentos", () => {
     await user.click(screen.getByRole("button", { name: /Atrasado/ }));
     await waitFor(() => expect(pedido().situacao).toBe("atrasado"));
     expect(pedido().natureza).toBeUndefined();
+  });
+
+  it("🔴 a PARCELA não aparece duas vezes na mesma linha", async () => {
+    /* O servidor já escreve "· 1/6" no fim da DESCRIÇÃO. A linha de baixo
+       repetia o número ao lado da contraparte, e na tela ficava
+       "Honorários · 1/6" em cima de "Meridional S.A. · 1/6". */
+    mocks.listarLancamentos.mockResolvedValue(
+      resposta([{
+        ...RATEADO, descricao: "Honorários · assessoria mensal · 1/6",
+        parcela: "1/6", contraparte: "Meridional S.A.", rateio: [],
+        valor_no_departamento_centavos: undefined,
+      }]),
+    );
+    montar();
+    await screen.findByText("Honorários · assessoria mensal · 1/6");
+    expect(screen.getByText("Meridional S.A.")).toBeInTheDocument();
+    expect(screen.queryByText("Meridional S.A. · 1/6")).not.toBeInTheDocument();
+  });
+
+  it("🔴 a TRANSFERÊNCIA mostra as duas contas", async () => {
+    /* Ela não tem `conta_id`, e a coluna ficava em branco -- na linha em que
+       a conta é a única coisa que importa. */
+    mocks.listarLancamentos.mockResolvedValue(
+      resposta([{
+        ...RATEADO, tipo: "transferencia", natureza: "", descricao: "Reforço do caixa",
+        conta_id: "", conta_origem_id: "c1", conta_destino_id: "c2",
+        contraparte: "", rateio: [], valor_no_departamento_centavos: undefined,
+      }]),
+    );
+    montar();
+    expect(await screen.findByText("Itaú → Caixa")).toBeInTheDocument();
   });
 
   it("lista vazia diz que não há nada no período", async () => {

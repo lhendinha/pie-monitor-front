@@ -3,7 +3,7 @@ import { Flex, Table, Text } from "@chakra-ui/react";
 import { CelulaComSub, Etiqueta } from "../../../../components";
 import { coresDaSituacao, corDoValor, sinalDoValor } from "../../../../theme/lancamento";
 import { formatarCentavos, formatarData } from "../../../../utils";
-import { ROTULO_DA_SITUACAO } from "../../constants";
+import { LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO, ROTULO_DA_SITUACAO } from "../../constants";
 import type { LinhaDeLancamentoProps } from "./types";
 
 /** Uma linha da lista de lançamentos.
@@ -46,15 +46,30 @@ export default function LinhaDeLancamento({
       <CelulaComSub
         variante="destaque"
         principal={l.descricao}
-        /* ⚠️ Contraparte e parcela na mesma linha de baixo: são as duas
-           respostas a "de quem é isso" e "qual das quantas", e cada uma
-           numa linha faria a tabela crescer para dizer pouco. */
-        sub={[l.contraparte, l.parcela].filter(Boolean).join(" · ")}
+        /* 🔴 A parcela NÃO entra aqui: o servidor já a escreve no fim da
+           DESCRIÇÃO ("Honorários · assessoria mensal · 1/6"), e repeti-la na
+           linha de baixo punha "1/6" duas vezes na mesma linha da tabela --
+           visto na tela com a série semeada. O `parcela` do item existe para
+           quem quer o número sozinho, não para desenhar aqui. */
+        sub={l.contraparte}
       />
-      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
+      <Table.Cell
+        p="13px 14px"
+        maxW={LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO}
+        borderBottomWidth="1px"
+        borderBottomColor="border.subtle"
+      >
         <Text fontSize="13px" truncate>{categoriaNome}</Text>
       </Table.Cell>
-      <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">
+      <Table.Cell
+        p="13px 14px"
+        maxW={LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO}
+        borderBottomWidth="1px"
+        borderBottomColor="border.subtle"
+      >
+        {/* 🔴 A TRANSFERÊNCIA não tem `conta_id` -- ela tem origem e destino.
+            Sem esta metade a coluna aparecia vazia justamente na linha em que
+            a conta é a única coisa que importa. */}
         <Text fontSize="13px" color="fg.muted" truncate>{contaNome}</Text>
       </Table.Cell>
       <Table.Cell p="13px 14px" borderBottomWidth="1px" borderBottomColor="border.subtle">

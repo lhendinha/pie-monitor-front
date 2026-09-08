@@ -14,7 +14,7 @@ import { useSubgruposBuscaveis } from "../../../../hooks/useSubgruposBuscaveis";
 import { lerCatalogoFinanceiro, listarLancamentos } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
-import { periodoPorExtenso } from "../../../../utils";
+import { contaDoLancamento, periodoPorExtenso } from "../../../../utils";
 import type { CatalogoFinanceiro } from "../../../../types";
 import type { RespostaDeLancamentos } from "../../../../types/respostas";
 import { COLUNAS_DE_LANCAMENTOS } from "../../constants";
@@ -73,8 +73,6 @@ export default function ListaDeLancamentos() {
 
   const nomeDaCategoria = (id: string) =>
     catalogo.data?.categorias.find((c) => c.categoria_id === id)?.nome ?? "";
-  const nomeDaConta = (id: string) =>
-    catalogo.data?.contas.find((c) => c.conta_id === id)?.nome ?? "";
 
   const lancamentos = query.data?.lancamentos ?? [];
 
@@ -123,7 +121,7 @@ export default function ListaDeLancamentos() {
                 key={l.lancamento_id}
                 lancamento={l}
                 categoriaNome={nomeDaCategoria(l.categoria_id)}
-                contaNome={nomeDaConta(l.conta_id)}
+                contaNome={contaDoLancamento(l, catalogo.data)}
                 onAbrir={() => navegar(`/financeiro/lancamentos/${l.lancamento_id}`)}
               />
             ))}

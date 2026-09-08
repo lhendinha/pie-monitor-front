@@ -204,3 +204,17 @@ export const SITUACOES_DA_SAIDA = [
   { value: SITUACAO_ABERTO, label: "A pagar" },
   { value: SITUACAO_EFETIVADO, label: "Paga" },
 ];
+
+/** Teto de largura das duas colunas de TEXTO da lista de lançamentos.
+ *
+ * 🔴 Sem ele, `truncate` não morde: em tabela de layout automático o texto
+ * alarga a coluna em vez de cortar. Medido em Chrome quando a transferência
+ * passou a mostrar as duas contas ("Bradesco - honorários → Caixa do
+ * escritório"): a tabela foi a 1170px dentro de 1130px visíveis, e a coluna
+ * VALOR terminava em x=1443 numa janela de 1440 -- o número mais importante
+ * da tela saía dela.
+ *
+ * ⚠️ Vale para categoria e conta, as duas que recebem nome de cadastro e
+ * podem crescer sem limite. Descrição não entra: ela é a coluna principal, e
+ * é dela que sobra o espaço. */
+export const LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO = "200px";

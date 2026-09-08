@@ -305,10 +305,15 @@ export default function LancamentoDetalhePage() {
         <Etiqueta cores={coresDaSituacao(lancamento.situacao)}>
           {ROTULO_DA_SITUACAO[lancamento.situacao] ?? lancamento.situacao}
         </Etiqueta>
-        {lancamento.parcela && (
-          <EtiquetaDeMetadado>Parcela {lancamento.parcela}</EtiquetaDeMetadado>
+        {/* 🔴 Nada de "Parcela 1/6" aqui: o servidor já escreve "· 1/6" no
+            fim da DESCRIÇÃO, que é o título logo acima. A etiqueta repetia o
+            número na mesma dobra da tela.
+            ⚠️ "Faz parte de uma série" fica, mas SÓ na repetição mensal --
+            ela tem irmãos e não tem numeração ("o mesmo aluguel todo mês"),
+            então é o único sinal de que existe série. */}
+        {Boolean(lancamento.recorrencia_id) && !lancamento.parcela && (
+          <EtiquetaDeMetadado>Faz parte de uma série</EtiquetaDeMetadado>
         )}
-        {naSerie && <EtiquetaDeMetadado>Faz parte de uma série</EtiquetaDeMetadado>}
       </Flex>
 
       <CartaoDeTabela>
