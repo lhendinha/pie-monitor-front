@@ -715,6 +715,71 @@ if (await existe(emAberto)) {
   conferir(true, "nenhuma fatura em aberto na base (rode a semente de desenho)");
 }
 
+// ─────────────────────────── a aba de FLUXO DE CAIXA (Fase 6)
+console.log("\n— Financeiro > Fluxo de caixa —");
+await pagina.goto(`${APP}/financeiro?aba=fluxo`);
+await pagina.getByRole("table").waitFor();
+await pagina.waitForTimeout(700);
+
+const fluxo = await pagina.evaluate(() => {
+  const linhas = [...document.querySelectorAll("tbody tr")]
+    .map((l) => l.cells[0]?.textContent.trim());
+  const th = [...document.querySelectorAll("thead th")];
+  const corrente = th.find((c) => c.textContent.includes("REALIZADO + PREVISTO"));
+  const passada = th.find((c) => /^[A-Z]{3} \d{4}REALIZADO$/.test(c.textContent.trim()));
+  const fixa = document.querySelector("tbody th, tbody td");
+  return {
+    ordem: linhas,
+    primeiroCabecalho: th[0]?.textContent.trim(),
+    legenda: document.querySelector("table").parentElement.querySelector("p")?.textContent ?? "",
+    fundoDaPrevisao: corrente ? getComputedStyle(corrente).backgroundColor : null,
+    fundoDaRealizada: passada ? getComputedStyle(passada).backgroundColor : null,
+    colunaFixa: fixa ? getComputedStyle(fixa).position : null,
+    recuo: fixa ? getComputedStyle(fixa).padding : null,
+    /* A faixa de ENTRADAS atravessa a tabela: uma célula com colSpan. */
+    faixaAtravessa: [...document.querySelectorAll("tbody td")]
+      .some((c) => c.textContent.trim() === "ENTRADAS" && Number(c.getAttribute("colspan")) > 3),
+  };
+});
+conferir(fluxo.primeiroCabecalho === "DESCRIÇÃO",
+  "a primeira coluna se chama DESCRIÇÃO, como no artefato", fluxo.primeiroCabecalho);
+conferir(/REALIZADO ATÉ .* PREVISTO DE .* EM DIANTE/.test(fluxo.legenda),
+  "🔴 a legenda diz até onde é fato e de onde é palpite", fluxo.legenda);
+conferir(fluxo.ordem[0] === "Saldo anterior"
+  && fluxo.ordem.indexOf("ENTRADAS") < fluxo.ordem.indexOf("Total de entradas")
+  && fluxo.ordem.indexOf("Total de saídas") < fluxo.ordem.indexOf("SALDO")
+  && fluxo.ordem[fluxo.ordem.length - 1] === "Saldo final",
+  "🔴 a ordem é a da leitura: de onde parti, o que entrou, o que saiu, onde cheguei",
+  fluxo.ordem.filter((r) => r === r.toUpperCase()).join(" > "));
+conferir(fluxo.faixaAtravessa, "a faixa da seção atravessa a tabela inteira");
+conferir(fluxo.fundoDaPrevisao === "rgb(253, 241, 222)" && fluxo.fundoDaRealizada === "rgba(0, 0, 0, 0)",
+  "🔴 a coluna de PREVISÃO tem fundo âmbar e a realizada não",
+  `${fluxo.fundoDaPrevisao} x ${fluxo.fundoDaRealizada}`);
+conferir(fluxo.colunaFixa === "sticky",
+  "a primeira coluna fica na rolagem horizontal", fluxo.colunaFixa);
+conferir(fluxo.recuo === "13px 14px", "e o recuo é 13px 14px", fluxo.recuo);
+
+/* Dobrar esconde as categorias e mantém o total. */
+const antesDeDobrar = await pagina.locator("tbody tr").count();
+await pagina.getByRole("button", { name: /SAÍDAS/ }).click();
+await pagina.waitForTimeout(400);
+const depoisDeDobrar = await pagina.locator("tbody tr").count();
+conferir(depoisDeDobrar < antesDeDobrar
+  && (await existe(pagina.getByText("Total de saídas"))),
+  "🔴 dobrar SAÍDAS esconde as categorias e mantém o total",
+  `${antesDeDobrar} -> ${depoisDeDobrar}`);
+await pagina.getByRole("button", { name: /SAÍDAS/ }).click();
+
+/* O botão de exportar: branco sobre o canvas, com ícone. */
+const exportar = await pagina.evaluate(() => {
+  const b = [...document.querySelectorAll("button")].find((x) => x.textContent.includes("Exportar"));
+  return b ? { bg: getComputedStyle(b).backgroundColor, temIcone: Boolean(b.querySelector("svg")) } : null;
+});
+conferir(exportar?.bg === "rgb(255, 255, 255)",
+  "🔴 'Exportar planilha' é BRANCO -- `transparent` sobre o canvas saía cinza",
+  exportar?.bg);
+conferir(exportar?.temIcone === true, "e leva o ícone de baixar, como no artefato");
+
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();
 

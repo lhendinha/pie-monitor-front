@@ -1,7 +1,7 @@
 import { NATUREZA_ENTRADA, NATUREZA_SAIDA } from "../../../../constants";
 import {
   centavosParaPlanilha,
-  formatarMes,
+  mesDaColuna,
   montarCsv,
 } from "../../../../utils";
 import type { FluxoDeCaixa } from "../../../../types";
@@ -25,7 +25,7 @@ import type { FluxoDeCaixa } from "../../../../types";
 export function montarPlanilhaDoFluxo(fluxo: FluxoDeCaixa): string {
   const { meses } = fluxo;
   const linhas: (string | number)[][] = [
-    ["Categoria", ...meses.map(formatarMes), "Total"],
+    ["Descrição", ...meses.map(mesDaColuna), "Total"],
   ];
 
   const secoes = [

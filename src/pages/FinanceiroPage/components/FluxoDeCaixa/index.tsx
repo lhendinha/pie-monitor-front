@@ -1,4 +1,4 @@
-import { Flex, Text } from "@chakra-ui/react";
+import { Flex } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -9,6 +9,7 @@ import {
   EstadoDeErro,
   EstadoVazio,
   Faixa,
+  IconeBaixar,
   PilulaDeFiltro,
   Select,
   SeletorDePeriodo,
@@ -77,6 +78,11 @@ export default function FluxoDeCaixa() {
   const personalizado = de && ate ? { de, ate } : undefined;
   const intervalo = intervaloEmMeses(periodoId, personalizado);
   const erroDoPeriodo = erroDoPeriodoEmMeses(intervalo);
+  /** O nome do recorte, para a legenda do topo da tabela. Cai no
+   * personalizado quando o id não está nos blocos -- é o mesmo caminho que a
+   * pílula usa para não mostrar "Todos os períodos" com período escolhido. */
+  const rotuloDoPeriodo =
+    PERIODOS_DO_FLUXO.flat().find((o) => o.id === periodoId)?.rotulo ?? "Período escolhido";
 
   const filtros = {
     de: intervalo?.de,
@@ -135,18 +141,24 @@ export default function FluxoDeCaixa() {
           emMeses
           onMudar={mudarPeriodo}
         />
+        {/* ⚠️ Centro ANTES de conta, como no artefato: o centro é o recorte
+            que muda o que a tabela mostra (e some o saldo); a conta é um
+            filtro comum. */}
+        <Select
+          id="fluxo-centro"
+          opcoes={[
+            { value: "", label: "Todos os centros de custo" },
+            ...opcoesDeCentro(catalogo.data).filter((o) => o.value),
+          ]}
+          valor={centroId}
+          onMudar={setCentroId}
+          variante="chip"
+        />
         <Select
           id="fluxo-conta"
           opcoes={[{ value: "", label: "Todas as contas" }, ...opcoesDeConta(catalogo.data)]}
           valor={contaId}
           onMudar={setContaId}
-          variante="chip"
-        />
-        <Select
-          id="fluxo-centro"
-          opcoes={opcoesDeCentro(catalogo.data)}
-          valor={centroId}
-          onMudar={setCentroId}
           variante="chip"
         />
         {(centroId || contaId) && (
@@ -168,6 +180,7 @@ export default function FluxoDeCaixa() {
               fluxo && baixarCsv(nomeDoArquivoDoFluxo(fluxo.meses), montarPlanilhaDoFluxo(fluxo))
             }
           >
+            <IconeBaixar />
             Exportar planilha
           </Botao>
         </Flex>
@@ -197,11 +210,9 @@ export default function FluxoDeCaixa() {
         </CartaoDeTabela>
       ) : fluxo && !erroDoPeriodo ? (
         <>
-          <Text fontSize="11.5px" color="fg.subtle" mt="10px" mb="10px">
-            {fluxo.meses.length === 1
-              ? "1 mês"
-              : `${fluxo.meses.length} meses`}
-          </Text>
+          {/* ⚠️ Sem a contagem de meses acima do cartão: a legenda dentro
+              dele já diz o período e o que é realizado -- duas linhas para a
+              mesma informação, uma em cima da outra. */}
           <CartaoDeTabela>
             {vazio ? (
               <EstadoVazio mensagem="Nenhum lançamento neste período." />
@@ -209,6 +220,7 @@ export default function FluxoDeCaixa() {
               <TabelaDoFluxo
                 fluxo={fluxo}
                 mesCorrente={mesDeHoje()}
+                rotuloDoPeriodo={rotuloDoPeriodo}
                 dobrados={dobrados}
                 onAlternar={alternar}
               />

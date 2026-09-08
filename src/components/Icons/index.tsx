@@ -18,6 +18,7 @@ export { default as IconeProcessos } from "./IconeProcessos";
 export { default as IconeClientes } from "./IconeClientes";
 export { default as IconeDocumentos } from "./IconeDocumentos";
 export { default as IconeGrupo } from "./IconeGrupo";
+export { default as IconeBaixar } from "./IconeBaixar";
 export { default as IconeBusca } from "./IconeBusca";
 export { default as IconeCalendario } from "./IconeCalendario";
 export { default as IconeSeta } from "./IconeSeta";

@@ -46,8 +46,25 @@ const arquivos = Object.entries(FONTES).filter(
 );
 
 /** As aberturas `<Table.Cell ...>` de um arquivo, cada uma com seus
- * atributos -- o que vai da tag até o `>` que a fecha. */
+ * atributos -- o que vai da tag até o `>` que a fecha.
+ *
+ * 🔴 **A célula com `colSpan` fica de fora, e o motivo é o mesmo da regra.**
+ * A medida existe para o valor nascer embaixo do título da SUA coluna; uma
+ * célula que atravessa a tabela inteira não tem coluna sob a qual alinhar --
+ * é faixa, não dado. Hoje só a do fluxo de caixa (ENTRADAS / SAÍDAS /
+ * SALDO), que no artefato é visivelmente mais baixa que uma linha de
+ * números.
+ *
+ * ⚠️ A exceção é ESTRUTURAL, não uma lista de arquivos: quem escrever uma
+ * célula de dado sem `colSpan` continua sendo cobrado. */
 function aberturasDeCelula(codigo: string): string[] {
+  return [...codigo.matchAll(/<Table\.Cell\b([^>]*)>/g)]
+    .map((m) => m[1])
+    .filter((atributos) => !atributos.includes("colSpan"));
+}
+
+/** Todas as aberturas, inclusive as que atravessam -- para o par negativo. */
+function todasAsAberturas(codigo: string): string[] {
   return [...codigo.matchAll(/<Table\.Cell\b([^>]*)>/g)].map((m) => m[1]);
 }
 
@@ -60,6 +77,17 @@ describe("a medida da célula de tabela", () => {
     expect(
       arquivos.filter(([, codigo]) => aberturasDeCelula(codigo).length).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("⚠️ a exceção do `colSpan` existe, e não engole as células de dado", () => {
+    /* O par negativo da exceção: se ela passasse a valer para tudo, este
+       teste cairia -- há muito mais célula de dado que faixa. */
+    const comColSpan = arquivos.flatMap(([, codigo]) =>
+      todasAsAberturas(codigo).filter((a) => a.includes("colSpan")),
+    );
+    const semColSpan = arquivos.flatMap(([, codigo]) => aberturasDeCelula(codigo));
+    expect(comColSpan.length).toBeGreaterThan(0);
+    expect(semColSpan.length).toBeGreaterThan(comColSpan.length * 5);
   });
 
   it.each([

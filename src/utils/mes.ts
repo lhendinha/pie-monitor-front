@@ -79,3 +79,34 @@ export function opcoesDeMes(deN = 36, ateN = 24): { value: string; label: string
   }
   return opcoes;
 }
+
+/** ⚠️ Nomes inteiros e em CAIXA-ALTA, do jeito que a legenda do fluxo os usa
+ * ("REALIZADO ATÉ AGOSTO DE 2026"). A caixa vem daqui e não do CSS porque a
+ * legenda é uma frase, e `text-transform` numa frase inteira também
+ * maiusculizaria o que não deve. */
+const POR_EXTENSO = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
+                     "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+
+/** `2026-08` vira `AGOSTO DE 2026` -- ou só `AGOSTO`, com `comAno: false`.
+ *
+ * ⚠️ A legenda usa as duas formas na mesma frase, como o artefato: "REALIZADO
+ * ATÉ AGOSTO DE 2026, PREVISTO DE SETEMBRO EM DIANTE". O ano aparece uma vez;
+ * repeti-lo no segundo mês só alonga a frase. */
+export function mesPorExtenso(mes?: string, comAno = true): string {
+  if (!mes) return "";
+  const achado = /^(\d{4})-(\d{2})$/.exec(mes);
+  if (!achado) return mes;
+  const [, ano, m] = achado;
+  const nome = POR_EXTENSO[Number(m) - 1] ?? m;
+  return comAno ? `${nome} DE ${ano}` : nome;
+}
+
+/** `2026-03` vira `MAR 2026` -- o cabeçalho de coluna da tabela do fluxo.
+ *
+ * ⚠️ Com ESPAÇO e em caixa-alta, e não `mar/2026`: é a forma do artefato, e
+ * a barra num cabeçalho de coluna estreita se confunde com separador de
+ * data. `formatarMes` continua existindo para frase corrida. */
+export function mesDaColuna(mes?: string): string {
+  const curto = formatarMes(mes);
+  return curto.includes("/") ? curto.replace("/", " ").toUpperCase() : curto;
+}

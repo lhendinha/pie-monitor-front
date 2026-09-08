@@ -109,43 +109,47 @@ describe("a tabela", () => {
     );
   });
 
-  it("uma coluna por mês, com o cabeçalho abreviado", async () => {
+  it("uma coluna por mês, e o cabeçalho diz o que a coluna É", async () => {
+    /* Duas linhas, como no artefato: o mês e se ele já aconteceu. */
     montar();
     await carregada();
-    for (const rotulo of ["jul/2026", "ago/2026", "set/2026"]) {
+    for (const rotulo of ["JUL 2026", "AGO 2026", "SET 2026"]) {
       expect(screen.getByText(rotulo)).toBeInTheDocument();
     }
+    expect(screen.getAllByText("REALIZADO").length).toBe(2);
+    expect(screen.getByText("REALIZADO + PREVISTO")).toBeInTheDocument();
   });
 
-  it("🔴 realça o mês CORRENTE, e só ele -- a coluna INTEIRA", async () => {
-    /* ⚠️ Pelo marcador, não pela cor: a cor vira classe do Chakra e o jsdom
-       devolve transparente nos dois casos. Ela se mede em Chrome.
-
-       ⚠️ E a coluna inteira, não só o cabeçalho: pintar só o topo perde o
-       realce assim que a pessoa rola numa tabela de vinte categorias. */
+  it("🔴 a LEGENDA diz até onde é fato e de onde é palpite", async () => {
+    /* É a informação mais importante da tabela, e por isso ela aparece três
+       vezes: aqui, no subtítulo da coluna e no fundo âmbar. */
     montar();
     await carregada();
-    const marcadas = document.querySelectorAll("[data-mes-corrente]");
-    const linhas = document.querySelectorAll("tbody tr").length;
-    expect(marcadas.length).toBe(linhas + 1);
-    expect(screen.getByText("set/2026").closest("[data-mes-corrente]")).not.toBeNull();
-    expect(screen.getByText("jul/2026").closest("[data-mes-corrente]")).toBeNull();
+    expect(
+      screen.getByText(
+        "FLUXO DE CAIXA · ESTE ANO · REALIZADO ATÉ AGOSTO DE 2026, PREVISTO DE SETEMBRO EM DIANTE",
+      ),
+    ).toBeInTheDocument();
   });
 
-  it("as três linhas de saldo aparecem", async () => {
+  it("🔴 a ordem das linhas é a da leitura: de onde parti, o que entrou, o que saiu, onde cheguei", async () => {
+    montar();
+    await carregada();
+    const rotulos = [...document.querySelectorAll<HTMLTableRowElement>("tbody tr")]
+      .map((l) => l.cells[0]?.textContent?.trim());
+    expect(rotulos[0]).toBe("Saldo anterior");
+    expect(rotulos.indexOf("ENTRADAS")).toBeLessThan(rotulos.indexOf("Total de entradas"));
+    expect(rotulos.indexOf("Total de entradas")).toBeLessThan(rotulos.indexOf("SAÍDAS"));
+    expect(rotulos.indexOf("Total de saídas")).toBeLessThan(rotulos.indexOf("SALDO"));
+    expect(rotulos[rotulos.length - 1]).toBe("Saldo final");
+  });
+
+  it("as três linhas de saldo aparecem, e o saldo anterior abre a tabela", async () => {
     montar();
     await carregada();
     for (const rotulo of ["Saldo anterior", "Saldo do período", "Saldo final"]) {
       expect(screen.getByText(rotulo)).toBeInTheDocument();
     }
-  });
-
-  it("⚠️ o realizado aparece embaixo do previsto quando eles DIFEREM", async () => {
-    /* A resposta separa os dois de propósito: num mês passado o previsto que
-       não aconteceu está na coluna e não está no saldo. */
-    montar();
-    await carregada();
-    expect(screen.getByText("R$ 1.500,00 realizado")).toBeInTheDocument();
   });
 
   it("período sem lançamento diz isso, em vez de tabela vazia", async () => {
@@ -163,39 +167,43 @@ describe("dobrar as seções", () => {
     await carregada();
     expect(screen.getByText("Impostos")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: /Saídas/ }));
+    await userEvent.click(screen.getByRole("button", { name: /SAÍDAS/ }));
 
     expect(screen.queryByText("Impostos")).not.toBeInTheDocument();
     expect(screen.queryByText("Aluguel")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Saídas/ })).toBeInTheDocument();
-    /* O total da seção de saídas continua: 600 + 600 + 600. */
+    expect(screen.getByText("Total de saídas")).toBeInTheDocument();
+    /* O total da seção continua: 600 + 600 + 600. */
     expect(screen.getByText("R$ 1.800,00")).toBeInTheDocument();
   });
 
   it("⚠️ dobrar uma seção NÃO dobra a outra", async () => {
     montar();
     await carregada();
-    await userEvent.click(screen.getByRole("button", { name: /Saídas/ }));
+    await userEvent.click(screen.getByRole("button", { name: /SAÍDAS/ }));
     expect(screen.getByText("Honorários")).toBeInTheDocument();
   });
 
   it("dobrar e desdobrar traz as categorias de volta", async () => {
     montar();
     await carregada();
-    const saidas = screen.getByRole("button", { name: /Saídas/ });
+    const saidas = screen.getByRole("button", { name: /SAÍDAS/ });
     await userEvent.click(saidas);
-    await userEvent.click(saidas);
+    await userEvent.click(screen.getByRole("button", { name: /SAÍDAS/ }));
     expect(screen.getByText("Impostos")).toBeInTheDocument();
   });
 
   it("a seção anuncia se está aberta -- `aria-expanded`", async () => {
     montar();
     await carregada();
-    const saidas = screen.getByRole("button", { name: /Saídas/ });
+    const saidas = screen.getByRole("button", { name: /SAÍDAS/ });
     expect(saidas).toHaveAttribute("aria-expanded", "true");
     await userEvent.click(saidas);
-    expect(screen.getByRole("button", { name: /Saídas/ }))
+    expect(screen.getByRole("button", { name: /SAÍDAS/ }))
       .toHaveAttribute("aria-expanded", "false");
+
+    /* ⚠️ A faixa do SALDO NÃO dobra: ela tem duas linhas e nenhuma
+       categoria, e uma seta que esconde o resultado não serve a ninguém. */
+    expect(screen.queryByRole("button", { name: /SALDO/ })).not.toBeInTheDocument();
   });
 });
 
@@ -272,7 +280,7 @@ describe("exportar planilha", () => {
   it("🔴 o CSV tem uma coluna por mês, mais categoria e total", async () => {
     const csv = montarPlanilhaDoFluxo(FLUXO);
     const cabecalho = csv.split("\r\n")[0].replace("﻿", "").split(";");
-    expect(cabecalho).toEqual(["Categoria", "jul/2026", "ago/2026", "set/2026", "Total"]);
+    expect(cabecalho).toEqual(["Descrição", "JUL 2026", "AGO 2026", "SET 2026", "Total"]);
     expect(cabecalho).toHaveLength(FLUXO.meses.length + 2);
   });
 
