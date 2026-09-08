@@ -4,6 +4,13 @@ import type { Tarefa } from "../../types";
 export interface NumeroDoResumo {
   rotulo: string;
   valor: number;
+  /** O que a linha ESCREVE, quando não é o número cru -- hoje, dinheiro
+   * ("R$ 12.480,00").
+   *
+   * 🔴 Separado de `valor` de propósito: é o `valor` que decide se a cor
+   * aparece (zero não grita), e formatá-lo em texto perderia essa régua.
+   * Uma linha de dinheiro em zero é notícia boa igual às outras. */
+  texto?: string;
   /** Só destaca em cor quando há o que destacar: um zero vermelho grita
    * sobre a ausência de problema. */
   tom?: "bad" | "warn";

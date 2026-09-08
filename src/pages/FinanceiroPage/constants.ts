@@ -218,6 +218,16 @@ export const SITUACOES_DA_SAIDA = [
  * é dela que sobra o espaço. */
 export const LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO = "200px";
 
+/** O teto da coluna de DESCRIÇÃO.
+ *
+ * 🔴 Ela ficou sem teto por um bom tempo, e o comentário acima dizia por
+ * quê: "é dela que sobra o espaço". Valia enquanto a linha de apoio era uma
+ * contraparte curta. Quando ela passou a receber o NOME DO CLIENTE, um nome
+ * de 91 caracteres levou a tabela a 1278px dentro de 1130px visíveis, medido
+ * em 08/09/2026. Maior que o das outras duas porque continua sendo a coluna
+ * principal; só deixou de ser ilimitada. */
+export const LARGURA_MAXIMA_DA_DESCRICAO = "330px";
+
 /** As duas seções da aba Faturas, em pílula.
  *
  * ⚠️ Pílula e não sub-aba, pela mesma razão do catálogo: são dois recortes
@@ -265,3 +275,12 @@ export const COLUNAS_DA_EMISSAO = [
   "Vencimento",
   { rotulo: "Valor", aDireita: true },
 ] as const;
+
+/** A janela do "A pagar" da Área de trabalho, em dias.
+ *
+ * 🔴 O MESMO número que a API usa (`lancamentos_consulta.DIAS_DO_A_PAGAR`), e
+ * ele aparece em três lugares: o rótulo da linha, o filtro que o clique
+ * aplica e a soma do servidor. Três literais divergiriam no primeiro ajuste,
+ * e aí o número da linha deixaria de bater com a lista que ela abre.
+ */
+export const DIAS_DO_A_PAGAR = 7;

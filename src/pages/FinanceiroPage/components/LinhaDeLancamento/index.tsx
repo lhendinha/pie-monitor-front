@@ -3,7 +3,7 @@ import { Flex, Table, Text } from "@chakra-ui/react";
 import { CelulaComSub, Etiqueta } from "../../../../components";
 import { coresDaSituacao, corDoValor, sinalDoValor } from "../../../../theme/lancamento";
 import { formatarCentavos, formatarData } from "../../../../utils";
-import { LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO, ROTULO_DA_SITUACAO } from "../../constants";
+import { LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO, LARGURA_MAXIMA_DA_DESCRICAO, ROTULO_DA_SITUACAO } from "../../constants";
 import type { LinhaDeLancamentoProps } from "./types";
 
 /** Uma linha da lista de lançamentos.
@@ -45,13 +45,14 @@ export default function LinhaDeLancamento({
     >
       <CelulaComSub
         variante="destaque"
+        maxLargura={LARGURA_MAXIMA_DA_DESCRICAO}
         principal={l.descricao}
         /* 🔴 A parcela NÃO entra aqui: o servidor já a escreve no fim da
            DESCRIÇÃO ("Honorários · assessoria mensal · 1/6"), e repeti-la na
            linha de baixo punha "1/6" duas vezes na mesma linha da tabela --
            visto na tela com a série semeada. O `parcela` do item existe para
            quem quer o número sozinho, não para desenhar aqui. */
-        sub={l.contraparte}
+        sub={l.contraparte || l.cliente_nome}
       />
       <Table.Cell
         p="13px 14px"

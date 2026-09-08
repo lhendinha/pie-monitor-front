@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +15,10 @@ const mocks = vi.hoisted(() => ({
   /* ⚠️ Entrou quando a linha passou a mostrar o subgrupo: sem mock, o
      catálogo era uma chamada de rede de verdade dentro do teste. */
   listarSubgrupos: vi.fn(),
+  /* O card "Vence esta semana" e a baixa pela linha. */
+  listarLancamentos: vi.fn(),
+  efetivarLancamento: vi.fn(),
+  lerCatalogoFinanceiro: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
@@ -49,6 +53,26 @@ const RESUMO = {
   movimentacoes_7_dias: 0,
 };
 
+/** O resumo de quem PODE ver dinheiro. As quatro chaves só existem para
+ * `financeiro`+ -- para os outros elas não vêm, e é a ausência que a tela
+ * lê. */
+const RESUMO_COM_DINHEIRO = {
+  ...RESUMO,
+  a_receber_atrasado_centavos: 1_248_000,
+  a_pagar_7_dias_centavos: 328_500,
+  saldo_das_contas_centavos: 5_286_780,
+  tem_conta_cadastrada: true,
+};
+
+const lancamento = (id: string, descricao: string, natureza: string, centavos: number) => ({
+  lancamento_id: id, tipo: natureza === "entrada" ? "honorario" : "saida",
+  descricao, valor_centavos: centavos, data_vencimento: "2026-09-18",
+  situacao: "aberto", natureza, conta_id: "ct1", categoria_id: "cat1", centro_id: "",
+  rateio: [], cliente_id: "", contraparte: "Construtora Alfa", subgrupo_id: "sg",
+  numero_processo: "", atendimento_id: "", responsavel: "", documento_numero: "",
+  parcela: "", criado_por: "x", criado_em: "2026-09-01T00:00:00Z",
+});
+
 const tarefa = (id: string, titulo: string, responsavel: string | null) => ({
   subgrupo_id: "sg",
   tarefa_id: id,
@@ -64,6 +88,15 @@ beforeEach(() => {
   mocks.getEmail.mockReturnValue("ana@argos.local");
   mocks.getApelido.mockReturnValue("Ana Paula");
   mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO);
+  mocks.listarLancamentos.mockResolvedValue({
+    lancamentos: [lancamento("l1", "Aluguel da sede", "saida", 285_000)],
+    total: 1, total_paginas: 1, totais: {},
+  });
+  mocks.efetivarLancamento.mockResolvedValue({ lancamento_id: "l1" });
+  mocks.lerCatalogoFinanceiro.mockResolvedValue({
+    contas: [], categorias: [], centros_de_custo: [], conta_padrao_id: "",
+    cores_disponiveis: [],
+  });
   mocks.listarQuadro.mockResolvedValue({
     colunas: [{ subgrupo_id: "sg", coluna_id: "fim", nome: "Concluído", ordem: 2, e_conclusao: true }],
   });
@@ -147,8 +180,10 @@ describe("WorkspacePage — retorno por linha", () => {
 
 /** Rota de mentira que revela pra onde a navegação foi, e com que estado. */
 function Destino() {
-  const { pathname, state } = useLocation();
-  return <div data-testid="destino">{`${pathname} ${JSON.stringify(state)}`}</div>;
+  const { pathname, search, state } = useLocation();
+  /* ⚠️ Mostra a QUERY também: as linhas do Financeiro levam o filtro na URL
+     (é assim que a lista de Lançamentos lê os dela), e não no `state`. */
+  return <div data-testid="destino">{`${pathname}${search} ${JSON.stringify(state)}`}</div>;
 }
 
 describe("cada número leva à lista que o gerou", () => {
@@ -176,6 +211,7 @@ describe("cada número leva à lista que o gerou", () => {
           <Route path="/processos" element={<Destino />} />
           <Route path="/agenda" element={<Destino />} />
           <Route path="/historico" element={<Destino />} />
+          <Route path="/financeiro" element={<Destino />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -259,5 +295,214 @@ describe("cada número leva à lista que o gerou", () => {
     expect(destino).toHaveTextContent("/processos");
     expect(destino).toHaveTextContent('"responsavelId":"__eu__"');
     expect(destino).toHaveTextContent('"dataVerificarAte"');
+  });
+});
+
+describe("o Financeiro na Área de trabalho", () => {
+  /** As mesmas rotas de destino do bloco acima -- as linhas do Financeiro
+   * levam para `/financeiro` com o filtro na QUERY. */
+  function montarComDestino() {
+    return renderComProviders(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<WorkspacePage />} />
+          <Route path="/financeiro" element={<Destino />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  describe("as três linhas do Resumo rápido", () => {
+    it("aparecem com o dinheiro formatado", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montar();
+      expect(await screen.findByText("A receber atrasado")).toBeInTheDocument();
+      expect(screen.getByText("R$ 12.480,00")).toBeInTheDocument();
+      expect(screen.getByText("A pagar até 7 dias")).toBeInTheDocument();
+      expect(screen.getByText("R$ 3.285,00")).toBeInTheDocument();
+      expect(screen.getByText("Saldo das contas")).toBeInTheDocument();
+      expect(screen.getByText("R$ 52.867,80")).toBeInTheDocument();
+    });
+
+    it("🔴 'A receber atrasado' abre a lista com o MESMO recorte da soma", async () => {
+      /* `periodo=todos` porque atrasado é vencimento no passado em QUALQUER
+         dia -- o padrão da lista é "Este mês", que esconderia o de julho. */
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montarComDestino();
+      await userEvent.click(await screen.findByRole("button", { name: /A receber atrasado/ }));
+
+      const destino = await screen.findByTestId("destino");
+      expect(destino).toHaveTextContent("/financeiro");
+      expect(destino).toHaveTextContent("aba=lancamentos");
+      expect(destino).toHaveTextContent("periodo=todos");
+      expect(destino).toHaveTextContent("natureza=entrada");
+      expect(destino).toHaveTextContent("situacao=atrasado");
+    });
+
+    it("🔴 'A pagar até 7 dias' leva `vencendo`, e não um período", async () => {
+      /* Nenhuma combinação de período e situação expressa "aberto, vencendo
+         até N dias, atrasados inclusive". Sem `vencendo` o card diria um
+         número e a lista abriria outro. */
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montarComDestino();
+      await userEvent.click(await screen.findByRole("button", { name: /A pagar até 7 dias/ }));
+
+      const destino = await screen.findByTestId("destino");
+      expect(destino).toHaveTextContent("natureza=saida");
+      expect(destino).toHaveTextContent("vencendo=7");
+      expect(destino).not.toHaveTextContent("periodo=");
+    });
+
+    it("'Saldo das contas' abre as contas do catálogo", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montarComDestino();
+      await userEvent.click(await screen.findByRole("button", { name: /Saldo das contas/ }));
+      expect(await screen.findByTestId("destino")).toHaveTextContent("secao=contas");
+    });
+
+    it("⚠️ sem conta cadastrada, a linha DIZ isso em vez de mostrar R$ 0,00", async () => {
+      /* Zero de "não tem conta" se lê igual a zero de "está zerado". */
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue({
+        ...RESUMO_COM_DINHEIRO,
+        saldo_das_contas_centavos: 0,
+        tem_conta_cadastrada: false,
+      });
+      montar();
+      expect(await screen.findByText("Nenhuma conta")).toBeInTheDocument();
+    });
+  });
+
+  describe("o piso de papel", () => {
+    it("🔴 sem as chaves, a seção e o card NÃO existem", async () => {
+      /* O critério é a AUSÊNCIA da chave, e não um papel lido na tela: o
+         servidor já decide quem as recebe, e uma segunda régua aqui
+         divergiria da dele. */
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO);
+      montar();
+      await screen.findByText("Protocolar réplica");
+
+      expect(screen.queryByText("Financeiro")).not.toBeInTheDocument();
+      expect(screen.queryByText("A receber atrasado")).not.toBeInTheDocument();
+      expect(screen.queryByText("Vence esta semana")).not.toBeInTheDocument();
+      /* ⚠️ E o card nem PEDE a lista: sem isto, quem é `user` levaria 403 a
+         cada abertura da home. */
+      expect(mocks.listarLancamentos).not.toHaveBeenCalled();
+    });
+
+    it("⚠️ e o resto da home continua inteiro -- a ausência não quebra nada", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO);
+      montar();
+      expect(await screen.findByText("Protocolar réplica")).toBeInTheDocument();
+      expect(screen.getByText("Processos monitorados")).toBeInTheDocument();
+    });
+  });
+
+  describe('o card "Vence esta semana"', () => {
+    it("traz o que vence, com valor e contraparte", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montar();
+      expect(await screen.findByText("Aluguel da sede")).toBeInTheDocument();
+      expect(screen.getByText("R$ 2.850,00")).toBeInTheDocument();
+      expect(screen.getAllByText("Construtora Alfa").length).toBeGreaterThan(0);
+    });
+
+    it("🔴 pede a rota com `vencendo`, e não o resumo", async () => {
+      /* É a MESMA leitura que gera a linha "A pagar até 7 dias" do lado do
+         servidor: os dois números batem por construção. */
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montar();
+      await screen.findByText("Aluguel da sede");
+      expect(mocks.listarLancamentos).toHaveBeenCalledWith(
+        expect.objectContaining({ vencendo: 7 }),
+      );
+    });
+
+    it("pagina como os cards de tarefa: cinco de sete, e a barra some com cinco", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      const sete = Array.from({ length: 7 }, (_v, i) =>
+        lancamento(`l${i}`, `Conta ${i}`, "saida", 100_00 + i));
+      mocks.listarLancamentos.mockImplementation((p: { pagina?: number }) =>
+        Promise.resolve({
+          lancamentos: p?.pagina === 2 ? sete.slice(5) : sete.slice(0, 5),
+          total: 7, total_paginas: 2, totais: {},
+        }));
+      montar();
+      await screen.findByText("Conta 0");
+      expect(screen.getByText("Conta 4")).toBeInTheDocument();
+      expect(screen.queryByText("Conta 5")).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "2" }));
+      await waitFor(() => expect(screen.getByText("Conta 5")).toBeInTheDocument());
+      expect(screen.queryByText("Conta 0")).not.toBeInTheDocument();
+    });
+
+    it("⚠️ com cinco ou menos a barra NÃO aparece", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montar();
+      await screen.findByText("Aluguel da sede");
+      expect(screen.queryByRole("button", { name: "2" })).not.toBeInTheDocument();
+    });
+
+    it("marcar como pago efetiva e relê a lista", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montar();
+      await screen.findByText("Aluguel da sede");
+      await userEvent.click(
+        screen.getByRole("button", { name: "Marcar Aluguel da sede como pago" }),
+      );
+      await waitFor(() => expect(mocks.efetivarLancamento).toHaveBeenCalledWith("l1"));
+    });
+
+    it("⚠️ na ENTRADA o botão diz 'recebido', e não 'pago'", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      mocks.listarLancamentos.mockResolvedValue({
+        lancamentos: [lancamento("l9", "Honorários", "entrada", 800_000)],
+        total: 1, total_paginas: 1, totais: {},
+      });
+      montar();
+      await screen.findByText("Honorários");
+      expect(
+        screen.getByRole("button", { name: "Marcar Honorários como recebido" }),
+      ).toBeInTheDocument();
+    });
+
+    it("nada vencendo diz isso", async () => {
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      mocks.listarLancamentos.mockResolvedValue({
+        lancamentos: [], total: 0, total_paginas: 0, totais: {},
+      });
+      montar();
+      expect(await screen.findByText("Nada vence esta semana.")).toBeInTheDocument();
+    });
+
+    it("🔴 falha de rede NÃO vira 'nada vence esta semana'", async () => {
+      /* O vazio deste card é uma boa notícia -- e seria falsa. É a mesma
+         régua dos cards de tarefa. */
+      mocks.listarLancamentos.mockRejectedValue(new Error("caiu"));
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      montar();
+      expect(
+        await screen.findByText('Não foi possível carregar "Vence esta semana".'),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Nada vence esta semana.")).not.toBeInTheDocument();
+    });
+
+    it("⚠️ dar baixa no que outra pessoa já baixou relê a lista", async () => {
+      /* O 409 vem como toast E a lista relê: o recado sozinho deixaria a
+         linha na tela, convidando ao segundo clique. */
+      const { ApiError } = await import("../../services/api/client");
+      mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO_COM_DINHEIRO);
+      mocks.efetivarLancamento.mockRejectedValue(
+        new ApiError("Lançamento já efetivado", 409),
+      );
+      montar();
+      await screen.findByText("Aluguel da sede");
+      mocks.listarLancamentos.mockClear();
+
+      await userEvent.click(
+        screen.getByRole("button", { name: "Marcar Aluguel da sede como pago" }),
+      );
+      await waitFor(() => expect(mocks.listarLancamentos).toHaveBeenCalled());
+    });
   });
 });

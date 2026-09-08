@@ -18,6 +18,19 @@ export interface ResumoDaAreaDeTrabalho {
   processos_total: number;
   atendimentos_em_andamento: number;
   movimentacoes_7_dias: number;
+  /** 🔴 As quatro do Financeiro são OPCIONAIS, e é o tipo dizendo a verdade:
+   * o servidor só as manda para `financeiro`+. Para quem é `user` elas não
+   * vêm zeradas -- não vêm, porque zero se lê como "não há nada a receber",
+   * que já é informação sobre o dinheiro do escritório.
+   *
+   * ⚠️ E são do escritório INTEIRO, fora do recorte por subgrupo que o resto
+   * do resumo respeita: dinheiro não é por subgrupo. */
+  a_receber_atrasado_centavos?: number;
+  a_pagar_7_dias_centavos?: number;
+  saldo_das_contas_centavos?: number;
+  /** Zero de "não tem conta cadastrada" se lê igual a zero de "está
+   * zerado" -- é este campo que deixa a tela distinguir os dois. */
+  tem_conta_cadastrada?: boolean;
 }
 
 /** Um aviso in-app. Uma linha POR DESTINATÁRIO: "lida" é individual, e o

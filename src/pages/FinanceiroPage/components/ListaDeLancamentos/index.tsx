@@ -43,8 +43,14 @@ export default function ListaDeLancamentos() {
   const departamentos = useSubgruposBuscaveis(true);
 
   const parametros = {
-    de: intervalo?.de,
-    ate: intervalo?.ate,
+    /* 🔴 Com `vencendo` ligado, o período NÃO vai: do lado do servidor ele
+       troca a Query do vencimento pela do índice esparso dos abertos, e
+       mandar as duas pontas junto faria a tela dizer um recorte (a pílula) e
+       o servidor aplicar outro. A pílula de período some enquanto ele está
+       ligado, pelo mesmo motivo. */
+    de: filtros.vencendo ? undefined : intervalo?.de,
+    ate: filtros.vencendo ? undefined : intervalo?.ate,
+    vencendo: filtros.vencendo || undefined,
     tipo: filtros.tipo || undefined,
     natureza: filtros.natureza || undefined,
     situacao: filtros.situacao || undefined,

@@ -103,3 +103,35 @@ describe("a medida da célula de tabela", () => {
     expect(faltando, `use \`CelulaComSub\` ou declare ${medida} nestas células`).toEqual([]);
   });
 });
+
+describe("a linha de apoio não estoura a coluna", () => {
+  /** 🔴 Ela recebe NOME DE CADASTRO -- contraparte, cliente --, e nome de
+   * empresa é longo. Medido em 08/09/2026: "Construtora Alfa Empreendimentos
+   * Imobiliários e Participações Societárias do Brasil Ltda ME" levou a
+   * tabela de lançamentos a 1278px dentro de 1130px visíveis.
+   *
+   * ⚠️ **O `truncate` sozinho não morde**, e é a lição que este projeto já
+   * pagou uma vez (a coluna VALOR saindo da tela): numa tabela a coluna
+   * cresce até o conteúdo caber, e o texto nunca chega a estourar a própria
+   * caixa. Quem corta é o TETO de largura.
+   *
+   * ⚠️ O guarda é de FORMA, como os daqui: a largura de verdade se mede em
+   * Chrome (`verificar-financeiro.mjs`), porque o jsdom não faz layout. */
+  const CELULA = FONTES["/src/components/CelulaComSub/index.tsx"];
+  const LINHA = FONTES["/src/pages/FinanceiroPage/components/LinhaDeLancamento/index.tsx"];
+
+  it("o `sub` declara `truncate`", () => {
+    const doSub = CELULA.split("{sub ?")[1] ?? "";
+    expect(doSub).toContain("truncate");
+  });
+
+  it("🔴 e a coluna que recebe nome de cadastro declara um TETO", () => {
+    /* Sem isto o `truncate` acima é decoração. */
+    expect(CELULA).toContain("maxW={maxLargura}");
+    expect(LINHA).toContain("maxLargura={LARGURA_MAXIMA_DA_DESCRICAO}");
+  });
+
+  it("⚠️ com teto, o principal também trunca -- senão a altura da linha varia", () => {
+    expect(CELULA).toContain("truncate={Boolean(maxLargura)}");
+  });
+});

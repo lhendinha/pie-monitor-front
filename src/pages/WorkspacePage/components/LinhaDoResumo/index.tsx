@@ -42,7 +42,7 @@ export default function LinhaDoResumo({ numero }: LinhaDoResumoProps) {
     <>
       <Text as="span">{numero.rotulo}</Text>
       <Text as="span" fontFamily="mono" color={cor}>
-        {numero.valor}
+        {numero.texto ?? numero.valor}
       </Text>
     </>
   );

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
 import { Cartao, EstadoDeErro, Esqueleto } from "../../../../components";
-import { emDias, hojeISO } from "../../../../utils";
+import { emDias, formatarCentavos, hojeISO } from "../../../../utils";
 /* O vocabulário do servidor vem de `constants/`, que é de todo mundo. */
 import { STATUS_EM_ANDAMENTO, TIPO_ENVIO_MOVIMENTACAO } from "../../../../constants";
 /* ⚠️ Os dois únicos imports de constante ENTRE páginas do projeto, e é
@@ -14,6 +14,13 @@ import { STATUS_EM_ANDAMENTO, TIPO_ENVIO_MOVIMENTACAO } from "../../../../consta
    só é melhor que dois literais concordando por sorte. */
 import { RESPONSAVEL_EU } from "../../../ProcessosPage/constants";
 import { DIAS_DA_JANELA_RECENTE } from "../../../HistoricoPage/constants";
+import { DIAS_DO_A_PAGAR } from "../../../FinanceiroPage/constants";
+import {
+  NATUREZA_ENTRADA,
+  NATUREZA_SAIDA,
+  PERIODO_TODOS,
+  SITUACAO_ATRASADO,
+} from "../../../../constants";
 import GrupoDeNumeros from "../GrupoDeNumeros";
 import type { NumeroDoResumo } from "../../types";
 import type { ResumoRapidoProps } from "./types";
@@ -98,6 +105,72 @@ export default function ResumoRapido({
     },
   ];
 
+  /** As três linhas do Financeiro -- ou nenhuma.
+   *
+   * 🔴 **A ausência das chaves é o critério, e não um papel lido aqui.** O
+   * servidor só as manda para `financeiro`+; perguntar o papel na tela
+   * criaria uma segunda régua, que divergiria da do servidor no dia em que
+   * uma das duas mudasse. Se a chave não veio, a seção não existe.
+   *
+   * ⚠️ **Os números são do escritório INTEIRO**, fora do recorte por
+   * subgrupo do resto do resumo -- dinheiro não é por subgrupo. E a lista
+   * que cada clique abre também é do grupo inteiro, então a régua de "o
+   * número bate com a lista" se mantém.
+   */
+  const temFinanceiro = resumo?.a_receber_atrasado_centavos !== undefined;
+
+  function irParaLancamentos(filtros: Record<string, string>) {
+    const query = new URLSearchParams({ aba: "lancamentos", ...filtros });
+    navegar(`/financeiro?${query}`);
+  }
+
+  const financeiro: NumeroDoResumo[] = [
+    {
+      rotulo: "A receber atrasado",
+      valor: resumo?.a_receber_atrasado_centavos ?? 0,
+      texto: `R$ ${formatarCentavos(resumo?.a_receber_atrasado_centavos ?? 0)}`,
+      tom: "bad",
+      /* ⚠️ `periodo=todos`: atrasado é vencimento no passado em QUALQUER dia,
+         e o padrão da lista é "Este mês" -- que esconderia o de julho. */
+      ir: () =>
+        irParaLancamentos({
+          periodo: PERIODO_TODOS,
+          natureza: NATUREZA_ENTRADA,
+          situacao: SITUACAO_ATRASADO,
+        }),
+    },
+    {
+      /* 🔴 "até", e não "em": a soma é `vencimento <= hoje + 7`, sem limite
+         inferior -- o atrasado de julho continua a pagar. É a mesma lição do
+         "A verificar até hoje" logo acima, e "em 7 dias" seria mentira. */
+      rotulo: `A pagar até ${DIAS_DO_A_PAGAR} dias`,
+      valor: resumo?.a_pagar_7_dias_centavos ?? 0,
+      texto: `R$ ${formatarCentavos(resumo?.a_pagar_7_dias_centavos ?? 0)}`,
+      tom: "warn",
+      /* 🔴 `vencendo`, e não um período: nenhuma combinação de período e
+         situação expressa "aberto, vencendo até N dias, atrasados
+         inclusive". Sem ele o card diria um número e a lista abriria
+         outro. */
+      ir: () =>
+        irParaLancamentos({
+          natureza: NATUREZA_SAIDA,
+          vencendo: String(DIAS_DO_A_PAGAR),
+        }),
+    },
+    {
+      rotulo: "Saldo das contas",
+      valor: resumo?.saldo_das_contas_centavos ?? 0,
+      texto: resumo?.tem_conta_cadastrada
+        ? `R$ ${formatarCentavos(resumo?.saldo_das_contas_centavos ?? 0)}`
+        /* ⚠️ Zero de "não tem conta" se lê igual a zero de "está zerado". A
+           frase diz qual dos dois é, e o clique leva para onde se resolve. */
+        : "Nenhuma conta",
+      /* Sem `tom`: saldo não é alarme. O vermelho de conta negativa é da
+         tela do Financeiro, que tem espaço para explicá-lo. */
+      ir: () => navegar("/financeiro?aba=configuracoes&secao=contas"),
+    },
+  ];
+
   const panorama: NumeroDoResumo[] = [
     {
       rotulo: "Processos monitorados",
@@ -137,6 +210,10 @@ export default function ResumoRapido({
       ) : (
         <>
           <GrupoDeNumeros rotulo="Precisa de atenção" numeros={atencao} primeiro />
+          {/* Entre "atenção" e "panorama": dinheiro atrasado pede ação, mas
+              não é prazo processual -- e o saldo é contexto. A seção fica no
+              meio porque é isso que ela é. */}
+          {temFinanceiro && <GrupoDeNumeros rotulo="Financeiro" numeros={financeiro} />}
           <GrupoDeNumeros rotulo="Panorama" numeros={panorama} />
         </>
       )}

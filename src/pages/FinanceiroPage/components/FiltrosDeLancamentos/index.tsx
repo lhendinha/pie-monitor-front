@@ -1,6 +1,12 @@
 import { Flex } from "@chakra-ui/react";
 
-import { CampoDeBusca, MultiSelect, Select, SeletorDePeriodo } from "../../../../components";
+import {
+  CampoDeBusca,
+  MultiSelect,
+  PilulaDeFiltro,
+  Select,
+  SeletorDePeriodo,
+} from "../../../../components";
 import { PERIODOS_DE_DINHEIRO } from "../../../../constants";
 import { comOpcoesEscolhidas } from "../../../../utils/opcoesEscolhidas";
 import { OPCOES_DE_NATUREZA, OPCOES_DE_SITUACAO, OPCOES_DE_TIPO } from "../../constants";
@@ -33,14 +39,30 @@ export default function FiltrosDeLancamentos({
 
   return (
     <Flex align="center" gap="8px" wrap="wrap" mb="12px">
-      <SeletorDePeriodo
-        periodoId={filtros.periodoId}
-        intervaloPersonalizado={filtros.intervaloPersonalizado}
-        blocos={PERIODOS_DE_DINHEIRO}
-        onMudar={(periodoId, intervalo) =>
-          onMudar({ periodoId, intervaloPersonalizado: intervalo })
-        }
-      />
+      {/* 🔴 A pílula de "vence até N dias" ENTRA NO LUGAR da de período, e
+          não ao lado: do lado do servidor `vencendo` TROCA a Query do
+          vencimento pela do índice esparso dos abertos, então o período
+          escolhido deixaria de valer. Duas pílulas em que só uma manda é
+          exatamente o "filtra em silêncio" que o card de totais já custou
+          uma correção.
+
+          ⚠️ Ela chega pelo clique da Área de trabalho, e é clicável para
+          DESLIGAR -- um filtro que a tela aplicou e não deixa tirar é pior
+          que filtro nenhum. */}
+      {filtros.vencendo > 0 ? (
+        <PilulaDeFiltro ativo onClick={() => onMudar({ vencendo: 0 })}>
+          {`Vence até ${filtros.vencendo} dias · atrasados inclusive ✕`}
+        </PilulaDeFiltro>
+      ) : (
+        <SeletorDePeriodo
+          periodoId={filtros.periodoId}
+          intervaloPersonalizado={filtros.intervaloPersonalizado}
+          blocos={PERIODOS_DE_DINHEIRO}
+          onMudar={(periodoId, intervalo) =>
+            onMudar({ periodoId, intervaloPersonalizado: intervalo })
+          }
+        />
+      )}
 
       <Select
         variante="chip"

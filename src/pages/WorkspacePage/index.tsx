@@ -10,6 +10,8 @@ import { qk } from "../../services/queryKeys";
 import BotaoDeAssumir from "./components/BotaoDeAssumir";
 import BotaoDeConcluir from "./components/BotaoDeConcluir";
 import CardDeTarefas from "./components/CardDeTarefas";
+import CardDeVencimentos from "./components/CardDeVencimentos";
+import { DIAS_DO_A_PAGAR } from "../FinanceiroPage/constants";
 import { DESTAQUE_MS } from "./constants";
 import MinhasAtividades from "./components/MinhasAtividades";
 import ResumoRapido from "./components/ResumoRapido";
@@ -141,6 +143,15 @@ export default function WorkspacePage() {
             )}
           />
           </Box>
+
+          {/* 🔴 Abaixo de "Disponíveis para assumir", e SÓ para quem pode ver
+              dinheiro. O critério é a ausência da chave no resumo, e não um
+              papel lido aqui: o servidor já decide quem recebe as chaves, e
+              uma segunda régua na tela divergiria da dele no dia em que uma
+              das duas mudasse. */}
+          {resumoQuery.data?.a_pagar_7_dias_centavos !== undefined && (
+            <CardDeVencimentos dias={DIAS_DO_A_PAGAR} />
+          )}
         </Stack>
 
         <Stack gap="20px">
