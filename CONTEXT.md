@@ -4530,3 +4530,40 @@ coluna sob a qual alinhar.
 
 Com as quatro abas prontas, nada mais lia o flag nem montava a frase. Eles
 voltam juntos se uma aba nova nascer vazia -- está escrito na constante.
+
+### O Financeiro na Área de trabalho (08/09/2026)
+
+⚠️ **O critério de mostrar é a AUSÊNCIA da chave no resumo**, e não um papel
+lido na tela: o servidor já decide quem recebe as chaves do dinheiro, e uma
+segunda régua aqui divergiria da dele no dia em que uma das duas mudasse.
+Sem as chaves, a seção não existe, o card não existe, e ele nem PEDE a lista
+-- sem isso quem é `user` levaria 403 a cada abertura da home.
+
+🔴 **"A pagar ATÉ 7 dias", e não "em".** A soma não tem limite inferior, e
+"em 7 dias" seria mentira. É a mesma lição que o "A verificar até hoje" já
+registra no `ResumoRapido`.
+
+🔴 **E o clique precisou de um filtro novo na lista de Lançamentos**:
+`vencendo`. Nenhuma combinação de período e situação expressa "aberto,
+vencendo até N dias, atrasados inclusive" -- `situacao` oferece aberto OU
+atrasado, e o período tem as duas pontas. Sem ele o card diria um número e a
+lista abriria outro. A pílula de período é SUBSTITUÍDA pela dele enquanto
+está ligado: do lado do servidor `vencendo` troca a Query do vencimento pela
+do índice esparso, e duas pílulas em que só uma manda é o "filtra em
+silêncio" que o card de totais já custou uma correção.
+
+⚠️ `NumeroDoResumo` ganhou `texto`, separado de `valor`: é o `valor` que
+decide se a cor aparece (zero não grita), e formatá-lo em texto perderia essa
+régua.
+
+### O `truncate` que não morde sem teto -- segunda ocorrência
+
+A linha de apoio da lista de lançamentos passou a receber o NOME DO CLIENTE,
+e um nome de 91 caracteres levou a tabela a **1278px dentro de 1130px
+visíveis**. A coluna de descrição era a única sem teto de largura.
+
+🔴 **Numa tabela, `truncate` sozinho é decoração**: a coluna cresce até o
+conteúdo caber, e o texto nunca chega a estourar a própria caixa. Quem corta
+é o `maxW`. É a mesma lição da coluna VALOR saindo da tela, e agora
+`CelulaComSub` tem `maxLargura` -- com ele o principal também trunca, senão
+ele quebraria em duas linhas e a altura deixaria de ser uniforme.
