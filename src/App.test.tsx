@@ -45,6 +45,7 @@ vi.mock("./pages", () => ({
   DocumentosPage: () => <div>tela de documentos</div>,
   DocumentoDetalhePage: () => <div>detalhe do documento</div>,
   FinanceiroPage: () => <div>tela de financeiro</div>,
+  FaturaDetalhePage: () => <div>detalhe da fatura</div>,
   LancamentoDetalhePage: () => <div>detalhe do lançamento</div>,
   GrupoPage: () => <div>tela de grupo</div>,
   WorkspacePage: () => <div>área de trabalho</div>,
@@ -103,6 +104,29 @@ describe("portão de autenticação", () => {
     renderComProviders(<App />);
     expect(screen.getByText("tela de clientes")).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Navegação principal" })).toBeInTheDocument();
+  });
+});
+
+describe("as telas de detalhe do Financeiro têm ENDEREÇO", () => {
+  /** 🔴 Rota que não existe cai no `*`, que redireciona para a raiz EM
+   * SILÊNCIO. É como uma tela some sem ninguém ver: o link da lista navega,
+   * a barra de endereço muda, e a pessoa acaba na Área de trabalho sem erro
+   * nenhum. Já aconteceu neste projeto com `/membros`, que nunca existiu. */
+  it.each([
+    ["/financeiro/lancamentos/l1", "detalhe do lançamento"],
+    ["/financeiro/faturas/f1", "detalhe da fatura"],
+  ])("%s abre a tela, e não a raiz", (rota, texto) => {
+    irPara(rota);
+    renderComProviders(<App />);
+    expect(screen.getByText(texto)).toBeInTheDocument();
+    expect(screen.queryByText("área de trabalho")).not.toBeInTheDocument();
+  });
+
+  it("⚠️ e o piso é `financeiro`: quem é `user` não entra nem digitando", () => {
+    mocks.papelAtende.mockReturnValue(false);
+    irPara("/financeiro/faturas/f1");
+    renderComProviders(<App />);
+    expect(screen.queryByText("detalhe da fatura")).not.toBeInTheDocument();
   });
 });
 

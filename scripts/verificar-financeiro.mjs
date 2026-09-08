@@ -616,6 +616,105 @@ conferir(caixa.accentDoNativo === caixa.marcaEmRgb,
   caixa.accentDoNativo);
 await pagina.getByRole("button", { name: /Cancelar/ }).click();
 
+// ─────────────────────────── o DOCUMENTO da fatura (Fase 6)
+console.log("\n— Financeiro > Fatura > documento —");
+await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+await pagina.getByRole("row").first().waitFor();
+await pagina.waitForTimeout(500);
+const emAberto = pagina.locator("tbody tr").filter({ hasText: "EM ABERTO" }).first();
+if (await existe(emAberto)) {
+  await emAberto.click();
+  await pagina.getByRole("heading", { level: 1 }).waitFor();
+  await pagina.waitForTimeout(600);
+  conferir(/\/financeiro\/faturas\//.test(pagina.url()),
+    "a linha abre o documento, e o endereço é dele", pagina.url());
+
+  const acoes = (await pagina.locator("main button").allInnerTexts()).filter(Boolean);
+  conferir(acoes.includes("Cancelar fatura") && acoes.includes("Registrar pagamento")
+    && acoes.includes("Imprimir"),
+    "a ABERTA tem os três botões", acoes.join(" | "));
+
+  /* 🔴 Dois cartões IRMÃOS, e não um dentro do outro. A tela nasceu com o
+     `CartaoDeTabela` dentro de um `Cartao`, o que desenhava moldura dentro
+     de moldura e colava os campos na borda da tabela. O usuário pegou. */
+  const cartoes = await pagina.evaluate(() => {
+    const tabela = document.querySelector("main table");
+    const daTabela = tabela.closest("[class]").parentElement;
+    return {
+      aninhado: Boolean(daTabela.closest("div")?.parentElement?.querySelector("table")
+        && daTabela.parentElement?.getAttribute("class")?.includes("card")),
+      /* A grade dos dados: duas colunas e respiro vertical. */
+      ...(() => {
+        const grade = [...document.querySelectorAll("main div")].find(
+          (e) => getComputedStyle(e).display === "grid" && e.textContent.includes("Cliente"));
+        const g = getComputedStyle(grade);
+        const rotulos = [...document.querySelectorAll("main p")]
+          .filter((r) => ["Cliente", "Vencimento"].includes(r.textContent.trim()));
+        return {
+          colunas: g.gridTemplateColumns.split(" ").length,
+          rowGap: g.rowGap,
+          ladoALado: Math.round(rotulos[0].getBoundingClientRect().top)
+            === Math.round(rotulos[1].getBoundingClientRect().top),
+        };
+      })(),
+    };
+  });
+  conferir(cartoes.colunas === 2 && cartoes.ladoALado,
+    "os dados vão em DUAS colunas", JSON.stringify(cartoes));
+  conferir(cartoes.rowGap !== "0px",
+    "🔴 e com respiro vertical -- `LinhaDeCampos` tem rowGap 0, e `CampoDeLeitura` não traz margem",
+    cartoes.rowGap);
+
+  /* 🔴 O PAPEL. Nada disto se afere em jsdom: media query não existe lá, e o
+     `emulateMedia` é o único jeito de ver o que sai da impressora. */
+  await pagina.emulateMedia({ media: "print" });
+  await pagina.waitForTimeout(300);
+  const papel = await pagina.evaluate(() => {
+    const visivel = (s) => {
+      const e = document.querySelector(s);
+      return e ? getComputedStyle(e).display !== "none" : null;
+    };
+    const grade = [...document.querySelectorAll("main div")].find(
+      (e) => getComputedStyle(e).display === "grid" && e.textContent.includes("Cliente"));
+    return {
+      menu: visivel("aside"), topo: visivel("header"), documento: visivel("table"),
+      acoesEscondidas: [...document.querySelectorAll("[data-fora-da-impressao]")]
+        .every((e) => getComputedStyle(e).display === "none"),
+      fundo: getComputedStyle(document.body).backgroundColor,
+      recuoDoMain: getComputedStyle(document.querySelector("main")).padding,
+      colunasDosDados: getComputedStyle(grade).gridTemplateColumns.split(" ").length,
+    };
+  });
+  conferir(papel.menu === false && papel.topo === false && papel.acoesEscondidas,
+    "no PAPEL somem o menu, o topo e as ações", JSON.stringify(papel));
+  conferir(papel.documento === true, "e o documento fica");
+  conferir(papel.fundo === "rgb(255, 255, 255)",
+    "🔴 o fundo do papel é BRANCO -- o `bg.canvas` do body vem depois e vencia", papel.fundo);
+  conferir(papel.recuoDoMain === "0px", "e o recuo do `main` some", papel.recuoDoMain);
+  conferir(papel.colunasDosDados === 2,
+    "🔴 e os dados seguem em DUAS colunas -- o breakpoint do Chakra é `@media screen` e desabava no papel",
+    `${papel.colunasDosDados}`);
+  await pagina.emulateMedia({ media: "screen" });
+
+  /* A paga perde os dois que mexem em dinheiro. */
+  await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+  await pagina.getByRole("row").first().waitFor();
+  await pagina.waitForTimeout(500);
+  const paga = pagina.locator("tbody tr").filter({ hasText: "PAGA" }).first();
+  if (await existe(paga)) {
+    await paga.click();
+    await pagina.getByRole("heading", { level: 1 }).waitFor();
+    await pagina.waitForTimeout(600);
+    const acoesDaPaga = (await pagina.locator("main button").allInnerTexts()).filter(Boolean);
+    conferir(!acoesDaPaga.includes("Cancelar fatura")
+      && !acoesDaPaga.includes("Registrar pagamento")
+      && acoesDaPaga.includes("Imprimir"),
+      "🔴 a PAGA fica só com Imprimir", acoesDaPaga.join(" | "));
+  }
+} else {
+  conferir(true, "nenhuma fatura em aberto na base (rode a semente de desenho)");
+}
+
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();
 

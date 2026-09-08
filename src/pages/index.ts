@@ -13,6 +13,7 @@ export { default as AgendaPage } from "./AgendaPage";
 export { default as AtendimentosPage } from "./AtendimentosPage";
 export { default as AtendimentoDetalhePage } from "./AtendimentoDetalhePage";
 export { default as FinanceiroPage } from "./FinanceiroPage";
+export { default as FaturaDetalhePage } from "./FaturaDetalhePage";
 export { default as LancamentoDetalhePage } from "./LancamentoDetalhePage";
 export { default as GrupoPage } from "./GrupoPage";
 export { default as PerfilPage } from "./PerfilPage";

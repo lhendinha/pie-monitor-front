@@ -10,6 +10,7 @@ import {
   ClientesPage,
   DocumentoDetalhePage,
   DocumentosPage,
+  FaturaDetalhePage,
   FinanceiroPage,
   GrupoPage,
   KanbanPage,
@@ -98,6 +99,14 @@ export default function Rotas() {
             <Route
               path="/financeiro/lancamentos/:lancamentoId"
               element={<LancamentoDetalhePage />}
+            />
+            {/* 🔴 No mesmo guarda, e pelo mesmo motivo: a fatura mostra
+                valor, cliente e cada linha cobrada. E ela É endereço --
+                a emissão manda para cá assim que o documento sai, e a
+                lista de Emitidas aponta para cá. */}
+            <Route
+              path="/financeiro/faturas/:faturaId"
+              element={<FaturaDetalhePage />}
             />
           </Route>
           {/* `manager`, igual ao piso do item no menu lateral. Esconder do

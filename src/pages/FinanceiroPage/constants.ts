@@ -247,6 +247,17 @@ export const COLUNAS_DE_FATURAS = [
   "Situação",
 ] as const;
 
+/** As colunas do documento da fatura -- o que ela cobra, linha a linha.
+ *
+ * ⚠️ Sem "Situação": dentro de uma fatura, a situação de cada linha não é
+ * escolha de ninguém -- pagar a fatura efetiva todas as abertas de uma vez.
+ * O que a linha precisa dizer é o que é e quanto vale. */
+export const COLUNAS_DO_DOCUMENTO = [
+  "Lançamento",
+  "Vencimento",
+  { rotulo: "Valor", aDireita: true },
+] as const;
+
 /** As colunas da prévia da emissão. A primeira é a caixa de marcar, e o
  * cabeçalho dela é vazio -- como o `<th style="width:36px">` do artefato. */
 export const COLUNAS_DA_EMISSAO = [

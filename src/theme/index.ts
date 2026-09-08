@@ -351,6 +351,34 @@ export const system = createSystem(defaultConfig, {
      * quem desenha é a `control`. */
     'input[type="checkbox"]': { accentColor: "fg.brand" },
 
+    /** A impressão. Hoje ela serve a UMA tela -- o documento da fatura --, e
+     * é o botão "Imprimir" dela que a aciona (`window.print()`).
+     *
+     * 🔴 Esconde por ATRIBUTO, e não por seletor de componente: a moldura do
+     * app (`AppShell`, `MenuLateral`, `Topbar`) e as ações da tela levam
+     * `data-fora-da-impressao`, e é isso que some. Um seletor por classe
+     * gerada do Chakra quebraria no dia em que a classe mudasse, sem erro
+     * nenhum -- e ninguém imprime dentro de uma suíte de testes.
+     *
+     * ⚠️ O `!important` é necessário: as classes do Chakra chegam com a
+     * mesma especificidade, e sem ele o menu lateral continuaria no papel.
+     *
+     * ⚠️ O seletor leva a media query junto, e não o contrário -- a mesma
+     * régua do `*` logo abaixo, e a tipagem do `globalCss` cobra: seletor
+     * dentro de condição é `TS2353`. */
+    "[data-fora-da-impressao]": {
+      "@media print": { display: "none !important" },
+    },
+    /* Recuo zero: a tela desenha 26px 32px 60px de folga -- no papel, isso
+       é margem dobrada, porque a impressora já tem a dela. */
+    main: {
+      "@media print": { padding: "0 !important", maxWidth: "none !important" },
+    },
+    /* Linha do documento não se parte ao meio entre duas páginas. */
+    tr: {
+      "@media print": { pageBreakInside: "avoid", breakInside: "avoid" },
+    },
+
     body: {
       fontFamily: "ui",
       fontSize: tipografia.tamanhoBase,
@@ -361,6 +389,12 @@ export const system = createSystem(defaultConfig, {
        * aplicação herdar o azul-escuro da paleta antiga por semanas. */
       bg: "bg.canvas",
       color: "fg",
+      /* 🔴 O branco do papel vai AQUI, e não numa chave `html, body` lá em
+         cima: as duas regras têm a mesma especificidade, a última vence, e
+         esta é a última -- medido, o papel saía com o cinza de `bg.canvas`
+         de fundo. (Uma segunda chave `html, body` no mesmo literal também
+         seria `TS1117`.) */
+      "@media print": { bg: "white" },
       /* ⚠️ Sem isto o texto sai mais grosso que o do artifact no macOS --
          diferença pequena e visível lado a lado. A tipagem do Chakra não
          conhece a propriedade (prefixada e fora do padrão), daí o cast. */
