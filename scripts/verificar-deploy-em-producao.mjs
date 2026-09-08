@@ -256,6 +256,51 @@ conferir(
 
 await semOpcional("Financeiro");
 
+// ── Financeiro > Lançamentos: a Fase 5 ──────────────────────────────────
+console.log("\n-- Financeiro > Lançamentos --");
+await pagina.goto(`${APP}/financeiro?aba=lancamentos`);
+await pagina.getByRole("button", { name: /Novo lançamento/ }).waitFor();
+conferir(true, "a aba abre -- deixou de ser pendente");
+conferir(
+  (await pagina.getByText("Lançamentos ainda não está disponível.").count()) === 0,
+  "e não diz mais que não chegou",
+);
+
+/* 🔴 A coluna de dinheiro alinhada nos DOIS. É o defeito que o usuário pegou,
+   e é `textAlign` -- classe do Chakra, que o jsdom não resolve. Só aqui e no
+   roteiro do offline isso se afere.
+
+   ⚠️ Produção pode não ter lançamento nenhum: então o que se confere é o
+   CABEÇALHO, que existe de qualquer jeito. */
+const alinhamento = await pagina.evaluate(() => {
+  const th = [...document.querySelectorAll("thead th")]
+    .find((e) => e.textContent.trim() === "Valor");
+  const linha = document.querySelector("tbody tr");
+  const td = linha?.cells?.[linha.cells.length - 1];
+  return {
+    th: th ? getComputedStyle(th).textAlign : null,
+    td: td ? getComputedStyle(td).textAlign : null,
+  };
+});
+conferir(alinhamento.th === "right", "o cabeçalho VALOR alinha à direita");
+conferir(alinhamento.td === null || alinhamento.td === "right",
+  "e a célula também, quando há linha");
+
+/* O menu das quatro portas, e o formulário com o departamento. */
+await pagina.getByRole("button", { name: /Novo lançamento/ }).click();
+conferir((await pagina.getByRole("menuitem").count()) === 4,
+  "o menu abre com as QUATRO portas");
+await pagina.getByText("Saída", { exact: true }).click();
+await pagina.getByText("Nova saída").waitFor();
+conferir((await pagina.getByLabel(/Departamento/).count()) >= 1,
+  "o formulário pede o DEPARTAMENTO -- o rateio chegou à tela");
+conferir((await pagina.getByRole("button", { name: "Salvar e adicionar outra" }).count()) === 1,
+  'e tem o "Salvar e adicionar outra" do artefato');
+await pagina.getByRole("button", { name: "Cancelar" }).click();
+
+/* A pílula que o card usa -- ela é a prova de que o filtro por natureza subiu. */
+conferir((await pagina.getByText("Entradas e saídas").count()) >= 1,
+  "a pílula de natureza existe -- o filtro novo da API chegou à tela");
 
 console.log(problemas.length ? `\n${problemas.length} FALHA(S)` : "\nTudo certo em produção.");
 if (deixarAberto) {
