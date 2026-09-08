@@ -1,4 +1,8 @@
-import { PERIODO_PERSONALIZADO, PERIODO_TODOS } from "../constants/periodos";
+import {
+  PERIODOS_DE_DINHEIRO,
+  PERIODO_PERSONALIZADO,
+  PERIODO_TODOS,
+} from "../constants/periodos";
 import { emDias, hojeISO } from "./prazo";
 
 import type { IntervaloDeDatas } from "../types";
@@ -134,4 +138,23 @@ export function intervaloDeMesesDoPeriodo(
   const dias = intervaloDoPeriodo(id, personalizado);
   if (!dias) return null;
   return { de: dias.de.slice(0, 7), ate: dias.ate.slice(0, 7) };
+}
+
+/** O período escolhido em MINÚSCULAS, para caber no meio de uma frase --
+ * "A receber · este mês".
+ *
+ * 🔴 Mora aqui, ao lado de `intervaloDoPeriodo`, e não na página: é
+ * tradução de id em palavra, a mesma coisa que este arquivo já faz. E o
+ * nome NÃO é `rotuloDoPeriodo`: o projeto já tem dois com esse nome e
+ * assinaturas diferentes (o do `SeletorDePeriodo`, que também recebe os
+ * blocos, e o da Agenda, que recebe uma data). Um terceiro homônimo faria
+ * a próxima pessoa importar o errado.
+ *
+ * ⚠️ Cai numa frase neutra quando o id não é conhecido: o card diz "de
+ * quando" ele fala, e um card sem essa metade é um número solto.
+ */
+export function periodoPorExtenso(periodoId: string): string {
+  if (periodoId === PERIODO_TODOS) return "todos os períodos";
+  const achado = PERIODOS_DE_DINHEIRO.flat().find((o) => o.id === periodoId);
+  return achado ? achado.rotulo.toLowerCase() : "o período escolhido";
 }

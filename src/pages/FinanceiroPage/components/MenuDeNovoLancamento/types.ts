@@ -1,4 +1,4 @@
-import type { PontoProps } from "../../../../components/Ponto/types";
+import type { TomDoPonto } from "../../../../types";
 import type { FormaDeLancamento } from "../../types";
 
 export interface MenuDeNovoLancamentoProps {
@@ -10,5 +10,5 @@ export interface OpcaoDeNovoLancamento {
   forma: FormaDeLancamento;
   rotulo: string;
   descricao: string;
-  tom: PontoProps["tom"];
+  tom: TomDoPonto;
 }

@@ -9,6 +9,8 @@
  * "R$ 1.234,56" é trabalho de `utils`, na borda da tela.
  */
 
+import type { OpcoesDePaginacao } from "./api";
+
 /** Onde o dinheiro entra e de onde sai. `GET /financeiro/catalogo`. */
 export interface ContaFinanceira {
   conta_id: string;
@@ -191,3 +193,56 @@ export interface TotaisDeLancamentos {
   atrasado_centavos: number;
   atrasado_quantidade: number;
 }
+
+/** Os campos que a tela de detalhe do lançamento edita, do jeito que o
+ * formulário os segura.
+ *
+ * 🔴 Vive aqui, e não no `types.ts` da pasta do formulário, porque
+ * `camposAlteradosDoLancamento` (`utils/lancamentos.ts`) o consome: tipo que
+ * atravessa a fronteira da página vale fora dela. Mesma régua do
+ * `CamposEditaveisDoAtendimento`.
+ *
+ * ⚠️ Nomes em camelCase e `valorCentavos` podendo ser `null`: é o estado da
+ * TELA, não o corpo da requisição -- aquele é `CamposDoLancamento`, em
+ * `types/requisicoes`. */
+export interface CamposEditaveisDoLancamento {
+  descricao: string;
+  valorCentavos: number | null;
+  contraparte: string;
+  documento: string;
+  categoriaId: string;
+  centroId: string;
+  contaId: string;
+  responsavel: string;
+  rateio: ParcelaParaEnviar[];
+}
+
+/** Os filtros da lista, todos opcionais e todos combináveis.
+ *
+ * 🔴 `subgrupo_id` é o DEPARTAMENTO, e a pergunta que ele faz é "tem parcela
+ * para X" -- não é o subgrupo do vínculo. Com ele, cada linha ganha
+ * `valor_no_departamento_centavos` e os totais somam o PEDAÇO.
+ *
+ * ⚠️ Sem `de`/`ate` a API lê "todos os períodos", que é escolha de quem
+ * clica. O padrão da tela é "Este mês", e quem manda as datas é ela. */
+export type FiltrosDeLancamentos = OpcoesDePaginacao & {
+  de?: string;
+  ate?: string;
+  tipo?: string;
+  /** `entrada` ou `saida` -- a NATUREZA, derivada do tipo.
+   *
+   * 🔴 Não é o mesmo que `tipo`: "a receber" são honorário e entrada, os
+   * dois de natureza `entrada`. Filtrar por `tipo=entrada` derruba os
+   * honorários -- é o que o card dos totais fazia. */
+  natureza?: string;
+  situacao?: string;
+  conta_id?: string;
+  categoria_id?: string;
+  centro_id?: string;
+  subgrupo_id?: string;
+  cliente_id?: string;
+  busca?: string;
+  /** O card da Área de trabalho: o que vence em N dias, atrasados
+   * inclusive. Troca a leitura pelo índice dos abertos. */
+  vencendo?: number;
+};

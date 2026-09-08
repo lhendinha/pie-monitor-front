@@ -9,12 +9,12 @@ import {
   Pagination,
   Tabela,
 } from "../../../../components";
-import { PERIODOS_DE_DINHEIRO, PERIODO_TODOS } from "../../../../constants";
 import { usePaginacaoDaLista } from "../../../../hooks/usePaginacaoDaLista";
 import { useSubgruposBuscaveis } from "../../../../hooks/useSubgruposBuscaveis";
 import { lerCatalogoFinanceiro, listarLancamentos } from "../../../../services";
 import { useToastOnQueryError } from "../../../../services/queryClient";
 import { qk } from "../../../../services/queryKeys";
+import { periodoPorExtenso } from "../../../../utils";
 import type { CatalogoFinanceiro } from "../../../../types";
 import type { RespostaDeLancamentos } from "../../../../types/respostas";
 import { COLUNAS_DE_LANCAMENTOS } from "../../constants";
@@ -22,13 +22,6 @@ import { useFiltrosDeLancamentos } from "../../hooks/useFiltrosDeLancamentos";
 import CartoesDeTotais from "../CartoesDeTotais";
 import FiltrosDeLancamentos from "../FiltrosDeLancamentos";
 import LinhaDeLancamento from "../LinhaDeLancamento";
-
-/** O rótulo do período escolhido, para os cards dizerem de quando falam. */
-function rotuloDoPeriodo(periodoId: string): string {
-  if (periodoId === PERIODO_TODOS) return "todos os períodos";
-  const achado = PERIODOS_DE_DINHEIRO.flat().find((o) => o.id === periodoId);
-  return achado ? achado.rotulo.toLowerCase() : "o período escolhido";
-}
 
 /** A lista de lançamentos: os três cards, os filtros e a tabela.
  *
@@ -90,7 +83,7 @@ export default function ListaDeLancamentos() {
       {query.data && (
         <CartoesDeTotais
           totais={query.data.totais}
-          periodo={rotuloDoPeriodo(filtros.periodoId)}
+          periodo={periodoPorExtenso(filtros.periodoId)}
           /* ⚠️ Zera o `tipo` junto: o card fala em natureza, e um
               `tipo=saida` que tivesse sobrado da pílula cruzaria com
               "a receber" e devolveria lista vazia. */

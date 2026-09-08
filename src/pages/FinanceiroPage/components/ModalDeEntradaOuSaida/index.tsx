@@ -28,6 +28,8 @@ import {
   FORMA_AVULSA,
   FORMA_DE_CLIENTE,
   FORMA_HONORARIO,
+  SITUACOES_DA_ENTRADA,
+  SITUACOES_DA_SAIDA,
 } from "../../constants";
 import { useCamposDoLancamento } from "../../hooks/useCamposDoLancamento";
 import CamposDeClassificacao from "../CamposDeClassificacao";
@@ -143,10 +145,7 @@ export default function ModalDeEntradaOuSaida({
           <Campo rotulo="Situação" para="lc-situacao" obrigatorio>
             <Select
               id="lc-situacao"
-              opcoes={[
-                { value: SITUACAO_ABERTO, label: eEntrada ? "A receber" : "A pagar" },
-                { value: SITUACAO_EFETIVADO, label: eEntrada ? "Recebida" : "Paga" },
-              ]}
+              opcoes={eEntrada ? SITUACOES_DA_ENTRADA : SITUACOES_DA_SAIDA}
               valor={campos.efetivado ? SITUACAO_EFETIVADO : SITUACAO_ABERTO}
               onMudar={(v) => campos.setEfetivado(v === SITUACAO_EFETIVADO)}
             />

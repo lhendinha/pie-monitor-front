@@ -1,5 +1,5 @@
 import { chamar } from "./client";
-import type { EscopoDaSerie, OpcoesDePaginacao } from "../../types";
+import type { EscopoDaSerie, FiltrosDeLancamentos } from "../../types";
 import type {
   CamposDoLancamento,
   DadosDaTransferencia,
@@ -13,36 +13,6 @@ import type {
  *
  * ➡️ `pages/FinanceiroPage`.
  */
-
-/** Os filtros da lista, todos opcionais e todos combináveis.
- *
- * 🔴 `subgrupo_id` é o DEPARTAMENTO, e a pergunta que ele faz é "tem parcela
- * para X" -- não é o subgrupo do vínculo. Com ele, cada linha ganha
- * `valor_no_departamento_centavos` e os totais somam o PEDAÇO.
- *
- * ⚠️ Sem `de`/`ate` a API lê "todos os períodos", que é escolha de quem
- * clica. O padrão da tela é "Este mês", e quem manda as datas é ela. */
-export type FiltrosDeLancamentos = OpcoesDePaginacao & {
-  de?: string;
-  ate?: string;
-  tipo?: string;
-  /** `entrada` ou `saida` -- a NATUREZA, derivada do tipo.
-   *
-   * 🔴 Não é o mesmo que `tipo`: "a receber" são honorário e entrada, os
-   * dois de natureza `entrada`. Filtrar por `tipo=entrada` derruba os
-   * honorários -- é o que o card dos totais fazia. */
-  natureza?: string;
-  situacao?: string;
-  conta_id?: string;
-  categoria_id?: string;
-  centro_id?: string;
-  subgrupo_id?: string;
-  cliente_id?: string;
-  busca?: string;
-  /** O card da Área de trabalho: o que vence em N dias, atrasados
-   * inclusive. Troca a leitura pelo índice dos abertos. */
-  vencendo?: number;
-};
 
 export function listarLancamentos({
   pagina, tamanhoPagina, vencendo, ...filtros

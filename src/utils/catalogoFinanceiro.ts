@@ -1,4 +1,9 @@
-import type { CatalogoFinanceiro, OpcaoDeSelect } from "../../types";
+import type { CatalogoFinanceiro, Membro, OpcaoDeSelect } from "../types";
+
+/* 🔴 Mora em `utils/`, e não na pasta da página: os quatro formulários de
+   lançamento e a tela de detalhe montam as MESMAS listas, e a página do
+   Financeiro não é dona delas -- a Fase 6 (faturas e fluxo) vai pedir as
+   mesmas. Mesma régua de `utils/opcoesEscolhidas.ts`. */
 
 /** As categorias que um lançamento desta natureza pode usar.
  *
@@ -36,7 +41,12 @@ export function opcoesDeCategoria(
 /** As contas em que o dinheiro pode entrar ou sair.
  *
  * ⚠️ Desativada fica de fora: o servidor responde "Conta desativada: escolha
- * outra", e a tela não deve oferecer o que ele nega. */
+ * outra", e a tela não deve oferecer o que ele nega.
+ *
+ * ⚠️ **Diferente do FILTRO da lista**, que inclui as inativas de propósito --
+ * lá a pergunta é "quais lançamentos usaram esta conta", e um lançamento
+ * antigo aponta para uma conta desativada. Aqui a pergunta é "onde este
+ * dinheiro vai se mover", e essa não tem resposta numa conta fechada. */
 export function opcoesDeConta(catalogo: CatalogoFinanceiro | undefined): OpcaoDeSelect[] {
   return (catalogo?.contas ?? [])
     .filter((c) => c.ativa)
@@ -54,5 +64,24 @@ export function opcoesDeCentro(catalogo: CatalogoFinanceiro | undefined): OpcaoD
     ...(catalogo?.centros_de_custo ?? [])
       .filter((c) => c.ativo)
       .map((c) => ({ value: c.centro_id, label: c.nome })),
+  ];
+}
+
+/** As pessoas que podem responder por um lançamento, com quem está logado
+ * sempre presente.
+ *
+ * 🔴 **A lista vem do DEPARTAMENTO, e não do grupo** -- quem chama passa os
+ * membros do subgrupo. `GET /grupos/membros` tem piso `manager`, e quem tem o
+ * papel `financeiro` pode não ser: o campo responderia 403 e ficaria vazio
+ * para exatamente quem usa a tela todo dia.
+ *
+ * ⚠️ **Quem está logado entra mesmo fora da lista.** Ele é o padrão do campo,
+ * e um select cujo valor não está entre as opções desenha vazio -- pareceria
+ * que ninguém responde pelo lançamento.
+ */
+export function opcoesDePessoa(membros: Membro[], eu: string): OpcaoDeSelect[] {
+  return [
+    ...membros.map((m) => ({ value: m.email, label: m.apelido || m.email })),
+    ...(eu && !membros.some((m) => m.email === eu) ? [{ value: eu, label: eu }] : []),
   ];
 }

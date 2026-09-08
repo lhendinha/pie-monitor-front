@@ -1,14 +1,6 @@
 import { Box } from "@chakra-ui/react";
+import { CORES_DO_PONTO } from "../../theme/ponto";
 import type { PontoProps } from "./types";
-
-/** ⚠️ Mapa, e não uma escada de ternários: com quatro tons a escada passa a
- * esconder qual cor sai de qual tom. */
-const CORES_DO_PONTO = {
-  marca: "fg.brand",
-  ruim: "status.bad",
-  bom: "status.good",
-  neutro: "fg.subtle",
-} as const;
 
 /** A bolinha que abre um item de lista (o "•" do artifact).
  *

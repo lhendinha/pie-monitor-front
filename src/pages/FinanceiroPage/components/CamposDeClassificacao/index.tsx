@@ -1,5 +1,5 @@
 import { Campo, LinhaDeCampos, Select } from "../../../../components";
-import { opcoesDeCategoria, opcoesDeCentro } from "../../opcoesDoCatalogo";
+import { opcoesDeCategoria, opcoesDeCentro } from "../../../../utils";
 import CampoDeDepartamentos from "../CampoDeDepartamentos";
 import type { CamposDeClassificacaoProps } from "./types";
 

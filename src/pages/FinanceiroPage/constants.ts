@@ -185,3 +185,22 @@ export const OPCOES_DE_NOVO_LANCAMENTO: OpcaoDeNovoLancamento[] = [
     tom: "neutro",
   },
 ];
+
+/** As duas situações que o formulário de entrada e de saída oferece.
+ *
+ * 🔴 Não é o filtro `OPCOES_DE_SITUACAO`: lá "atrasado" existe, e aqui não --
+ * ninguém CRIA um lançamento atrasado, a situação é derivada da data. Aqui a
+ * pergunta é outra: "isto já aconteceu?".
+ *
+ * ⚠️ As palavras mudam com o lado do dinheiro ("Recebida" numa entrada,
+ * "Paga" numa saída), como no artefato -- a mesma data no banco, e a palavra
+ * errada faria a tela de uma despesa dizer que alguém recebeu. */
+export const SITUACOES_DA_ENTRADA = [
+  { value: SITUACAO_ABERTO, label: "A receber" },
+  { value: SITUACAO_EFETIVADO, label: "Recebida" },
+];
+
+export const SITUACOES_DA_SAIDA = [
+  { value: SITUACAO_ABERTO, label: "A pagar" },
+  { value: SITUACAO_EFETIVADO, label: "Paga" },
+];

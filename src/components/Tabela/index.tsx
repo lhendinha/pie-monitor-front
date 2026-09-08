@@ -1,10 +1,6 @@
 import { Table } from "@chakra-ui/react";
-import type { ColunaDaTabela, TabelaProps } from "./types";
-
-/** A string curta é o caso comum; o objeto, a exceção do dinheiro. */
-function normalizar(coluna: string | ColunaDaTabela): ColunaDaTabela {
-  return typeof coluna === "string" ? { rotulo: coluna } : coluna;
-}
+import { colunaComRotulo } from "../../utils/tabela";
+import type { TabelaProps } from "./types";
 
 /** A tabela do sistema (`.tbl` do artifact), com o cabeçalho e a área de
  * rolagem que toda tabela precisa.
@@ -26,7 +22,7 @@ export default function Tabela({ colunas, vazio, children }: TabelaProps) {
       <Table.Root size="sm" width="100%">
         <Table.Header>
           <Table.Row>
-            {colunas.map(normalizar).map((coluna, i) => (
+            {colunas.map(colunaComRotulo).map((coluna, i) => (
               <Table.ColumnHeader
                 key={coluna.rotulo || `acoes-${i}`}
                 /* `.tbl th` do artifact: 11px/800 em caixa alta, com

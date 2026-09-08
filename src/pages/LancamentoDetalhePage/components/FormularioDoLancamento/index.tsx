@@ -12,9 +12,14 @@ import { NATUREZA_ENTRADA, SITUACAO_EFETIVADO, TIPO_TRANSFERENCIA } from "../../
 import CamposDeClassificacao from "../../../FinanceiroPage/components/CamposDeClassificacao";
 import CamposDeContaEResponsavel from "../../../FinanceiroPage/components/CamposDeContaEResponsavel";
 import { ROTULO_DA_SITUACAO } from "../../../FinanceiroPage/constants";
-import { formatarData, mascararNumeroProcesso } from "../../../../utils";
-import { camposAlteradosDoLancamento } from "../../camposAlterados";
-import type { CamposEditaveisDoLancamento, FormularioDoLancamentoProps } from "./types";
+import {
+  camposAlteradosDoLancamento,
+  formatarData,
+  mascararNumeroProcesso,
+} from "../../../../utils";
+
+import type { CamposEditaveisDoLancamento } from "../../../../types";
+import type { FormularioDoLancamentoProps } from "./types";
 
 /** O lançamento aberto para edição -- a tela do artefato, campo por campo.
  *

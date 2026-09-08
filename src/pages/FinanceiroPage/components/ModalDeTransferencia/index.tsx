@@ -17,7 +17,7 @@ import { usePessoasBuscaveis } from "../../../../hooks/usePessoasBuscaveis";
 import { getEmail } from "../../../../services";
 import { hojeISO } from "../../../../utils";
 import { podeListarPessoas } from "../../../../utils/permissoes";
-import { opcoesDeConta } from "../../opcoesDoCatalogo";
+import { opcoesDeConta } from "../../../../utils";
 import type { ModalDeTransferenciaProps } from "./types";
 
 /** Dinheiro que só muda de conta.

@@ -1,4 +1,4 @@
-import type { CatalogoFinanceiro, Lancamento, ParcelaParaEnviar } from "../../../../types";
+import type { CatalogoFinanceiro, Lancamento } from "../../../../types";
 import type { CamposDoLancamento } from "../../../../types/requisicoes";
 
 export interface FormularioDoLancamentoProps {
@@ -14,17 +14,4 @@ export interface FormularioDoLancamentoProps {
    * a soma das parcelas tem de bater com o valor, e o servidor recusa a
    * edição de um rateado que mude o valor sem trazer a divisão nova. */
   onSalvar: (campos: CamposDoLancamento) => void;
-}
-
-/** O que o formulário segura enquanto se edita. */
-export interface CamposEditaveisDoLancamento {
-  descricao: string;
-  valorCentavos: number | null;
-  contraparte: string;
-  documento: string;
-  categoriaId: string;
-  centroId: string;
-  contaId: string;
-  responsavel: string;
-  rateio: ParcelaParaEnviar[];
 }

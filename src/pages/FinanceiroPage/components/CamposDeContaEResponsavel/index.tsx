@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Campo, LinhaDeCampos, Select } from "../../../../components";
 import { getEmail, listarMembrosDoSubgrupo } from "../../../../services";
 import { qk } from "../../../../services/queryKeys";
-import { opcoesDeConta } from "../../opcoesDoCatalogo";
+import { opcoesDeConta, opcoesDePessoa } from "../../../../utils";
 import type { RespostaDeMembros } from "../../../../types/respostas";
 import type { CamposDeContaEResponsavelProps } from "./types";
 
@@ -33,12 +33,7 @@ export default function CamposDeContaEResponsavel({
     enabled: Boolean(subgrupoId),
   });
 
-  const lista = membros.data?.membros ?? [];
-  const eu = getEmail() ?? "";
-  const opcoesDePessoa = [
-    ...lista.map((m) => ({ value: m.email, label: m.apelido || m.email })),
-    ...(eu && !lista.some((m) => m.email === eu) ? [{ value: eu, label: eu }] : []),
-  ];
+  const pessoas = opcoesDePessoa(membros.data?.membros ?? [], getEmail() ?? "");
 
   return (
     <LinhaDeCampos>
@@ -59,7 +54,7 @@ export default function CamposDeContaEResponsavel({
       <Campo rotulo="Responsável" para="lc-responsavel">
         <Select
           id="lc-responsavel"
-          opcoes={opcoesDePessoa}
+          opcoes={pessoas}
           valor={responsavel}
           onMudar={onResponsavel}
         />
