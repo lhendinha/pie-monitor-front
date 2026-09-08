@@ -5,6 +5,18 @@ import userEvent from "@testing-library/user-event";
 
 const mocks = vi.hoisted(() => ({
   lerCatalogoFinanceiro: vi.fn(),
+  listarLancamentos: vi.fn(),
+  criarHonorario: vi.fn(),
+  criarEntrada: vi.fn(),
+  criarSaida: vi.fn(),
+  criarTransferencia: vi.fn(),
+  listarMembrosDoSubgrupo: vi.fn(),
+  listarProcessos: vi.fn(),
+  listarAtendimentos: vi.fn(),
+  listarMembrosDoGrupo: vi.fn(),
+  getEmail: vi.fn(),
+  listarSubgrupos: vi.fn(),
+  listarClientes: vi.fn(),
   listarContas: vi.fn(),
   listarCentrosDeCusto: vi.fn(),
   papelAtende: vi.fn(),
@@ -111,6 +123,52 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.papelAtende.mockReturnValue(true);
   mocks.lerCatalogoFinanceiro.mockResolvedValue(CATALOGO);
+  mocks.listarLancamentos.mockResolvedValue({
+    lancamentos: [
+      {
+        lancamento_id: "l1",
+        tipo: "honorario",
+        descricao: "Honorários Alfa",
+        valor_centavos: 250000,
+        data_vencimento: "2026-09-20",
+        situacao: "aberto",
+        natureza: "entrada",
+        conta_id: "c1",
+        categoria_id: "cat1",
+        centro_id: "",
+        rateio: [{ subgrupo_id: "s1", valor_centavos: 250000 }],
+        cliente_id: "",
+        contraparte: "Construtora Alfa",
+        subgrupo_id: "s1",
+        numero_processo: "",
+        atendimento_id: "",
+        responsavel: "",
+        documento_numero: "",
+        parcela: "",
+        criado_por: "ana@x.com",
+        criado_em: "2026-09-01T10:00:00+00:00",
+      },
+    ],
+    totais: {
+      a_receber_centavos: 250000, a_receber_quantidade: 1,
+      a_pagar_centavos: 0, a_pagar_quantidade: 0,
+      atrasado_centavos: 0, atrasado_quantidade: 0,
+    },
+    pagina: 1, tamanho_pagina: 20, total: 1, total_paginas: 1,
+  });
+  mocks.listarSubgrupos.mockResolvedValue({
+    subgrupos: [{ subgrupo_id: "civel", nome: "Cível", grupo_id: "g1" }],
+  });
+  mocks.criarHonorario.mockResolvedValue({ lancamento_id: "l9" });
+  mocks.criarEntrada.mockResolvedValue({ lancamento_id: "l9" });
+  mocks.criarSaida.mockResolvedValue({ lancamento_id: "l9" });
+  mocks.criarTransferencia.mockResolvedValue({ lancamento_id: "l9" });
+  mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
+  mocks.listarMembrosDoGrupo.mockResolvedValue({ membros: [] });
+  mocks.listarProcessos.mockResolvedValue({ processos: [] });
+  mocks.listarAtendimentos.mockResolvedValue({ atendimentos: [] });
+  mocks.getEmail.mockReturnValue("ana@x.com");
+  mocks.listarClientes.mockResolvedValue({ clientes: [] });
   mocks.listarContas.mockResolvedValue(envelope("contas", CATALOGO.contas));
   mocks.listarCentrosDeCusto.mockResolvedValue(
     envelope("centros_de_custo", CATALOGO.centros_de_custo),
@@ -693,5 +751,173 @@ describe("FinanceiroPage", () => {
       await abrirContas();
       expect(await screen.findByText(/Não foi possível carregar as contas/)).toBeInTheDocument();
     });
+  });
+});
+
+describe("cada aba mostra o SEU conteúdo", () => {
+  /** 🔴 Nenhum teste cobria isto, e o defeito passou: a página renderizava
+   * Configurações para toda aba "não pendente", o que funcionava enquanto
+   * ela era a única pronta. Marcar Lançamentos como não pendente, antes de a
+   * lista existir, fez a aba mostrar a tela de Configurações INTEIRA -- com
+   * as três tabelas do catálogo. Quem viu foi o usuário, não a suíte.
+   */
+
+  it.each([
+    ["faturas", "Faturas"],
+    ["fluxo", "Fluxo de caixa"],
+  ])("a aba pendente %s diz que ainda não chegou", async (id, rotulo) => {
+    montar(`/financeiro?aba=${id}`);
+    expect(await screen.findByText(`${rotulo} ainda não está disponível.`)).toBeInTheDocument();
+  });
+
+  it("🔴 Lançamentos mostra a LISTA, e não o catálogo -- o par negativo do defeito", async () => {
+    /* Esta aba deixou de ser pendente quando a lista e a tela de detalhe
+       existiram. É exatamente o momento em que o defeito antigo aparecia:
+       "não é pendente, então é Configurações". */
+    montar("/financeiro?aba=lancamentos");
+    expect(await screen.findByText("Honorários Alfa")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "+ Nova categoria" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Lançamentos ainda não está disponível."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("só Configurações traz as três listas", async () => {
+    montarConfiguracoes();
+    expect(await screen.findByRole("button", { name: "+ Nova categoria" })).toBeInTheDocument();
+  });
+});
+
+describe("o botão de novo lançamento", () => {
+  const abrirMenu = () =>
+    userEvent.click(screen.getByRole("button", { name: /Novo lançamento/ }));
+
+  /** ⚠️ O catálogo padrão tem UMA conta ativa (a outra é a desativada que os
+   * testes de configuração usam), e transferência precisa de duas -- o
+   * seletor não oferece conta desativada, que é o que o servidor recusa. */
+  function comDuasContasAtivas() {
+    mocks.lerCatalogoFinanceiro.mockResolvedValue({
+      ...CATALOGO,
+      contas: [
+        ...CATALOGO.contas,
+        {
+          conta_id: "c3",
+          nome: "Caixa do escritório",
+          tipo: "outros",
+          inicio: "2026-01-01",
+          saldo_inicial_centavos: 0,
+          saldo_centavos: 0,
+          ativa: true,
+        },
+      ],
+    });
+  }
+
+  it("🔴 aparece em TODAS as abas, inclusive Configurações", async () => {
+    /* Ele está no cabeçalho da página, acima das abas, como no artefato:
+       quem acabou de cadastrar a conta em Configurações vai usá-la já. */
+    montar("/financeiro?aba=configuracoes");
+    expect(
+      await screen.findByRole("button", { name: /Novo lançamento/ }),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["Honorário", "Novo honorário"],
+    ["Outra entrada", "Nova entrada"],
+    ["Saída", "Nova saída"],
+    ["Transferência", "Nova transferência"],
+  ])("%s abre o formulário '%s'", async (opcao, titulo) => {
+    montar("/financeiro?aba=lancamentos");
+    await abrirMenu();
+    await userEvent.click(await screen.findByText(opcao));
+    expect(await screen.findByText(titulo)).toBeInTheDocument();
+  });
+
+  it("🔴 'Honorário' dentro da ENTRADA troca de formulário", async () => {
+    /* A porta que o artefato desenhou: quem abriu o formulário errado não
+       precisa fechar e recomeçar. */
+    montar("/financeiro?aba=lancamentos");
+    await abrirMenu();
+    await userEvent.click(await screen.findByText("Outra entrada"));
+    await screen.findByText("Nova entrada");
+
+    await userEvent.click(screen.getByLabelText(/^Tipo/));
+    await userEvent.click(await screen.findByRole("option", { name: "Honorário" }));
+
+    expect(await screen.findByText("Novo honorário")).toBeInTheDocument();
+    expect(screen.queryByText("Nova entrada")).not.toBeInTheDocument();
+  });
+
+  it("salvar uma transferência chama a API e FECHA", async () => {
+    comDuasContasAtivas();
+    montar("/financeiro?aba=lancamentos");
+    await abrirMenu();
+    await userEvent.click(await screen.findByText("Transferência"));
+    await screen.findByText("Nova transferência");
+
+    await userEvent.click(screen.getByLabelText(/Conta de origem/));
+    await userEvent.click(await screen.findByRole("option", { name: "Conta corrente Itaú" }));
+    await userEvent.click(screen.getByLabelText(/Conta de destino/));
+    await userEvent.click(await screen.findByRole("option", { name: "Caixa do escritório" }));
+    await userEvent.type(screen.getByLabelText(/Descrição/), "Reforço do caixa");
+    await userEvent.type(screen.getByLabelText(/^Valor/), "50000");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.criarTransferencia).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.queryByText("Nova transferência")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("🔴 'Salvar e adicionar outra' mantém o formulário ABERTO e vazio", async () => {
+    comDuasContasAtivas();
+    montar("/financeiro?aba=lancamentos");
+    await abrirMenu();
+    await userEvent.click(await screen.findByText("Transferência"));
+    await screen.findByText("Nova transferência");
+
+    await userEvent.click(screen.getByLabelText(/Conta de origem/));
+    await userEvent.click(await screen.findByRole("option", { name: "Conta corrente Itaú" }));
+    await userEvent.click(screen.getByLabelText(/Conta de destino/));
+    await userEvent.click(await screen.findByRole("option", { name: "Caixa do escritório" }));
+    await userEvent.type(screen.getByLabelText(/Descrição/), "Reforço do caixa");
+    await userEvent.type(screen.getByLabelText(/^Valor/), "50000");
+    await userEvent.click(
+      screen.getByRole("button", { name: "Salvar e adicionar outra" }),
+    );
+
+    await waitFor(() => expect(mocks.criarTransferencia).toHaveBeenCalled());
+    expect(await screen.findByText("Nova transferência")).toBeInTheDocument();
+    /* Vazio: o remount é o que garante isso, e é o que dá uma
+       `chave_de_criacao` nova ao próximo. */
+    await waitFor(() =>
+      expect(screen.getByLabelText<HTMLInputElement>(/Descrição/).value).toBe(""),
+    );
+  });
+
+  it("a recusa do servidor aparece no FORMULÁRIO, que continua aberto", async () => {
+    const { ApiError } = await import("../../services/api/client");
+    mocks.criarTransferencia.mockRejectedValue(
+      new ApiError("A conta de origem e a de destino têm de ser diferentes", 400),
+    );
+    comDuasContasAtivas();
+    montar("/financeiro?aba=lancamentos");
+    await abrirMenu();
+    await userEvent.click(await screen.findByText("Transferência"));
+    await screen.findByText("Nova transferência");
+
+    await userEvent.click(screen.getByLabelText(/Conta de origem/));
+    await userEvent.click(await screen.findByRole("option", { name: "Conta corrente Itaú" }));
+    await userEvent.click(screen.getByLabelText(/Conta de destino/));
+    await userEvent.click(await screen.findByRole("option", { name: "Caixa do escritório" }));
+    await userEvent.type(screen.getByLabelText(/Descrição/), "Reforço do caixa");
+    await userEvent.type(screen.getByLabelText(/^Valor/), "50000");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findByText("A conta de origem e a de destino têm de ser diferentes"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Nova transferência")).toBeInTheDocument();
   });
 });

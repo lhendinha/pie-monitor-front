@@ -53,6 +53,14 @@ export type FormaDaOpcaoDeSelect = "caixa" | "linha";
 /** As variantes de `.btn` do artifact que o sistema usa de fato. */
 export type VarianteBotao = "primario" | "ghost" | "perigo" | "perigoContorno";
 
+/** O tom da bolinha (`Ponto`). As cores estão em `theme/ponto.ts`.
+ *
+ * ⚠️ Nomeado aqui, e não deduzido de `PontoProps["tom"]`: quem monta a lista
+ * de opções do menu de "Novo lançamento" precisa do tipo, e alcançar o
+ * `types.ts` de um componente a partir de uma página é a fronteira que a
+ * regra de tipos manda não cruzar. */
+export type TomDoPonto = "marca" | "ruim" | "bom" | "neutro";
+
 /** O que o `Modal` faz quando alguém tenta fechá-lo.
  *
  * 🔴 **Obrigatória de propósito, e não opcional com padrão seguro.** A

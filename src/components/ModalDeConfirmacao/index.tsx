@@ -19,6 +19,7 @@ import type { ModalDeConfirmacaoProps } from "./types";
 export default function ModalDeConfirmacao({
   titulo,
   mensagem,
+  escolha,
   aviso,
   rotulo,
   rotuloDeCancelar,
@@ -73,6 +74,7 @@ export default function ModalDeConfirmacao({
             Enquanto isso não carregar, a exclusão fica bloqueada.
           </Faixa>
         )}
+        {!verificando && escolha}
         {!verificando && aviso && (
           <Faixa tom="aviso" aEsquerda>
             {aviso}

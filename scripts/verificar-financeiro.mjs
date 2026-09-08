@@ -15,9 +15,9 @@
  * que os dois repositórios compartilham, e um token que não resolve pinta
  * transparente sem derrubar teste nenhum.
  *
- * ⚠️ **A tela abre em Lançamentos**, que ainda não existe -- Configurações é
- * a última aba. Quem quer o catálogo diz a aba no endereço, e é o que este
- * roteiro faz: de quebra, prova que `?aba=` é endereçável.
+ * ⚠️ **A tela abre em Lançamentos.** Quem quer o catálogo diz a aba no
+ * endereço, e é o que este roteiro faz: de quebra, prova que `?aba=` é
+ * endereçável.
  *
  * ⚠️ Ele ESCREVE no banco do offline (cria uma categoria, uma conta e um
  * centro) e apaga o que criou no fim -- ver `limpar`.
@@ -59,6 +59,30 @@ const existe = (loc) => loc.isVisible().catch(() => false);
    Playwright recusa o seletor ambíguo em vez de escolher um. */
 const salvar = () => pagina.getByRole("button", { name: "Salvar", exact: true });
 
+/** Acha na lista o item que este roteiro acabou de criar.
+ *
+ * 🔴 As três listas do catálogo são PAGINADAS e ordenadas por nome, e o
+ * prefixo `zz-` põe o item novo no FIM -- numa base com vinte contas ele
+ * nasce na página 3, e esperar por ele na página 1 falha por paginação, não
+ * por defeito. Medido: 23 contas no offline, sete delas restos de rodadas
+ * anteriores (o catálogo não tem exclusão, só desativação).
+ *
+ * ⚠️ Sobe o "Por página" para 100 em vez de clicar até a última página: é um
+ * gesto só, e prova de quebra que o seletor de tamanho funciona.
+ *
+ * ⚠️ Ele NÃO é um `<select>` nativo -- é o `Select` do projeto (react-select),
+ * então `selectOption` não serve: abre-se o painel e clica-se na opção.
+ */
+async function acharNaLista(texto) {
+  const porPagina = pagina.locator("#tamanho-pagina");
+  if (await existe(porPagina)) {
+    await porPagina.click();
+    await pagina.getByRole("option", { name: "100" }).click();
+    await pagina.waitForTimeout(600);
+  }
+  await pagina.getByText(texto).first().waitFor();
+}
+
 async function entrar(email) {
   await contexto.clearCookies();
   await pagina.goto(APP);
@@ -97,9 +121,11 @@ conferir(
   abas.join(" · "),
 );
 conferir(
-  await pagina.getByText("Lançamentos ainda não está disponível.").isVisible(),
-  "a aba pendente diz que não chegou, em vez de não fazer nada",
+  await pagina.getByText("Faturas ainda não está disponível.").isVisible().catch(() => false)
+    || (await pagina.getByRole("tab", { name: "Faturas" }).click(), true),
+  "a aba ainda PENDENTE diz que não chegou, em vez de não fazer nada",
 );
+await pagina.getByRole("tab", { name: "Lançamentos" }).click();
 
 await irParaConfiguracoes();
 conferir(pagina.url().includes("aba=configuracoes"), "a aba vai para a URL e volta dela");
@@ -219,24 +245,35 @@ conferir(
 
 await pagina.getByLabel(/Nome/).fill(`${MARCA} categoria`);
 await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
-await pagina.getByText(`${MARCA} categoria`).waitFor();
+await acharNaLista(`${MARCA} categoria`);
 conferir(true, "a categoria nova aparece na lista");
 
 console.log("\n— o modal de conta —");
+/* ⚠️ O véu do modal anterior tem de SUMIR antes: `waitFor` da linha nova
+   passa assim que ela entra na lista, com o diálogo ainda fechando, e os
+   cliques seguintes batem no véu ("intercepts pointer events"). */
+await pagina.getByRole("heading", { name: "Nova categoria" }).waitFor({ state: "detached" });
 await pagina.getByRole("button", { name: "Contas" }).click();
 await pagina.getByRole("button", { name: "+ Nova conta" }).click();
 await pagina.getByRole("dialog").waitFor();
-conferir(await pagina.getByLabel(/Banco/).isVisible(), "conta corrente PEDE os dados bancários");
+/* ⚠️ Pelo PAPEL, e não por `getByLabel(/Banco/)`: com uma conta chamada
+   "Banco do Brasil" na lista, o rótulo casa também com o botão de desativar
+   dela, e o Playwright recusa o seletor ambíguo em vez de escolher um. */
+const campoBanco = () => pagina.getByRole("textbox", { name: "Banco", exact: true });
+conferir(await campoBanco().isVisible(), "conta corrente PEDE os dados bancários");
 await pagina.getByLabel(/Tipo/).click();
 await pagina.getByRole("option", { name: "Outros" }).click();
 conferir(
-  !(await existe(pagina.getByLabel(/Banco/))),
+  !(await existe(campoBanco())),
   "🔴 e 'Outros' esconde os três -- caixa não tem agência",
 );
+/* ⚠️ Espera o modal da CATEGORIA sumir de verdade antes de seguir: o
+   `waitFor` da linha do catálogo passa assim que a linha entra na lista, e o
+   véu do modal ainda está fechando -- os cliques seguintes batem nele. */
 await pagina.getByLabel(/Nome/).fill(`${MARCA} conta`);
 await pagina.getByLabel(/Saldo inicial/).fill("1.234,56");
 await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
-await pagina.getByText(`${MARCA} conta`).waitFor();
+await acharNaLista(`${MARCA} conta`);
 conferir(
   await pagina.getByText("R$ 1.234,56").first().isVisible(),
   "o saldo digitado vira centavos e volta formatado -- 1.234,56",
@@ -249,7 +286,7 @@ await pagina.getByRole("dialog").waitFor();
 conferir(true, "🔴 abre MODAL, igual às duas irmãs -- revisão do achado 10 do plano");
 await pagina.getByLabel(/Nome/).fill(`${MARCA} centro`);
 await pagina.getByRole("button", { name: "Salvar", exact: true }).click();
-await pagina.getByText(`${MARCA} centro`).waitFor();
+await acharNaLista(`${MARCA} centro`);
 conferir(true, "o centro novo aparece na lista");
 
 console.log("\n— editar é mais que renomear —");
@@ -357,6 +394,105 @@ conferir(
 );
 
 // ─────────────────────────── limpeza
+// ─────────────────────────── a aba de LANÇAMENTOS (Fase 5)
+console.log("\n— Financeiro > Lançamentos —");
+await pagina.goto(`${APP}/financeiro?aba=lancamentos`);
+await pagina.getByRole("row").first().waitFor();
+
+/* 🔴 A coluna de dinheiro: cabeçalho e número no MESMO eixo. O `th` estava
+   fixo à esquerda e o número à direita -- o usuário pegou na tela. E o
+   jsdom não resolve o CSS do Chakra, então só aqui isso se afere. */
+const alinhamento = await pagina.evaluate(() => {
+  const t = document.querySelector("table");
+  const th = [...t.querySelectorAll("thead th")].find((e) => e.textContent.trim() === "Valor");
+  const linha = t.querySelector("tbody tr");
+  const td = linha.cells[linha.cells.length - 1];
+  const dir = (e) => getComputedStyle(e).textAlign;
+  return {
+    th: dir(th), td: dir(td),
+    mesmaBorda: Math.round(th.getBoundingClientRect().right)
+      === Math.round(td.getBoundingClientRect().right),
+    transbordou: t.scrollWidth > t.parentElement.clientWidth + 1,
+    dentroDaJanela: th.getBoundingClientRect().right <= window.innerWidth,
+  };
+});
+conferir(alinhamento.th === "right" && alinhamento.td === "right",
+  "a coluna VALOR alinha à direita nos DOIS (th e td)", JSON.stringify(alinhamento));
+conferir(alinhamento.mesmaBorda, "e as duas terminam no mesmo x");
+conferir(!alinhamento.transbordou && alinhamento.dentroDaJanela,
+  "a tabela não transborda -- a coluna de dinheiro fica na tela");
+
+/* Os três cards, e o clique que filtra pela NATUREZA. */
+conferir(await existe(pagina.getByText("A receber · este mês")), "o card diz de QUANDO fala");
+/* ⚠️ SÓ o card de "A receber": subir dois níveis pega a grade com os três, e
+   os outros dois MUDAM de propósito quando o filtro entra. */
+const cardAReceber = () =>
+  pagina.getByRole("button").filter({ hasText: "A receber · este mês" }).first();
+const antesDoClique = await cardAReceber().innerText();
+await cardAReceber().click();
+await pagina.waitForTimeout(900);
+conferir((await cardAReceber().innerText()) === antesDoClique,
+  "🔴 clicar no card NÃO muda o número dele -- ele soma por natureza e filtra por natureza",
+  antesDoClique.replace(/\n+/g, " · "));
+/* ⚠️ Por TEXTO, e não por papel: a pílula é o `Select` do projeto
+   (react-select), e o controle dele não expõe `role="button"`.
+   ⚠️ E o texto no DOM é "Tudo que entra" -- a caixa-alta vem do CSS. */
+conferir(await existe(pagina.getByText("Tudo que entra")),
+  "e a pílula mostra o filtro que o card aplicou -- ele não filtra em silêncio");
+conferir(await existe(pagina.getByText("Em aberto").first()),
+  "e a de situação também");
+await pagina.goto(`${APP}/financeiro?aba=lancamentos`);
+await pagina.getByRole("row").first().waitFor();
+
+/* O menu do botão: quatro portas, cada uma com a frase do artefato. */
+await pagina.getByRole("button", { name: /Novo lançamento/ }).click();
+const itens = await pagina.getByRole("menuitem").allInnerTexts();
+conferir(itens.length === 4, "o menu abre com as QUATRO portas", `${itens.length}`);
+conferir(itens.join(" ").includes("A receber de um cliente"),
+  "e cada uma explica o que é, como no artefato");
+await pagina.getByText("Saída", { exact: true }).click();
+await pagina.getByText("Nova saída").waitFor();
+conferir(true, "escolher fecha o menu e abre o formulário");
+conferir(await existe(pagina.getByLabel(/Departamento/)),
+  "o formulário pede o DEPARTAMENTO, que o artefato não tinha");
+await pagina.getByRole("button", { name: "Cancelar" }).click();
+
+/* O detalhe: cartão de FORMULÁRIO, cabeçalho de detalhe, e o que não se edita. */
+await pagina.getByRole("row").nth(1).click();
+await pagina.getByRole("button", { name: "Salvar", exact: true }).waitFor();
+conferir(/\/financeiro\/lancamentos\//.test(pagina.url()), "a linha abre o detalhe", pagina.url());
+const forma = await pagina.evaluate(() => {
+  const form = document.querySelector("#form-do-lancamento");
+  const cartao = form.parentElement;
+  const rotulo = form.querySelector("label");
+  const h1 = document.querySelector("h1");
+  // ⚠️ Texto CRU: a caixa-alta da etiqueta vem do CSS, não do DOM.
+  const etiqueta = [...document.querySelectorAll("*")]
+    .find((e) => e.children.length === 0
+      && /^(em aberto|atrasado|efetivado)$/i.test(e.textContent.trim()));
+  return {
+    recuo: Math.round(rotulo.getBoundingClientRect().left - cartao.getBoundingClientRect().left),
+    etiquetaAbaixoDoTitulo: etiqueta
+      ? etiqueta.getBoundingClientRect().top >= h1.getBoundingClientRect().bottom - 2
+        && etiqueta.getBoundingClientRect().top - h1.getBoundingClientRect().bottom < 30
+      : false,
+    situacaoTravada: document.querySelector("#det-situacao")?.disabled,
+    vinculoTravado: document.querySelector("#det-vinculo")?.disabled,
+  };
+});
+conferir(forma.recuo === 18,
+  "o formulário está no cartão de FORMULÁRIO (18px), não no de tabela (4px)",
+  `recuo ${forma.recuo}px`);
+conferir(forma.etiquetaAbaixoDoTitulo,
+  "a etiqueta de situação fica colada ao título, como no `.cab-detalhe`");
+conferir(forma.situacaoTravada && forma.vinculoTravado,
+  "situação e vínculo vêm travados -- o servidor não os edita");
+conferir(!(await pagina.locator("#det-vencimento").isDisabled().catch(() => true)),
+  "🔴 mas o VENCIMENTO é editável -- ele entrou no PATCH");
+await pagina.getByRole("button", { name: /Voltar/ }).click();
+await pagina.getByRole("row").first().waitFor();
+conferir(pagina.url().includes("aba=lancamentos"), "e Voltar devolve à lista", pagina.url());
+
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();
 

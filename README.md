@@ -124,13 +124,20 @@ alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
 a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 (`/grupo`, `/perfil`) usam estado local de propósito.
 
-### Financeiro: quatro abas, três ainda por vir
+### Financeiro: quatro abas, duas ainda por vir
 
-`/financeiro` já nasce com as **quatro** abas, e três delas mostram uma frase
+`/financeiro` já nasce com as **quatro** abas, e duas delas mostram uma frase
 dizendo que aquela parte ainda não chegou. Aparecerem mesmo vazias é de
 propósito: elas são a estrutura da tela, e escondê-las faria `/financeiro`
 parecer ser só uma tela de configuração. Quem decide é o `pendente` em
-`pages/FinanceiroPage/constants.ts`; a aba pronta é **Configurações**.
+`pages/FinanceiroPage/constants.ts`; as abas prontas são **Lançamentos** e
+**Configurações**.
+
+🔴 **`pendente` só diz que a aba não tem conteúdo ainda -- quem escolhe o que
+mostrar é a página, com um painel por aba.** Antes ela deduzia ("não é
+pendente, então é Configurações"), e isso funcionou enquanto Configurações era
+a única pronta: no dia em que Lançamentos virou `pendente: false`, a aba
+passou a mostrar a tela de Configurações inteira. Quem viu foi o usuário.
 
 ⚠️ **Trocar de aba LIMPA `pagina`, `tamanho` e `busca` da URL.** As quatro
 dividem um endereço só, e as listagens guardam esse estado com as mesmas
@@ -141,6 +148,38 @@ nada na tela explicando por quê.
 ⚠️ A aba vai para a **URL**, ao contrário de `/grupo`, que também está no menu
 e usa estado local. Não é exceção à régua de `utils/abas`: o critério é ser
 alcançada por LINK, e a Área de trabalho abre esta tela já filtrada.
+
+#### Lançamentos
+
+A lista tem três cards de total, seis pílulas de filtro e a tabela. O botão
+**+ Novo lançamento** abre um menu com as quatro portas -- honorário, outra
+entrada, saída e transferência --, cada uma com a frase que diz o que é.
+
+🔴 **Os cards filtram por NATUREZA, não por tipo.** "A receber" soma
+honorário E entrada; filtrar por `tipo=entrada` derrubava os honorários, e o
+número que a pessoa clicava sumia no clique. Por isso existe a pílula "Tudo
+que entra / Tudo que sai", com palavras deliberadamente diferentes das do
+filtro de TIPO -- que oferece os quatro tipos, e onde "Entradas" quer dizer
+outra coisa.
+
+🔴 **Dar baixa e excluir vivem no DETALHE, não na linha.** As duas mexem no
+saldo de uma conta, e um clique de raspão numa tabela de vinte linhas é
+barato demais para isso. A linha inteira abre o detalhe, por clique ou por
+Enter.
+
+⚠️ **Cada botão do detalhe só aparece quando o servidor aceitaria**:
+transferência não efetiva nem reabre (400), lançamento em fatura não reabre
+nem se exclui (409), e excluir é `admin`+. O subtítulo diz o motivo no lugar
+do botão que não veio.
+
+⚠️ **O departamento é obrigatório e pode ser DIVIDIDO** ("Dividir entre
+departamentos"). Um departamento só é um rateio de uma linha -- a mesma
+forma, não um caso especial --, e o campo diz quanto FALTA distribuir em vez
+de só avisar que a soma não bate.
+
+⚠️ **Editar o vencimento de uma parcela pergunta até onde vai**, com o número
+de irmãs em aberto, e as seguintes são REANCORADAS a partir da data nova --
+o comportamento do Google Agenda. Sem irmã à frente, a pergunta não aparece.
 
 #### Configurações: três tabelas, e como se edita
 
@@ -793,8 +832,8 @@ src/
   theme/                    -- tokens e paletas de design
   hooks/                    -- hooks usados por mais de uma página
   contexts/SessaoContext.tsx
-  components/               -- 68 componentes gerais, cada um em pasta com seu index
-  pages/                    -- 22 páginas, cada uma em pasta com index.tsx
+  components/               -- 69 componentes gerais, cada um em pasta com seu index
+  pages/                    -- 23 páginas, cada uma em pasta com index.tsx
   test/setup.ts             -- jest-dom + TZ fixo em America/Sao_Paulo
 
 vercel.json                 -- SPA fallback (o link de convite/redefinição depende dele)

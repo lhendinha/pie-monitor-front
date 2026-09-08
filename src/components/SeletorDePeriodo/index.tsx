@@ -3,14 +3,13 @@ import { useState } from "react";
 
 import { SELETOR_CALENDARIO } from "../../constants/camadaFlutuante";
 import {
-  PERIODOS_FUTUROS,
-  PERIODOS_PASSADOS,
+  PERIODOS_DO_KANBAN,
   PERIODO_PERSONALIZADO,
   PERIODO_TODOS,
 } from "../../constants/periodos";
 import { PAINEL } from "../../theme/painelFiltro";
 import { formatarData } from "../../utils";
-import type { IntervaloDeDatas } from "../../types";
+import type { IntervaloDeDatas, OpcaoDeMenu } from "../../types";
 import { PilulaDeFiltro } from "../PilulaDeFiltro";
 import IntervaloPersonalizado from "./IntervaloPersonalizado";
 import ListaDeOpcoes from "./ListaDeOpcoes";
@@ -19,11 +18,18 @@ import type { SeletorDePeriodoProps } from "./types";
 /** O rótulo da pílula. Personalizado mostra as duas datas em vez de
  * "Personalizado": o nome do filtro não diz que período é, e o número de um
  * intervalo escolhido a dedo é a única coisa que responde isso. */
-function rotuloDoPeriodo(periodoId: string, intervalo?: IntervaloDeDatas): string {
+function rotuloDoPeriodo(
+  periodoId: string,
+  blocos: readonly (readonly OpcaoDeMenu[])[],
+  intervalo?: IntervaloDeDatas,
+): string {
   if (periodoId === PERIODO_PERSONALIZADO && intervalo?.de && intervalo?.ate) {
     return `${formatarData(intervalo.de)} – ${formatarData(intervalo.ate)}`;
   }
-  const achado = [...PERIODOS_FUTUROS, ...PERIODOS_PASSADOS].find((o) => o.id === periodoId);
+  // ⚠️ Procura nos blocos DESTA tela, e não numa lista fixa: com as opções
+  // do Financeiro, "Este ano" não existe nas do Kanban -- e a pílula
+  // mostraria "Todos os períodos" com um período escolhido.
+  const achado = blocos.flat().find((o) => o.id === periodoId);
   return achado?.rotulo ?? "Todos os períodos";
 }
 
@@ -41,6 +47,7 @@ function rotuloDoPeriodo(periodoId: string, intervalo?: IntervaloDeDatas): strin
 export default function SeletorDePeriodo({
   periodoId,
   intervaloPersonalizado,
+  blocos = PERIODOS_DO_KANBAN,
   onMudar,
 }: SeletorDePeriodoProps) {
   const [aberto, setAberto] = useState(false);
@@ -83,7 +90,7 @@ export default function SeletorDePeriodo({
     >
       <Popover.Trigger asChild>
         <PilulaDeFiltro ativo={periodoId !== PERIODO_TODOS}>
-          {rotuloDoPeriodo(periodoId, intervaloPersonalizado)}
+          {rotuloDoPeriodo(periodoId, blocos, intervaloPersonalizado)}
         </PilulaDeFiltro>
       </Popover.Trigger>
       <Portal>
@@ -92,6 +99,7 @@ export default function SeletorDePeriodo({
             {modo === "lista" ? (
               <ListaDeOpcoes
                 selecionado={periodoId}
+                blocos={blocos}
                 onEscolher={escolher}
                 onAbrirPersonalizado={() => setModo("personalizado")}
               />

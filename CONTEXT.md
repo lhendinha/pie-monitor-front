@@ -4327,3 +4327,106 @@ de `MemoryRouter` o endereço não chega ao `window.location`, e
 ➡️ A história do lado do servidor -- o índice, o prefixo do tipo na chave, e
 o teto que foi proposto e descartado -- está em `api/CONTEXT.md`, seção "O
 catálogo do Financeiro paginado".
+
+## Lançamentos na tela: a Fase 5 (07-08/09/2026)
+
+A aba deixou de ser pendente. Lista com cards e filtros, os quatro
+formulários com o menu do botão, e o detalhe -- que é ROTA, não modal,
+porque precisa aguentar um F5 e um link colado.
+
+### O que o usuário pegou olhando a tela, e os testes não
+
+Quatro defeitos, todos com a suíte verde antes e depois. É o registro mais
+útil desta fase: **lista de seis linhas de teste não mostra desenho.**
+
+🔴 **A coluna VALOR tinha cabeçalho à esquerda e número à direita.** O
+`Tabela` fixava `textAlign="left"` em todo `th`. Ele passou a aceitar
+`{ rotulo, aDireita }`, e a célula ganhou `textAlign` também -- é `th.direita`
+e `td.direita` no artefato, os dois.
+
+🔴 **A transferência mostrava a coluna CONTA em branco**, justamente na
+linha em que a conta é a única coisa que importa: ela não tem `conta_id`,
+tem origem e destino. Virou `contaDoLancamento`, que devolve
+"Bradesco → Caixa".
+
+🔴 **E consertar isso empurrou a coluna VALOR para FORA da tela.** Medido em
+Chrome: a tabela foi a 1170px dentro de 1130px visíveis, e o `th` terminava
+em x=1443 numa janela de 1440. **`truncate` não morde sem teto** -- em
+tabela de layout automático o texto alarga a coluna em vez de cortar. Com
+`LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO`, `th` e `td` voltaram a x=1403.
+
+🔴 **A parcela aparecia duas vezes na mesma linha.** O servidor já escreve
+"· 1/6" no fim da descrição (decisão antiga: a descrição tem de se explicar
+sozinha na fatura e na Área de trabalho), e a linha repetia o número ao lado
+da contraparte. Mesma repetição no detalhe, onde o título É a descrição.
+
+### O detalhe: dois containers errados
+
+🔴 **O formulário estava dentro do `CartaoDeTabela`**, que tem padding de
+4px -- e o docstring dele diz por quê: *"pequeno de propósito, porque quem
+espaça de verdade são as células"*. Num formulário os campos encostavam na
+borda. O certo é `Cartao` (16px/18px), o `.cartao-form` do artefato, que
+`FormularioProcesso` já usava.
+
+🔴 **E o cabeçalho era o de PÁGINA.** No artefato (`.cab-detalhe`) as
+etiquetas ficam DENTRO do bloco do título; com `CabecalhoDePagina` elas
+caíam numa faixa solta entre o cabeçalho e o cartão.
+
+⚠️ **Quatro campos vêm com cadeado, e a razão é a API, não a tela:** situação
+é ação (move o saldo, e quem a muda é "Marcar como recebido"), e cliente e
+vínculo não estão no `PATCH` -- o cliente é por quem a fatura agrupa, o
+vínculo carrega a permissão. O vencimento ERA o quinto e deixou de ser: ver
+abaixo.
+
+### O departamento que não resolvia o nome
+
+O select carrega a primeira página da busca (50 subgrupos) e o escritório do
+offline tem sessenta: o do rateio estava na segunda, e o campo desenhava
+VAZIO num lançamento que tem rateio. É o mesmo defeito que
+`comOpcaoEscolhida` conserta no campo de cliente.
+
+🔴 **E aí ele passou a mostrar o ID** -- que é a régua do projeto
+(`useNomeDeSubgrupo` cai para o id), mas a causa era outra: o departamento
+pertence a uma equipe que a conta não participa, e `GET /subgrupos` só
+devolve os que ela vê. O mesmo recorte causava um **403 em
+`/subgrupos/{id}/membros`** a cada abertura do detalhe, porque o campo de
+responsável pedia os membros de um departamento alheio. Agora ele só
+pergunta quando a pessoa participa.
+
+### O vencimento, e a pergunta do Google Agenda
+
+O campo entrou no `PATCH`, e a série o propaga REANCORADO: mover para o dia
+5 de outubro faz as seguintes caírem no dia 5 dos meses seguintes. O
+diálogo diz **quantas** parcelas o escopo alcança (`GET /lancamentos/{id}/serie`)
+e o que acontece com a data nelas -- sem essa linha, escolher "os próximos"
+parece que vai jogar todas no mesmo dia.
+
+⚠️ **"Está numa série" não bastava.** A última parcela tem `recorrencia_id`
+e não alcança ninguém: a tela perguntava e o servidor ignorava a resposta.
+Agora, sem irmã à frente, a pergunta não aparece.
+
+⚠️ O aviso é `<Text as="span" display="block">`, e não um `Box`: a mensagem
+do diálogo renderiza dentro de um `<Text>`, que é um `<p>`, e `<div>` ali é
+HTML inválido. Foi o guarda de aninhamento que pegou -- o mesmo caso que fez
+o slot `escolha` do `ModalDeConfirmacao` existir.
+
+### Três armadilhas do roteiro de Chrome
+
+Todas encontradas rodando, e todas fazem a falha PARECER defeito de tela:
+
+- **caixa-alta vem do CSS.** No DOM está "Em aberto" e "Tudo que entra";
+  seletor em maiúsculas não acha nada.
+- **a pílula não tem `role="button"`** -- é o `Select` do projeto
+  (react-select). Acha-se por texto.
+- **subir dois níveis a partir de um card pega os TRÊS**, e comparar o bloco
+  inteiro acusa mudança onde ela é correta: filtrar por "tudo que entra"
+  zera mesmo o card de "A pagar".
+
+⚠️ E o roteiro acumulava lixo: ele cria três itens de catálogo por rodada e
+o `limpar()` só DESATIVA (o catálogo não tem exclusão). Eram 23 contas, sete
+delas restos, e a lista paginada passou a empurrar o item recém-criado para
+a terceira página -- quebrando o próprio roteiro. Quem limpa agora é
+`semear_lancamentos_para_desenho.py --recriar`.
+
+➡️ A história do servidor -- o filtro por natureza, a reancoragem e as duas
+chaves derivadas -- está em `api/CONTEXT.md`.

@@ -4,14 +4,20 @@ import { describe, expect, it, vi } from "vitest";
 
 import { renderComProviders } from "../../test/queryTestUtils";
 import SeletorDePeriodo from ".";
-import type { IntervaloDeDatas } from "../../types";
+import { PERIODOS_DE_DINHEIRO } from "../../constants/periodos";
+import type { IntervaloDeDatas, OpcaoDeMenu } from "../../types";
 
-function montar(periodoId = "todos", intervaloPersonalizado?: IntervaloDeDatas) {
+function montar(
+  periodoId = "todos",
+  intervaloPersonalizado?: IntervaloDeDatas,
+  blocos?: readonly (readonly OpcaoDeMenu[])[],
+) {
   const onMudar = vi.fn();
   renderComProviders(
     <SeletorDePeriodo
       periodoId={periodoId}
       intervaloPersonalizado={intervaloPersonalizado}
+      blocos={blocos}
       onMudar={onMudar}
     />,
   );
@@ -150,5 +156,51 @@ describe("SeletorDePeriodo", () => {
         ate: "2026-09-14",
       });
     });
+  });
+});
+
+describe("os blocos vêm de fora", () => {
+  it("sem a prop, mostra os do Kanban", async () => {
+    /* 🔴 O padrão existe para o Kanban e a Agenda não mudarem: elas já usavam
+       esta pílula, e o Financeiro é quem chegou depois com opções próprias. */
+    const user = userEvent.setup();
+    montar();
+    await abrirPainel(user);
+    expect(painel().getByRole("button", { name: "Amanhã" })).toBeInTheDocument();
+    expect(painel().queryByRole("button", { name: "Este ano" })).not.toBeInTheDocument();
+  });
+
+  it("com os blocos do dinheiro, troca a lista inteira", async () => {
+    const user = userEvent.setup();
+    montar("todos", undefined, PERIODOS_DE_DINHEIRO);
+    await abrirPainel(user);
+    expect(painel().getByRole("button", { name: "Este ano" })).toBeInTheDocument();
+    expect(painel().getByRole("button", { name: "Mês passado" })).toBeInTheDocument();
+    // ⚠️ As opções de DIA ficam de fora: dinheiro se conta em mês.
+    expect(painel().queryByRole("button", { name: "Amanhã" })).not.toBeInTheDocument();
+    expect(painel().queryByRole("button", { name: "Próximos 3 dias" })).not.toBeInTheDocument();
+  });
+
+  it("⚠️ 'Todos os períodos' e 'Definir período…' seguem fixos", async () => {
+    /* Eles não são um período da lista -- são o sem-limite e a porta do
+       calendário. Deixá-los configuráveis convidaria a esquecer um deles. */
+    const user = userEvent.setup();
+    montar("todos", undefined, PERIODOS_DE_DINHEIRO);
+    await abrirPainel(user);
+    expect(painel().getByRole("button", { name: "Todos os períodos" })).toBeInTheDocument();
+    expect(painel().getByRole("button", { name: "Definir período…" })).toBeInTheDocument();
+  });
+
+  it("🔴 o rótulo da pílula lê os blocos DESTA tela", () => {
+    /* Com uma lista fixa, "Este ano" não seria achado entre as opções do
+       Kanban e a pílula mostraria "Todos os períodos" com um período
+       escolhido -- a tela mentindo sobre o próprio filtro. */
+    montar("ano", undefined, PERIODOS_DE_DINHEIRO);
+    expect(pilula()).toHaveTextContent("Este ano");
+  });
+
+  it("⚠️ e o par negativo: sem os blocos certos, ele mentiria", () => {
+    montar("ano");
+    expect(pilula()).toHaveTextContent("Todos os períodos");
   });
 });

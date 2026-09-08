@@ -1,4 +1,5 @@
 import { Box } from "@chakra-ui/react";
+import { CORES_DO_PONTO } from "../../theme/ponto";
 import type { PontoProps } from "./types";
 
 /** A bolinha que abre um item de lista (o "•" do artifact).
@@ -17,7 +18,7 @@ export default function Ponto({ tom = "marca", noTopo }: PontoProps) {
       mt={noTopo ? "6px" : undefined}
       flex="0 0 auto"
       borderRadius="full"
-      bg={tom === "ruim" ? "status.bad" : "fg.brand"}
+      bg={CORES_DO_PONTO[tom]}
     />
   );
 }
