@@ -508,6 +508,78 @@ await pagina.getByRole("button", { name: /Voltar/ }).click();
 await pagina.getByRole("row").first().waitFor();
 conferir(pagina.url().includes("aba=lancamentos"), "e Voltar devolve à lista", pagina.url());
 
+// ─────────────────────────── a aba de FATURAS (Fase 6)
+console.log("\n— Financeiro > Faturas > Emitidas —");
+await pagina.goto(`${APP}/financeiro?aba=faturas&secao=emitidas`);
+await pagina.getByRole("row").first().waitFor();
+await pagina.waitForTimeout(500);
+
+/* 🔴 A lista SÓ CRESCE -- paga e cancelada continuam nela --, e por isso ela
+   é paginada NO SERVIDOR. A contagem é a do total, não a das linhas: dizer
+   "10 faturas emitidas" com 14 no escritório é mentira de tela.
+
+   ⚠️ Depende de `semear_lancamentos_para_desenho.py`, que emite catorze de
+   propósito: a barra só aparece acima de dez. */
+const contagemDeFaturas = await pagina.getByText(/Mostrando .* de /).first().innerText();
+conferir(/Mostrando \d+ de \d+ faturas emitidas/.test(contagemDeFaturas),
+  "a contagem é a do TOTAL, e não a da página", contagemDeFaturas);
+
+const barra = pagina.getByRole("button", { name: "2" });
+if (await existe(barra)) {
+  const medidasDaFatura = await pagina.evaluate(() => {
+    const t = document.querySelector("table");
+    const cabecalhos = [...t.querySelectorAll("thead th")];
+    const th = cabecalhos.find((e) => e.textContent.trim() === "Valor");
+    const linhas = [...t.querySelectorAll("tbody tr")];
+    const ultima = linhas[linhas.length - 1];
+    const td = ultima.cells[cabecalhos.indexOf(th)];
+    const dir = (e) => getComputedStyle(e).textAlign;
+    return {
+      linhas: linhas.length,
+      th: dir(th), td: dir(td),
+      mesmaBorda: Math.round(th.getBoundingClientRect().right)
+        === Math.round(td.getBoundingClientRect().right),
+      transbordou: t.scrollWidth > t.parentElement.clientWidth + 1,
+      bordaDaUltima: getComputedStyle(ultima.cells[0]).borderBottomWidth,
+      bordaDaPrimeira: getComputedStyle(linhas[0].cells[0]).borderBottomWidth,
+      recuo: getComputedStyle(linhas[0].cells[0]).padding,
+      alturas: [...new Set(linhas.map((l) => Math.round(l.getBoundingClientRect().height)))],
+    };
+  });
+  conferir(medidasDaFatura.th === "right" && medidasDaFatura.td === "right"
+    && medidasDaFatura.mesmaBorda && !medidasDaFatura.transbordou,
+    "a coluna VALOR alinha à direita nos dois e a tabela não transborda",
+    JSON.stringify(medidasDaFatura));
+  conferir(medidasDaFatura.bordaDaUltima === "0px" && medidasDaFatura.bordaDaPrimeira !== "0px",
+    "a ÚLTIMA linha não desenha a divisória");
+  conferir(medidasDaFatura.recuo === "13px 14px" && medidasDaFatura.alturas.length === 1,
+    "recuo de 13px 14px e altura uniforme", `${medidasDaFatura.recuo} / ${medidasDaFatura.alturas}`);
+
+  await barra.click();
+  await pagina.waitForTimeout(800);
+  conferir(pagina.url().includes("pagina=2"), "clicar na página 2 a põe no ENDEREÇO", pagina.url());
+
+  /* 🔴 Trocar o período apaga a página: a 4ª de "todos" quase nunca existe
+     em "este mês", e o servidor devolveria uma lista vazia sem nada na tela
+     explicando por quê. */
+  await pagina.getByText("Todos os períodos").first().click();
+  await pagina.getByRole("dialog").waitFor();
+  await pagina.getByRole("dialog").getByRole("button", { name: "Este mês" }).click();
+  await pagina.waitForTimeout(800);
+  conferir(!pagina.url().includes("pagina=2"),
+    "🔴 e trocar o PERÍODO apaga a página", pagina.url());
+} else {
+  conferir(true, "menos de 11 faturas: a barra some sozinha (rode a semente de desenho)");
+}
+
+/* O par negativo da assimetria: "A faturar" é o que está aberto HOJE, e
+   encolhe conforme se cobra -- não é lista que cresça, e não pagina. */
+await pagina.goto(`${APP}/financeiro?aba=faturas`);
+await pagina.getByRole("row").first().waitFor();
+await pagina.waitForTimeout(400);
+conferir(!(await existe(pagina.getByText(/Por página/).first())),
+  "⚠️ 'A faturar' NÃO tem barra de paginação -- o par negativo");
+
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();
 
