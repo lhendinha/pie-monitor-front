@@ -49,6 +49,8 @@ export const qk = {
    * de setembro com o filtro de outubro escolhido. */
   lancamentos: (filtros: Record<string, unknown> = {}) => ["lancamentos", filtros] as const,
   lancamento: (lancamentoId: string) => ["lancamento", lancamentoId] as const,
+  serieDoLancamento: (lancamentoId: string) =>
+    ["lancamento-serie", lancamentoId] as const,
   /** ⚠️ Chaves SEPARADAS da do catálogo: são leituras diferentes, com donos
    * diferentes. Quem escreve no catálogo invalida as três -- ver
    * `ConfiguracoesFinanceiras`. */

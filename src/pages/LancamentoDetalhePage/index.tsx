@@ -1,4 +1,4 @@
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,6 +25,7 @@ import { useToast } from "../../contexts/ToastContext";
 import { useVoltarParaLista } from "../../hooks/useVoltarParaLista";
 import {
   atualizarLancamento,
+  contarASerie,
   detalheCliente,
   detalheLancamento,
   efetivarLancamento,
@@ -91,6 +92,20 @@ export default function LancamentoDetalhePage() {
   });
 
   const clienteId = query.data?.cliente_id ?? "";
+  /** Quantas parcelas abertas o "este e os próximos" alcança.
+   *
+   * 🔴 É este número que decide se a PERGUNTA existe: na última parcela da
+   * série não há irmã à frente, o servidor ignora o escopo, e perguntar
+   * pediria uma decisão que não muda nada.
+   *
+   * ⚠️ Só numa série, e só quando ela existe -- a rota custa uma Query no
+   * índice dos abertos do lado de lá. */
+  const serie = useQuery<{ abertos_a_frente: number }>({
+    queryKey: qk.serieDoLancamento(lancamentoId),
+    queryFn: () => contarASerie(lancamentoId) as Promise<{ abertos_a_frente: number }>,
+    enabled: Boolean(query.data?.recorrencia_id),
+  });
+
   /* ⚠️ Pelo ID, e não pela busca: `listarClientes({busca})` procura no NOME,
      e o lançamento guarda só o id -- a busca por um id devolveria vazio e o
      campo mostraria o id cru.
@@ -206,7 +221,10 @@ export default function LancamentoDetalhePage() {
   const eEntrada = lancamento.natureza === NATUREZA_ENTRADA;
   const eTransferencia = lancamento.tipo === TIPO_TRANSFERENCIA;
   const emFatura = Boolean(lancamento.fatura_id);
-  const naSerie = Boolean(lancamento.recorrencia_id);
+  /** 🔴 "Está numa série" NÃO basta: o que importa é haver irmã ABERTA à
+   * frente. A última parcela tem `recorrencia_id` e não alcança ninguém. */
+  const aFrente = serie.data?.abertos_a_frente ?? 0;
+  const naSerie = Boolean(lancamento.recorrencia_id) && aFrente > 0;
 
   const podeExcluir = papelAtende("admin") && !emFatura;
   const podeDarBaixa = !eTransferencia && !efetivado;
@@ -310,14 +328,36 @@ export default function LancamentoDetalhePage() {
              ser desfeita" assustaria à toa. */
           reversivel
           rotulo="Salvar"
-          mensagem="Este lançamento faz parte de uma série. Até onde a alteração vai?"
+          mensagem={
+            <>
+              Esta parcela tem <strong>{aFrente}</strong>{" "}
+              {aFrente === 1 ? "seguinte em aberto" : "seguintes em aberto"}. Até onde a
+              alteração vai?
+              {/* 🔴 A data é o único campo que muda de forma no caminho: as
+                  seguintes não recebem esta data, recebem a delas, contada
+                  mês a mês a partir desta. Sem esta linha a pessoa escolhe
+                  "os próximos" achando que vai jogar todas no mesmo dia. */}
+              {/* ⚠️ `as="span" display="block"`, e não um `Box`: a mensagem
+                  do diálogo é renderizada dentro de um `<Text>`, que é um
+                  `<p>` -- e `<div>` dentro de `<p>` é HTML inválido. O
+                  navegador fecha a tag sozinho e joga o aviso para fora do
+                  parágrafo. É a mesma razão que fez o slot `escolha` existir,
+                  e o guarda de aninhamento pegou. */}
+              {confirmandoSalvar?.data_vencimento && (
+                <Text as="span" display="block" mt="8px" color="fg.muted">
+                  As seguintes passam a vencer no mesmo dia do mês, contadas a partir da
+                  data nova.
+                </Text>
+              )}
+            </>
+          }
           escolha={
             <Box>
               <OpcaoDeLinha ativa={escopo === "este"} onClick={() => setEscopo("este")}>
                 Somente este
               </OpcaoDeLinha>
               <OpcaoDeLinha ativa={escopo === "futuros"} onClick={() => setEscopo("futuros")}>
-                Este e os próximos em aberto
+                Este e {aFrente === 1 ? "o próximo" : `os próximos ${aFrente}`} em aberto
               </OpcaoDeLinha>
             </Box>
           }
@@ -333,6 +373,15 @@ export default function LancamentoDetalhePage() {
           mensagem={
             <>
               O lançamento <strong>{lancamento.descricao}</strong> será removido.
+              {/* ⚠️ O número dito ANTES, não depois: "3 lançamentos excluídos"
+                  no toast é tarde demais para quem queria excluir um. */}
+              {naSerie && (
+                <>
+                  {" "}
+                  Esta parcela tem <strong>{aFrente}</strong>{" "}
+                  {aFrente === 1 ? "seguinte em aberto" : "seguintes em aberto"}.
+                </>
+              )}
             </>
           }
           escolha={
@@ -342,7 +391,7 @@ export default function LancamentoDetalhePage() {
                   Somente este
                 </OpcaoDeLinha>
                 <OpcaoDeLinha ativa={escopo === "futuros"} onClick={() => setEscopo("futuros")}>
-                  Este e os próximos em aberto
+                  Este e {aFrente === 1 ? "o próximo" : `os próximos ${aFrente}`} em aberto
                 </OpcaoDeLinha>
               </Box>
             ) : undefined

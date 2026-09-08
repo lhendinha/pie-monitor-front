@@ -7,6 +7,7 @@ import { renderComProviders } from "../../test/queryTestUtils";
 
 const mocks = vi.hoisted(() => ({
   detalheLancamento: vi.fn(),
+  contarASerie: vi.fn(),
   atualizarLancamento: vi.fn(),
   efetivarLancamento: vi.fn(),
   reabrirLancamento: vi.fn(),
@@ -103,6 +104,7 @@ async function abrirExclusao() {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO });
+  mocks.contarASerie.mockResolvedValue({ abertos_a_frente: 2 });
   mocks.atualizarLancamento.mockResolvedValue({ lancamento_id: "l1", atualizados: 1 });
   mocks.efetivarLancamento.mockResolvedValue({ lancamento_id: "l1" });
   mocks.reabrirLancamento.mockResolvedValue({ lancamento_id: "l1" });
@@ -155,15 +157,46 @@ describe("hidratação", () => {
 });
 
 describe("o que NÃO se edita", () => {
-  it("🔴 situação, vencimento e vínculo vêm travados", async () => {
-    /* Situação é ação (move o saldo); vencimento alimenta duas chaves de
-       ordenação e não está no PATCH; o vínculo carrega a permissão.
-       Editáveis, os três prometeriam o que falha ao salvar. */
+  it("🔴 situação e vínculo vêm travados", async () => {
+    /* Situação é ação (move o saldo, e quem a muda é "Marcar como
+       recebido"); o vínculo carrega a permissão e não está no PATCH.
+       Editáveis, os dois prometeriam o que falha ao salvar. */
     montar();
     await carregada();
     expect(screen.getByLabelText<HTMLInputElement>(/^Situação/)).toBeDisabled();
-    expect(screen.getByLabelText<HTMLInputElement>(/A receber em/)).toBeDisabled();
     expect(screen.getByLabelText<HTMLInputElement>(/Processo ou atendimento/)).toBeDisabled();
+  });
+
+  it("🔴 o VENCIMENTO, esse, é editável", async () => {
+    /* O par negativo do de cima, e a diferença que importa: o vencimento
+       entrou no PATCH, e a série o propaga reancorado. */
+    montar();
+    await carregada();
+    expect(screen.getByLabelText(/A receber em/)).toBeEnabled();
+  });
+
+  it("🔴 a data de EFETIVAÇÃO continua travada, e é outro campo", async () => {
+    /* Uma é quando devia acontecer, a outra é quando aconteceu -- e a
+       segunda se move por "Desfazer baixa", com o saldo junto. */
+    mocks.detalheLancamento.mockResolvedValue({
+      ...LANCAMENTO, situacao: "efetivado", data_efetivacao: "2026-09-05",
+    });
+    montar();
+    await carregada();
+    expect(screen.getByLabelText(/A receber em/)).toBeEnabled();
+    expect(screen.getByLabelText<HTMLInputElement>(/Recebida em/)).toBeDisabled();
+  });
+
+  it("na TRANSFERÊNCIA o vencimento volta a ser travado", async () => {
+    /* A data dela É a data em que o dinheiro se moveu; a API recusa com
+       400, e a tela não oferece o que ele nega. */
+    mocks.detalheLancamento.mockResolvedValue({
+      ...LANCAMENTO, tipo: "transferencia", natureza: "",
+      situacao: "efetivado", data_efetivacao: "2026-09-05", rateio: [],
+    });
+    montar();
+    await carregada();
+    expect(screen.getByLabelText<HTMLInputElement>(/Vencimento/)).toBeDisabled();
   });
 
   it("descrição, valor e contraparte SÃO editáveis -- o par negativo", async () => {
@@ -317,17 +350,122 @@ describe("a série", () => {
     /* ⚠️ Dentro do DIÁLOGO: a etiqueta do cabeçalho também diz "série", e
        uma busca solta acharia as duas. */
     const dialogo = await screen.findByRole("dialog");
-    expect(within(dialogo).getByText(/faz parte de uma série/i)).toBeInTheDocument();
+    expect(within(dialogo).getByText(/seguintes em aberto/i)).toBeInTheDocument();
     expect(mocks.atualizarLancamento).not.toHaveBeenCalled();
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Este e os próximos em aberto" }),
+      screen.getByRole("button", { name: /Este e os próximos 2 em aberto/ }),
     );
     const salvar = screen.getAllByRole("button", { name: /Salvar/ });
     await userEvent.click(salvar[salvar.length - 1]);
 
     await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
     expect(mocks.atualizarLancamento.mock.calls[0][2]).toBe("futuros");
+  });
+});
+
+describe("a pergunta da série só existe quando alcança alguém", () => {
+  const NA_SERIE = { ...LANCAMENTO, recorrencia_id: "r1" };
+
+  it("🔴 na ÚLTIMA parcela, salvar não pergunta nada", async () => {
+    /* Ela tem `recorrencia_id` e nenhuma irmã à frente: o servidor ignora o
+       escopo, e perguntar pediria uma decisão que não muda nada. */
+    mocks.detalheLancamento.mockResolvedValue(NA_SERIE);
+    mocks.contarASerie.mockResolvedValue({ abertos_a_frente: 0 });
+    montar();
+    await carregada();
+    await waitFor(() => expect(mocks.contarASerie).toHaveBeenCalled());
+
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "Somente este" })).not.toBeInTheDocument();
+  });
+
+  it("com UMA à frente, a opção fala no singular", async () => {
+    mocks.detalheLancamento.mockResolvedValue(NA_SERIE);
+    mocks.contarASerie.mockResolvedValue({ abertos_a_frente: 1 });
+    montar();
+    await carregada();
+    await waitFor(() => expect(mocks.contarASerie).toHaveBeenCalled());
+
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(
+      await screen.findByRole("button", { name: "Este e o próximo em aberto" }),
+    ).toBeInTheDocument();
+  });
+
+  it("num AVULSO nem chega a perguntar ao servidor", async () => {
+    /* Par negativo: a rota custa uma Query no índice dos abertos, e a maioria
+       dos lançamentos não é série. */
+    montar();
+    await carregada();
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    expect(mocks.contarASerie).not.toHaveBeenCalled();
+  });
+});
+
+/** Abre o calendário do vencimento e escolhe um dia do mês seguinte.
+ *
+ * ⚠️ `SeletorData` é um GATILHO, não um input de texto -- não dá para digitar
+ * a data. Um mês à frente garante que a data escolhida difere da atual em
+ * qualquer dia do ano. */
+async function escolherOutraData() {
+  await userEvent.click(screen.getByLabelText(/A receber em/));
+  await userEvent.click(await screen.findByRole("button", { name: "Próximo mês" }));
+  const dias = await screen.findAllByRole("button", { name: /^Escolher / });
+  await userEvent.click(dias[dias.length - 1]);
+}
+
+describe("o vencimento", () => {
+  it("🔴 mudar a data manda `data_vencimento`, e SOZINHA", async () => {
+    /* Ao contrário do valor, que arrasta o rateio: a data não mexe na
+       divisão, e quem a transforma para os irmãos é o servidor. */
+    montar();
+    await carregada();
+    await escolherOutraData();
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    await waitFor(() => expect(mocks.atualizarLancamento).toHaveBeenCalled());
+    const campos = mocks.atualizarLancamento.mock.calls[0][1];
+    expect(campos.data_vencimento).toBeTruthy();
+    expect(campos.data_vencimento).not.toBe(LANCAMENTO.data_vencimento);
+    expect(campos.valor_centavos).toBeUndefined();
+    expect(campos.rateio).toBeUndefined();
+  });
+
+  it("🔴 numa série, o diálogo avisa o que acontece com as seguintes", async () => {
+    /* Sem esta linha a pessoa escolhe "os próximos" achando que vai jogar
+       todas no mesmo dia -- que é o que aconteceria sem a reancoragem. */
+    mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO, recorrencia_id: "r1" });
+    montar();
+    await carregada();
+    await waitFor(() => expect(mocks.contarASerie).toHaveBeenCalled());
+
+    await escolherOutraData();
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(
+      within(dialogo).getByText(/mesmo dia do mês, contadas a partir da data nova/),
+    ).toBeInTheDocument();
+  });
+
+  it("sem mexer na data, o aviso não aparece -- o par negativo", async () => {
+    mocks.detalheLancamento.mockResolvedValue({ ...LANCAMENTO, recorrencia_id: "r1" });
+    montar();
+    await carregada();
+    await waitFor(() => expect(mocks.contarASerie).toHaveBeenCalled());
+
+    await userEvent.type(screen.getByLabelText(/^Descrição/), " x");
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).queryByText(/mesmo dia do mês/)).not.toBeInTheDocument();
   });
 });
 
@@ -503,9 +641,12 @@ describe("excluir", () => {
     mocks.excluirLancamento.mockResolvedValue({ lancamento_id: "l1", removidos: 3 });
     montar();
     await carregada();
+    /* ⚠️ Espera a CONTAGEM chegar antes de abrir: é ela que decide se a
+       pergunta existe, e sem isto o diálogo abre com "sem série". */
+    await waitFor(() => expect(mocks.contarASerie).toHaveBeenCalledWith("l1"));
     await userEvent.click(screen.getByRole("button", { name: "Excluir" }));
     await userEvent.click(
-      await screen.findByRole("button", { name: "Este e os próximos em aberto" }),
+      await screen.findByRole("button", { name: /Este e os próximos 2 em aberto/ }),
     );
     const botoes = screen.getAllByRole("button", { name: /Excluir/ });
     await userEvent.click(botoes[botoes.length - 1]);

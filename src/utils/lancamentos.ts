@@ -53,6 +53,11 @@ export function camposAlteradosDoLancamento(
   const documento = atual.documento.trim();
 
   if (!mesmoValor(original.descricao, descricao)) mudou.descricao = descricao;
+  /* ⚠️ A data vai SOZINHA quando muda -- ela não arrasta o rateio como o
+     valor faz, e quem a transforma para os irmãos é o servidor. */
+  if (!mesmoValor(original.data_vencimento, atual.dataVencimento)) {
+    mudou.data_vencimento = atual.dataVencimento;
+  }
   if (!mesmoValor(original.contraparte, contraparte)) mudou.contraparte = contraparte;
   if (!mesmoValor(original.documento_numero, documento)) mudou.documento_numero = documento;
   if (!mesmoValor(original.categoria_id, atual.categoriaId)) {

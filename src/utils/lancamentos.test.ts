@@ -31,6 +31,7 @@ const GRAVADO = {
 /** O formulário recém-montado: espelho exato do que está gravado. */
 const INTOCADO: CamposEditaveisDoLancamento = {
   descricao: "Honorários",
+  dataVencimento: "2026-09-20",
   valorCentavos: 250000,
   contraparte: "Construtora Alfa",
   documento: "",

@@ -27,6 +27,20 @@ export function listarLancamentos({
   });
 }
 
+/** Quantas parcelas ABERTAS vêm depois desta, na mesma série.
+ *
+ * 🔴 É o número que o diálogo mostra antes de perguntar "este e os
+ * próximos?" -- e é o que faz a pergunta NÃO aparecer quando não há o que
+ * alcançar (lançamento avulso, ou a última parcela). Perguntar no vazio pede
+ * uma decisão que não muda nada.
+ *
+ * ⚠️ Rota própria, e não um campo do detalhe: do lado do servidor isto custa
+ * uma Query no índice dos abertos, e a maioria dos lançamentos não é série.
+ */
+export function contarASerie(lancamentoId: string) {
+  return chamar(`/lancamentos/${lancamentoId}/serie`);
+}
+
 export function detalheLancamento(lancamentoId: string) {
   return chamar(`/lancamentos/${lancamentoId}`);
 }

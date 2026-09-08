@@ -7,6 +7,7 @@ import {
   CampoComCadeado,
   CampoDeValor,
   LinhaDeCampos,
+  SeletorData,
 } from "../../../../components";
 import { NATUREZA_ENTRADA, SITUACAO_EFETIVADO, TIPO_TRANSFERENCIA } from "../../../../constants";
 import CamposDeClassificacao from "../../../FinanceiroPage/components/CamposDeClassificacao";
@@ -48,6 +49,7 @@ export default function FormularioDoLancamento({
 }: FormularioDoLancamentoProps) {
   const [campos, setCampos] = useState<CamposEditaveisDoLancamento>({
     descricao: l.descricao,
+    dataVencimento: l.data_vencimento,
     valorCentavos: l.valor_centavos,
     contraparte: l.contraparte,
     documento: l.documento_numero,
@@ -69,6 +71,7 @@ export default function FormularioDoLancamento({
   const doCliente = Boolean(l.cliente_id);
 
   const semDescricao = campos.descricao.trim() === "";
+  const semData = campos.dataVencimento.trim() === "";
   /* 🔴 Cliente OU contraparte, e nunca nenhum dos dois: é `_validar_contraparte`
      no servidor. Com cliente o campo é de leitura e sempre tem valor; sem
      cliente, esvaziá-lo daria 400 "Informe o cliente ou o nome de quem
@@ -88,7 +91,7 @@ export default function FormularioDoLancamento({
       (campos.valorCentavos ?? 0);
 
   const impedido =
-    semDescricao || semValor || semContraparte || semCategoria || semConta ||
+    semDescricao || semData || semValor || semContraparte || semCategoria || semConta ||
     semDepartamento || rateioNaoFecha;
 
   function handleSubmit(e: FormEvent) {
@@ -129,24 +132,46 @@ export default function FormularioDoLancamento({
             />
           </CampoComCadeado>
         </Campo>
+        {/* 🔴 O VENCIMENTO é editável; a data de EFETIVAÇÃO não. São datas
+            diferentes: uma é quando devia acontecer, a outra é quando
+            aconteceu -- e a segunda se move por "Desfazer baixa", com o saldo
+            junto. Num efetivado o formulário mostra as duas. */}
         <Campo
-          rotulo={
-            l.data_efetivacao
-              ? eEntrada ? "Recebida em" : "Paga em"
-              : eEntrada ? "A receber em" : "Vencimento"
-          }
+          rotulo={eEntrada ? "A receber em" : "Vencimento"}
           para="det-vencimento"
-          dica="O vencimento não se edita: exclua e refaça."
+          obrigatorio
+          dica={
+            eTransferencia
+              ? "A data da transferência não se edita: exclua e refaça."
+              : undefined
+          }
         >
-          <CampoComCadeado>
-            <Input
+          {eTransferencia ? (
+            <CampoComCadeado>
+              <Input id="det-vencimento" value={formatarData(l.data_vencimento)} disabled />
+            </CampoComCadeado>
+          ) : (
+            <SeletorData
               id="det-vencimento"
-              value={formatarData(l.data_efetivacao || l.data_vencimento)}
-              disabled
+              rotuladoPor="det-vencimento-rotulo"
+              valor={campos.dataVencimento}
+              onMudar={(dataVencimento) => mudar({ dataVencimento })}
             />
-          </CampoComCadeado>
+          )}
         </Campo>
       </LinhaDeCampos>
+
+      {l.data_efetivacao && (
+        <Campo
+          rotulo={eEntrada ? "Recebida em" : "Paga em"}
+          para="det-efetivacao"
+          dica="Quem move esta data é “Desfazer baixa”, com o saldo junto."
+        >
+          <CampoComCadeado>
+            <Input id="det-efetivacao" value={formatarData(l.data_efetivacao)} disabled />
+          </CampoComCadeado>
+        </Campo>
+      )}
 
       <Campo
         rotulo="Descrição"

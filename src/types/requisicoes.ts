@@ -140,12 +140,21 @@ export type DadosDaTransferencia = {
 export type CamposDoLancamento = {
   descricao?: string;
   valor_centavos?: number;
+  /** 🔴 O único campo que a série propaga TRANSFORMADO: com
+   * `escopo=futuros` a API REANCORA os irmãos abertos a partir desta data --
+   * mudar para o dia 5 de outubro faz os seguintes caírem no dia 5 dos meses
+   * seguintes, como o Google Agenda. As já pagas não são tocadas.
+   *
+   * ⚠️ Transferência recusa com 400: a data dela É a data em que o dinheiro
+   * se moveu. */
   data_vencimento?: string;
   conta_id?: string;
   categoria_id?: string;
   centro_id?: string;
   rateio?: ParcelaParaEnviar[];
-  cliente_id?: string;
+  /* ⚠️ `cliente_id` NÃO entra: o `PATCH` da API tem `extra="forbid"` e não o
+     conhece -- mandá-lo é 422. É por ele que a fatura agrupa, e trocá-lo
+     mudaria de quem se cobra. A tela mostra o cliente com cadeado. */
   contraparte?: string;
   responsavel?: string;
   documento_numero?: string;

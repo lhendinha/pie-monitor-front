@@ -207,6 +207,7 @@ export interface TotaisDeLancamentos {
  * `types/requisicoes`. */
 export interface CamposEditaveisDoLancamento {
   descricao: string;
+  dataVencimento: string;
   valorCentavos: number | null;
   contraparte: string;
   documento: string;
