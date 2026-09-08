@@ -124,7 +124,7 @@ alcançadas por link -- do e-mail, do Kanban, da Agenda -- e um F5 que devolve
 a pessoa pra primeira aba incomoda de verdade. As telas de gestão
 (`/grupo`, `/perfil`) usam estado local de propósito.
 
-### Financeiro: quatro abas, duas ainda por vir
+### Financeiro: as quatro abas, e o dinheiro na home
 
 `/financeiro` tem **quatro** abas, e desde 08/09/2026 as quatro estão
 prontas: **Lançamentos**, **Faturas** (A faturar | Emitidas), **Fluxo de
@@ -148,6 +148,21 @@ cancelada ficam na lista.
 ⚠️ **O documento da fatura é imprimível** (`window.print()`), e quem esconde
 a moldura é uma regra `@media print` no tema com `data-fora-da-impressao` no
 `AppShell`, no menu, na barra do topo e nas ações da tela.
+
+**E o Financeiro aparece na Área de trabalho**: uma seção com três somas no
+"Resumo rápido" e o card "Vence esta semana", com baixa pela linha.
+
+🔴 **O critério de mostrar é a AUSÊNCIA da chave no resumo, e não um papel
+lido na tela.** O servidor só manda as chaves do dinheiro para `financeiro`+;
+uma segunda régua aqui divergiria da dele no dia em que uma das duas mudasse.
+Sem as chaves, a seção não existe, o card não existe, e ele nem PEDE a lista
+-- sem isso quem é `user` levaria 403 a cada abertura da home.
+
+⚠️ **`?vencendo=N` é um filtro da lista de Lançamentos**, e ele SUBSTITUI a
+pílula de período: do lado do servidor troca a Query do vencimento pela do
+índice esparso dos abertos. Existe porque nenhuma combinação de período e
+situação expressa "aberto, vencendo até N dias, **atrasados inclusive**" -- e
+sem ele o número da home não bateria com a lista que o clique abre.
 
 ⚠️ **Trocar de aba LIMPA `pagina`, `tamanho` e `busca` da URL.** As quatro
 dividem um endereço só, e as listagens guardam esse estado com as mesmas
