@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,12 +6,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Botao,
   BotaoDeTexto,
-  CabecalhoDePagina,
+  Cartao,
   CartaoDeTabela,
   Esqueleto,
   EstadoDeErro,
   Etiqueta,
   EtiquetaDeMetadado,
+  IconeLixeira,
   IconeSeta,
   ModalDeConfirmacao,
   OpcaoDeLinha,
@@ -259,64 +260,69 @@ export default function LancamentoDetalhePage() {
     <Box>
       {cabecalhoDeVolta}
 
-      <CabecalhoDePagina
-        titulo={lancamento.descricao}
-        subtitulo={impedimento || undefined}
-        acoes={
-          <Flex gap="8px" wrap="wrap">
-            {podeExcluir && (
-              <Botao
-                variante="perigoContorno"
-                onClick={() => {
-                  /* ⚠️ Reabre sempre em "este": a escolha da vez passada não
-                     pode virar padrão silencioso de uma exclusão em série. */
-                  setEscopo("este");
-                  setConfirmandoExclusao(true);
-                }}
-              >
-                Excluir
-              </Botao>
+      {/* 🔴 Cabeçalho PRÓPRIO, e não `CabecalhoDePagina`: é o `.cab-detalhe`
+          do artefato, onde as etiquetas ficam DENTRO do bloco do título, logo
+          abaixo dele. Com o componente de página elas caíam numa faixa solta
+          entre o cabeçalho e o cartão. É o mesmo molde de
+          `FormularioProcesso`, que é a outra tela de detalhe com ações. */}
+      <Flex align="flex-start" justify="space-between" gap="16px" mb="18px">
+        <Box>
+          <Heading as="h1" fontSize="23px" fontWeight="800" lineHeight="30px"
+                   letterSpacing="-0.23px">
+            {lancamento.descricao}
+          </Heading>
+          <Flex wrap="wrap" gap="8px" mt="8px" align="center">
+            <Etiqueta cores={coresDaSituacao(lancamento.situacao)}>
+              {ROTULO_DA_SITUACAO[lancamento.situacao] ?? lancamento.situacao}
+            </Etiqueta>
+            {/* ⚠️ "Faz parte de uma série" só na REPETIÇÃO mensal: a parcela
+                já traz "· 2/6" no fim do título, logo acima. */}
+            {Boolean(lancamento.recorrencia_id) && !lancamento.parcela && (
+              <EtiquetaDeMetadado>Faz parte de uma série</EtiquetaDeMetadado>
             )}
-            {podeDarBaixa && (
-              <Botao
-                variante="ghost"
-                onClick={() => efetivar.mutate()}
-                disabled={efetivar.isPending}
-              >
-                {eEntrada ? "Marcar como recebido" : "Marcar como pago"}
-              </Botao>
+            {/* O impedimento explica a ausência de um botão, e por isso mora
+                junto das etiquetas de estado -- não é subtítulo da tela. */}
+            {impedimento && (
+              <Text fontSize="12px" color="fg.subtle">{impedimento}</Text>
             )}
-            {/* 🔴 "Desfazer" no lugar de "Marcar como…", nunca os dois: um
-                botão que reafirma o que já aconteceu convida ao clique que
-                mexe no saldo de novo. */}
-            {podeDesfazer && (
-              <Botao variante="ghost" onClick={() => reabrir.mutate()} disabled={reabrir.isPending}>
-                Desfazer baixa
-              </Botao>
-            )}
-            <Botao type="submit" form="form-do-lancamento" disabled={salvar.isPending}>
-              {salvar.isPending ? "Salvando…" : "Salvar"}
-            </Botao>
           </Flex>
-        }
-      />
+        </Box>
 
-      <Flex gap="6px" wrap="wrap" mb="14px">
-        <Etiqueta cores={coresDaSituacao(lancamento.situacao)}>
-          {ROTULO_DA_SITUACAO[lancamento.situacao] ?? lancamento.situacao}
-        </Etiqueta>
-        {/* 🔴 Nada de "Parcela 1/6" aqui: o servidor já escreve "· 1/6" no
-            fim da DESCRIÇÃO, que é o título logo acima. A etiqueta repetia o
-            número na mesma dobra da tela.
-            ⚠️ "Faz parte de uma série" fica, mas SÓ na repetição mensal --
-            ela tem irmãos e não tem numeração ("o mesmo aluguel todo mês"),
-            então é o único sinal de que existe série. */}
-        {Boolean(lancamento.recorrencia_id) && !lancamento.parcela && (
-          <EtiquetaDeMetadado>Faz parte de uma série</EtiquetaDeMetadado>
-        )}
+        <Flex gap="8px" flexShrink={0} wrap="wrap" justify="flex-end">
+          {podeExcluir && (
+            <Botao
+              variante="perigoContorno"
+              onClick={() => {
+                /* ⚠️ Reabre sempre em "este": a escolha da vez passada não
+                   pode virar padrão silencioso de uma exclusão em série. */
+                setEscopo("este");
+                setConfirmandoExclusao(true);
+              }}
+            >
+              <IconeLixeira />
+              Excluir
+            </Botao>
+          )}
+          {podeDarBaixa && (
+            <Botao variante="ghost" onClick={() => efetivar.mutate()} disabled={efetivar.isPending}>
+              {eEntrada ? "Marcar como recebido" : "Marcar como pago"}
+            </Botao>
+          )}
+          {/* 🔴 "Desfazer" no lugar de "Marcar como…", nunca os dois: um botão
+              que reafirma o que já aconteceu convida ao clique que mexe no
+              saldo de novo. */}
+          {podeDesfazer && (
+            <Botao variante="ghost" onClick={() => reabrir.mutate()} disabled={reabrir.isPending}>
+              Desfazer baixa
+            </Botao>
+          )}
+          <Botao type="submit" form="form-do-lancamento" disabled={salvar.isPending}>
+            {salvar.isPending ? "Salvando…" : "Salvar"}
+          </Botao>
+        </Flex>
       </Flex>
 
-      <CartaoDeTabela>
+      <Cartao>
         <FormularioDoLancamento
           lancamento={lancamento}
           catalogo={catalogo.data}
@@ -324,7 +330,7 @@ export default function LancamentoDetalhePage() {
           erro={erroDoFormulario}
           onSalvar={pedirParaSalvar}
         />
-      </CartaoDeTabela>
+      </Cartao>
 
       {confirmandoSalvar && (
         <ModalDeConfirmacao
