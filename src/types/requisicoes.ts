@@ -159,3 +159,22 @@ export type CamposDoLancamento = {
   responsavel?: string;
   documento_numero?: string;
 };
+
+/** `POST /faturas`.
+ *
+ * ⚠️ `conta_do_reembolso_id` vazio deixa o servidor derivar: a conta que
+ * TODAS as cobranças preveem, ou a conta padrão do grupo quando elas
+ * divergem. O reembolso é a única linha que o sistema cria sozinho -- toda
+ * outra teve a conta escolhida por alguém. */
+export type DadosDaFatura = {
+  cliente_id: string;
+  lancamento_ids: string[];
+  data_vencimento: string;
+  conta_do_reembolso_id?: string;
+};
+
+/** `POST /faturas/{id}/pagar`. Vazio = hoje, na conta prevista. */
+export type DadosDoPagamento = {
+  pago_em?: string;
+  conta_id?: string;
+};
