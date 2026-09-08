@@ -198,6 +198,65 @@ export const system = createSystem(defaultConfig, {
       },
     },
 
+    /** A caixa de marcar.
+     *
+     * 🔴 **Ela nunca passava pela paleta do projeto.** O preenchimento sai
+     * de `colorPalette.solid`, e o projeto nunca declarou a paleta `brand`
+     * -- então o Chakra caía no `gray.solid` e a caixa marcada era PRETA no
+     * meio de uma tela azul. Medido no Chrome: `rgb(24,24,27)` marcada,
+     * borda `#d4d4d8` desmarcada; nenhum dos dois um token nosso.
+     *
+     * ⚠️ A cor é a da MARCA, e não o verde de `status.good`: a caixa diz
+     * "escolhido", não "deu certo" -- a mesma língua do número da página
+     * atual e da pílula de filtro ativa, que já são `fg.brand` cheio com o
+     * glifo branco.
+     *
+     * ⚠️ Só a COR muda: tamanho, raio e traço conferem com o artefato.
+     *
+     * 🔴 E vai em `slotRecipes.checkbox`, NÃO em `recipes.checkmark`. A
+     * receita do `checkmark` existe, tem exatamente estas chaves e parece o
+     * lugar certo -- mas a do `checkbox` COPIA os valores dela no carregamento
+     * do módulo (`control: checkmarkRecipe.base`), então sobrescrever o
+     * `checkmark` depois não alcança o que já foi copiado. Medido: a cor não
+     * mudou um pixel.
+     *
+     * Vai na receita e não em cada tela pelo motivo do `input` acima: são
+     * três checkboxes em três pastas (emissão de fatura, prévia da
+     * importação, repetir mensalmente), e a única forma de eles não
+     * divergirem é existirem num lugar só.
+     */
+    slotRecipes: {
+      checkbox: {
+        /* ⚠️ Obrigatório mesmo sobrescrevendo só uma slot: `SlotRecipeDefinition`
+           exige a anatomia inteira, e o `tsc -b` recusa sem ela (o `vitest`
+           não checa tipo e passava). São as cinco de `checkboxAnatomy`. */
+        slots: ["root", "label", "control", "indicator", "group"],
+        base: {
+          control: {
+            borderColor: "border",
+            /* ⚠️ A variável, não a propriedade -- a mesma armadilha do campo
+               de texto: a receita da lib emite `outline-color:
+               var(--focus-ring-color)` depois da nossa declaração. */
+            _focusVisible: { "--focus-ring-color": "{colors.fg.brand}" },
+          },
+        },
+        variants: {
+          variant: {
+            solid: {
+              control: {
+                borderColor: "border",
+                "&:is([data-state=checked], [data-state=indeterminate])": {
+                  bg: "fg.brand",
+                  borderColor: "fg.brand",
+                  color: "white",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+
     /** O que os componentes consomem. A camada existe pra que uma tela peça
      * "a cor do texto secundário" e não "slate.muted" -- se o papel mudar de
      * cor, muda aqui e não em 40 arquivos.
@@ -281,6 +340,16 @@ export const system = createSystem(defaultConfig, {
 
   globalCss: {
     "html, body": { margin: 0, padding: 0 },
+
+    /** 🔴 O checkbox NATIVO -- o das opções do `MultiSelect` (react-select),
+     * que não passa pela receita do Chakra porque não é componente dele.
+     * Medido: `accent-color: auto`, ou seja, o azul do sistema operacional
+     * (#0075FF no macOS) ao lado do nosso #008fd5. Dois azuis quase iguais
+     * na mesma tela é pior que um azul só.
+     *
+     * ⚠️ Pega também o `Checkbox.HiddenInput`, e é inócuo: ele é invisível,
+     * quem desenha é a `control`. */
+    'input[type="checkbox"]': { accentColor: "fg.brand" },
 
     body: {
       fontFamily: "ui",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { system } from ".";
 import { cores } from "./tokens";
 import { CORES_DO_STATUS } from "./atendimento";
 import { CORES_DO_PAPEL } from "./papel";
@@ -208,5 +209,49 @@ describe("as etiquetas de PAPEL (o defeito que este bloco fecha)", () => {
       expect(CORES_DO_PAPEL[papel].bg).toBeTruthy();
       expect(CORES_DO_PAPEL[papel].color).toBeTruthy();
     }
+  });
+});
+
+describe("a caixa de marcar fala a paleta do projeto", () => {
+  /* 🔴 A caixa marcada saía PRETA (#18181b): o preenchimento vem de
+     `colorPalette.solid`, e o projeto nunca declarou a paleta `brand` --
+     então o Chakra caía no cinza dele, no meio de uma tela azul. O usuário
+     pegou olhando.
+
+     ⚠️ Este bloco NÃO substitui a medição em Chrome, e a diferença é
+     concreta: a primeira tentativa foi sobrescrever `recipes.checkmark`, que
+     tem exatamente estas chaves e ficaria verde num teste assim -- mas a
+     receita do `checkbox` copia as do `checkmark` no carregamento do módulo,
+     e a cor na tela não mudou um pixel. Quem pega isso é
+     `verificar-financeiro.mjs`. Aqui se guarda o que ninguém apaga sem
+     querer: a slot certa e o token certo. */
+  const checkbox = system._config.theme?.slotRecipes?.checkbox;
+
+  it("a receita é a do CHECKBOX, com a anatomia declarada", () => {
+    expect(checkbox).toBeDefined();
+    expect(checkbox?.slots).toContain("control");
+    /* ⚠️ Não dá para afirmar aqui que `recipes.checkmark` NÃO foi tocado: o
+       `_config` já vem fundido com o do Chakra, que tem a receita dele. É
+       justamente por isso que a medição em Chrome é que fecha este caso. */
+  });
+
+  it("a marcada é a cor da MARCA, e não o preto da lib nem o verde de 'deu certo'", () => {
+    /* ⚠️ Por `unknown`: o tipo da receita é `Partial<Record<string,
+       SystemStyleObject>>`, e o `tsc -b` recusa a conversão direta. */
+    const solid = checkbox?.variants?.variant?.solid as unknown as
+      Record<string, Record<string, Record<string, string>>>;
+    const marcada = solid?.control?.["&:is([data-state=checked], [data-state=indeterminate])"];
+    expect(marcada?.bg).toBe("fg.brand");
+    expect(marcada?.borderColor).toBe("fg.brand");
+    expect(marcada?.color).toBe("white");
+    /* A caixa diz "escolhido", não "deu certo". */
+    expect(marcada?.bg).not.toBe("status.good");
+  });
+
+  it("e o checkbox NATIVO do MultiSelect também -- ele não passa pela receita", () => {
+    /* `accent-color: auto` é o azul do sistema operacional (#0075FF no
+       macOS): dois azuis quase iguais na mesma tela. */
+    const nativo = system._config.globalCss?.['input[type="checkbox"]'] as { accentColor?: string };
+    expect(nativo?.accentColor).toBe("fg.brand");
   });
 });

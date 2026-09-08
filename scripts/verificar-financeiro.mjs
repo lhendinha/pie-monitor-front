@@ -580,6 +580,42 @@ await pagina.waitForTimeout(400);
 conferir(!(await existe(pagina.getByText(/Por página/).first())),
   "⚠️ 'A faturar' NÃO tem barra de paginação -- o par negativo");
 
+/* 🔴 A CAIXA DE MARCAR do modal de emissão, medida.
+   Ela saía preta (#18181b): o preenchimento vem de `colorPalette.solid`, o
+   projeto nunca declarou a paleta `brand`, e o Chakra caiu no cinza dele.
+   O usuário pegou olhando a tela.
+
+   ⚠️ E só se afere AQUI. A primeira correção foi na receita `checkmark`,
+   que tem exatamente as chaves certas -- mas a do `checkbox` copia as dela
+   no carregamento do módulo, e a cor na tela não mudou um pixel. Um teste
+   de unidade sobre o tema passaria verde nas duas versões. */
+await pagina.getByRole("row").nth(1).click();
+await pagina.getByText(/Emitir fatura ·/).waitFor();
+await pagina.waitForTimeout(400);
+const caixa = await pagina.evaluate(() => {
+  const c = document.querySelector('[data-scope="checkbox"][data-part="control"]');
+  const e = getComputedStyle(c);
+  const marca = getComputedStyle(document.documentElement)
+    .getPropertyValue("--chakra-colors-fg-brand").trim();
+  const paraRgb = (hex) => {
+    const h = hex.replace("#", "");
+    return `rgb(${parseInt(h.slice(0, 2), 16)}, ${parseInt(h.slice(2, 4), 16)}, ${parseInt(h.slice(4, 6), 16)})`;
+  };
+  return {
+    fundo: e.backgroundColor, borda: e.borderColor, glifo: e.color,
+    marcaEmRgb: paraRgb(marca), estado: c.getAttribute("data-state"),
+    accentDoNativo: getComputedStyle(document.querySelector('input[type="checkbox"]')).accentColor,
+  };
+});
+conferir(caixa.estado === "checked" && caixa.fundo === caixa.marcaEmRgb
+  && caixa.borda === caixa.marcaEmRgb,
+  "🔴 a caixa marcada é a cor da MARCA, e não o preto da lib", JSON.stringify(caixa));
+conferir(caixa.glifo === "rgb(255, 255, 255)", "e o tique é branco sobre ela", caixa.glifo);
+conferir(caixa.accentDoNativo === caixa.marcaEmRgb,
+  "⚠️ e o checkbox NATIVO (MultiSelect) usa a mesma marca -- `auto` seria o azul do sistema",
+  caixa.accentDoNativo);
+await pagina.getByRole("button", { name: /Cancelar/ }).click();
+
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();
 

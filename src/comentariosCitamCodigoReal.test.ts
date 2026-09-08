@@ -36,6 +36,8 @@ const DE_FORA = new Set([
   "setSearchParams", "setState", "BoxProps", "DateValue", "valueAsString",
   "setMonth", "periodRange", "selectOptions", "visiblePageNumbers",
   "backspaceRemovesValue", "isolatedModules", "VoidFunction", "Label",
+  // Receitas e tipos do Chakra/Ark citados na explicação da caixa de marcar
+  "checkmark", "checkboxAnatomy", "SlotRecipeDefinition",
   // DOM e CSS
   "defaultPrevented", "opener", "borderBottom", "paddingLeft", "classNames",
   "confirm", "back",
