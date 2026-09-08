@@ -13,6 +13,8 @@ import type {
   Atendimento,
   AtendimentoResumido,
   CentroDeCusto,
+  ClienteAFaturar,
+  Fatura,
   Cliente,
   ColunaDoQuadro,
   ContaFinanceira,
@@ -174,4 +176,18 @@ export interface RespostaDeMensagem {
  * normaliza). */
 export interface RespostaDeMembroAdicionado extends RespostaDeMensagem {
   email: string;
+}
+
+/** `GET /faturas/a-faturar` -- os clientes com dinheiro esperando cobrança. */
+export interface RespostaAFaturar {
+  clientes: ClienteAFaturar[];
+  total_centavos: number;
+}
+
+/** `GET /faturas`.
+ *
+ * ⚠️ `total` é a CONTAGEM de faturas, não a soma dos valores -- é o mesmo
+ * nome que as listagens paginadas usam, e aqui ele não é paginação. */
+export interface RespostaDeFaturas extends ContagemDaPagina {
+  faturas: Fatura[];
 }

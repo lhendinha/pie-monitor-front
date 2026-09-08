@@ -248,6 +248,15 @@ export type FiltrosDeLancamentos = OpcoesDePaginacao & {
   vencendo?: number;
 };
 
+/** O recorte da aba "Emitidas": período e página.
+ *
+ * ⚠️ O período filtra pelo VENCIMENTO da fatura, e não pela emissão -- é a
+ * data que a aba mostra e a mesma que ordena a lista. */
+export type FiltrosDeFaturas = OpcoesDePaginacao & {
+  de?: string;
+  ate?: string;
+};
+
 /** Um cliente com dinheiro a faturar. `GET /faturas/a-faturar`.
  *
  * 🔴 `honorarios_centavos` e `despesas_centavos` vêm SEPARADOS porque a

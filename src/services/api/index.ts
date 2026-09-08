@@ -10,6 +10,7 @@ export * from "./cep";
 export * from "./clientes";
 export * from "./opcoesProcesso";
 export * from "./financeiro";
+export * from "./faturas";
 export * from "./lancamentos";
 export * from "./tarefas";
 export * from "./perfil";

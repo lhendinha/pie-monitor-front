@@ -17,6 +17,7 @@ export * from "./atendimentos";
 export * from "./processos";
 export * from "./lancamentos";
 export * from "./catalogoFinanceiro";
+export * from "./faturas";
 export * from "./tabela";
 export * from "./iguais";
 export * from "./query";

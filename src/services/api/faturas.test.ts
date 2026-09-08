@@ -24,18 +24,33 @@ describe("as rotas de fatura", () => {
     expect(chamar).toHaveBeenCalledWith("/faturas/a-faturar");
   });
 
-  it("listar manda o período quando ele existe", async () => {
-    await listarFaturas({ de: "2026-09-01", ate: "2026-09-30" });
+  it("listar manda o período e a página quando eles existem", async () => {
+    await listarFaturas({ de: "2026-09-01", ate: "2026-09-30", pagina: 3, tamanhoPagina: 20 });
     expect(chamar).toHaveBeenCalledWith("/faturas", {
-      query: { de: "2026-09-01", ate: "2026-09-30" },
+      query: { de: "2026-09-01", ate: "2026-09-30", pagina: "3", tamanho_pagina: "20" },
     });
   });
 
-  it("⚠️ e sem período manda os dois vazios -- é o 'todos os períodos'", async () => {
+  it("⚠️ e sem nada manda tudo vazio -- é o 'todos os períodos', primeira página", async () => {
     await listarFaturas();
     expect(chamar).toHaveBeenCalledWith("/faturas", {
-      query: { de: undefined, ate: undefined },
+      query: { de: undefined, ate: undefined, pagina: undefined, tamanho_pagina: undefined },
     });
+  });
+
+  it("🔴 a página vai em snake_case e como TEXTO -- é query string", async () => {
+    /* `tamanhoPagina` é o nome do front; `tamanho_pagina` é o da API. Mandar
+       o nome do front faria o servidor cair no padrão calado, e a barra
+       mostraria 10 por página com 50 escolhidos. */
+    await listarFaturas({ pagina: 2, tamanhoPagina: 50 });
+    const chamadas = chamar.mock.calls;
+    const [, opcoes] = chamadas[chamadas.length - 1] as [
+      string,
+      { query: Record<string, unknown> },
+    ];
+    expect(opcoes.query).not.toHaveProperty("tamanhoPagina");
+    expect(opcoes.query.tamanho_pagina).toBe("50");
+    expect(opcoes.query.pagina).toBe("2");
   });
 
   it("emitir vai com o corpo, por POST", async () => {

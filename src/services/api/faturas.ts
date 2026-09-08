@@ -1,6 +1,6 @@
 import { chamar } from "./client";
 import type { DadosDaFatura, DadosDoPagamento } from "../../types/requisicoes";
-import type { OpcoesDoFluxo } from "../../types";
+import type { FiltrosDeFaturas, OpcoesDoFluxo } from "../../types";
 
 /** As faturas do escritório e o fluxo de caixa.
  *
@@ -22,8 +22,18 @@ export function listarAFaturar() {
 /** As faturas já emitidas, do período.
  *
  * ⚠️ Sem `de`/`ate` traz todas -- é o "Todos os períodos" da pílula. */
-export function listarFaturas({ de, ate }: { de?: string; ate?: string } = {}) {
-  return chamar("/faturas", { query: { de, ate } });
+/** A página de "Emitidas", filtrada pelo VENCIMENTO.
+ *
+ * 🔴 Paginada no servidor, pelo índice estreito: nenhuma fatura é apagada
+ * -- paga e cancelada ficam --, então a lista só cresce. */
+export function listarFaturas({ pagina, tamanhoPagina, ...filtros }: FiltrosDeFaturas = {}) {
+  return chamar("/faturas", {
+    query: {
+      ...filtros,
+      pagina: pagina ? String(pagina) : undefined,
+      tamanho_pagina: tamanhoPagina ? String(tamanhoPagina) : undefined,
+    },
+  });
 }
 
 export function detalheFatura(faturaId: string) {

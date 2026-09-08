@@ -19,6 +19,7 @@ import { qk } from "../../services/queryKeys";
 import { PARAM_DA_ABA, abaValida } from "../../utils/abas";
 import type { CatalogoFinanceiro } from "../../types";
 import AindaNaoChegou from "./components/AindaNaoChegou";
+import ListaDeFaturas from "./components/ListaDeFaturas";
 import ListaDeLancamentos from "./components/ListaDeLancamentos";
 import MenuDeNovoLancamento from "./components/MenuDeNovoLancamento";
 import ModalDeEntradaOuSaida from "./components/ModalDeEntradaOuSaida";
@@ -100,7 +101,7 @@ export default function FinanceiroPage() {
         {abaAtiva === "lancamentos" && <ListaDeLancamentos />}
       </PainelDaAba>
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="faturas" ativa={abaAtiva}>
-        {abaAtiva === "faturas" && <AindaNaoChegou rotulo="Faturas" />}
+        {abaAtiva === "faturas" && <ListaDeFaturas />}
       </PainelDaAba>
       <PainelDaAba grupo={GRUPO_DE_ABAS} id="fluxo" ativa={abaAtiva}>
         {abaAtiva === "fluxo" && <AindaNaoChegou rotulo="Fluxo de caixa" />}

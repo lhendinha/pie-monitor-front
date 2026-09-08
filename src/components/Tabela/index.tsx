@@ -45,7 +45,18 @@ export default function Tabela({ colunas, vazio, children }: TabelaProps) {
             ))}
           </Table.Row>
         </Table.Header>
-        <Table.Body>{children}</Table.Body>
+        {/* 🔴 A ÚLTIMA linha não desenha a divisória de baixo -- é
+            `tbody tr:last-child td{border-bottom-width:0}` no artefato. Cada
+            célula declara a borda (o guarda de padding cobra isso), então
+            sem esta regra a última risca o cartão e sobra um vão embaixo
+            dela, que se lê como uma linha vazia. Visto na tela.
+
+            ⚠️ Aqui e não em cada célula: `:last-child` é do CSS, e repetir a
+            exceção linha a linha só funcionaria se quem escreve a linha
+            soubesse que é a última -- ele não sabe. */}
+        <Table.Body css={{ "& tr:last-child td": { borderBottomWidth: 0 } }}>
+          {children}
+        </Table.Body>
       </Table.Root>
     </Table.ScrollArea>
   );

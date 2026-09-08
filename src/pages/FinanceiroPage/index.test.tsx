@@ -763,7 +763,6 @@ describe("cada aba mostra o SEU conteúdo", () => {
    */
 
   it.each([
-    ["faturas", "Faturas"],
     ["fluxo", "Fluxo de caixa"],
   ])("a aba pendente %s diz que ainda não chegou", async (id, rotulo) => {
     montar(`/financeiro?aba=${id}`);

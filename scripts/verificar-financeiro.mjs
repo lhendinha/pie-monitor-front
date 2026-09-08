@@ -422,6 +422,21 @@ conferir(alinhamento.mesmaBorda, "e as duas terminam no mesmo x");
 conferir(!alinhamento.transbordou && alinhamento.dentroDaJanela,
   "a tabela não transborda -- a coluna de dinheiro fica na tela");
 
+/* 🔴 A ÚLTIMA linha não desenha divisória. Cada célula declara a borda, e
+   sem a regra do `tbody tr:last-child` ela risca o cartão e sobra um vão
+   embaixo -- que se lê como uma linha vazia. O usuário pegou na tela. */
+const divisorias = await pagina.evaluate(() => {
+  const linhas = [...document.querySelectorAll("tbody tr")];
+  return {
+    primeira: getComputedStyle(linhas[0].cells[0]).borderBottomWidth,
+    ultima: getComputedStyle(linhas[linhas.length - 1].cells[0]).borderBottomWidth,
+    quantas: linhas.length,
+  };
+});
+conferir(divisorias.ultima === "0px" && divisorias.primeira !== "0px",
+  "🔴 a ÚLTIMA linha não desenha a divisória, e as outras desenham",
+  JSON.stringify(divisorias));
+
 /* Os três cards, e o clique que filtra pela NATUREZA. */
 conferir(await existe(pagina.getByText("A receber · este mês")), "o card diz de QUANDO fala");
 /* ⚠️ SÓ o card de "A receber": subir dois níveis pega a grade com os três, e

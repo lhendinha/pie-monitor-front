@@ -36,7 +36,7 @@ import {
  */
 export const ABAS_DO_FINANCEIRO = [
   { id: "lancamentos", rotulo: "Lançamentos", pendente: false },
-  { id: "faturas", rotulo: "Faturas", pendente: true },
+  { id: "faturas", rotulo: "Faturas", pendente: false },
   { id: "fluxo", rotulo: "Fluxo de caixa", pendente: true },
   { id: "configuracoes", rotulo: "Configurações", pendente: false },
 ] as const;
@@ -218,3 +218,40 @@ export const SITUACOES_DA_SAIDA = [
  * podem crescer sem limite. Descrição não entra: ela é a coluna principal, e
  * é dela que sobra o espaço. */
 export const LARGURA_MAXIMA_DA_COLUNA_DE_TEXTO = "200px";
+
+/** As duas seções da aba Faturas, em pílula.
+ *
+ * ⚠️ Pílula e não sub-aba, pela mesma razão do catálogo: são dois recortes
+ * de UMA tela, e sub-aba dentro de aba dá dois níveis de navegação na mesma
+ * página. "A faturar" vem primeiro porque é a que pede ação -- "Emitidas" é
+ * consulta.
+ */
+export const SECOES_DE_FATURAS = [
+  { id: "a-faturar", rotulo: "A faturar" },
+  { id: "emitidas", rotulo: "Emitidas" },
+] as const;
+
+export const COLUNAS_A_FATURAR = [
+  "Cliente",
+  { rotulo: "Honorários", aDireita: true },
+  { rotulo: "Despesas", aDireita: true },
+  { rotulo: "Total", aDireita: true },
+] as const;
+
+export const COLUNAS_DE_FATURAS = [
+  "Número",
+  "Cliente",
+  "Vencimento",
+  "Pagamento",
+  { rotulo: "Valor", aDireita: true },
+  "Situação",
+] as const;
+
+/** As colunas da prévia da emissão. A primeira é a caixa de marcar, e o
+ * cabeçalho dela é vazio -- como o `<th style="width:36px">` do artefato. */
+export const COLUNAS_DA_EMISSAO = [
+  "",
+  "Lançamento",
+  "Vencimento",
+  { rotulo: "Valor", aDireita: true },
+] as const;

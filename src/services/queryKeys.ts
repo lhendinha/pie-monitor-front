@@ -45,7 +45,9 @@ export const qk = {
    * então só existe UMA resposta por sessão. */
   catalogoFinanceiro: () => ["catalogo-financeiro"] as const,
   aFaturar: () => ["a-faturar"] as const,
-  faturas: (periodo: { de?: string; ate?: string } = {}) => ["faturas", periodo] as const,
+  /** ⚠️ O recorte INTEIRO entra na chave -- período e página. A chave só
+   * com o período mostraria a página 1 depois de clicar na 2. */
+  faturas: (filtros: Record<string, unknown> = {}) => ["faturas", filtros] as const,
   fatura: (faturaId: string) => ["fatura", faturaId] as const,
   fluxoDeCaixa: (filtros: Record<string, unknown> = {}) => ["fluxo-de-caixa", filtros] as const,
   /** ⚠️ Os filtros INTEIROS entram na chave: o período, o departamento e a

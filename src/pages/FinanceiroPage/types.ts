@@ -5,7 +5,7 @@ import type {
   TIPO_TRANSFERENCIA,
 } from "../../constants";
 import type { IntervaloDeDatas } from "../../types";
-import type { ABAS_DO_FINANCEIRO } from "./constants";
+import type { ABAS_DO_FINANCEIRO, SECOES_DE_FATURAS } from "./constants";
 
 /** Qual das quatro abas da tela -- derivado da lista em `constants`, como o
  * gêmeo em `ClienteDetalhePage`. */
@@ -50,3 +50,6 @@ export type FormaDeLancamento =
   | typeof TIPO_ENTRADA
   | typeof TIPO_SAIDA
   | typeof TIPO_TRANSFERENCIA;
+
+/** Qual das duas seções da aba Faturas está na tela. */
+export type SecaoDeFaturas = (typeof SECOES_DE_FATURAS)[number]["id"];
