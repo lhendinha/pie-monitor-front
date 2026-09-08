@@ -71,6 +71,7 @@ export function useFiltrosDeLancamentos() {
     departamentoIds: lerParametroDaUrl(params, "departamento", [] as string[]),
     departamentoNomes,
     busca: lerParametroDaUrl(params, "busca", ""),
+    vencendo: lerParametroDaUrl(params, "vencendo", 0),
   };
 
   const mudar = useCallback(
@@ -97,6 +98,10 @@ export function useFiltrosDeLancamentos() {
       if (mudanca.contaId !== undefined) escrever.conta = mudanca.contaId;
       if (mudanca.departamentoIds !== undefined) escrever.departamento = mudanca.departamentoIds;
       if (mudanca.busca !== undefined) escrever.busca = mudanca.busca;
+      /* ⚠️ Zero é DESLIGADO, e `lerParametroDaUrl` já apaga o padrão da URL:
+         limpar o filtro tira o parâmetro do endereço em vez de deixar
+         `vencendo=0` pendurado nele. */
+      if (mudanca.vencendo !== undefined) escrever.vencendo = String(mudanca.vencendo);
       if (mudanca.departamentoNomes !== undefined) setDepartamentoNomes(mudanca.departamentoNomes);
 
       // ⚠️ `tambemApaga` da página: mudar filtro volta para a primeira.

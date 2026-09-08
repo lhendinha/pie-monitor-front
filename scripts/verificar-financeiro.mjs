@@ -780,6 +780,63 @@ conferir(exportar?.bg === "rgb(255, 255, 255)",
   exportar?.bg);
 conferir(exportar?.temIcone === true, "e leva o ícone de baixar, como no artefato");
 
+// ─────────────────────────── o Financeiro na HOME (Fase 7)
+console.log("\n— Área de trabalho > Financeiro —");
+await pagina.goto(`${APP}/`);
+await pagina.getByText("Resumo rápido").waitFor();
+await pagina.waitForTimeout(1500);
+
+const home = await pagina.evaluate(() => {
+  const linha = (rotulo) => {
+    const e = [...document.querySelectorAll("button, div")].find(
+      (x) => x.children.length === 2 && x.textContent?.startsWith(rotulo));
+    return e ? e.textContent : null;
+  };
+  const cabecalhos = [...document.querySelectorAll("h3")].map((h) => h.textContent?.trim());
+  /* ⚠️ DENTRO do cartão "Resumo rápido", e não no documento: o menu lateral
+     também tem um "Financeiro", e ele vem antes no DOM.
+     ⚠️ E a caixa-alta é do CSS (`text-transform`), então o `textContent` vem
+     em caixa mista -- comparar com "FINANCEIRO" nunca casaria. */
+  const cartao = [...document.querySelectorAll("h3")]
+    .find((h) => h.textContent?.trim() === "Resumo rápido")?.closest("div")?.parentElement;
+  const rotulos = [...(cartao?.querySelectorAll("p") ?? [])]
+    .map((x) => x.textContent?.trim().toUpperCase());
+  return {
+    rotulosDoResumo: rotulos.filter((r) => ["PRECISA DE ATENÇÃO", "FINANCEIRO", "PANORAMA"].includes(r ?? "")),
+    aReceber: linha("A receber atrasado"),
+    aPagar: linha("A pagar até"),
+    saldo: linha("Saldo das contas"),
+    cabecalhos,
+  };
+});
+conferir(home.rotulosDoResumo.join(" > ") === "PRECISA DE ATENÇÃO > FINANCEIRO > PANORAMA",
+  "🔴 a seção Financeiro fica ENTRE atenção e panorama",
+  home.rotulosDoResumo.join(" > "));
+conferir(/R\$/.test(home.aReceber ?? ""), "a linha 'A receber atrasado' mostra DINHEIRO", home.aReceber);
+conferir(/A pagar até \d+ dias/.test(home.aPagar ?? ""),
+  "🔴 e o rótulo diz 'até', não 'em' -- a soma não tem limite inferior", home.aPagar);
+conferir(/R\$|Nenhuma conta/.test(home.saldo ?? ""),
+  "e o saldo mostra o valor ou diz que não há conta", home.saldo);
+conferir(home.cabecalhos.includes("Vence esta semana"),
+  "o card 'Vence esta semana' está na tela", home.cabecalhos.join(" | "));
+
+/* 🔴 O clique tem de abrir a lista que gerou o número. */
+await pagina.getByRole("button", { name: /A pagar até/ }).click();
+await pagina.waitForTimeout(1800);
+conferir(pagina.url().includes("vencendo=7") && pagina.url().includes("natureza=saida"),
+  "🔴 'A pagar' abre a lista com `vencendo`, e não com um período", pagina.url());
+conferir(await existe(pagina.getByText(/Vence até 7 dias/)),
+  "e a tela DIZ o filtro que recebeu -- ele não filtra em silêncio");
+
+await pagina.goto(`${APP}/`);
+await pagina.getByText("Resumo rápido").waitFor();
+await pagina.waitForTimeout(1500);
+await pagina.getByRole("button", { name: /A receber atrasado/ }).click();
+await pagina.waitForTimeout(1800);
+conferir(pagina.url().includes("situacao=atrasado") && pagina.url().includes("periodo=todos"),
+  "🔴 'A receber atrasado' abre com período TODOS -- atrasado não é deste mês",
+  pagina.url());
+
 console.log("\n— limpando o que este roteiro criou —");
 await limpar();
 

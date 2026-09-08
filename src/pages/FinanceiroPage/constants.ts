@@ -265,3 +265,12 @@ export const COLUNAS_DA_EMISSAO = [
   "Vencimento",
   { rotulo: "Valor", aDireita: true },
 ] as const;
+
+/** A janela do "A pagar" da Área de trabalho, em dias.
+ *
+ * 🔴 O MESMO número que a API usa (`lancamentos_consulta.DIAS_DO_A_PAGAR`), e
+ * ele aparece em três lugares: o rótulo da linha, o filtro que o clique
+ * aplica e a soma do servidor. Três literais divergiriam no primeiro ajuste,
+ * e aí o número da linha deixaria de bater com a lista que ela abre.
+ */
+export const DIAS_DO_A_PAGAR = 7;
