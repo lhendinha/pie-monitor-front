@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { Campo, LinhaDeCampos, Select } from "../../../../components";
+import { useTodosOsSubgrupos } from "../../../../hooks/useTodosOsSubgrupos";
 import { getEmail, listarMembrosDoSubgrupo } from "../../../../services";
 import { qk } from "../../../../services/queryKeys";
 import { opcoesDeConta, opcoesDePessoa } from "../../../../utils";
@@ -27,10 +28,19 @@ import type { CamposDeContaEResponsavelProps } from "./types";
 export default function CamposDeContaEResponsavel({
   catalogo, contaId, onConta, responsavel, onResponsavel, subgrupoId, tentou, semConta,
 }: CamposDeContaEResponsavelProps) {
+  /* 🔴 Só pergunta pelos membros de um departamento que a pessoa PARTICIPA.
+     `GET /subgrupos/{id}/membros` responde 403 para quem está de fora, e o
+     lançamento pode estar classificado num departamento de outra equipe --
+     visto na tela: um 403 a cada abertura do detalhe, sem nada quebrar e sem
+     ninguém notar. Fora da lista, o campo fica com quem está logado, que é o
+     padrão dele de qualquer jeito. */
+  const visiveis = useTodosOsSubgrupos();
+  const participo = (visiveis.data ?? []).some((s) => s.subgrupo_id === subgrupoId);
+
   const membros = useQuery<RespostaDeMembros>({
     queryKey: qk.membrosDoSubgrupo(subgrupoId),
     queryFn: () => listarMembrosDoSubgrupo(subgrupoId) as Promise<RespostaDeMembros>,
-    enabled: Boolean(subgrupoId),
+    enabled: Boolean(subgrupoId) && participo,
   });
 
   const pessoas = opcoesDePessoa(membros.data?.membros ?? [], getEmail() ?? "");

@@ -255,6 +255,27 @@ describe("o que NÃO se edita", () => {
   });
 });
 
+describe("o responsável", () => {
+  it("🔴 não pede os membros de um departamento que a pessoa NÃO participa", async () => {
+    /* `GET /subgrupos/{id}/membros` responde 403 para quem está de fora, e o
+       lançamento pode estar classificado no departamento de outra equipe --
+       visto na tela: um 403 a cada abertura do detalhe, sem nada quebrar. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [{ subgrupo_id: "outro", nome: "Trabalhista", grupo_id: "g1" }],
+    });
+    montar();
+    await carregada();
+    await waitFor(() => expect(mocks.listarSubgrupos).toHaveBeenCalled());
+    expect(mocks.listarMembrosDoSubgrupo).not.toHaveBeenCalled();
+  });
+
+  it("pede quando participa -- o par negativo", async () => {
+    montar();
+    await carregada();
+    await waitFor(() => expect(mocks.listarMembrosDoSubgrupo).toHaveBeenCalledWith("s1"));
+  });
+});
+
 describe("salvar", () => {
   it("🔴 manda SÓ o que mudou", async () => {
     montar();

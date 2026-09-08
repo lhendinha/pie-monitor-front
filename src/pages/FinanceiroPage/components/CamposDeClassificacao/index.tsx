@@ -57,7 +57,10 @@ export default function CamposDeClassificacao({
         rotulo="Departamento"
         para="lc-departamento"
         obrigatorio
-        dica="A equipe a que este dinheiro pertence."
+        /* ⚠️ A dica some quando o campo está DIVIDIDO: ali o controle tem
+           várias linhas e um link no fim, e a dica caía embaixo dele --
+           lendo como legenda do link, não do campo. */
+        dica={rateio.length > 1 ? undefined : "A equipe a que este dinheiro pertence."}
         erro={
           tentou && semDepartamento
             ? "Escolha o departamento."

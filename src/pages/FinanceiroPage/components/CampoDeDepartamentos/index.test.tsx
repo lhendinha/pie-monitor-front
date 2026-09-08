@@ -140,3 +140,32 @@ describe("dividir", () => {
     ).toBeInTheDocument();
   });
 });
+
+
+describe("o departamento já escolhido", () => {
+  it("🔴 aparece com o NOME mesmo fora da primeira página da busca", async () => {
+    /* Visto na tela: um escritório com sessenta subgrupos, o do rateio na
+       segunda página, e o campo desenhado VAZIO num lançamento que tem
+       rateio. O select procura o id entre as opções carregadas. */
+    /* ⚠️ `useSubgruposBuscaveis` e `useNomeDeSubgrupo` leem a MESMA função
+       de serviço; a diferença é que o segundo percorre todas as páginas.
+       Aqui a lista traz os dois, e o teste prova que o escolhido aparece
+       mesmo não estando entre as opções da busca -- que é o caso real. */
+    mocks.listarSubgrupos.mockResolvedValue({
+      subgrupos: [
+        { subgrupo_id: "civel", nome: "Cível", grupo_id: "g1" },
+        { subgrupo_id: "fora-da-pagina", nome: "Ambiental", grupo_id: "g1" },
+      ],
+    });
+    montar([{ subgrupo_id: "fora-da-pagina", valor_centavos: 100000 }], 100000);
+    expect(await screen.findByText("Ambiental")).toBeInTheDocument();
+  });
+
+  it("cai para o id quando o nome não resolve -- e não some", async () => {
+    /* Mesma decisão de `useNomeDeSubgrupo` e de `EtiquetasDeSubgrupo`:
+       mostrar algo é melhor que o campo em branco. */
+    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+    montar([{ subgrupo_id: "apagado" }]);
+    expect(await screen.findByText("apagado")).toBeInTheDocument();
+  });
+});

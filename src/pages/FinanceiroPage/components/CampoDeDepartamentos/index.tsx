@@ -4,7 +4,9 @@ import BotaoDeTexto from "../../../../components/BotaoDeTexto";
 import CampoDeValor from "../../../../components/CampoDeValor";
 import { Select } from "../../../../components/Select";
 import { MAXIMO_DE_DEPARTAMENTOS_NO_RATEIO } from "../../../../constants";
+import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import { useSubgruposBuscaveis } from "../../../../hooks/useSubgruposBuscaveis";
+import { comOpcoesEscolhidas } from "../../../../utils/opcoesEscolhidas";
 import { formatarCentavos } from "../../../../utils";
 import type { CampoDeDepartamentosProps } from "./types";
 
@@ -31,8 +33,25 @@ export default function CampoDeDepartamentos({
   id, valor, onMudar, valorTotalCentavos,
 }: CampoDeDepartamentosProps) {
   const subgrupos = useSubgruposBuscaveis(true);
+  const nomeDeSubgrupo = useNomeDeSubgrupo();
   const dividido = valor.length > 1;
-  const opcoes = subgrupos.opcoes;
+
+  /** 🔴 O departamento JÁ ESCOLHIDO entra na lista mesmo fora da primeira
+   * página da busca. Sem isto o campo aparecia VAZIO num lançamento que tem
+   * rateio -- visto na tela: um escritório com sessenta subgrupos, e o do
+   * rateio na segunda página. É o mesmo defeito que `comOpcaoEscolhida`
+   * conserta no campo de cliente, e a razão é a mesma: o select desenha o
+   * rótulo procurando o id entre as opções carregadas.
+   *
+   * ⚠️ O nome vem de `useNomeDeSubgrupo`, que percorre TODAS as páginas numa
+   * ida só e é compartilhado com as outras sete telas -- não custa consulta
+   * nova. */
+  const escolhidos = valor.map((p) => p.subgrupo_id).filter(Boolean);
+  const opcoes = comOpcoesEscolhidas(
+    subgrupos.opcoes,
+    escolhidos,
+    Object.fromEntries(escolhidos.map((id) => [id, nomeDeSubgrupo(id)])),
+  );
 
   const somado = valor.reduce((t, p) => t + (p.valor_centavos ?? 0), 0);
   const total = valorTotalCentavos ?? 0;
