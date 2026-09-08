@@ -143,11 +143,12 @@ for (const aba of ["Lançamentos", "Faturas", "Fluxo de caixa", "Configurações
   conferir((await pagina.getByRole("tab", { name: aba }).count()) === 1, `a aba "${aba}" está na tela`);
 }
 
-/* A aba pendente APARECE e diz que ainda não chegou -- clicar e não
-   acontecer nada é que seria ruim. */
-await pagina.getByRole("tab", { name: "Lançamentos" }).click();
+/* A aba ainda pendente APARECE e diz que não chegou -- clicar e não
+   acontecer nada é que seria ruim.
+   ⚠️ Era Lançamentos até a Fase 5; agora as pendentes são Faturas e Fluxo. */
+await pagina.getByRole("tab", { name: "Faturas" }).click();
 conferir(
-  await pagina.getByText("Lançamentos ainda não está disponível.").isVisible().catch(() => false),
+  await pagina.getByText("Faturas ainda não está disponível.").isVisible().catch(() => false),
   "⚠️ a aba pendente diz que ainda não chegou, em vez de abrir vazia",
 );
 
@@ -272,19 +273,41 @@ conferir(
 
    ⚠️ Produção pode não ter lançamento nenhum: então o que se confere é o
    CABEÇALHO, que existe de qualquer jeito. */
+/* ⚠️ Espera a LISTA chegar antes de medir: ou a tabela, ou o estado vazio.
+   Sem isto a medição acontece com a consulta em voo e acusa "sem tabela"
+   num lugar onde ela vai existir. */
+await pagina
+  .locator("table")
+  .or(pagina.getByText("Nenhum lançamento neste período."))
+  .first()
+  .waitFor();
+
 const alinhamento = await pagina.evaluate(() => {
   const th = [...document.querySelectorAll("thead th")]
     .find((e) => e.textContent.trim() === "Valor");
   const linha = document.querySelector("tbody tr");
   const td = linha?.cells?.[linha.cells.length - 1];
   return {
+    temTabela: Boolean(th),
     th: th ? getComputedStyle(th).textAlign : null,
     td: td ? getComputedStyle(td).textAlign : null,
   };
 });
-conferir(alinhamento.th === "right", "o cabeçalho VALOR alinha à direita");
-conferir(alinhamento.td === null || alinhamento.td === "right",
-  "e a célula também, quando há linha");
+if (alinhamento.temTabela) {
+  conferir(alinhamento.th === "right", "o cabeçalho VALOR alinha à direita");
+  conferir(alinhamento.td === null || alinhamento.td === "right",
+    "e a célula também, quando há linha");
+} else {
+  /* ⚠️ Produção ainda não tem lançamento nenhum, e `Tabela` troca a tabela
+     INTEIRA pelo estado vazio (`if (vazio) return <>{vazio}</>`) -- não há
+     `thead` para medir. O alinhamento é aferido no offline, com a base
+     semeada (`verificar-financeiro.mjs`); aqui o que se confere é que a tela
+     diz por que está vazia, em vez de mostrar uma tabela sem linhas. */
+  conferir(
+    await pagina.getByText("Nenhum lançamento neste período.").isVisible().catch(() => false),
+    "sem lançamento nenhum, a tela DIZ isso -- e não há tabela para alinhar",
+  );
+}
 
 /* O menu das quatro portas, e o formulário com o departamento. */
 await pagina.getByRole("button", { name: /Novo lançamento/ }).click();
