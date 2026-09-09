@@ -23,6 +23,68 @@ if (!("ResizeObserver" in globalThis)) {
   };
 }
 
+/** O jsdom não implementa `PointerEvent`, e o Chakra v3 o instancia ao dar
+ * foco num botão (`@zag-js/focus-visible`). Sem este substituto o teste ainda
+ * passa, mas `win.PointerEvent is not a constructor` sobe como erro NÃO
+ * TRATADO -- e erro não tratado faz o `vitest` sair com código 1 mesmo com
+ * 2.284 testes verdes, que é o pior sinal possível para um pipeline.
+ *
+ * ⚠️ Herda de `MouseEvent`, que o jsdom tem: é o que faz `clientX`,
+ * `button` e o borbulhar continuarem funcionando de verdade.
+ *
+ * ➡️ Medido em 09/09/2026: 9 ocorrências na suíte, em 3 arquivos. */
+if (!("PointerEvent" in globalThis)) {
+  globalThis.PointerEvent = class PointerEvent extends MouseEvent {
+    readonly pointerId: number;
+    readonly pointerType: string;
+    readonly isPrimary: boolean;
+
+    constructor(tipo: string, opcoes: PointerEventInit = {}) {
+      super(tipo, opcoes);
+      this.pointerId = opcoes.pointerId ?? 0;
+      this.pointerType = opcoes.pointerType ?? "";
+      this.isPrimary = opcoes.isPrimary ?? false;
+    }
+  } as unknown as typeof PointerEvent;
+}
+
+/** 🔴 O parser CSS do jsdom não entende `@layer`, e o Chakra v3 emite tudo
+ * dentro de um. Cada `<style>` inserido vira um `jsdomError` -- e o vitest o
+ * conta como erro NÃO TRATADO, então a suíte sai com código 1 sem nenhum
+ * teste falhar.
+ *
+ * ⚠️ **E o custo não é só o código de saída.** Cada erro despeja o CSS
+ * inteiro do Chakra no log: medido em 09/09/2026, 2.966 ocorrências e **49 MB**
+ * de saída numa rodada. Um erro de verdade se perde ali dentro.
+ *
+ * 🔴 **Silencia SÓ este, pelo texto exato da mensagem.** Qualquer outro
+ * `jsdomError` continua subindo -- é o que impede que este remendo vire um
+ * "ignore tudo" no dia em que aparecer um erro que importa. Há teste
+ * cobrando as duas metades: `src/test/setup.test.ts`.
+ *
+ * ⚠️ Medido: das construções modernas que o Chakra usa (`@media`,
+ * `@supports`, `@container`, `@property`, `:where()`), o jsdom 25.0.1 só
+ * falha em `@layer`. Não é o Chakra sendo exótico -- é o parser sendo
+ * antigo, e o dia em que o jsdom o suportar este bloco pode sair inteiro. */
+export const ERRO_DE_CSS_DO_JSDOM = "Could not parse CSS stylesheet";
+
+const janela = globalThis.window as unknown as {
+  _virtualConsole?: {
+    emit: (evento: string, ...resto: unknown[]) => boolean;
+  };
+};
+const consoleVirtual = janela?._virtualConsole;
+if (consoleVirtual) {
+  const emitirOriginal = consoleVirtual.emit.bind(consoleVirtual);
+  consoleVirtual.emit = (evento: string, ...resto: unknown[]) => {
+    const erro = resto[0] as { message?: string } | undefined;
+    if (evento === "jsdomError" && erro?.message === ERRO_DE_CSS_DO_JSDOM) {
+      return false;
+    }
+    return emitirOriginal(evento, ...resto);
+  };
+}
+
 
 /** 🔴 Aninhamento de HTML inválido REPROVA o teste.
  *
