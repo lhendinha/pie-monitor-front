@@ -50,6 +50,24 @@ Nenhuma edição de código é feita direto na `main`. O fluxo, sem exceção:
    verdes mostrando o estado vazio -- e a primeira vez que alguém lançar
    dinheiro lá será a primeira vez que aquelas telas verão dado.
 
+8. 🔴 **O merge termina com `git push origin main` -- e AQUI o push É o
+   deploy** (09/09/2026, dito pelo usuário ao perguntar por que 19 commits da
+   API não tinham subido).
+
+   ⚠️ **A ordem importa mais aqui que na API.** Lá o push é só sincronização,
+   e esquecê-lo deixa o repositório atrás da produção. Aqui ele PUBLICA: o
+   Vercel constrói tudo o que chega na `main`. Um merge sem push é uma
+   entrega que ninguém recebeu; um push é uma entrega que já foi.
+
+   ⚠️ **Por isso a regra 4 vem antes desta:** a conferência em produção só
+   pode acontecer DEPOIS do push, porque é ele que põe o código no ar. Na API
+   é o inverso -- lá se confere antes de mesclar.
+
+   ⚠️ Um commit que toca só `scripts/` publica um bundle IDÊNTICO (eles ficam
+   fora dele), mas o Vercel constrói do mesmo jeito. Isso não dispensa a
+   régua: o que decide é o que mudou, e conferir isso é uma linha
+   (`git diff --name-only origin/main..HEAD | grep ^src/`).
+
 ⚠️ **O que a `main` recebe direto**: só documento (`CONTEXT.md`, `README.md`)
 que não altera código nem teste.
 
