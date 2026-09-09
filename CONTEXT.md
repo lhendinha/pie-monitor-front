@@ -63,10 +63,13 @@ Nenhuma edição de código é feita direto na `main`. O fluxo, sem exceção:
    pode acontecer DEPOIS do push, porque é ele que põe o código no ar. Na API
    é o inverso -- lá se confere antes de mesclar.
 
-   ⚠️ Um commit que toca só `scripts/` publica um bundle IDÊNTICO (eles ficam
-   fora dele), mas o Vercel constrói do mesmo jeito. Isso não dispensa a
-   régua: o que decide é o que mudou, e conferir isso é uma linha
-   (`git diff --name-only origin/main..HEAD | grep ^src/`).
+   ⚠️ **O que decide é o BUNDLE, não o caminho do arquivo.** Um commit que
+   toca só `scripts/` publica um bundle idêntico -- e `src/test/` também
+   fica fora dele (medido em 09/09/2026: mexer em `src/test/setup.ts` deixou
+   o mesmo `index-nOq8uunm.js`). O `git diff --name-only origin/main..HEAD |
+   grep ^src/` é o primeiro filtro, não a resposta; quando ele acusa,
+   comparar o nome do arquivo gerado pelo `yarn build` antes e depois é o que
+   diz se alguém vai ver diferença.
 
 ⚠️ **O que a `main` recebe direto**: só documento (`CONTEXT.md`, `README.md`)
 que não altera código nem teste.
