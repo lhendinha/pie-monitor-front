@@ -11,14 +11,19 @@ const mocks = vi.hoisted(() => ({
     async (
       _caminho: string,
       _opcoes?: { method?: string; body?: unknown },
-    ): Promise<{ removidas: number; ignoradas: unknown[]; recusadas: unknown[] }> => ({
+    ): Promise<Record<string, number | unknown[]>> => ({
       removidas: 0, ignoradas: [], recusadas: [],
     }),
   ),
 }));
 vi.mock("./client", () => mocks);
 
-import { removerTarefasEmLote } from "./tarefas";
+import {
+  alterarStatusEmLote,
+  atribuirTarefasEmLote,
+  concluirTarefasEmLote,
+  removerTarefasEmLote,
+} from "./tarefas";
 import { TETO_POR_PAGINA } from "../../constants";
 import type { ChaveDeTarefa } from "../../types";
 
@@ -107,5 +112,79 @@ describe("removerTarefasEmLote", () => {
       .mockResolvedValueOnce({ removidas: 100, ignoradas: [], recusadas: [] })
       .mockRejectedValueOnce(new Error("500"));
     await expect(removerTarefasEmLote(chaves(TETO_POR_PAGINA + 1))).rejects.toThrow("500");
+  });
+});
+
+/** O corpo inteiro de uma chamada -- para as ações que levam mais que a lista. */
+function corpo(i: number) {
+  return mocks.chamar.mock.calls[i][1]?.body as Record<string, unknown>;
+}
+
+describe("concluirTarefasEmLote", () => {
+  it("vai na rota de conclusão, por POST, e SEM coluna no corpo", async () => {
+    /* O destino é a conclusão de CADA subgrupo, resolvida no servidor --
+       mandar uma coluna daqui seria escolher o quadro de um pelos outros. */
+    await concluirTarefasEmLote(chaves(2));
+    expect(mocks.chamar.mock.calls[0][0]).toBe("/tarefas/conclusao-em-lote");
+    expect(mocks.chamar.mock.calls[0][1]?.method).toBe("POST");
+    expect(Object.keys(corpo(0))).toEqual(["tarefas"]);
+  });
+
+  it("🔴 acima do teto fatia e SOMA as concluídas", async () => {
+    mocks.chamar
+      .mockResolvedValueOnce({ concluidas: 100, ignoradas: [], recusadas: [] })
+      .mockResolvedValueOnce({ concluidas: 0, ignoradas: [{ tarefa_id: "x" }], recusadas: [] });
+    const r = await concluirTarefasEmLote(chaves(TETO_POR_PAGINA + 1));
+    expect(mocks.chamar).toHaveBeenCalledTimes(2);
+    expect(r.concluidas).toBe(100);
+    expect(r.ignoradas).toHaveLength(1);
+  });
+
+  it("lista vazia não chama a API", async () => {
+    expect(await concluirTarefasEmLote([])).toEqual({ concluidas: 0, ignoradas: [], recusadas: [] });
+    expect(mocks.chamar).not.toHaveBeenCalled();
+  });
+});
+
+describe("alterarStatusEmLote", () => {
+  it("🔴 a coluna vai como `coluna_id`, na rota de status", async () => {
+    await alterarStatusEmLote(chaves(2), "col-9");
+    expect(mocks.chamar.mock.calls[0][0]).toBe("/tarefas/status-em-lote");
+    expect(corpo(0).coluna_id).toBe("col-9");
+  });
+
+  it("⚠️ a coluna vai em TODAS as fatias, não só na primeira", async () => {
+    /* Esquecê-la na segunda faria o servidor recusar com 422 -- e só quando a
+       seleção passasse de 100, que é quando ninguém está olhando. */
+    await alterarStatusEmLote(chaves(TETO_POR_PAGINA + 1), "col-9");
+    expect(mocks.chamar).toHaveBeenCalledTimes(2);
+    expect(corpo(0).coluna_id).toBe("col-9");
+    expect(corpo(1).coluna_id).toBe("col-9");
+  });
+});
+
+describe("atribuirTarefasEmLote", () => {
+  it("🔴 o responsável vai como `responsavel_id`, na rota de atribuição", async () => {
+    await atribuirTarefasEmLote(chaves(1), "ana@x.com");
+    expect(mocks.chamar.mock.calls[0][0]).toBe("/tarefas/atribuicao-em-lote");
+    expect(corpo(0).responsavel_id).toBe("ana@x.com");
+  });
+
+  it("⚠️ devolver ao pool manda `null` -- e não omite o campo", async () => {
+    /* `null` é afirmação: "sem responsável". Um `|| undefined` aqui sumiria
+       com o campo do JSON, e o servidor leria a ausência pelo padrão -- que
+       hoje coincide, e amanhã pode não coincidir. */
+    await atribuirTarefasEmLote(chaves(1), null);
+    expect(Object.prototype.hasOwnProperty.call(corpo(0), "responsavel_id")).toBe(true);
+    expect(corpo(0).responsavel_id).toBeNull();
+  });
+
+  it("soma as IMPEDIDAS das fatias, junto das outras listas", async () => {
+    mocks.chamar
+      .mockResolvedValueOnce({ atribuidas: 99, impedidas: [{ tarefa_id: "a" }], ignoradas: [], recusadas: [] })
+      .mockResolvedValueOnce({ atribuidas: 0, impedidas: [{ tarefa_id: "b" }], ignoradas: [], recusadas: [] });
+    const r = await atribuirTarefasEmLote(chaves(TETO_POR_PAGINA + 1), "ana@x.com");
+    expect(r.atribuidas).toBe(99);
+    expect(r.impedidas).toHaveLength(2);
   });
 });

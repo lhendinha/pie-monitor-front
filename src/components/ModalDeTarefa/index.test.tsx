@@ -146,7 +146,7 @@ describe("vinculoInicial", () => {
  * separa uma guarda correta de uma que suja sozinha. */
 describe("guarda de descarte", () => {
   const perguntou = () => screen.queryByText("Sair sem salvar?") !== null;
-  const seletorDeColuna = () => screen.getByLabelText(/Coluna do quadro/);
+  const seletorDeColuna = () => screen.getByLabelText(/^Status/);
 
   it("🔴 a coluna que chega do QUADRO não conta como mudança", async () => {
     /* `colunaEscolhida` é `""` até a query responder, e vira a primeira

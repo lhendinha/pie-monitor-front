@@ -12,7 +12,18 @@ import type { Tarefa } from "./tarefa";
 /** Por que uma tarefa do lote não foi tocada. Espelha as constantes de
  * `api/src/services/tarefas_em_lote_service.py` -- os dois lados mudam
  * juntos, como em `ALVO_*` de notificação. */
-export type MotivoDeRecusa = "nao_existe" | "responsavel_mudou";
+export type MotivoDeRecusa =
+  | "nao_existe"
+  | "responsavel_mudou"
+  /* Já estava onde o lote queria pôr. Não é erro: é o que faz repetir o lote
+     ser inócuo. Arquivada conta como concluída. */
+  | "ja_concluida"
+  | "ja_na_coluna"
+  | "ja_e_o_responsavel"
+  /* O quadro do subgrupo não tem coluna marcada como conclusão. */
+  | "sem_coluna_de_conclusao"
+  /* A pessoa escolhida não é membro DAQUELE subgrupo -- vem com o nome dele. */
+  | "nao_e_membro";
 
 /** O par que identifica a tarefa, mais o responsável que a TELA VIU. É ele
  * que o servidor confere antes de agir: vazio tem que continuar vazio. */
@@ -30,6 +41,9 @@ export interface TarefaNaoTocada {
   motivo: MotivoDeRecusa;
   /** Só em `responsavel_mudou`: quem é o dono agora. */
   responsavel_atual?: string | null;
+  /** Só em `nao_e_membro`: ONDE pedir acesso. O id não é palavra que alguém
+   * reconheça. */
+  subgrupo_nome?: string;
 }
 
 /** O que `POST /tarefas/remocao-em-lote` devolve. */
@@ -37,6 +51,45 @@ export interface ResultadoDoLote {
   removidas: number;
   ignoradas: TarefaNaoTocada[];
   recusadas: TarefaNaoTocada[];
+}
+
+/** O que `POST /tarefas/conclusao-em-lote` devolve. */
+export interface ResultadoDaConclusao {
+  concluidas: number;
+  ignoradas: TarefaNaoTocada[];
+  recusadas: TarefaNaoTocada[];
+}
+
+/** O que `POST /tarefas/status-em-lote` devolve. */
+export interface ResultadoDoStatus {
+  movidas: number;
+  ignoradas: TarefaNaoTocada[];
+  recusadas: TarefaNaoTocada[];
+}
+
+/** O que `POST /tarefas/atribuicao-em-lote` devolve.
+ *
+ * ⚠️ `impedidas` é o terceiro jeito de não tocar uma tarefa, e não se confunde
+ * com os outros dois: a pessoa escolhida não é membro do subgrupo dela.
+ * Resultado parcial legítimo, não erro. */
+export interface ResultadoDaAtribuicao {
+  atribuidas: number;
+  impedidas: TarefaNaoTocada[];
+  ignoradas: TarefaNaoTocada[];
+  recusadas: TarefaNaoTocada[];
+}
+
+/** O pedido de mudar o status de muitas: as tarefas e a coluna -- que é de UM
+ * quadro, e por isso as tarefas são de um subgrupo só. */
+export interface PedidoDeStatusEmLote {
+  tarefas: Tarefa[];
+  colunaId: string;
+}
+
+/** O pedido de atribuir muitas. `responsavelId` nulo DEVOLVE ao pool. */
+export interface PedidoDeAtribuicaoEmLote {
+  tarefas: Tarefa[];
+  responsavelId: string | null;
 }
 
 /** O estado da caixa do topo. `indeterminada` é o traço, não o tique --

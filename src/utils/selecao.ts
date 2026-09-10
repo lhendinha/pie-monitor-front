@@ -4,8 +4,18 @@
  * testá-las sem montar React, e o hook fica só com o estado. É a régua da
  * seção 3 do `CONTEXT.md`: auxiliar de transformação mora em `utils/`.
  */
+import { TETO_POR_PAGINA } from "../constants";
 import { contar } from "./plural";
-import type { ChaveDeTarefa, EstadoDaCaixa, ResultadoDoLote, Tarefa } from "../types";
+import type {
+  ChaveDeTarefa,
+  EstadoDaCaixa,
+  ResultadoDoLote,
+  Tarefa,
+  ResultadoDaAtribuicao,
+  ResultadoDaConclusao,
+  ResultadoDoStatus,
+  TarefaNaoTocada,
+} from "../types";
 
 /** A chave de uma tarefa na seleção.
  *
@@ -110,4 +120,169 @@ export function fraseDoResultado(r: ResultadoDoLote): string {
     partes.push(`${contar(r.ignoradas.length, "já não existia", "já não existiam")}.`);
   }
   return partes.join(" ");
+}
+
+/** Chama `pedir` em fatias de até `TETO_POR_PAGINA` e soma as respostas.
+ *
+ * 🔴 O servidor recusa lote acima de 100 (`MAXIMO_DE_TAREFAS_NO_LOTE`), e
+ * "selecionar todas as N" pode passar disso. As fatias vão EM SÉRIE: uma falha
+ * no meio para as seguintes e propaga, e o que já foi fica feito -- o mesmo
+ * resultado parcial que o servidor já devolve dentro de uma fatia.
+ *
+ * ⚠️ Soma campo a campo: número soma, lista concatena. É o formato dos quatro
+ * resultados do lote, e uma função por ação repetiria o mesmo laço quatro
+ * vezes.
+ */
+export async function emFatias<T, R extends { [K in keyof R]: number | unknown[] }>(
+  itens: T[],
+  vazio: R,
+  pedir: (fatia: T[]) => Promise<R>,
+): Promise<R> {
+  let total = vazio;
+  for (let i = 0; i < itens.length; i += TETO_POR_PAGINA) {
+    total = somarResultado(total, await pedir(itens.slice(i, i + TETO_POR_PAGINA)));
+  }
+  return total;
+}
+
+function somarResultado<R extends { [K in keyof R]: number | unknown[] }>(a: R, b: R): R {
+  const soma = { ...a };
+  for (const chave of Object.keys(b) as (keyof R)[]) {
+    const x = a[chave];
+    const y = b[chave];
+    soma[chave] = (Array.isArray(x) ? [...x, ...(y as unknown[])] : (x as number) + (y as number)) as R[keyof R];
+  }
+  return soma;
+}
+
+/** O que o aviso diz quando o Desfazer deu certo. */
+export const FRASE_DESFEITO = "Desfeito.";
+
+/** Junta nomes como gente escreve: "Cível", "Cível e Trabalhista",
+ * "Cível, Família e Trabalhista". */
+function juntarNomes(nomes: string[]): string {
+  if (nomes.length <= 1) return nomes[0] ?? "";
+  return `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
+}
+
+/** Quantas voltaram com cada motivo. */
+function comMotivo(lista: TarefaNaoTocada[], motivo: TarefaNaoTocada["motivo"]): TarefaNaoTocada[] {
+  return lista.filter((n) => n.motivo === motivo);
+}
+
+/** As duas partes que as quatro frases dividem: quem mudou de dono no meio do
+ * caminho, e quem já não existia. */
+function restoComum(recusadas: TarefaNaoTocada[], ignoradas: TarefaNaoTocada[]): string[] {
+  const partes: string[] = [];
+  if (recusadas.length) {
+    partes.push(`${contar(recusadas.length, "ficou", "ficaram")}: o responsável mudou enquanto você escolhia.`);
+  }
+  const sumiram = comMotivo(ignoradas, "nao_existe");
+  if (sumiram.length) {
+    partes.push(`${contar(sumiram.length, "já não existia", "já não existiam")}.`);
+  }
+  return partes;
+}
+
+/** A frase do aviso de CONCLUIR em lote.
+ *
+ * ⚠️ "Já estava concluída" inclui a ARQUIVADA: arquivada continua concluída, e
+ * o servidor a devolve com o mesmo motivo. */
+export function fraseDaConclusao(r: ResultadoDaConclusao): string {
+  const partes = [`${contar(r.concluidas, "tarefa concluída", "tarefas concluídas")}.`];
+  const jaEstavam = comMotivo(r.ignoradas, "ja_concluida");
+  if (jaEstavam.length) {
+    partes.push(`${contar(jaEstavam.length, "já estava concluída", "já estavam concluídas")}.`);
+  }
+  const semColuna = comMotivo(r.ignoradas, "sem_coluna_de_conclusao");
+  if (semColuna.length) {
+    partes.push(
+      `${contar(semColuna.length, "ficou", "ficaram")}: o quadro do subgrupo não tem coluna de conclusão.`,
+    );
+  }
+  return [...partes, ...restoComum(r.recusadas, r.ignoradas)].join(" ");
+}
+
+/** A frase do aviso de ALTERAR STATUS em lote.
+ *
+ * 🔴 **Segue a palavra do botão.** Se lá diz "status", aqui não pode dizer
+ * "movida": duas palavras para a mesma coisa fazem a pessoa procurar a
+ * diferença que não existe. É a decisão 10 do plano, e a frase sai do
+ * artefato validado. */
+export function fraseDoStatus(r: ResultadoDoStatus, destino: string): string {
+  const partes = [`${contar(r.movidas, "tarefa agora está", "tarefas agora estão")} em “${destino}”.`];
+  const jaEstavam = comMotivo(r.ignoradas, "ja_na_coluna");
+  if (jaEstavam.length) {
+    partes.push(contar(jaEstavam.length, "já estava.", "já estavam."));
+  }
+  return [...partes, ...restoComum(r.recusadas, r.ignoradas)].join(" ");
+}
+
+/** A frase do aviso de ATRIBUIR em lote -- `nome` nulo é devolver ao pool.
+ *
+ * 🔴 As impedidas dizem ONDE: "não é membro de Trabalhista". Sem o nome, a
+ * pessoa lê "2 ficaram de fora" e não sabe em que subgrupo pedir acesso.
+ *
+ * ⚠️ Sem "dela"/"dele": o sistema não guarda o gênero de ninguém, e "essa
+ * pessoa" diz o mesmo. */
+export function fraseDaAtribuicao(r: ResultadoDaAtribuicao, nome: string | null): string {
+  const partes = [
+    nome
+      ? `${contar(r.atribuidas, "tarefa atribuída", "tarefas atribuídas")} a ${nome}.`
+      : `${contar(r.atribuidas, "tarefa devolvida ao pool", "tarefas devolvidas ao pool")}.`,
+  ];
+  if (r.impedidas.length) {
+    const onde = [...new Set(r.impedidas.map((i) => i.subgrupo_nome || i.subgrupo_id))];
+    partes.push(
+      `${contar(r.impedidas.length, "ficou", "ficaram")} de fora: não é membro de ${juntarNomes(onde)}.`,
+    );
+  }
+  const jaEram = comMotivo(r.ignoradas, "ja_e_o_responsavel");
+  if (jaEram.length) {
+    partes.push(
+      nome
+        ? `${contar(jaEram.length, "já estava com essa pessoa", "já estavam com essa pessoa")}.`
+        : `${contar(jaEram.length, "já estava sem responsável", "já estavam sem responsável")}.`,
+    );
+  }
+  return [...partes, ...restoComum(r.recusadas, r.ignoradas)].join(" ");
+}
+
+/** As tarefas que o lote de FATO tocou: as enviadas, menos as que voltaram sem
+ * ser tocadas.
+ *
+ * 🔴 **É a base do Desfazer.** O servidor devolve só a contagem das que
+ * mudaram, e a lista das que não mudaram. Desfazer sobre as ENVIADAS tiraria
+ * da conclusão uma tarefa que já estava concluída antes -- e o Desfazer
+ * criaria um estado que ninguém pediu. */
+export function tocadas(enviadas: Tarefa[], naoTocadas: TarefaNaoTocada[]): Tarefa[] {
+  const fora = new Set(naoTocadas.map((n) => `${n.subgrupo_id}:${n.tarefa_id}`));
+  return enviadas.filter((t) => !fora.has(chaveDe(t)));
+}
+
+/** Agrupa pelo lugar de onde cada tarefa SAIU.
+ *
+ * ⚠️ O Desfazer é a chamada inversa, e as rotas do lote aceitam UM destino por
+ * chamada: uma coluna no status, um responsável na atribuição. Tarefas que
+ * vieram de lugares diferentes voltam em uma chamada por grupo. */
+export function agruparPorOrigem(tarefas: Tarefa[], origem: (t: Tarefa) => string): Map<string, Tarefa[]> {
+  const grupos = new Map<string, Tarefa[]>();
+  for (const t of tarefas) {
+    const chave = origem(t);
+    grupos.set(chave, [...(grupos.get(chave) ?? []), t]);
+  }
+  return grupos;
+}
+
+/** Por que "Alterar status…" está travado -- ou `""` quando não está.
+ *
+ * 🔴 A coluna vem de UM quadro, e cada subgrupo tem o seu: com a seleção
+ * cruzando subgrupos, o servidor recusa o pedido inteiro. Travar antes, COM o
+ * motivo à vista, é melhor que deixar clicar e mostrar um erro -- e melhor que
+ * esconder o botão, que parece defeito. A frase sai do artefato validado.
+ */
+export function motivoParaAlterarStatus(tarefas: Tarefa[]): string {
+  if (tarefas.length === 0) return "Selecione alguma tarefa";
+  const subgrupos = new Set(tarefas.map((t) => t.subgrupo_id)).size;
+  return subgrupos > 1 ? `A seleção cruza ${subgrupos} subgrupos, e cada um tem seu quadro` : "";
 }

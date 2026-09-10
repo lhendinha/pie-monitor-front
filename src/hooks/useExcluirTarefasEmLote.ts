@@ -8,7 +8,11 @@
  * do "Resumo rápido" falam do MESMO conjunto, e atualizar um só faria a tela
  * contar duas histórias.
  *
- * ➡️ `useExcluirTarefasEmLote.test.tsx`; `PLANO_ACOES_EM_LOTE.md`, Fase 3.
+ * ⚠️ Devolve também as tarefas ENVIADAS, como os outros três hooks do lote.
+ * A exclusão não tem Desfazer -- a tarefa voltaria com outro id --, mas o
+ * contrato igual é o que deixa um teste só cobrir os quatro.
+ *
+ * ➡️ `lotesDeTarefas.test.tsx`; `PLANO_ACOES_EM_LOTE.md`, Fase 3.
  */
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -18,17 +22,17 @@ import { paraOLote } from "../utils/selecao";
 import type { ResultadoDoLote, Tarefa } from "../types";
 
 export function useExcluirTarefasEmLote(
-  aoTerminar: (resultado: ResultadoDoLote) => void,
+  aoTerminar: (resultado: ResultadoDoLote, tarefas: Tarefa[]) => void,
   aoFalhar: (erro: unknown) => void,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (tarefas: Tarefa[]) => removerTarefasEmLote(paraOLote(tarefas)),
-    onSuccess: (resultado) => {
+    onSuccess: (resultado, tarefas) => {
       queryClient.invalidateQueries({ queryKey: ["tarefas"] });
       queryClient.invalidateQueries({ queryKey: qk.resumo() });
-      aoTerminar(resultado);
+      aoTerminar(resultado, tarefas);
     },
     onError: aoFalhar,
   });

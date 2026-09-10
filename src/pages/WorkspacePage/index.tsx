@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import {
-  Avatar, BarraDeSelecao, CabecalhoDePagina, ConfirmacaoDeExclusaoEmLote,
+  Avatar, BarraDeSelecao, CabecalhoDePagina, ConfirmacoesDoLote,
 } from "../../components";
 import { useToast } from "../../contexts/ToastContext";
 import { getApelido, getEmail, resumoDaAreaDeTrabalho } from "../../services";
@@ -95,7 +95,8 @@ export default function WorkspacePage() {
   /* 🔴 O escopo mora AQUI, não em cada card: é ele que impede os dois de
      selecionarem ao mesmo tempo, e sem isso "Excluir 7" não diz quais sete. */
   const subgrupoNome = useNomeDeSubgrupo();
-  const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
+  const acoes = useAcoesEmLote();
+  const { selecao, setConfirmando, excluir } = acoes;
   /** As N do filtro, guardadas quando alguém pede "todas" -- é delas que o
    * lote sai, porque elas estão fora da página. */
   const [todasDoFiltro, setTodasDoFiltro] = useState<Tarefa[]>([]);
@@ -151,6 +152,12 @@ export default function WorkspacePage() {
           setConfirmando(marcadas);
         }}
         excluindo={excluir.isPending}
+        tarefasMarcadas={marcadas}
+        subgrupoNome={subgrupoNome}
+        onAtribuir={(id, nome) => acoes.atribuir(marcadas, id, nome)}
+        onAlterarStatus={(coluna) => acoes.alterarStatus(marcadas, coluna)}
+        onConcluir={() => acoes.setConfirmandoConclusao(marcadas)}
+        agindo={acoes.agindo}
       />
     );
   }
@@ -270,15 +277,7 @@ export default function WorkspacePage() {
       {/* 🔴 Irmão fixo do conteúdo, nunca dentro de um ramo condicional: uma
           troca de ramo com ele aberto o REMONTA, e ele volta vazio sem
           ninguém perceber. É a regra do docstring do `Modal`. */}
-      {confirmando && (
-        <ConfirmacaoDeExclusaoEmLote
-          tarefas={confirmando}
-          subgrupoNome={subgrupoNome}
-          excluindo={excluir.isPending}
-          onConfirmar={() => excluir.mutate(confirmando)}
-          onFechar={() => setConfirmando(null)}
-        />
-      )}
+      <ConfirmacoesDoLote acoes={acoes} subgrupoNome={subgrupoNome} />
     </>
   );
 }

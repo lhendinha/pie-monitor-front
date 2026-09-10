@@ -10,7 +10,7 @@ import {
   Esqueleto,
   IconePlus,
   BarraDoLote,
-  ConfirmacaoDeExclusaoEmLote,
+  ConfirmacoesDoLote,
   ModalDeTarefa,
 } from "../../components";
 import { useToastOnQueryError } from "../../services/queryClient";
@@ -143,7 +143,8 @@ export default function AgendaPage() {
      não sobre `tarefas`. Aqui o filtro de pessoa é aplicado no CLIENTE sobre
      o período já baixado, então "selecionar todas as N" não custa
      requisição nenhuma: os ids já estão em mãos. */
-  const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
+  const acoes = useAcoesEmLote();
+  const { selecao, setConfirmando, excluir } = acoes;
   const selecionando = selecao.escopo === "agenda";
 
   const chavesVisiveis = visiveis.map(chaveDe);
@@ -252,6 +253,11 @@ export default function AgendaPage() {
             universo={visiveis}
             onExcluir={setConfirmando}
             excluindo={excluir.isPending}
+            subgrupoNome={subgrupoNome}
+            onAtribuir={acoes.atribuir}
+            onAlterarStatus={acoes.alterarStatus}
+            onConcluir={acoes.setConfirmandoConclusao}
+            agindo={acoes.agindo}
           />
         </Box>
       )}
@@ -317,15 +323,7 @@ export default function AgendaPage() {
 
       {/* Irmão FIXO do conteúdo, como o `Modal` exige: dentro de um ramo
           condicional, uma troca de ramo com ele aberto o remonta vazio. */}
-      {confirmando && (
-        <ConfirmacaoDeExclusaoEmLote
-          tarefas={confirmando}
-          subgrupoNome={subgrupoNome}
-          excluindo={excluir.isPending}
-          onConfirmar={() => excluir.mutate(confirmando)}
-          onFechar={() => setConfirmando(null)}
-        />
-      )}
+      <ConfirmacoesDoLote acoes={acoes} subgrupoNome={subgrupoNome} />
 
       {(tarefaAberta || criando) && (
         <ModalDeTarefa

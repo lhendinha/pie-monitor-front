@@ -3,8 +3,10 @@ import { Box, Checkbox, Flex, Text } from "@chakra-ui/react";
 import Botao from "../Botao";
 import BotaoDeTexto from "../BotaoDeTexto";
 import Faixa from "../Faixa";
-import { IconeLixeira } from "../Icons";
-import { contar, rotuloDeSelecao } from "../../utils";
+import { IconeCheck, IconeLixeira } from "../Icons";
+import PainelDePessoasDoLote from "../PainelDePessoasDoLote";
+import PainelDeStatusDoLote from "../PainelDeStatusDoLote";
+import { contar, motivoParaAlterarStatus, rotuloDeSelecao } from "../../utils";
 import type { BarraDeSelecaoProps } from "./types";
 
 /** A barra que só existe enquanto há um modo de seleção de pé.
@@ -33,11 +35,21 @@ export default function BarraDeSelecao({
   onTodas,
   carregandoTodas,
   nota,
+  tarefasMarcadas,
+  subgrupoNome,
+  onAtribuir,
+  onAlterarStatus,
+  onConcluir,
+  agindo,
   onCancelar,
   onExcluir,
   excluindo,
 }: BarraDeSelecaoProps) {
   const todasMarcadas = marcadas >= total && total > 0;
+  const comAcoes = Boolean(tarefasMarcadas && subgrupoNome && onAtribuir && onAlterarStatus && onConcluir);
+  /* Só o motivo de CRUZAR subgrupos vai à vista: "Selecione alguma tarefa"
+     na barra repetiria o que o "0 de N" já diz. */
+  const motivoDoStatus = comAcoes && marcadas > 0 ? motivoParaAlterarStatus(tarefasMarcadas ?? []) : "";
 
   return (
     <Box mb="4px">
@@ -65,13 +77,20 @@ export default function BarraDeSelecao({
           {rotuloDeSelecao(marcadas, total)}
         </Text>
 
-        <BotaoDeTexto onClick={onTodas}>
-          {carregandoTodas
-            ? "Carregando…"
-            : todasMarcadas
-              ? "Limpar seleção"
-              : `Selecionar todas as ${total}`}
-        </BotaoDeTexto>
+        {/* ⚠️ Some com o universo VAZIO. Na Agenda, entrar no modo troca a visão
+            para lista e recarrega o período: nesse intervalo a barra dizia "0 de 0"
+            e oferecia "Selecionar todas as 0", um clique que não faz nada -- e a
+            seleção continuava vazia quando a lista chegava.
+            Medido em Chrome em 10/09/2026, clicando logo depois de entrar no modo. */}
+        {total > 0 && (
+          <BotaoDeTexto onClick={onTodas}>
+            {carregandoTodas
+              ? "Carregando…"
+              : todasMarcadas
+                ? "Limpar seleção"
+                : `Selecionar todas as ${total}`}
+          </BotaoDeTexto>
+        )}
 
         {/* Mesmo peso da contagem: o que o modo TIRA é tão importante quanto
             quantas estão marcadas, e em peso normal a frase se perdia na
@@ -82,10 +101,40 @@ export default function BarraDeSelecao({
           </Text>
         )}
 
+        {/* 🔴 O motivo À VISTA, e não só no `title` do botão travado: botão
+            desabilitado não recebe o mouse em todo navegador, e aí o `title`
+            nunca aparece. Some com a seleção de um subgrupo só. */}
+        {motivoDoStatus && (
+          <Text fontSize="12px" fontWeight="600" color="status.warn.text" truncate maxW="340px" title={motivoDoStatus}>
+            {motivoDoStatus}
+          </Text>
+        )}
+
         <Flex align="center" gap="8px" ml="auto">
           <Botao variante="ghost" onClick={onCancelar}>
             Cancelar
           </Botao>
+          {/* A ordem é a do artefato validado: as reversíveis entre o Cancelar e
+              a única destrutiva, que fica sozinha na ponta. */}
+          {comAcoes && (
+            <>
+              <PainelDePessoasDoLote
+                tarefas={tarefasMarcadas ?? []}
+                desabilitado={marcadas === 0 || agindo}
+                onEscolher={(id, nome) => onAtribuir?.(id, nome)}
+              />
+              <PainelDeStatusDoLote
+                tarefas={tarefasMarcadas ?? []}
+                subgrupoNome={subgrupoNome ?? ((id) => id)}
+                desabilitado={agindo}
+                onEscolher={(coluna) => onAlterarStatus?.(coluna)}
+              />
+              <Botao variante="ghost" onClick={onConcluir} disabled={marcadas === 0 || agindo}>
+                <IconeCheck />
+                Concluir
+              </Botao>
+            </>
+          )}
           <Botao variante="perigo" onClick={onExcluir} disabled={marcadas === 0 || excluindo}>
             <IconeLixeira />
             {excluindo ? "Excluindo…" : `Excluir ${marcadas}`}

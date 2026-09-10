@@ -1,6 +1,14 @@
 import { chamar } from "./client";
-import { TETO_POR_PAGINA } from "../../constants";
-import type { ChaveDeTarefa, NovaTarefa, OpcoesListarTarefas, ResultadoDoLote } from "../../types";
+import { emFatias } from "../../utils/selecao";
+import type {
+  ChaveDeTarefa,
+  NovaTarefa,
+  OpcoesListarTarefas,
+  ResultadoDaAtribuicao,
+  ResultadoDaConclusao,
+  ResultadoDoLote,
+  ResultadoDoStatus,
+} from "../../types";
 
 export function listarTarefas(opcoes: OpcoesListarTarefas = {}) {
   const {
@@ -73,17 +81,40 @@ export function removerTarefa(subgrupoId: string, tarefaId: string) {
  * é transação nem aqui nem lá --, e quem chama recarrega a lista para ver o
  * que sobrou. Engolir o erro faria a tela afirmar um número que não aconteceu.
  */
-export async function removerTarefasEmLote(tarefas: ChaveDeTarefa[]): Promise<ResultadoDoLote> {
-  const total: ResultadoDoLote = { removidas: 0, ignoradas: [], recusadas: [] };
-  for (let i = 0; i < tarefas.length; i += TETO_POR_PAGINA) {
-    const pedaco = tarefas.slice(i, i + TETO_POR_PAGINA);
-    const r = (await chamar("/tarefas/remocao-em-lote", {
+export function removerTarefasEmLote(tarefas: ChaveDeTarefa[]): Promise<ResultadoDoLote> {
+  return emFatias(tarefas, { removidas: 0, ignoradas: [], recusadas: [] }, (fatia) =>
+    chamar("/tarefas/remocao-em-lote", { method: "POST", body: { tarefas: fatia } }) as Promise<ResultadoDoLote>,
+  );
+}
+
+/** Cada tarefa vai para a coluna de conclusão DO SEU subgrupo -- por isso não
+ * há coluna no corpo, e a seleção pode cruzar subgrupos. */
+export function concluirTarefasEmLote(tarefas: ChaveDeTarefa[]): Promise<ResultadoDaConclusao> {
+  return emFatias(tarefas, { concluidas: 0, ignoradas: [], recusadas: [] }, (fatia) =>
+    chamar("/tarefas/conclusao-em-lote", { method: "POST", body: { tarefas: fatia } }) as Promise<ResultadoDaConclusao>,
+  );
+}
+
+/** ⚠️ Todas do MESMO subgrupo: a coluna vem de um quadro, e o servidor recusa
+ * a seleção cruzada inteira com 400. A tela desabilita o botão antes. */
+export function alterarStatusEmLote(tarefas: ChaveDeTarefa[], colunaId: string): Promise<ResultadoDoStatus> {
+  return emFatias(tarefas, { movidas: 0, ignoradas: [], recusadas: [] }, (fatia) =>
+    chamar("/tarefas/status-em-lote", {
       method: "POST",
-      body: { tarefas: pedaco },
-    })) as ResultadoDoLote;
-    total.removidas += r.removidas;
-    total.ignoradas.push(...r.ignoradas);
-    total.recusadas.push(...r.recusadas);
-  }
-  return total;
+      body: { coluna_id: colunaId, tarefas: fatia },
+    }) as Promise<ResultadoDoStatus>,
+  );
+}
+
+/** `null` devolve ao pool -- é uma afirmação, não "não me perguntaram". */
+export function atribuirTarefasEmLote(
+  tarefas: ChaveDeTarefa[],
+  responsavelId: string | null,
+): Promise<ResultadoDaAtribuicao> {
+  return emFatias(tarefas, { atribuidas: 0, impedidas: [], ignoradas: [], recusadas: [] }, (fatia) =>
+    chamar("/tarefas/atribuicao-em-lote", {
+      method: "POST",
+      body: { responsavel_id: responsavelId, tarefas: fatia },
+    }) as Promise<ResultadoDaAtribuicao>,
+  );
 }

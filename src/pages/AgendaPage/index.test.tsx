@@ -25,6 +25,11 @@ const mocks = vi.hoisted(() => ({
   atualizarTarefa: vi.fn(),
   removerTarefa: vi.fn(),
   removerTarefasEmLote: vi.fn(),
+  /* As ações reversíveis da Fase 8: sem o mock, o módulo substituído não as
+     teria, e o clique quebraria longe da causa. */
+  concluirTarefasEmLote: vi.fn(),
+  alterarStatusEmLote: vi.fn(),
+  atribuirTarefasEmLote: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -836,5 +841,114 @@ describe("seleção em lote na Agenda (Fase 4 do PLANO_ACOES_EM_LOTE)", () => {
     montar();
     await screen.findByText("Peticionar recurso");
     expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ações reversíveis do lote na Agenda (Fase 8 do PLANO_ACOES_EM_LOTE)", () => {
+  /** Uma tarefa de cada subgrupo, as duas hoje: é a seleção que cruza quadros,
+   * o caso que só a Agenda produz. */
+  async function entrarComDoisSubgrupos() {
+    const usuario = userEvent.setup();
+    comTarefas(
+      tarefa({ tarefa_id: "a", titulo: "Do Cível", subgrupo_id: "s1", data: ISO_HOJE }),
+      tarefa({ tarefa_id: "b", titulo: "Do Trabalhista", subgrupo_id: "s2", data: ISO_HOJE }),
+    );
+    montar();
+    await screen.findAllByText("Do Cível");
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    return usuario;
+  }
+
+  it("🔴 seleção que cruza subgrupos TRAVA 'Alterar status…' -- e o motivo aparece À VISTA", async () => {
+    /* A coluna vem de UM quadro. Botão travado não recebe o mouse em todo
+       navegador, então o `title` sozinho nunca apareceria. */
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 2/ }));
+
+    expect(screen.getByRole("button", { name: "Alterar status…" })).toBeDisabled();
+    expect(screen.getByText("A seleção cruza 2 subgrupos, e cada um tem seu quadro")).toBeInTheDocument();
+  });
+
+  it("⚠️ o par: com um subgrupo só, destrava e o motivo some", async () => {
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+
+    expect(screen.getByRole("button", { name: "Alterar status…" })).toBeEnabled();
+    expect(screen.queryByText(/A seleção cruza/)).not.toBeInTheDocument();
+  });
+
+  it("🔴 concluir numa seleção cruzada é PERMITIDO -- cada uma vai para a conclusão do seu subgrupo", async () => {
+    /* A diferença para o status: concluir não escolhe coluna. */
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 2/ }));
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByText(/Cível, Trabalhista/)).toBeInTheDocument();
+    expect(within(dialogo).getByRole("button", { name: "Concluir 2" })).toBeEnabled();
+  });
+
+  it("painel de pessoas: diz quem ficaria de fora ANTES da escolha", async () => {
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "ana@x.com", apelido: "Ana", subgrupos: ["s1"] }],
+    });
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 2/ }));
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+
+    expect(await screen.findByRole("menuitem", { name: /Ana.*1 ficará de fora — não é membro/ })).toBeInTheDocument();
+  });
+
+  it("⚠️ as impedidas voltam na frase com o NOME do subgrupo -- é onde pedir acesso", async () => {
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "ana@x.com", apelido: "Ana", subgrupos: ["s1"] }],
+    });
+    mocks.atribuirTarefasEmLote.mockResolvedValue({
+      atribuidas: 1,
+      impedidas: [{ subgrupo_id: "s2", tarefa_id: "b", motivo: "nao_e_membro", subgrupo_nome: "Trabalhista" }],
+      ignoradas: [],
+      recusadas: [],
+    });
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 2/ }));
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Ana/ }));
+
+    expect(
+      await screen.findByText("1 tarefa atribuída a Ana. 1 ficou de fora: não é membro de Trabalhista."),
+    ).toBeInTheDocument();
+  });
+
+  it("painel de status: diz DE QUAL quadro são as colunas, e busca o do subgrupo marcado", async () => {
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(await within(menu).findByText("Status no quadro de Cível")).toBeInTheDocument();
+    expect(await within(menu).findByRole("menuitem", { name: /Concluído.*· conclusão/ })).toBeInTheDocument();
+    expect(mocks.listarQuadro).toHaveBeenCalledWith("s1");
+  });
+
+  it("⚠️ painel de status CARREGANDO diz isso, em vez de mostrar um quadro vazio", async () => {
+    mocks.listarQuadro.mockReturnValue(new Promise(() => {}));
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByText("Carregando…")).toBeInTheDocument();
+    expect(within(menu).queryAllByRole("menuitem")).toHaveLength(0);
+  });
+
+  it("🔴 painel de status FALHANDO diz que falhou -- e não oferece coluna nenhuma", async () => {
+    mocks.listarQuadro.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(await within(menu).findByText("Não foi possível carregar o quadro.")).toBeInTheDocument();
+    expect(within(menu).queryAllByRole("menuitem")).toHaveLength(0);
   });
 });

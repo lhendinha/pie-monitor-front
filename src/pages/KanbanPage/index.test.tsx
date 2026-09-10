@@ -18,6 +18,9 @@ const mocks = vi.hoisted(() => ({
   criarTarefa: vi.fn(),
   papelAtende: vi.fn(),
   removerTarefasEmLote: vi.fn(),
+  concluirTarefasEmLote: vi.fn(),
+  alterarStatusEmLote: vi.fn(),
+  atribuirTarefasEmLote: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
@@ -532,7 +535,7 @@ describe("guarda de descarte na tarefa", () => {
     const user = userEvent.setup();
     montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
     await screen.findByDisplayValue("Protocolar recurso");
-    await screen.findByLabelText(/Coluna do quadro/);
+    await screen.findByLabelText(/^Status/);
 
     await user.keyboard("{Escape}");
 
@@ -710,5 +713,458 @@ describe("seleção em lote no Kanban (Fase 5 do PLANO_ACOES_EM_LOTE)", () => {
     montar();
     await screen.findByText("A Fazer");
     expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ações reversíveis do lote no Kanban (Fase 8 do PLANO_ACOES_EM_LOTE)", () => {
+  /** Dois cartões em A Fazer e um em Concluído -- é o que deixa o Desfazer
+   * provar que volta cada um para ONDE saiu, e que a já concluída não volta. */
+  const NO_QUADRO = [
+    { subgrupo_id: "sg-trab", tarefa_id: "k1", titulo: "Elaborar defesa", data: "2026-09-10",
+      coluna_id: "c1", prioridade: "Alta", responsavel_id: null },
+    { subgrupo_id: "sg-trab", tarefa_id: "k2", titulo: "Reunir provas", data: "2026-09-11",
+      coluna_id: "c1", prioridade: "Média", responsavel_id: "ana@x.com", responsavel_nome: "Ana" },
+    { subgrupo_id: "sg-trab", tarefa_id: "k3", titulo: "Fechar acordo", data: "2026-09-12",
+      coluna_id: "c2", prioridade: "Baixa", responsavel_id: null },
+  ];
+  const K1 = { subgrupo_id: "sg-trab", tarefa_id: "k1", responsavel_id: null };
+  const K2 = { subgrupo_id: "sg-trab", tarefa_id: "k2", responsavel_id: "ana@x.com" };
+
+  async function entrarEMarcar(...titulos: string[]) {
+    const usuario = userEvent.setup();
+    lembrarTrabalhista();
+    mocks.listarTarefas.mockResolvedValue({ tarefas: NO_QUADRO, total: 3, total_paginas: 1 });
+    montar();
+    await screen.findByText("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    for (const t of titulos) {
+      await usuario.click(screen.getByRole("checkbox", { name: `Selecionar ${t}` }));
+    }
+    return usuario;
+  }
+
+  it("🔴 concluir abre a confirmação REVERSÍVEL: botão primário, sem 'não pode ser desfeita'", async () => {
+    /* Ícone de lixo e aviso de irreversível numa ação que se desfaz mentem --
+       e assustam a pessoa a não usar o que é seguro. */
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByRole("button", { name: "Concluir 2" })).toHaveAttribute("data-variante", "primario");
+    expect(within(dialogo).queryByText("Essa ação não pode ser desfeita.")).not.toBeInTheDocument();
+    expect(within(dialogo).getByText(/Dá para reabrir depois/)).toBeInTheDocument();
+  });
+
+  it("concluir manda as MARCADAS e FICA no modo, com Desfazer no aviso", async () => {
+    /* Ação reversível não sai do modo: distribuir é multi-passo, e refazer a
+       seleção a cada escolha é o que ninguém faz. */
+    mocks.concluirTarefasEmLote.mockResolvedValue({ concluidas: 2, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+
+    expect(await screen.findByText("2 tarefas concluídas.")).toBeInTheDocument();
+    expect(mocks.concluirTarefasEmLote).toHaveBeenCalledWith([K1, K2]);
+    expect(screen.getByRole("button", { name: "Desfazer" })).toBeInTheDocument();
+    /* Continua de pé, e as duas que já foram saíram do conjunto. */
+    expect(screen.getByText("0 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("🔴 Desfazer devolve cada uma à coluna de ONDE saiu", async () => {
+    mocks.concluirTarefasEmLote.mockResolvedValue({ concluidas: 2, ignoradas: [], recusadas: [] });
+    mocks.alterarStatusEmLote.mockResolvedValue({ movidas: 2, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+    await usuario.click(await screen.findByRole("button", { name: "Desfazer" }));
+
+    expect(await screen.findByText("Desfeito.")).toBeInTheDocument();
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledTimes(1);
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K1, K2], "c1");
+  });
+
+  it("⚠️ a que JÁ estava concluída não volta no Desfazer", async () => {
+    /* O servidor a devolve em `ignoradas`. Desfazer sobre as enviadas a
+       tiraria da conclusão -- um estado que ninguém pediu. */
+    mocks.concluirTarefasEmLote.mockResolvedValue({
+      concluidas: 1,
+      ignoradas: [{ subgrupo_id: "sg-trab", tarefa_id: "k3", motivo: "ja_concluida" }],
+      recusadas: [],
+    });
+    mocks.alterarStatusEmLote.mockResolvedValue({ movidas: 1, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Fechar acordo");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+    expect(await screen.findByText("1 tarefa concluída. 1 já estava concluída.")).toBeInTheDocument();
+    await usuario.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await screen.findByText("Desfeito.");
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledTimes(1);
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K1], "c1");
+  });
+
+  it("⚠️ o par: excluir NÃO oferece Desfazer, e sai do modo", async () => {
+    mocks.removerTarefasEmLote.mockResolvedValue({ removidas: 1, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Excluir 1" }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    expect(await screen.findByText("1 tarefa excluída.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Selecionar" })).toBeInTheDocument());
+  });
+
+  it("painel de status: as colunas do quadro, a conclusão marcada e quantas já estão lá", async () => {
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    expect(await screen.findByRole("menuitem", { name: /A Fazer.*2 já estão aqui/ })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /Concluído.*· conclusão/ })).toBeInTheDocument();
+  });
+
+  it("🔴 alterar status manda a coluna escolhida -- e a frase segue o botão, sem 'movida'", async () => {
+    mocks.alterarStatusEmLote.mockResolvedValue({ movidas: 2, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+
+    const aviso = await screen.findByText("2 tarefas agora estão em “Arquivado”.");
+    expect(aviso.textContent).not.toMatch(/movid/i);
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K1, K2], "c3");
+  });
+
+  it("painel de pessoas: cada uma diz, ANTES da escolha, quantas ficariam de fora", async () => {
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [
+        { email: "ana@x.com", apelido: "Ana", subgrupos: ["sg-trab"] },
+        { email: "bia@x.com", apelido: "Bia", subgrupos: ["outro"] },
+      ],
+    });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+
+    expect(await screen.findByRole("menuitem", { name: /Ana.*Membro de todos os subgrupos da seleção/ })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: /Bia.*2 ficarão de fora — não é membro/ })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Ninguém — devolver ao pool" })).toBeInTheDocument();
+  });
+
+  it("🔴 atribuir FICA no modo, e o Desfazer devolve cada uma ao dono de onde saiu", async () => {
+    /* A guarda do Desfazer é o responsável que a tela vê AGORA -- a Bia. E
+       cada grupo volta ao seu: k1 ao pool, k2 à Ana. */
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "bia@x.com", apelido: "Bia", subgrupos: ["sg-trab"] }],
+    });
+    mocks.atribuirTarefasEmLote.mockResolvedValue({ atribuidas: 2, impedidas: [], ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Bia/ }));
+
+    expect(await screen.findByText("2 tarefas atribuídas a Bia.")).toBeInTheDocument();
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenCalledWith([K1, K2], "bia@x.com");
+    expect(screen.getByText("0 de 3 selecionadas")).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole("button", { name: "Desfazer" }));
+    await screen.findByText("Desfeito.");
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenCalledTimes(3);
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenCalledWith([{ ...K1, responsavel_id: "bia@x.com" }], null);
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenCalledWith([{ ...K2, responsavel_id: "bia@x.com" }], "ana@x.com");
+  });
+
+  it("⚠️ devolver ao pool manda `null` -- e diz isso na frase", async () => {
+    mocks.atribuirTarefasEmLote.mockResolvedValue({ atribuidas: 1, impedidas: [], ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: "Ninguém — devolver ao pool" }));
+
+    expect(await screen.findByText("1 tarefa devolvida ao pool.")).toBeInTheDocument();
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenCalledWith([K2], null);
+  });
+
+  it("⚠️ com uma ação a caminho, as três travam -- um segundo clique mandaria o lote duas vezes", async () => {
+    mocks.alterarStatusEmLote.mockReturnValue(new Promise(() => {}));
+    const usuario = await entrarEMarcar("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Concluir" })).toBeDisabled());
+    expect(screen.getByRole("button", { name: "Atribuir a…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Alterar status…" })).toBeDisabled();
+  });
+
+  it("🔴 Desfazer com origens DIFERENTES faz uma chamada por coluna de onde cada uma saiu", async () => {
+    /* Achado por mutação: agrupar tudo numa origem só passava em todos os
+       testes, porque nenhum desfazia tarefas vindas de colunas diferentes. A
+       rota de status aceita UMA coluna por chamada -- sem o agrupamento,
+       "Fechar acordo" voltaria para A Fazer em vez de Concluído. */
+    mocks.alterarStatusEmLote.mockResolvedValue({ movidas: 2, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Fechar acordo");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+    await usuario.click(await screen.findByRole("button", { name: "Desfazer" }));
+
+    await screen.findByText("Desfeito.");
+    const K3 = { subgrupo_id: "sg-trab", tarefa_id: "k3", responsavel_id: null };
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledTimes(3);
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K1, K3], "c3");
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K1], "c1");
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K3], "c2");
+  });
+
+  it("⚠️ concluir com sucesso FECHA a confirmação -- ela não fica perguntando sobre o que já foi", async () => {
+    /* Achado por mutação: nenhum teste olhava o diálogo depois do sucesso. */
+    mocks.concluirTarefasEmLote.mockResolvedValue({ concluidas: 2, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+
+    await screen.findByText("2 tarefas concluídas.");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("🔴 a RECUSADA não volta no Desfazer, e CONTINUA marcada para uma nova tentativa", async () => {
+    /* Ela mudou de dono no meio do caminho e não foi tocada. Desfazê-la
+       mexeria no trabalho de outra pessoa; e tirá-la da seleção obrigaria a
+       procurá-la de novo. */
+    mocks.concluirTarefasEmLote.mockResolvedValue({
+      concluidas: 1,
+      ignoradas: [],
+      recusadas: [{ subgrupo_id: "sg-trab", tarefa_id: "k2", motivo: "responsavel_mudou", responsavel_atual: "bia@x.com" }],
+    });
+    mocks.alterarStatusEmLote.mockResolvedValue({ movidas: 1, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+
+    expect(
+      await screen.findByText("1 tarefa concluída. 1 ficou: o responsável mudou enquanto você escolhia."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 de 3 selecionadas")).toBeInTheDocument();
+    await usuario.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await screen.findByText("Desfeito.");
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledTimes(1);
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledWith([K1], "c1");
+  });
+
+  it("🔴 a IMPEDIDA não volta no Desfazer, e CONTINUA marcada para outra pessoa", async () => {
+    /* Não foi atribuída (a pessoa não é membro do subgrupo dela). O gesto
+       natural é escolher outra pessoa para ela -- e para isso ela precisa
+       continuar marcada. */
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "bia@x.com", apelido: "Bia", subgrupos: ["sg-trab"] }],
+    });
+    mocks.atribuirTarefasEmLote.mockResolvedValue({
+      atribuidas: 1,
+      impedidas: [{ subgrupo_id: "sg-trab", tarefa_id: "k2", motivo: "nao_e_membro", subgrupo_nome: "Trabalhista" }],
+      ignoradas: [],
+      recusadas: [],
+    });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Bia/ }));
+
+    expect(
+      await screen.findByText("1 tarefa atribuída a Bia. 1 ficou de fora: não é membro de Trabalhista."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 de 3 selecionadas")).toBeInTheDocument();
+    await usuario.click(screen.getByRole("button", { name: "Desfazer" }));
+
+    await screen.findByText("Desfeito.");
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenCalledTimes(2);
+    expect(mocks.atribuirTarefasEmLote).toHaveBeenLastCalledWith([{ ...K1, responsavel_id: "bia@x.com" }], null);
+  });
+
+  it("⚠️ quando NADA foi tocado, o aviso não oferece Desfazer -- e as marcadas continuam marcadas", async () => {
+    /* Um Desfazer sem nada a desfazer é um botão que mente. */
+    mocks.concluirTarefasEmLote.mockResolvedValue({
+      concluidas: 0,
+      ignoradas: [
+        { subgrupo_id: "sg-trab", tarefa_id: "k1", motivo: "ja_concluida" },
+        { subgrupo_id: "sg-trab", tarefa_id: "k2", motivo: "ja_concluida" },
+      ],
+      recusadas: [],
+    });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+
+    expect(await screen.findByText("0 tarefas concluídas. 2 já estavam concluídas.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+    expect(screen.getByText("2 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("🔴 concluir FALHANDO: fecha a confirmação, avisa, e as marcadas continuam marcadas", async () => {
+    /* Nada mudou no servidor. Modal aberto sobre o erro faria clicar de novo
+       achando que o botão falhou; e perder a seleção obrigaria a refazê-la para
+       tentar outra vez. */
+    mocks.concluirTarefasEmLote.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+
+    expect(await screen.findByText("Não foi possível concluir.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("2 de 3 selecionadas")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+  });
+
+  it("⚠️ alterar status FALHANDO: avisa, sem Desfazer, e as marcadas continuam marcadas", async () => {
+    mocks.alterarStatusEmLote.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+
+    expect(await screen.findByText("Não foi possível alterar o status.")).toBeInTheDocument();
+    expect(screen.getByText("2 de 3 selecionadas")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+  });
+
+  it("⚠️ atribuir FALHANDO: avisa, sem Desfazer, e as marcadas continuam marcadas", async () => {
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "bia@x.com", apelido: "Bia", subgrupos: ["sg-trab"] }],
+    });
+    mocks.atribuirTarefasEmLote.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Bia/ }));
+
+    expect(await screen.findByText("Não foi possível atribuir.")).toBeInTheDocument();
+    expect(screen.getByText("2 de 3 selecionadas")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+  });
+
+  it("🔴 o Desfazer FALHANDO avisa -- e nunca diz 'Desfeito.'", async () => {
+    mocks.concluirTarefasEmLote.mockResolvedValue({ concluidas: 2, ignoradas: [], recusadas: [] });
+    mocks.alterarStatusEmLote.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 2" }));
+    await usuario.click(await screen.findByRole("button", { name: "Desfazer" }));
+
+    expect(await screen.findByText("Não foi possível desfazer.")).toBeInTheDocument();
+    expect(screen.queryByText("Desfeito.")).not.toBeInTheDocument();
+  });
+
+  it("⚠️ Desfazer em SÉRIE: se o segundo grupo falha, avisa -- e o primeiro já tinha voltado", async () => {
+    /* As chamadas inversas vão uma a uma. A falha no meio vira aviso de erro,
+       e "Desfeito." mentiria sobre a metade que não voltou. */
+    mocks.alterarStatusEmLote
+      .mockResolvedValueOnce({ movidas: 2, ignoradas: [], recusadas: [] })
+      .mockResolvedValueOnce({ movidas: 1, ignoradas: [], recusadas: [] })
+      .mockRejectedValueOnce(new Error("rede"));
+    const usuario = await entrarEMarcar("Elaborar defesa", "Fechar acordo");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+    await usuario.click(await screen.findByRole("button", { name: "Desfazer" }));
+
+    expect(await screen.findByText("Não foi possível desfazer.")).toBeInTheDocument();
+    expect(mocks.alterarStatusEmLote).toHaveBeenCalledTimes(3);
+    expect(screen.queryByText("Desfeito.")).not.toBeInTheDocument();
+  });
+
+  it("⚠️ status sem nada tocado (todas já estavam lá) não oferece Desfazer", async () => {
+    mocks.alterarStatusEmLote.mockResolvedValue({
+      movidas: 0,
+      ignoradas: [
+        { subgrupo_id: "sg-trab", tarefa_id: "k1", motivo: "ja_na_coluna" },
+        { subgrupo_id: "sg-trab", tarefa_id: "k2", motivo: "ja_na_coluna" },
+      ],
+      recusadas: [],
+    });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /A Fazer/ }));
+
+    expect(await screen.findByText("0 tarefas agora estão em “A Fazer”. 2 já estavam.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+  });
+
+  it("⚠️ atribuir sem nada tocado (todas impedidas) não oferece Desfazer, e ficam marcadas", async () => {
+    mocks.listarTodosOsMembrosDoGrupo.mockResolvedValue({
+      membros: [{ email: "bia@x.com", apelido: "Bia", subgrupos: [] }],
+    });
+    mocks.atribuirTarefasEmLote.mockResolvedValue({
+      atribuidas: 0,
+      impedidas: [
+        { subgrupo_id: "sg-trab", tarefa_id: "k1", motivo: "nao_e_membro", subgrupo_nome: "Trabalhista" },
+        { subgrupo_id: "sg-trab", tarefa_id: "k2", motivo: "nao_e_membro", subgrupo_nome: "Trabalhista" },
+      ],
+      ignoradas: [],
+      recusadas: [],
+    });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Bia/ }));
+
+    expect(
+      await screen.findByText("0 tarefas atribuídas a Bia. 2 ficaram de fora: não é membro de Trabalhista."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Desfazer" })).not.toBeInTheDocument();
+    expect(screen.getByText("2 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("⚠️ painel de pessoas CARREGANDO diz isso -- e o pool continua oferecido", async () => {
+    mocks.listarTodosOsMembrosDoGrupo.mockReturnValue(new Promise(() => {}));
+    const usuario = await entrarEMarcar("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByText("Carregando…")).toBeInTheDocument();
+    expect(within(menu).getByRole("menuitem", { name: "Ninguém — devolver ao pool" })).toBeInTheDocument();
+  });
+
+  it("🔴 painel de pessoas FALHANDO diz que falhou -- e não vira uma lista vazia", async () => {
+    /* Lista vazia diria "não há ninguém para receber": a mentira que o estado
+       de erro existe para evitar. */
+    mocks.listarTodosOsMembrosDoGrupo.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarEMarcar("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Atribuir a…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(await within(menu).findByText("Não foi possível carregar as pessoas.")).toBeInTheDocument();
+    expect(within(menu).getAllByRole("menuitem")).toHaveLength(1);
+  });
+
+  it("🔴 o erro DO SERVIDOR chega ao aviso com as palavras dele -- não a frase genérica", async () => {
+    /* O caso real: um 400 de regra. A frase genérica esconderia o motivo que o
+       servidor já escreveu para a pessoa. */
+    mocks.alterarStatusEmLote.mockRejectedValue(
+      new ApiError("Todas as tarefas precisam ser do mesmo subgrupo para mudar de status", 400),
+    );
+    const usuario = await entrarEMarcar("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+
+    expect(
+      await screen.findByText("Todas as tarefas precisam ser do mesmo subgrupo para mudar de status"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Não foi possível alterar o status.")).not.toBeInTheDocument();
+  });
+
+  it("⚠️ o 403 do servidor no Desfazer também chega com as palavras dele", async () => {
+    /* Alguém pode ter perdido acesso ao subgrupo entre a ação e o Desfazer. */
+    mocks.concluirTarefasEmLote.mockResolvedValue({ concluidas: 1, ignoradas: [], recusadas: [] });
+    mocks.alterarStatusEmLote.mockRejectedValue(new ApiError("Sem permissão neste subgrupo", 403));
+    const usuario = await entrarEMarcar("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    await usuario.click(await screen.findByRole("button", { name: "Concluir 1" }));
+    await usuario.click(await screen.findByRole("button", { name: "Desfazer" }));
+
+    expect(await screen.findByText("Sem permissão neste subgrupo")).toBeInTheDocument();
+    expect(screen.queryByText("Desfeito.")).not.toBeInTheDocument();
+  });
+
+  it("⚠️ alterar status com sucesso FICA no modo, e as que mudaram SAEM da seleção", async () => {
+    /* Achado por mutação: nenhum teste olhava a seleção depois de mudar o
+       status. Sem tirar as tocadas, "Excluir 2" continuaria apontando para
+       tarefas que a pessoa já tratou -- e um segundo clique agiria de novo. */
+    mocks.alterarStatusEmLote.mockResolvedValue({ movidas: 2, ignoradas: [], recusadas: [] });
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+    await usuario.click(await screen.findByRole("menuitem", { name: /Arquivado/ }));
+
+    await screen.findByText("2 tarefas agora estão em “Arquivado”.");
+    expect(screen.getByText("0 de 3 selecionadas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Desfazer" })).toBeInTheDocument();
   });
 });

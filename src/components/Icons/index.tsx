@@ -30,6 +30,8 @@ export { default as IconeLixeira } from "./IconeLixeira";
 export { default as IconeLapis } from "./IconeLapis";
 export { default as IconePlus } from "./IconePlus";
 export { default as IconeCheck } from "./IconeCheck";
+export { default as IconePessoa } from "./IconePessoa";
+export { default as IconeMover } from "./IconeMover";
 export { default as IconeAlerta } from "./IconeAlerta";
 export { default as IconeCadeado } from "./IconeCadeado";
 export { default as IconeOlho } from "./IconeOlho";
