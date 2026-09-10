@@ -918,4 +918,37 @@ describe("ações reversíveis do lote na Agenda (Fase 8 do PLANO_ACOES_EM_LOTE)
       await screen.findByText("1 tarefa atribuída a Ana. 1 ficou de fora: não é membro de Trabalhista."),
     ).toBeInTheDocument();
   });
+
+  it("painel de status: diz DE QUAL quadro são as colunas, e busca o do subgrupo marcado", async () => {
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(await within(menu).findByText("Status no quadro de Cível")).toBeInTheDocument();
+    expect(await within(menu).findByRole("menuitem", { name: /Concluído.*· conclusão/ })).toBeInTheDocument();
+    expect(mocks.listarQuadro).toHaveBeenCalledWith("s1");
+  });
+
+  it("⚠️ painel de status CARREGANDO diz isso, em vez de mostrar um quadro vazio", async () => {
+    mocks.listarQuadro.mockReturnValue(new Promise(() => {}));
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(within(menu).getByText("Carregando…")).toBeInTheDocument();
+    expect(within(menu).queryAllByRole("menuitem")).toHaveLength(0);
+  });
+
+  it("🔴 painel de status FALHANDO diz que falhou -- e não oferece coluna nenhuma", async () => {
+    mocks.listarQuadro.mockRejectedValue(new Error("rede"));
+    const usuario = await entrarComDoisSubgrupos();
+    await usuario.click(screen.getAllByRole("checkbox", { name: "Selecionar Do Cível" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Alterar status…" }));
+
+    const menu = await screen.findByRole("menu");
+    expect(await within(menu).findByText("Não foi possível carregar o quadro.")).toBeInTheDocument();
+    expect(within(menu).queryAllByRole("menuitem")).toHaveLength(0);
+  });
 });
