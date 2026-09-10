@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   criarTarefa: vi.fn(),
   atualizarTarefa: vi.fn(),
   removerTarefa: vi.fn(),
+  removerTarefasEmLote: vi.fn(),
 }));
 
 vi.mock("../../services", () => mocks);
@@ -74,6 +75,7 @@ beforeEach(() => {
   vi.setSystemTime(HOJE);
 
   mocks.papelAtende.mockReturnValue(true);
+  mocks.removerTarefasEmLote.mockResolvedValue({ removidas: 0, ignoradas: [], recusadas: [] });
   mocks.listarSubgrupos.mockResolvedValue({
     subgrupos: [
       { subgrupo_id: "s1", nome: "Cível" },
@@ -674,10 +676,165 @@ describe("modo Atrasadas: o cartão 'Hoje' não pode afirmar o que não sabe", (
   it("oferece a lista de pessoas pra manager+", async () => {
     const user = userEvent.setup();
     mocks.papelAtende.mockReturnValue(true);
+  mocks.removerTarefasEmLote.mockResolvedValue({ removidas: 0, ignoradas: [], recusadas: [] });
     renderComProviders(<MemoryRouter><AgendaPage /></MemoryRouter>);
     await screen.findByText("Todas as pessoas");
 
     await user.click(screen.getByText("Todas as pessoas"));
     expect(await screen.findByRole("option", { name: "Ana" })).toBeInTheDocument();
+  });
+});
+
+
+describe("seleção em lote na Agenda (Fase 4 do PLANO_ACOES_EM_LOTE)", () => {
+  async function entrar() {
+    const usuario = userEvent.setup();
+    comTarefas(
+      tarefa({ tarefa_id: "a", titulo: "Peticionar recurso", data: ISO_HOJE }),
+      tarefa({ tarefa_id: "b", titulo: "Juntar procuração", data: ISO_HOJE,
+               processo_numero: "08012345620268190001" }),
+      tarefa({ tarefa_id: "c", titulo: "Ligar para o cliente", data: "2026-08-20" }),
+    );
+    montar();
+    await screen.findByText("Peticionar recurso");
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    return usuario;
+  }
+
+  it("🔴 entrar TRAVA a visão em lista, e a pílula diz por quê", async () => {
+    /* Marcar caixa em célula de calendário não tem onde caber. E a pílula
+       fica desabilitada em vez de sumir: controle que some parece defeito. */
+    await entrar();
+    const visao = screen.getByRole("button", { name: /Por mês|Em lista/ });
+    expect(visao).toBeDisabled();
+    expect(visao).toHaveAttribute("title", "Em seleção a lista ignora o calendário");
+  });
+
+  it("o par: FORA do modo a visão volta a funcionar", async () => {
+    comTarefas(tarefa({ titulo: "Peticionar recurso" }));
+    montar();
+    await screen.findByText("Peticionar recurso");
+    expect(screen.getByRole("button", { name: /Por mês/ })).toBeEnabled();
+  });
+
+  it("🔴 a contagem da barra é do PERÍODO, não de um dia", async () => {
+    /* São três tarefas em DOIS dias diferentes. Uma barra por dia contaria
+       duas e uma; a barra do período conta três. */
+    await entrar();
+    expect(screen.getByText("0 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("selecionar todas alcança os dois dias", async () => {
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+    expect(screen.getByText("3 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("🔴 a linha deixa de ser BOTÃO e vira a caixa", async () => {
+    /* Caixa dentro de `<button>` é conteúdo interativo aninhado: HTML
+       inválido, e o clique fica ambíguo entre abrir e marcar. */
+    await entrar();
+    /* DUAS: a da pilha de dias e a do cartão "Hoje". A primeira versão só
+       trocou a da pilha, e a mesma tarefa ficava selecionável de um lado e
+       botão de abrir do outro. */
+    expect(
+      await screen.findAllByRole("checkbox", { name: "Selecionar Peticionar recurso" }),
+    ).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: /Peticionar recurso/ })).not.toBeInTheDocument();
+  });
+
+  it("marcar no cartão \"Hoje\" acende a caixa na pilha de dias", async () => {
+    /* A seleção guarda CHAVE, não posição: a mesma tarefa listada duas vezes
+       é UMA marcada, e a contagem não pode dizer 2. */
+    const usuario = await entrar();
+    const caixas = await screen.findAllByRole("checkbox", {
+      name: "Selecionar Peticionar recurso",
+    });
+    /* A do cartão lateral é a última no DOM -- o cartão vem depois da pilha. */
+    await usuario.click(caixas[caixas.length - 1]);
+
+    /* `data-state` do Root, e não `toBeChecked()`: o Ark marca o input pelo
+       ATRIBUTO `checked`, que o jsdom não reflete na propriedade -- e é o
+       `data-state` que desenha o tique que a pessoa enxerga. */
+    for (const caixa of screen.getAllByRole("checkbox", {
+      name: "Selecionar Peticionar recurso",
+    })) {
+      expect(caixa.closest("[data-part='root']")).toHaveAttribute("data-state", "checked");
+    }
+    expect(screen.getByText("1 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("🔴 no cartão \"Hoje\" a caixa entra no lugar da ETIQUETA, não do título", async () => {
+    /* Medido em Chrome em 10/09/2026: naquela coluna de 320px a linha útil
+       tem 250, o bloco da direita comia 131 e a caixa levou o título de 99px
+       para 67 -- "Protocol…", que não identifica tarefa na hora de apagar.
+       Sem a etiqueta o título vai a 148, mais do que tinha antes.
+
+       ⚠️ O par: na PILHA de dias, larga, a etiqueta FICA. */
+    const usuario = userEvent.setup();
+    comTarefas(
+      tarefa({ tarefa_id: "a", titulo: "Peticionar recurso", data: ISO_HOJE }),
+      tarefa({ tarefa_id: "b", titulo: "Juntar procuração", data: ISO_HOJE }),
+      tarefa({ tarefa_id: "c", titulo: "Ligar para o cliente", data: "2026-08-20" }),
+    );
+    montar();
+    await screen.findByText("Peticionar recurso");
+
+    /* Em LISTA, para comparar igual com igual: a seleção também lista. */
+    await usuario.click(screen.getByRole("button", { name: /Por mês/ }));
+    await usuario.click(await screen.findByRole("button", { name: /^Em lista$/ }));
+    /* Cinco: três na pilha de dias e duas no cartão "Hoje". */
+    expect(screen.getAllByTitle("Cível")).toHaveLength(5);
+
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    /* Três: só as da pilha. As duas do cartão cederam o espaço ao título. */
+    expect(screen.getAllByTitle("Cível")).toHaveLength(3);
+  });
+
+  it("clicar na LINHA inteira marca -- ela é o rótulo da caixa", async () => {
+    /* É onde a pessoa clica de verdade: a caixa tem 16px, a linha tem a
+       largura do cartão. E marcar UMA vez, não duas -- sem o
+       `preventDefault` do `onClick` o Chakra alterna junto e o clique se
+       anula. */
+    const usuario = await entrar();
+    await usuario.click(screen.getAllByText("Peticionar recurso")[0]);
+    expect(screen.getByText("1 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("Shift+clique na linha marca o intervalo", async () => {
+    /* O modificador só existe no evento de CLIQUE -- `onCheckedChange`
+       recebe o estado novo e mais nada, que é onde o Shift morreria calado. */
+    const usuario = await entrar();
+    await usuario.click(screen.getAllByText("Peticionar recurso")[0]);
+    await usuario.keyboard("{Shift>}");
+    await usuario.click(screen.getAllByText("Ligar para o cliente")[0]);
+    await usuario.keyboard("{/Shift}");
+    expect(screen.getByText("3 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("⚠️ trocar o filtro de pessoa LIMPA a seleção", async () => {
+    /* A contagem passaria a falar de tarefa que saiu da tela, e o lote
+       apagaria o que ninguém vê. */
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+    expect(screen.getByText("3 de 3 selecionadas")).toBeInTheDocument();
+
+    await usuario.click(screen.getByText("Todas as pessoas"));
+    await usuario.click(await screen.findByRole("option", { name: "Sem responsável" }));
+    expect(screen.getByText(/^0 de/)).toBeInTheDocument();
+  });
+
+  it("a faixa conta as vinculadas das marcadas", async () => {
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+    expect(screen.getByText(/1 delas está vinculada/)).toBeInTheDocument();
+  });
+
+  it("🔴 quem NÃO é manager não vê a entrada", async () => {
+    mocks.papelAtende.mockReturnValue(false);
+    comTarefas(tarefa({ titulo: "Peticionar recurso" }));
+    montar();
+    await screen.findByText("Peticionar recurso");
+    expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
   });
 });

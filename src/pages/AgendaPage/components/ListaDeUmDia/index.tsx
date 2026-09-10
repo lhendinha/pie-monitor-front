@@ -18,6 +18,7 @@ export default function ListaDeUmDia({
   subgrupoNome,
   onAbrir,
   comData = true,
+  selecaoDe,
 }: ListaDeUmDiaProps) {
   return (
     <Cartao titulo={comData ? rotuloDoDia(data) : undefined}>
@@ -33,6 +34,7 @@ export default function ListaDeUmDia({
             }
             subgrupoNome={subgrupoNome(tarefa.subgrupo_id)}
             onAbrir={onAbrir}
+            selecao={selecaoDe?.(tarefa)}
             ultima={indice === tarefas.length - 1}
           />
         ))}

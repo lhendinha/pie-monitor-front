@@ -2,7 +2,9 @@ import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
-import { Avatar, BarraDeSelecao, CabecalhoDePagina, ModalDeConfirmacao } from "../../components";
+import {
+  Avatar, BarraDeSelecao, CabecalhoDePagina, ConfirmacaoDeExclusaoEmLote,
+} from "../../components";
 import { useToast } from "../../contexts/ToastContext";
 import { getApelido, getEmail, resumoDaAreaDeTrabalho } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
@@ -17,11 +19,10 @@ import MinhasAtividades from "./components/MinhasAtividades";
 import ResumoRapido from "./components/ResumoRapido";
 import { useAssumirTarefa } from "./hooks/useAssumirTarefa";
 import { useConcluirTarefa } from "./hooks/useConcluirTarefa";
-import { useSelecaoDeTarefas } from "../../hooks/useSelecaoDeTarefas";
-import { useExcluirTarefasEmLote } from "../../hooks/useExcluirTarefasEmLote";
+import { useAcoesEmLote } from "../../hooks/useAcoesEmLote";
 import CaixaDaLinha from "./components/CaixaDaLinha";
 import { podeAgirEmLote } from "../../utils/permissoes";
-import { chaveDe, contar, contarVinculadas, estadoDaCaixaDoTopo, fraseDoResultado } from "../../utils";
+import { chaveDe, contarVinculadas, estadoDaCaixaDoTopo } from "../../utils";
 import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import type { ResumoDaAreaDeTrabalho, Tarefa } from "../../types";
 
@@ -94,8 +95,7 @@ export default function WorkspacePage() {
   /* 🔴 O escopo mora AQUI, não em cada card: é ele que impede os dois de
      selecionarem ao mesmo tempo, e sem isso "Excluir 7" não diz quais sete. */
   const subgrupoNome = useNomeDeSubgrupo();
-  const selecao = useSelecaoDeTarefas();
-  const [confirmando, setConfirmando] = useState<Tarefa[] | null>(null);
+  const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
   /** As N do filtro, guardadas quando alguém pede "todas" -- é delas que o
    * lote sai, porque elas estão fora da página. */
   const [todasDoFiltro, setTodasDoFiltro] = useState<Tarefa[]>([]);
@@ -105,18 +105,6 @@ export default function WorkspacePage() {
     setTodasDoFiltro([]);
     selecao.entrar(escopo);
   }
-
-  const excluir = useExcluirTarefasEmLote(
-    (resultado) => {
-      selecao.sair();
-      setConfirmando(null);
-      toast.sucesso(fraseDoResultado(resultado));
-    },
-    (err) => {
-      setConfirmando(null);
-      toastErroMutation(toast, err, "Não foi possível excluir.");
-    },
-  );
 
   /** A barra e as caixas de um card. A PÁGINA monta, o card só posiciona --
    * é o que mantém o estado num lugar só com dois cards na tela. */
@@ -283,30 +271,10 @@ export default function WorkspacePage() {
           troca de ramo com ele aberto o REMONTA, e ele volta vazio sem
           ninguém perceber. É a regra do docstring do `Modal`. */}
       {confirmando && (
-        <ModalDeConfirmacao
-          titulo={`Excluir ${contar(confirmando.length, "tarefa", "tarefas")}`}
-          mensagem={
-            <>
-              Você vai excluir <strong>{contar(confirmando.length, "tarefa", "tarefas")}</strong>
-              {" de "}
-              {[...new Set(confirmando.map((t) => subgrupoNome(t.subgrupo_id)))].join(", ")}.
-            </>
-          }
-          aviso={
-            contarVinculadas(confirmando) > 0
-              ? `${contar(contarVinculadas(confirmando), "delas está vinculada", "delas estão vinculadas")} a um processo ativo. O processo não muda — mas o que a tarefa pedia deixa de existir.`
-              : undefined
-          }
-          /* 🔴 O rótulo do modal NÃO pode ser igual ao do gatilho na barra.
-             Dois botões com o mesmo nome acessível no mesmo documento fazem
-             o leitor de tela anunciar a mesma escolha duas vezes e quebram
-             qualquer busca por nome -- é a regra que criou
-             `rotuloDeCancelar`, e foi um teste que a pegou aqui.
-
-             O número fica nos DOIS, porque é ele a guarda; o que separa é o
-             substantivo, que na confirmação lê melhor de qualquer forma. */
-          rotulo={`Excluir ${contar(confirmando.length, "tarefa", "tarefas")}`}
-          confirmando={excluir.isPending}
+        <ConfirmacaoDeExclusaoEmLote
+          tarefas={confirmando}
+          subgrupoNome={subgrupoNome}
+          excluindo={excluir.isPending}
           onConfirmar={() => excluir.mutate(confirmando)}
           onFechar={() => setConfirmando(null)}
         />

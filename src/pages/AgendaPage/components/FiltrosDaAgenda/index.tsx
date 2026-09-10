@@ -24,6 +24,7 @@ export default function FiltrosDaAgenda({
   mostrarPessoas,
   filtros,
   onMudar,
+  selecionando,
 }: FiltrosDaAgendaProps) {
   const opcoesDeSubgrupo = comOpcoesEscolhidas(
     subgrupos.opcoes,
@@ -40,8 +41,15 @@ export default function FiltrosDaAgenda({
       <SeletorDeVisao
         visao={filtros.visao}
         onMudar={(visao) => onMudar({ visao })}
-        desabilitado={filtros.periodo === "atrasadas"}
-        motivo="Em Atrasadas a lista ignora o calendário"
+        /* 🔴 DUAS causas travam a visão, e cada uma diz a sua. Uma razão
+           genérica ("indisponível") faria a pessoa procurar o que fez de
+           errado; a razão certa ela entende de imediato. */
+        desabilitado={filtros.periodo === "atrasadas" || selecionando}
+        motivo={
+          selecionando
+            ? "Em seleção a lista ignora o calendário"
+            : "Em Atrasadas a lista ignora o calendário"
+        }
       />
 
       <Select

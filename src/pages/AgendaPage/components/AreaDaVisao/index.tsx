@@ -21,6 +21,7 @@ export default function AreaDaVisao({
   subgrupoNome,
   onAbrirTarefa,
   onEscolherDia,
+  selecaoDe,
 }: AreaDaVisaoProps) {
   /* 🔴 No modo atrasadas os três ramos de calendário são PULADOS e a
      renderização cai na lista, lá embaixo.
@@ -69,6 +70,7 @@ export default function AreaDaVisao({
         subgrupoNome={subgrupoNome}
         assuntoDoAtendimento={assuntoDoAtendimento}
         onAbrir={onAbrirTarefa}
+        selecaoDe={selecaoDe}
         /* A barra de datas logo acima já diz que dia é este. */
         comData={false}
       />
@@ -115,6 +117,7 @@ export default function AreaDaVisao({
           subgrupoNome={subgrupoNome}
           assuntoDoAtendimento={assuntoDoAtendimento}
           onAbrir={onAbrirTarefa}
+          selecaoDe={selecaoDe}
         />
       ))}
     </Stack>

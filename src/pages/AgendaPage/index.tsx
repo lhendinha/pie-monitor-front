@@ -7,11 +7,12 @@ import {
   CabecalhoDePagina,
   Cartao,
   EstadoDeErro,
-  EstadoVazio,
   Esqueleto,
   IconePlus,
+  ConfirmacaoDeExclusaoEmLote,
   ModalDeTarefa,
 } from "../../components";
+import { BarraDeSelecao } from "../../components";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
 import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
@@ -19,8 +20,8 @@ import { hojeISO } from "../../utils";
 import { paraIso } from "../../utils/calendario";
 import AreaDaVisao from "./components/AreaDaVisao";
 import BarraDeDatas from "./components/BarraDeDatas";
+import CartaoDeHoje from "./components/CartaoDeHoje";
 import FiltrosDaAgenda from "./components/FiltrosDaAgenda";
-import LinhaDeTarefa from "./components/LinhaDeTarefa";
 import { useTarefasDaAgenda } from "./hooks/useTarefasDaAgenda";
 import { agruparPorDia } from "./tarefasPorDia";
 import {
@@ -32,7 +33,9 @@ import {
 } from "./periodoDaAgenda";
 import type { FiltrosDaAgenda as Filtros, PeriodoDaAgenda } from "./types";
 import type { OpcaoDeSelect, Tarefa } from "../../types";
-import { podeListarPessoas } from "../../utils/permissoes";
+import { podeAgirEmLote, podeListarPessoas } from "../../utils/permissoes";
+import { useAcoesEmLote } from "../../hooks/useAcoesEmLote";
+import { chaveDe, contarVinculadas, estadoDaCaixaDoTopo } from "../../utils";
 import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
 import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 
@@ -136,6 +139,31 @@ export default function AgendaPage() {
     return tarefas.filter((t) => t.responsavel_id === filtros.pessoa);
   }, [tarefas, filtros.pessoa]);
 
+  /* 🔴 A seleção age sobre `visiveis` -- o que o FILTRO deixou na tela --, e
+     não sobre `tarefas`. Aqui o filtro de pessoa é aplicado no CLIENTE sobre
+     o período já baixado, então "selecionar todas as N" não custa
+     requisição nenhuma: os ids já estão em mãos. */
+  const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
+  const selecionando = selecao.escopo === "agenda";
+
+  const marcadas = visiveis.filter(selecao.estaMarcada);
+  const chavesVisiveis = visiveis.map(chaveDe);
+
+  /* 🔴 UMA função para as DUAS listas da tela. A pilha de dias e o cartão
+     "Hoje" mostram as MESMAS tarefas (`doDiaDeHoje` sai de `visiveis`), e a
+     primeira versão só deu caixa à pilha: a mesma tarefa aparecia
+     selecionável de um lado e como botão de abrir do outro. Marcá-la aqui
+     acende a caixa lá, porque a seleção guarda CHAVE, não posição.
+
+     ⚠️ A ordem do Shift é `chavesVisiveis` -- a do período inteiro, não a do
+     cartão. É o que faz o intervalo significar a mesma coisa nas duas. */
+  const selecaoDaLinha = selecionando
+    ? (t: Tarefa) => ({
+        marcada: selecao.estaMarcada(t),
+        onAlternar: (comShift: boolean) => selecao.alternar(t, chavesVisiveis, comShift),
+      })
+    : undefined;
+
   const porDia = useMemo(() => agruparPorDia(visiveis), [visiveis]);
   const doDiaDeHoje = porDia.get(isoDeHoje) || [];
 
@@ -171,10 +199,34 @@ export default function AgendaPage() {
         titulo="Agenda"
         subtitulo="As tarefas do escritório organizadas por data."
         acoes={
-          <Botao onClick={() => setCriando(true)} disabled={subgrupos.primeiraPagina.length === 0}>
-            <IconePlus />
-            Nova tarefa
-          </Botao>
+          <>
+            {/* Some com a barra de pé: ela é a moldura do modo. */}
+            {podeAgirEmLote() && !selecionando && visiveis.length > 0 && (
+              <Botao
+                variante="ghost"
+                onClick={() => {
+                  /* 🔴 Entrar TROCA a visão junto, e não é conveniência: a
+                     Agenda abre "Por mês", e o modo de seleção renderiza a
+                     LISTA. Sem trocar, a pílula ficaria desabilitada dizendo
+                     "Por mês" sobre uma grade sem caixa nenhuma -- ou pior,
+                     sem linha alguma para marcar. É exatamente o que
+                     "Atrasadas" já faz em `FiltrosDaAgenda`.
+
+                     ⚠️ Sair NÃO devolve a visão anterior: a pessoa fica em
+                     "Em lista", que é o que ela está vendo. Restaurar seria
+                     a tela mudando sozinha sem ninguém pedir. */
+                  setFiltros((atual) => ({ ...atual, visao: "lista" }));
+                  selecao.entrar("agenda");
+                }}
+              >
+                Selecionar
+              </Botao>
+            )}
+            <Botao onClick={() => setCriando(true)} disabled={subgrupos.primeiraPagina.length === 0}>
+              <IconePlus />
+              Nova tarefa
+            </Botao>
+          </>
         }
       />
 
@@ -183,8 +235,36 @@ export default function AgendaPage() {
         pessoas={pessoas}
         mostrarPessoas={podeListarPessoas()}
         filtros={filtros}
-        onMudar={(parcial) => setFiltros((atual) => ({ ...atual, ...parcial }))}
+        selecionando={selecionando}
+        onMudar={(parcial) => {
+          /* ⚠️ Mudar de filtro LIMPA a seleção: a contagem passaria a falar
+             de tarefa que saiu da tela, e o lote apagaria o que ninguém vê. */
+          if (selecionando) selecao.limpar();
+          setFiltros((atual) => ({ ...atual, ...parcial }));
+        }}
       />
+
+      {/* 🔴 A barra fica ACIMA da pilha de dias, e não dentro de um: a
+          contagem é do PERÍODO inteiro, e um dia não pode falar por ele. */}
+      {selecionando && (
+        <Box mb="14px">
+          <BarraDeSelecao
+            marcadas={selecao.marcadas.size}
+            total={visiveis.length}
+            estadoDaCaixa={estadoDaCaixaDoTopo(marcadas.length, visiveis.length)}
+            vinculadas={contarVinculadas(marcadas)}
+            onAlternarTopo={() => selecao.alternarTodas(chavesVisiveis)}
+            onTodas={() =>
+              selecao.marcadas.size >= visiveis.length
+                ? selecao.limpar()
+                : selecao.alternarTodas(chavesVisiveis)
+            }
+            onCancelar={selecao.sair}
+            onExcluir={() => setConfirmando(marcadas)}
+            excluindo={excluir.isPending}
+          />
+        </Box>
+      )}
 
       {/* 320px na lateral, como o artifact (`.agenda-layout`). Uma coluna só
           abaixo de 980px -- o "Hoje" vira um bloco embaixo em vez de espremer
@@ -228,47 +308,34 @@ export default function AgendaPage() {
               subgrupoNome={subgrupoNome}
               onAbrirTarefa={setTarefaAberta}
               onEscolherDia={abrirDia}
+              selecaoDe={selecaoDaLinha}
             />
           )}
         </Box>
 
-        {/* "Hoje" fixo na lateral, INDEPENDENTE do que está navegado: é o
-            ponto de retorno de quem foi olhar outro mês. */}
-        <Cartao titulo={`Hoje · ${new Intl.DateTimeFormat("pt-BR").format(hoje)}`}>
-          {carregando ? (
-            <Box px="16px" py="10px">
-              <Esqueleto linhas={3} />
-            </Box>
-          ) : atrasadas ? (
-            /* 🔴 "Nenhuma tarefa para hoje" seria MENTIRA aqui, e uma
-               mentira que a tela não tem como perceber: no modo atrasadas a
-               consulta pede `data_ate: ontem`, então as de hoje nunca vêm --
-               a pessoa pode ter cinco e o cartão diria zero.
-               Lista vazia sem dizer por quê é o defeito que este projeto
-               persegue; aqui o "por quê" é o próprio filtro. */
-            <EstadoVazio mensagem="Em Atrasadas a lista traz só o passado — as de hoje não entram." />
-          ) : doDiaDeHoje.length === 0 ? (
-            <EstadoVazio mensagem="Nenhuma tarefa para hoje." />
-          ) : (
-            <Box px="16px" py="4px">
-              {doDiaDeHoje.map((tarefa, indice) => (
-                <LinhaDeTarefa
-                  key={`${tarefa.subgrupo_id}:${tarefa.tarefa_id}`}
-                  tarefa={tarefa}
-                  concluida={tarefa.esta_concluida ?? false}
-                  nomeDaColuna={tarefa.coluna_nome ?? undefined}
-                  subgrupoNome={subgrupoNome(tarefa.subgrupo_id)}
-                  assuntoDoAtendimento={
-                    tarefa.atendimento_id ? assuntoDoAtendimento(tarefa.atendimento_id) : undefined
-                  }
-                  onAbrir={setTarefaAberta}
-                  ultima={indice === doDiaDeHoje.length - 1}
-                />
-              ))}
-            </Box>
-          )}
-        </Cartao>
+        <CartaoDeHoje
+          hoje={hoje}
+          tarefas={doDiaDeHoje}
+          carregando={carregando}
+          atrasadas={atrasadas}
+          subgrupoNome={subgrupoNome}
+          assuntoDoAtendimento={assuntoDoAtendimento}
+          onAbrir={setTarefaAberta}
+          selecaoDe={selecaoDaLinha}
+        />
       </Grid>
+
+      {/* Irmão FIXO do conteúdo, como o `Modal` exige: dentro de um ramo
+          condicional, uma troca de ramo com ele aberto o remonta vazio. */}
+      {confirmando && (
+        <ConfirmacaoDeExclusaoEmLote
+          tarefas={confirmando}
+          subgrupoNome={subgrupoNome}
+          excluindo={excluir.isPending}
+          onConfirmar={() => excluir.mutate(confirmando)}
+          onFechar={() => setConfirmando(null)}
+        />
+      )}
 
       {(tarefaAberta || criando) && (
         <ModalDeTarefa
