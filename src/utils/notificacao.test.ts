@@ -5,6 +5,7 @@ import {
   TIPO_PROCESSOS_ATRIBUIDOS,
   TIPO_PROCESSOS_IMPORTADOS,
   TIPO_SESSAO_ALTERADA,
+  TIPO_TAREFAS_MOVIDAS,
   TIPOS_DE_NOTIFICACAO,
 } from "../constants";
 import { destinoDaNotificacao, detalheSecundario, frasePrincipal } from "./notificacao";
@@ -275,5 +276,39 @@ describe("🔴 o guarda do conjunto: nenhum tipo fica sem frase", () => {
     );
 
     expect(vazios).toEqual([]);
+  });
+});
+
+describe("tarefas movidas em lote", () => {
+  /* 🔴 Uma linha por PESSOA, não uma por tarefa: concluir 40 tarefas de
+     alguém viraria 40 linhas no sino. A API só manda este tipo a partir de
+     DUAS -- com uma só, a individual (`tarefa_movida`) leva à tarefa. */
+  const EM_LOTE: Notificacao = {
+    ...BASE,
+    tipo: TIPO_TAREFAS_MOVIDAS,
+    titulo: "4 tarefas suas foram concluídas",
+    autor: "Chefe",
+    alvo_tipo: "tarefa",
+    alvo_id: "",
+  };
+
+  it("mostra a frase que veio do servidor, com quem fez", () => {
+    /* O título vem PRONTO da API: só ela sabe quantas foram e para onde. */
+    expect(frasePrincipal(EM_LOTE)).toBe("Chefe: 4 tarefas suas foram concluídas");
+  });
+
+  it("⚠️ sem autor, a frase é o título sozinho -- nunca vazia", () => {
+    expect(frasePrincipal({ ...EM_LOTE, autor: "" })).toBe("4 tarefas suas foram concluídas");
+  });
+
+  it("🔴 NÃO tem destino -- e isso é decisão, não esquecimento", () => {
+    /* Não há UMA tarefa para onde ir, e `/kanban` não recebe subgrupo pela
+       URL: abriria o último quadro usado, que pode nem ser o do aviso.
+       Mesma situação de `itens_reatribuidos`. */
+    expect(destinoDaNotificacao(EM_LOTE)).toBeNull();
+  });
+
+  it("⚠️ e nem com `subgrupo_id` ele inventa um endereço", async () => {
+    expect(destinoDaNotificacao({ ...EM_LOTE, subgrupo_id: "sg" })).toBeNull();
   });
 });

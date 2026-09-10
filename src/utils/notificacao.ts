@@ -17,6 +17,7 @@ import {
   TIPO_SESSAO_ALTERADA,
   TIPO_TAREFA_ATRIBUIDA,
   TIPO_TAREFA_MOVIDA,
+  TIPO_TAREFAS_MOVIDAS,
 } from "../constants";
 import type { Notificacao } from "../types";
 
@@ -46,6 +47,11 @@ export function frasePrincipal(n: Notificacao): string {
       return autor ? `${autor} atribuiu uma tarefa a você` : "Uma tarefa foi atribuída a você";
     case TIPO_TAREFA_MOVIDA:
       return autor ? `${autor} moveu sua tarefa` : "Sua tarefa foi movida";
+    /* O título JÁ é a frase inteira ("4 tarefas suas foram concluídas") --
+       montada na API, que é quem sabe a contagem e o destino. Aqui só entra
+       quem fez, como em `processos_atribuidos`. */
+    case TIPO_TAREFAS_MOVIDAS:
+      return autor ? `${autor}: ${n.titulo}` : n.titulo;
     case TIPO_ATENDIMENTO_STATUS:
       return autor ? `${autor} mudou o status de um atendimento` : "Um atendimento mudou de status";
     case TIPO_LEMBRETE:

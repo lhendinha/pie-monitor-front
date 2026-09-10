@@ -9,6 +9,19 @@
  * backend. */
 export const TIPO_TAREFA_ATRIBUIDA = "tarefa_atribuida";
 export const TIPO_TAREFA_MOVIDA = "tarefa_movida";
+
+/** Muitas tarefas de uma pessoa mudaram de coluna de uma vez -- concluídas em
+ * lote, ou com o status alterado em lote.
+ *
+ * 🔴 **Uma linha por PESSOA, não uma por tarefa.** Concluir 40 tarefas de
+ * alguém viraria 40 linhas no sino. É a mesma escolha de
+ * `TIPO_PROCESSOS_ATRIBUIDOS`, e a API só usa este tipo a partir de DUAS: com
+ * uma só, a individual (`tarefa_movida`) leva à tarefa.
+ *
+ * ⚠️ **Chega sem `alvo_id` e SEM destino.** Não há uma tarefa para onde ir, e
+ * `/kanban` não recebe subgrupo pela URL -- abriria o último quadro usado,
+ * que pode nem ser o do aviso. Mesma situação de `itens_reatribuidos`. */
+export const TIPO_TAREFAS_MOVIDAS = "tarefas_movidas";
 export const TIPO_ATENDIMENTO_STATUS = "atendimento_status";
 export const TIPO_LEMBRETE = "lembrete";
 /** A pessoa foi movida de grupo, ou teve o papel alterado.
@@ -118,6 +131,7 @@ export const ALVO_DOCUMENTO = "documento";
 export const TIPOS_DE_NOTIFICACAO = [
   TIPO_TAREFA_ATRIBUIDA,
   TIPO_TAREFA_MOVIDA,
+  TIPO_TAREFAS_MOVIDAS,
   TIPO_ATENDIMENTO_STATUS,
   TIPO_LEMBRETE,
   TIPO_SESSAO_ALTERADA,
