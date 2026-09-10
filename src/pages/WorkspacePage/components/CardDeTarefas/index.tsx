@@ -1,4 +1,4 @@
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Flex, Text } from "@chakra-ui/react";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
@@ -16,7 +16,11 @@ import { qk } from "../../../../services/queryKeys";
 import { contar } from "../../../../utils";
 import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import LinhaDeTarefa from "../LinhaDeTarefa";
+import { BotaoDeTexto } from "../../../../components";
+import { chaveDe } from "../../../../utils";
 import { TAMANHOS_PAGINA_CARD, TAMANHO_PAGINA_CARD_PADRAO } from "../../constants";
+import { TETO_POR_PAGINA } from "../../../../constants";
+import type { Tarefa } from "../../../../types";
 import type {
   RespostaDeTarefasPaginada,
 } from "../../../../types/respostas";
@@ -38,6 +42,11 @@ export default function CardDeTarefas({
   vazio,
   acao,
   responsavel,
+  escopo,
+  escopoAtivo,
+  onSelecionar,
+  selecao,
+  caixa,
 }: CardDeTarefasProps) {
   /* 🔴 O hook fica NESTE card, e não na página. Aqui é diferente das outras
      telas: quem busca as tarefas e mapeia as linhas é o próprio card, que tem
@@ -66,6 +75,32 @@ export default function CardDeTarefas({
 
   const tarefas = query.data?.tarefas || [];
   const total = query.data?.total ?? 0;
+  const selecionando = escopoAtivo === escopo;
+  /** A ordem VISÍVEL, que é a âncora do Shift+clique. */
+  const ordemNaTela = tarefas.map(chaveDe);
+
+  /** Todas as que batem o filtro, não só a página.
+   *
+   * 🔴 Sem isto o link "Selecionar todas as 47" marcaria as 5 da página, e o
+   * rótulo mentiria -- numa ação destrutiva, a mentira é cara. O card é quem
+   * sabe o filtro, então é ele que busca.
+   *
+   * ⚠️ Pagina até somar o `total` anunciado, como `useTarefasDaAgenda`: pedir
+   * `TETO_POR_PAGINA` e assumir que deu traria uma seleção incompleta sem
+   * erro nenhum. O segundo limite é rede de segurança -- se as duas contas
+   * discordarem, melhor parar que girar para sempre.
+   */
+  async function carregarTodas(): Promise<Tarefa[]> {
+    const juntas: Tarefa[] = [];
+    for (let pag = 1; ; pag += 1) {
+      const r = await listarTarefas({
+        ...filtro, apenasAbertas: true, pagina: pag, tamanhoPagina: TETO_POR_PAGINA,
+      }) as RespostaDeTarefasPaginada;
+      juntas.push(...r.tarefas);
+      if (juntas.length >= r.total || pag >= r.total_paginas) break;
+    }
+    return juntas;
+  }
 
   return (
     <Cartao
@@ -75,9 +110,18 @@ export default function CardDeTarefas({
          primeiros. */
       acoes={
         total > 0 ? (
-          <Text fontSize="11.5px" fontWeight="700" color="fg.subtle" fontFamily="mono">
-            {contar(total, "tarefa", "tarefas")}
-          </Text>
+          <Flex align="center" gap="12px">
+            {/* 🔴 A entrada SOME enquanto a barra está de pé: a barra é a
+                moldura do modo e é ela que carrega o Cancelar. E some
+                também quando o OUTRO card está selecionando -- dois modos
+                abertos fariam "Excluir 7" não dizer quais sete. */}
+            {onSelecionar && !escopoAtivo && (
+              <BotaoDeTexto onClick={onSelecionar}>Selecionar</BotaoDeTexto>
+            )}
+            <Text fontSize="11.5px" fontWeight="700" color="fg.subtle" fontFamily="mono">
+              {contar(total, "tarefa", "tarefas")}
+            </Text>
+          </Flex>
         ) : undefined
       }
     >
@@ -96,6 +140,7 @@ export default function CardDeTarefas({
         <EstadoVazio mensagem={vazio} />
       ) : (
         <Box>
+          {selecionando && selecao?.(tarefas, total, carregarTodas)}
           {/* Aqui o apagado importa DUAS vezes: os dois cards paginam
               independente na mesma coluna, e sem manter a página anterior o
               card colapsava de altura e o layout saltava. */}
@@ -104,7 +149,11 @@ export default function CardDeTarefas({
               <LinhaDeTarefa
                 key={`${t.subgrupo_id}-${t.tarefa_id}`}
                 tarefa={t}
-                acao={acao?.(t)}
+                /* ⚠️ A caixa entra no slot que a linha JÁ TEM. Em
+                   "Disponíveis" ele está vazio (não se conclui o que não é
+                   seu); em "Minhas tarefas" ela substitui o círculo de
+                   concluir enquanto o modo dura. */
+                acao={selecionando ? caixa?.(t, ordemNaTela) : acao?.(t)}
                 responsavel={responsavel?.(t)}
                 subgrupoNome={subgrupoNome(t.subgrupo_id)}
               />
