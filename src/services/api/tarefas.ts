@@ -1,5 +1,6 @@
 import { chamar } from "./client";
-import type { NovaTarefa, OpcoesListarTarefas } from "../../types";
+import { TETO_POR_PAGINA } from "../../constants";
+import type { ChaveDeTarefa, NovaTarefa, OpcoesListarTarefas, ResultadoDoLote } from "../../types";
 
 export function listarTarefas(opcoes: OpcoesListarTarefas = {}) {
   const {
@@ -54,4 +55,35 @@ export function detalhesTarefa(subgrupoId: string, tarefaId: string) {
 
 export function removerTarefa(subgrupoId: string, tarefaId: string) {
   return chamar(`/subgrupos/${subgrupoId}/tarefas/${tarefaId}`, { method: "DELETE" });
+}
+
+/** Apaga muitas tarefas de uma vez (`manager`+).
+ *
+ * 🔴 Manda a LISTA que a tela contou, nunca um filtro. Com filtro, o servidor
+ * apagaria também o que nasceu entre a contagem e o clique -- o número na
+ * tela dizendo uma coisa e o servidor fazendo outra.
+ *
+ * ⚠️ Fatia em pedaços de `TETO_POR_PAGINA` porque a rota tem esse teto
+ * (`MAXIMO_DE_TAREFAS_NO_LOTE`, no lado de lá), e SOMA os resultados: quem
+ * chama vê um resultado só, não N. Os pedaços vão em sequência de propósito
+ * -- em paralelo, um erro no meio deixaria o resto em voo sem ninguém saber
+ * o que saiu.
+ *
+ * ⚠️ Uma falha em qualquer pedaço PROPAGA. O que já saiu, saiu -- o lote não
+ * é transação nem aqui nem lá --, e quem chama recarrega a lista para ver o
+ * que sobrou. Engolir o erro faria a tela afirmar um número que não aconteceu.
+ */
+export async function removerTarefasEmLote(tarefas: ChaveDeTarefa[]): Promise<ResultadoDoLote> {
+  const total: ResultadoDoLote = { removidas: 0, ignoradas: [], recusadas: [] };
+  for (let i = 0; i < tarefas.length; i += TETO_POR_PAGINA) {
+    const pedaco = tarefas.slice(i, i + TETO_POR_PAGINA);
+    const r = (await chamar("/tarefas/remocao-em-lote", {
+      method: "POST",
+      body: { tarefas: pedaco },
+    })) as ResultadoDoLote;
+    total.removidas += r.removidas;
+    total.ignoradas.push(...r.ignoradas);
+    total.recusadas.push(...r.recusadas);
+  }
+  return total;
 }
