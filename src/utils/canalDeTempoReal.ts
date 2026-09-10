@@ -45,7 +45,7 @@ export function assinarCanal(tipo: string, ouvinte: Ouvinte): () => void {
  * de graça (`if (corpo.tipo !== "notificacao") return`).
  *
  * ⚠️ **Um ouvinte que estoura não leva os outros junto.** É o mesmo motivo
- * de `_criar_tolerando_falha` na API: uma exceção no primeiro deixava os
+ * de `criar_tolerando_falha` na API: uma exceção no primeiro deixava os
  * demais sem receber, e o canal não é lugar de propagar erro de tela.
  */
 export function publicarNoCanal(mensagem: MensagemDoCanal): void {

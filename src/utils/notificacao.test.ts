@@ -6,6 +6,7 @@ import {
   TIPO_PROCESSOS_IMPORTADOS,
   TIPO_SESSAO_ALTERADA,
   TIPO_TAREFAS_MOVIDAS,
+  TIPO_TAREFAS_ATRIBUIDAS,
   TIPOS_DE_NOTIFICACAO,
 } from "../constants";
 import { destinoDaNotificacao, detalheSecundario, frasePrincipal } from "./notificacao";
@@ -310,5 +311,31 @@ describe("tarefas movidas em lote", () => {
 
   it("⚠️ e nem com `subgrupo_id` ele inventa um endereço", async () => {
     expect(destinoDaNotificacao({ ...EM_LOTE, subgrupo_id: "sg" })).toBeNull();
+  });
+});
+
+describe("tarefas atribuídas em lote", () => {
+  const ATRIBUIDAS: Notificacao = {
+    ...BASE,
+    tipo: TIPO_TAREFAS_ATRIBUIDAS,
+    titulo: "5 tarefas atribuídas a você",
+    autor: "Chefe",
+    alvo_tipo: "tarefa",
+    alvo_id: "",
+  };
+
+  it("mostra a frase do servidor, com quem distribuiu", () => {
+    expect(frasePrincipal(ATRIBUIDAS)).toBe("Chefe: 5 tarefas atribuídas a você");
+  });
+
+  it("🔴 LEVA à Área de trabalho -- é onde ficam 'Minhas tarefas'", async () => {
+    /* O par do `tarefas_movidas`, que não tem destino nenhum: aqui o
+       endereço existe e responde exatamente a pergunta que o aviso levanta
+       ("quais são as minhas?"). */
+    expect(destinoDaNotificacao(ATRIBUIDAS)).toBe("/");
+  });
+
+  it("⚠️ e leva mesmo SEM `alvo_id` -- não há uma tarefa para abrir", async () => {
+    expect(destinoDaNotificacao({ ...ATRIBUIDAS, alvo_id: "" })).toBe("/");
   });
 });

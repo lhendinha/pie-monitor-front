@@ -18,6 +18,7 @@ import {
   TIPO_TAREFA_ATRIBUIDA,
   TIPO_TAREFA_MOVIDA,
   TIPO_TAREFAS_MOVIDAS,
+  TIPO_TAREFAS_ATRIBUIDAS,
 } from "../constants";
 import type { Notificacao } from "../types";
 
@@ -51,6 +52,7 @@ export function frasePrincipal(n: Notificacao): string {
        montada na API, que é quem sabe a contagem e o destino. Aqui só entra
        quem fez, como em `processos_atribuidos`. */
     case TIPO_TAREFAS_MOVIDAS:
+    case TIPO_TAREFAS_ATRIBUIDAS:
       return autor ? `${autor}: ${n.titulo}` : n.titulo;
     case TIPO_ATENDIMENTO_STATUS:
       return autor ? `${autor} mudou o status de um atendimento` : "Um atendimento mudou de status";
@@ -207,6 +209,16 @@ export function destinoDaNotificacao(n: Notificacao): string | null {
    * ⚠️ Mostra o subgrupo INTEIRO, não só os que acabaram de entrar. É o mais
    * próximo que a listagem alcança hoje; um filtro de "chegaram agora" seria
    * campo novo, e a decisão foi não inventá-lo por causa deste aviso. */
+  /* 🔴 A atribuição em lote LEVA a algum lugar, e o de movidas não.
+   *
+   * "N tarefas atribuídas a você" são exatamente as que a Área de trabalho
+   * lista em "Minhas tarefas" -- o endereço existe e responde a pergunta que
+   * o aviso levanta. Já as movidas em lote continuam sem destino: não há uma
+   * tarefa para onde ir, e `/kanban` abriria o último quadro usado. */
+  if (n.tipo === TIPO_TAREFAS_ATRIBUIDAS) {
+    return "/";
+  }
+
   if (n.tipo === TIPO_PROCESSOS_IMPORTADOS && n.subgrupo_id) {
     return `/processos?subgrupo=${encodeURIComponent(n.subgrupo_id)}`;
   }

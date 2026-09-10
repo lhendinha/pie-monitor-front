@@ -75,7 +75,7 @@ describe("barramento do canal de tempo real", () => {
   });
 
   it("um ouvinte que estoura não leva os outros junto", () => {
-    /* ⚠️ Mesmo motivo de `_criar_tolerando_falha` na API: uma exceção no
+    /* ⚠️ Mesmo motivo de `criar_tolerando_falha` na API: uma exceção no
      * primeiro deixava os demais sem receber. O canal não é lugar de
      * propagar erro de tela. */
     vi.spyOn(console, "error").mockImplementation(() => {});

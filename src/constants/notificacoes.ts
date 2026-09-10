@@ -22,6 +22,19 @@ export const TIPO_TAREFA_MOVIDA = "tarefa_movida";
  * `/kanban` não recebe subgrupo pela URL -- abriria o último quadro usado,
  * que pode nem ser o do aviso. Mesma situação de `itens_reatribuidos`. */
 export const TIPO_TAREFAS_MOVIDAS = "tarefas_movidas";
+
+/** Muitas tarefas passaram a ser de uma pessoa de uma vez -- atribuição em
+ * lote.
+ *
+ * 🔴 Uma linha por PESSOA, como `TIPO_TAREFAS_MOVIDAS` e
+ * `TIPO_PROCESSOS_ATRIBUIDOS`. Distribuir 40 tarefas viraria 40 linhas no
+ * sino de quem recebeu -- e a partir de DUAS: com uma só, a individual
+ * (`tarefa_atribuida`) abre a tarefa.
+ *
+ * ⚠️ **Este TEM destino**, ao contrário de `TIPO_TAREFAS_MOVIDAS**: "tarefas
+ * atribuídas a você" são exatamente as que a Área de trabalho lista em
+ * "Minhas tarefas". Sem `alvo_id`, o clique leva à raiz. */
+export const TIPO_TAREFAS_ATRIBUIDAS = "tarefas_atribuidas";
 export const TIPO_ATENDIMENTO_STATUS = "atendimento_status";
 export const TIPO_LEMBRETE = "lembrete";
 /** A pessoa foi movida de grupo, ou teve o papel alterado.
@@ -132,6 +145,7 @@ export const TIPOS_DE_NOTIFICACAO = [
   TIPO_TAREFA_ATRIBUIDA,
   TIPO_TAREFA_MOVIDA,
   TIPO_TAREFAS_MOVIDAS,
+  TIPO_TAREFAS_ATRIBUIDAS,
   TIPO_ATENDIMENTO_STATUS,
   TIPO_LEMBRETE,
   TIPO_SESSAO_ALTERADA,
