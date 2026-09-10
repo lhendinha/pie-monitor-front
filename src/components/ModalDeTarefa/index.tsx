@@ -208,7 +208,7 @@ export default function ModalDeTarefa({
           </LinhaDeCampos>
 
           <Campo
-            rotulo="Coluna do quadro"
+            rotulo="Status"
             para="tf-coluna"
             obrigatorio
           >

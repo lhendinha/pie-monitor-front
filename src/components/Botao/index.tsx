@@ -29,6 +29,10 @@ export default function Botao({ variante = "primario", children, ...resto }: Bot
          descendentes e vence o atributo `width` do próprio ícone -- a
          lixeira do Excluir saía com 20px. */
       css={{ "& svg": { width: "15px", height: "15px" } }}
+      /* Dá nome à variante no DOM: cor não se afere em jsdom, e é assim que um
+         teste sabe qual botão é o primário. Mesmo recurso do `data-tipo` do
+         `Aviso`. */
+      data-variante={variante}
       {...CORES_DO_BOTAO[variante]}
       {...resto}
     >

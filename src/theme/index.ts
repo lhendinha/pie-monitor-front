@@ -20,6 +20,10 @@ export const system = createSystem(defaultConfig, {
      * e não no componente porque `@keyframes` é global por definição: o
      * nome precisa existir no documento pra a animação encontrá-lo. */
     keyframes: {
+      /* A barrinha do aviso com Desfazer: o prazo visível. */
+      drenar: {
+        to: { transform: "scaleX(0)" },
+      },
       "aviso-entrar": {
         from: { opacity: 0, transform: "translateY(6px)" },
         to: { opacity: 1, transform: "none" },

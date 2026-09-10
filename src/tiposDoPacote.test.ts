@@ -17,13 +17,17 @@ const PASTA = join(process.cwd(), "src/types");
 /** Os envelopes e corpos das rotas ficam fora do índice de propósito: quem
  * os usa importa `types/respostas` e `types/requisicoes` pelo caminho. */
 const FORA_DO_INDICE = new Set(["index.ts", "respostas.ts", "requisicoes.ts"]);
-/* 120: a Fase 2 do PLANO_ACOES_EM_LOTE trouxe cinco em `selecao.ts`
+/* 126: a Fase 2 do PLANO_ACOES_EM_LOTE trouxe cinco em `selecao.ts`
    (MotivoDeRecusa, ChaveDeTarefa, TarefaNaoTocada, ResultadoDoLote,
    EstadoDaCaixa) e a Fase 5 trouxe `SelecaoDeTarefas`, que descreve o
    retorno do hook para a barra poder receber a seleção inteira -- o mesmo
-   desenho de `OpcoesBuscaveis`. O número é o guarda: tipo novo sem pensar
-   não passa. */
-const TIPOS_NO_PACOTE = 120;
+   desenho de `OpcoesBuscaveis`. A Fase 8 trouxe seis: os três resultados
+   das ações novas (`ResultadoDaConclusao`, `ResultadoDoStatus`,
+   `ResultadoDaAtribuicao`), os dois pedidos que os hooks recebem
+   (`PedidoDeStatusEmLote`, `PedidoDeAtribuicaoEmLote`) e `OpcoesDoAviso`,
+   o segundo argumento do aviso com Desfazer. O número é o guarda: tipo
+   novo sem pensar não passa. */
+const TIPOS_NO_PACOTE = 126;
 
 const dominios = readdirSync(PASTA)
   .filter((a) => a.endsWith(".ts") && !FORA_DO_INDICE.has(a))

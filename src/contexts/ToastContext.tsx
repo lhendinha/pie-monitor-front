@@ -1,7 +1,7 @@
 import { Flex } from "@chakra-ui/react";
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 
-import { DURACAO_DO_AVISO_MS } from "../constants/toast";
+import { DURACAO_DO_AVISO_COM_DESFAZER_MS, DURACAO_DO_AVISO_MS } from "../constants/toast";
 import Aviso from "../components/Aviso";
 import type { ToastItem } from "../types";
 import type { ToastContextValue } from "./types";
@@ -18,17 +18,17 @@ export function ToastProvider({ children }: ToastProviderProps) {
   }, []);
 
   const adicionar = useCallback(
-    (tipo: ToastItem["tipo"], mensagem: string) => {
+    (tipo: ToastItem["tipo"], mensagem: string, onDesfazer?: () => void) => {
       const id = proximoId.current++;
-      setToasts((prev) => [...prev, { id, tipo, mensagem }]);
-      setTimeout(() => remover(id), DURACAO_DO_AVISO_MS);
+      setToasts((prev) => [...prev, { id, tipo, mensagem, onDesfazer }]);
+      setTimeout(() => remover(id), onDesfazer ? DURACAO_DO_AVISO_COM_DESFAZER_MS : DURACAO_DO_AVISO_MS);
     },
     [remover]
   );
 
   const valor: ToastContextValue = {
     erro: (mensagem) => adicionar("erro", mensagem),
-    sucesso: (mensagem) => adicionar("sucesso", mensagem),
+    sucesso: (mensagem, opcoes) => adicionar("sucesso", mensagem, opcoes?.onDesfazer),
   };
 
   return (
@@ -54,7 +54,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
   );
 }
 
-/** `erro(mensagem)` / `sucesso(mensagem)`. Precisa estar dentro de
+/** `erro(mensagem)` / `sucesso(mensagem, { onDesfazer })`. Precisa estar dentro de
  * `<ToastProvider>` (montado uma vez em `App.tsx`). */
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);

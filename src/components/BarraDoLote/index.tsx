@@ -13,7 +13,18 @@ import type { BarraDoLoteProps } from "./types";
  *
  * ➡️ `PLANO_ACOES_EM_LOTE.md`, Fase 5.
  */
-export default function BarraDoLote({ selecao, universo, nota, onExcluir, excluindo }: BarraDoLoteProps) {
+export default function BarraDoLote({
+  selecao,
+  universo,
+  nota,
+  onExcluir,
+  excluindo,
+  subgrupoNome,
+  onAtribuir,
+  onAlterarStatus,
+  onConcluir,
+  agindo,
+}: BarraDoLoteProps) {
   const marcadas = universo.filter(selecao.estaMarcada);
   const chaves = universo.map(chaveDe);
 
@@ -33,6 +44,12 @@ export default function BarraDoLote({ selecao, universo, nota, onExcluir, exclui
          não pode avisar sobre um recorte e apagar outro. */
       onExcluir={() => onExcluir(marcadas)}
       excluindo={excluindo}
+      tarefasMarcadas={marcadas}
+      subgrupoNome={subgrupoNome}
+      onAtribuir={onAtribuir && ((id, nome) => onAtribuir(marcadas, id, nome))}
+      onAlterarStatus={onAlterarStatus && ((coluna) => onAlterarStatus(marcadas, coluna))}
+      onConcluir={onConcluir && (() => onConcluir(marcadas))}
+      agindo={agindo}
     />
   );
 }

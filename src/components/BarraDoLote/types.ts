@@ -1,4 +1,4 @@
-import type { SelecaoDeTarefas, Tarefa } from "../../types";
+import type { ColunaDoQuadro, SelecaoDeTarefas, Tarefa } from "../../types";
 
 export interface BarraDoLoteProps {
   selecao: SelecaoDeTarefas;
@@ -11,5 +11,12 @@ export interface BarraDoLoteProps {
   /** Uma linha sobre o que o modo custa NESTA tela, quando custa algo. */
   nota?: string;
   onExcluir: (marcadas: Tarefa[]) => void;
+  /** As ações reversíveis. Recebem as MARCADAS -- o mesmo conjunto que a
+   * contagem mostra, pela mesma razão do `onExcluir`. */
+  subgrupoNome?: (id: string) => string;
+  onAtribuir?: (marcadas: Tarefa[], responsavelId: string | null, nome: string | null) => void;
+  onAlterarStatus?: (marcadas: Tarefa[], coluna: ColunaDoQuadro) => void;
+  onConcluir?: (marcadas: Tarefa[]) => void;
+  agindo?: boolean;
   excluindo?: boolean;
 }

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 
 import {
-  BarraDoLote, Botao, CabecalhoDePagina, ConfirmacaoDeExclusaoEmLote, EstadoVazio,
+  BarraDoLote, Botao, CabecalhoDePagina, ConfirmacoesDoLote, EstadoVazio,
   EstadoDeErro, Esqueleto, IconePlus, ModalDeTarefa,
 } from "../../components";
 import { PERIODO_TODOS } from "../../constants";
@@ -107,7 +107,8 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
   /* 🔴 O escopo é do QUADRO, não de uma coluna: "Excluir 7" tem que dizer
      quais sete, e no kanban a pessoa marca cartões de colunas diferentes na
      mesma leva -- é metade da razão de existir a seleção aqui. */
-  const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
+  const acoes = useAcoesEmLote();
+  const { selecao, setConfirmando, excluir } = acoes;
   const selecionando = selecao.escopo === "kanban";
 
   const colunas = [...(quadroQuery.data?.colunas || [])].sort((a, b) => a.ordem - b.ordem);
@@ -286,6 +287,11 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
                 nota="O arraste fica desligado enquanto você seleciona."
                 onExcluir={setConfirmando}
                 excluindo={excluir.isPending}
+                subgrupoNome={() => subgrupoNome}
+                onAtribuir={acoes.atribuir}
+                onAlterarStatus={acoes.alterarStatus}
+                onConcluir={acoes.setConfirmandoConclusao}
+                agindo={acoes.agindo}
               />
             )}
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
@@ -309,15 +315,7 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
 
       {/* Irmão FIXO do conteúdo, como o `Modal` exige: dentro de um ramo
           condicional, uma troca de ramo com ele aberto o remonta vazio. */}
-      {confirmando && (
-        <ConfirmacaoDeExclusaoEmLote
-          tarefas={confirmando}
-          subgrupoNome={() => subgrupoNome}
-          excluindo={excluir.isPending}
-          onConfirmar={() => excluir.mutate(confirmando)}
-          onFechar={() => setConfirmando(null)}
-        />
-      )}
+      <ConfirmacoesDoLote acoes={acoes} subgrupoNome={() => subgrupoNome} />
 
       {editandoQuadro && (
         <ModalDoQuadro

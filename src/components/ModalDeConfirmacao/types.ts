@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { VarianteBotao } from "../../types";
 
 export interface ModalDeConfirmacaoProps {
   titulo: string;
@@ -35,6 +36,27 @@ export interface ModalDeConfirmacaoProps {
    * "não pode ser desfeita": ícone de lixo em ação reversível mente, e o
    * aviso assusta à toa. */
   reversivel?: boolean;
+  /** A cor do botão de confirmar. `perigo` quando não vem nada, que é o de
+   * toda exclusão.
+   *
+   * ⚠️ Prop à parte, e NÃO derivada de `reversivel`: quatro telas já usam
+   * `reversivel` com o botão vermelho (fatura, opções do grupo, membros,
+   * lançamento), e amarrar a cor à prop mudaria as quatro sem ninguém pedir.
+   * Concluir em lote é a primeira que pede o primário -- é o que o artefato
+   * validado desenha. */
+  varianteDoBotao?: Extract<VarianteBotao, "perigo" | "primario">;
+  /** O que o botão diz enquanto confirma. "Excluindo…" quando não vem nada.
+   *
+   * 🔴 Era fixo, e um diálogo de CONCLUIR diria "Excluindo…" no meio do envio
+   * -- a palavra errada no exato momento em que a pessoa confere o que está
+   * acontecendo. */
+  rotuloConfirmando?: string;
+  /** Uma linha pequena no pé, só nas ações REVERSÍVEIS: onde a exclusão diz
+   * "não pode ser desfeita", a reversível diz COMO se volta.
+   *
+   * ⚠️ Ignorada sem `reversivel` -- ali a frase do irreversível é fixa, e uma
+   * nota tranquilizadora sob um botão de exclusão mentiria. */
+  nota?: string;
   confirmando?: boolean;
   /** Ainda checando se dá pra excluir.
    *

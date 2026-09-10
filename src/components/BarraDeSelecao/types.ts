@@ -1,4 +1,4 @@
-import type { EstadoDaCaixa } from "../../types";
+import type { ColunaDoQuadro, EstadoDaCaixa, Tarefa } from "../../types";
 
 export interface BarraDeSelecaoProps {
   /** Quantas estão marcadas, e de quantas -- vira "3 de 47 selecionadas". */
@@ -23,6 +23,19 @@ export interface BarraDeSelecaoProps {
    * e concluindo que o quadro travou. Nas telas em que a seleção não tira
    * nada, fica de fora: nota que aparece sempre deixa de ser lida. */
   nota?: string;
+  /** As tarefas MARCADAS. Presente junto dos três `on*` abaixo, a barra ganha
+   * as ações reversíveis -- os dois painéis precisam saber quem está marcado.
+   *
+   * ⚠️ Opcionais em conjunto, e não uma a uma: meia barra (atribuir sem
+   * concluir) não é um estado que alguma tela deva ter. */
+  tarefasMarcadas?: Tarefa[];
+  subgrupoNome?: (id: string) => string;
+  onAtribuir?: (responsavelId: string | null, nome: string | null) => void;
+  onAlterarStatus?: (coluna: ColunaDoQuadro) => void;
+  onConcluir?: () => void;
+  /** Uma ação reversível está a caminho: trava as três, para um segundo
+   * clique não mandar o mesmo lote duas vezes. */
+  agindo?: boolean;
   onCancelar: () => void;
   onExcluir: () => void;
   excluindo?: boolean;

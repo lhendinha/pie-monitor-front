@@ -87,6 +87,19 @@ export interface ToastItem {
   id: number;
   tipo: "erro" | "sucesso";
   mensagem: string;
+  /** Presente, o aviso ganha o botão DESFAZER e vive mais -- ver
+   * `DURACAO_DO_AVISO_COM_DESFAZER_MS`. */
+  onDesfazer?: () => void;
+}
+
+/** O segundo argumento de `useToast().sucesso`. */
+export interface OpcoesDoAviso {
+  /** A chamada inversa da ação que o aviso anuncia.
+   *
+   * 🔴 Só nas ações REVERSÍVEIS. Excluir não ganha: a exclusão no servidor já
+   * aconteceu, e o que voltaria seria uma cópia com outro id -- o link do sino
+   * continuaria morto. */
+  onDesfazer?: () => void;
 }
 
 /** O que o servidor pode mandar em `Notificacao.tipo`.

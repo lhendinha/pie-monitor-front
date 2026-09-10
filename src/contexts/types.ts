@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
+import type { OpcoesDoAviso } from "../types";
+
 /** O que o `useToast()` entrega a quem chama.
  */
 export interface ToastContextValue {
   erro: (mensagem: string) => void;
-  sucesso: (mensagem: string) => void;
+  sucesso: (mensagem: string, opcoes?: OpcoesDoAviso) => void;
 }
 
 /** O que o `SessaoContext` entrega -- o retorno inteiro de `useSessao`.

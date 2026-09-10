@@ -24,6 +24,9 @@ export default function ModalDeConfirmacao({
   rotulo,
   rotuloDeCancelar,
   reversivel,
+  varianteDoBotao,
+  rotuloConfirmando,
+  nota,
   confirmando,
   verificando,
   mensagemDeEspera,
@@ -44,13 +47,13 @@ export default function ModalDeConfirmacao({
             {rotuloDeCancelar || "Cancelar"}
           </Botao>
           <Botao
-            variante="perigo"
+            variante={varianteDoBotao ?? "perigo"}
             onClick={onConfirmar}
             disabled={confirmando || verificando || falhouAVerificacao}
           >
             {!reversivel && <IconeLixeira />}
             {confirmando
-              ? "Excluindo…"
+              ? rotuloConfirmando || "Excluindo…"
               : verificando && !falhouAVerificacao
                 ? "Verificando…"
                 : rotulo || "Excluir"}
@@ -83,6 +86,11 @@ export default function ModalDeConfirmacao({
         {!verificando && !reversivel && (
           <Text fontSize="11.5px" color="fg.subtle">
             Essa ação não pode ser desfeita.
+          </Text>
+        )}
+        {!verificando && reversivel && nota && (
+          <Text fontSize="11.5px" color="fg.subtle">
+            {nota}
           </Text>
         )}
       </Stack>
