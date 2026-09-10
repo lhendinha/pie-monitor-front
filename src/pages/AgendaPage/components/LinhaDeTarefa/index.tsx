@@ -1,4 +1,4 @@
-import { Box, Flex, Text } from "@chakra-ui/react";
+import { Box, Checkbox, Flex, Text } from "@chakra-ui/react";
 
 import { BotaoNu, EtiquetasDeSubgrupo } from "../../../../components";
 
@@ -14,6 +14,12 @@ import type { LinhaDeTarefaProps } from "./types";
  *
  * É um `<button>`, não uma `<div>` clicável: abrir a tarefa é a ação
  * principal da linha, e teclado precisa alcançá-la.
+ *
+ * 🔴 **No modo de seleção ela deixa de ser botão e vira o `<label>` da
+ * caixa.** Caixa de marcar dentro de `<button>` é conteúdo interativo
+ * aninhado: HTML inválido, e o clique fica ambíguo entre abrir e marcar.
+ * Como `<label>`, a linha inteira é alvo nativo da caixa -- sem JS de
+ * propagação, sem duplo disparo, e o teclado continua chegando pelo input.
  */
 export default function LinhaDeTarefa({
   tarefa,
@@ -23,6 +29,8 @@ export default function LinhaDeTarefa({
   subgrupoNome,
   onAbrir,
   ultima,
+  selecao,
+  semEtiqueta,
 }: LinhaDeTarefaProps) {
   const cor = CORES_DA_PRIORIDADE[tarefa.prioridade] ?? "fg.subtle";
 
@@ -34,22 +42,24 @@ export default function LinhaDeTarefa({
     : assuntoDoAtendimento;
   const detalhe = [nomeDaColuna, vinculo].filter(Boolean).join(" · ");
 
-  return (
-    <BotaoNu
-      type="button"
-      onClick={() => onAbrir(tarefa)}
-      display="flex"
-      alignItems="center"
-      gap="12px"
-      w="100%"
-      textAlign="left"
-      px="4px"
-      py="11px"
-      borderBottomWidth={ultima ? "0" : "1px"}
-      borderBottomStyle="solid"
-      borderBottomColor="border.subtle"
-      _hover={{ bg: "bg.subtle" }}
-    >
+  /* A moldura é a MESMA nos dois modos. O que troca é o elemento de fora --
+     e é por isso que ela vive num objeto, e não repetida duas vezes. */
+  const moldura = {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    w: "100%",
+    textAlign: "left" as const,
+    px: "4px",
+    py: "11px",
+    borderBottomWidth: ultima ? "0" : "1px",
+    borderBottomStyle: "solid",
+    borderBottomColor: "border.subtle",
+    _hover: { bg: "bg.subtle" },
+  };
+
+  const miolo = (
+    <>
       {/* `minW=0` pra que o texto longo possa encolher e reticenciar em vez
           de esticar a linha e empurrar a etiqueta pra fora. */}
       <Box flex="1" minW="0">
@@ -69,21 +79,49 @@ export default function LinhaDeTarefa({
         )}
       </Box>
 
-      <Flex align="center" gap="8px" flexShrink="0">
-        {/* 🔴 Junto do bloco de metadados da direita, não colado no título: a
-            Agenda junta as tarefas de TODOS os seus subgrupos no mesmo dia, e
-            aqui é onde a linha já responde "em que pé isto está".
+      {/* 🔴 Junto do bloco de metadados da direita, não colado no título: a
+          Agenda junta as tarefas de TODOS os seus subgrupos no mesmo dia, e
+          aqui é onde a linha já responde "em que pé isto está".
 
-            ⚠️ Este `Flex` tem `flexShrink="0"` e NÃO tem `wrap` -- ao
-            contrário do de Atendimentos. Se a etiqueta não couber, ela
-            espreme o título em vez de descer. Medido em Chrome antes de
-            fechar. */}
-        <EtiquetasDeSubgrupo nomes={[subgrupoNome]} />
+          ⚠️ Este `Flex` tem `flexShrink="0"` e NÃO tem `wrap` -- ao
+          contrário do de Atendimentos. Se a etiqueta não couber, ela
+          espreme o título em vez de descer. Medido em Chrome antes de
+          fechar. */}
+      <Flex align="center" gap="8px" flexShrink="0">
+        {!semEtiqueta && <EtiquetasDeSubgrupo nomes={[subgrupoNome]} />}
         <Box w="8px" h="8px" borderRadius="full" bg={cor} aria-hidden="true" />
         <Text fontSize="11.5px" fontWeight="700" color="fg.muted" whiteSpace="nowrap">
           {tarefa.prioridade}
         </Text>
       </Flex>
+    </>
+  );
+
+  if (selecao) {
+    return (
+      <Checkbox.Root
+        {...moldura}
+        checked={selecao.marcada}
+        onClick={(evento) => {
+          /* O Chakra alterna sozinho pelo clique no label; o `preventDefault`
+             impede a dupla troca (a dele e a nossa). E o `shiftKey` só existe
+             no evento de clique -- `onCheckedChange` recebe o estado novo e
+             mais nada, que é onde o Shift+clique morreria calado. */
+          evento.preventDefault();
+          selecao.onAlternar(evento.shiftKey);
+        }}
+        aria-label={`Selecionar ${tarefa.titulo}`}
+      >
+        <Checkbox.HiddenInput />
+        <Checkbox.Control />
+        {miolo}
+      </Checkbox.Root>
+    );
+  }
+
+  return (
+    <BotaoNu type="button" onClick={() => onAbrir(tarefa)} {...moldura}>
+      {miolo}
     </BotaoNu>
   );
 }

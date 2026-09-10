@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -618,6 +618,43 @@ describe("seleção em lote (Fase 3 do PLANO_ACOES_EM_LOTE)", () => {
     expect(await screen.findByText(/1 ficou: o responsável mudou/)).toBeInTheDocument();
   });
 
+  it("terminada a exclusão, o modal fecha e o modo SAI", async () => {
+    /* Ficar no modo com a seleção já apagada deixaria "0 de N" no topo da
+       tela, sem nada para fazer -- e a pessoa procurando o que sumiu.
+       O modal é o par: sair do modo NÃO o fecha (ele é irmão fixo do
+       conteúdo, ver o comentário na página), e ele ficaria de pé perguntando
+       sobre tarefas que já não existem. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Conferir prazo");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[1]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Conferir prazo" }));
+    await usuario.click(screen.getByRole("button", { name: /Excluir 1/ }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Selecionar" })).toHaveLength(2),
+    );
+    expect(screen.queryByText(/selecionadas/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("⚠️ falhando, o modal FECHA antes do aviso", async () => {
+    /* Deixá-lo aberto sobre um erro faria a pessoa clicar de novo achando
+       que o botão falhou -- e a segunda tentativa apagaria de verdade. */
+    mocks.removerTarefasEmLote.mockRejectedValue(new Error("caiu"));
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Conferir prazo");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[1]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Conferir prazo" }));
+    await usuario.click(screen.getByRole("button", { name: /Excluir 1/ }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    expect(await screen.findByText(/Não foi possível excluir/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("🔴 o botão da barra e o do modal têm nomes DIFERENTES", async () => {
     /* Dois botões com o mesmo nome acessível no mesmo documento fazem o
        leitor anunciar a mesma escolha duas vezes -- a regra que criou
@@ -664,6 +701,46 @@ describe("seleção em lote (Fase 3 do PLANO_ACOES_EM_LOTE)", () => {
 
     /* Duas das três têm processo -- e uma delas está FORA da página. */
     expect(await screen.findByText(/2 delas estão vinculadas/)).toBeInTheDocument();
+  });
+
+  it("🔴 a confirmação avisa das vinculadas a um processo ativo", async () => {
+    /* Medido em produção em 09/09/2026: três das quatro órfãs prendiam um
+       processo VIVO. "Sem responsável" não é sinônimo de lixo, e é ESTA
+       frase -- na confirmação, com o dedo já no botão -- que diz isso. */
+    mocks.listarTarefas.mockImplementation((p: { responsavel?: string }) =>
+      Promise.resolve(
+        p?.responsavel === "eu"
+          ? { tarefas: [], total: 0, total_paginas: 0 }
+          : {
+              tarefas: [tarefa("t3", "Com processo", null, "08012345620268190001")],
+              total: 1,
+              total_paginas: 1,
+            },
+      ),
+    );
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Com processo");
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Com processo" }));
+    await usuario.click(screen.getByRole("button", { name: /Excluir 1/ }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).getByText(/vinculada a um processo ativo/)).toBeInTheDocument();
+  });
+
+  it("⚠️ o par: sem vínculo, a confirmação não inventa aviso", async () => {
+    /* Aviso que aparece sempre vira moldura e ninguém lê -- e aí ele não
+       protege no dia em que o vínculo existe de verdade. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Conferir prazo");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[1]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Conferir prazo" }));
+    await usuario.click(screen.getByRole("button", { name: /Excluir 1/ }));
+
+    const dialogo = await screen.findByRole("dialog");
+    expect(within(dialogo).queryByText(/processo ativo/)).not.toBeInTheDocument();
   });
 
   it("🔴 quem NÃO é manager não vê a entrada", async () => {
