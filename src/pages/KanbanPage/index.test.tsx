@@ -110,6 +110,111 @@ beforeEach(() => {
   mocks.removerTarefasEmLote.mockResolvedValue({ removidas: 0, ignoradas: [], recusadas: [] });
 });
 
+/** 🔴 O NOME do subgrupo quando o link aponta para um fora da primeira página.
+ *
+ * O quadro só conhecia o nome pela primeira página da pílula ou pela memória
+ * do último subgrupo usado -- e a memória entrava SEM conferir o id. Com outro
+ * subgrupo lembrado, a pílula, o modal e as confirmações do lote diziam o nome
+ * ERRADO; sem memória, diziam o id cru. Medido em Chrome contra o offline. */
+describe("KanbanPage — o nome do subgrupo do link", () => {
+  const CATALOGO = [
+    { subgrupo_id: "sg-civel", nome: "Cível" },
+    { subgrupo_id: "sg-trab", nome: "Trabalhista" },
+    { subgrupo_id: "sg-fora", nome: "Civil" },
+  ];
+
+  /** A pílula pede a primeira página (sem `pagina`); o catálogo pede todas
+   * (com `pagina`). Só o catálogo conhece o subgrupo do link. */
+  function subgruposComUmForaDaPrimeiraPagina(catalogoFalha = false) {
+    mocks.listarSubgrupos.mockImplementation((opcoes: { pagina?: number } = {}) => {
+      if (!opcoes.pagina) {
+        return Promise.resolve({ subgrupos: CATALOGO.slice(0, 2), total: 3, total_paginas: 2 });
+      }
+      if (catalogoFalha) return Promise.reject(new ApiError("Falhou", 500));
+      return Promise.resolve({ subgrupos: CATALOGO, total: 3, total_paginas: 1 });
+    });
+    mocks.detalhesTarefa.mockResolvedValue({ ...TAREFA_DO_LINK, subgrupo_id: "sg-fora" });
+  }
+
+  function comCartao(subgrupoId: string, titulo: string) {
+    mocks.listarTarefas.mockResolvedValue({
+      tarefas: [{ subgrupo_id: subgrupoId, tarefa_id: "cartao", titulo, data: "2026-09-10",
+        coluna_id: "c1", prioridade: "Alta", responsavel_id: null }],
+      total: 1,
+      total_paginas: 1,
+    });
+  }
+
+  /** Fecha o modal do link, marca o cartão e abre a confirmação de excluir:
+   * é nela que o nome errado fazia estrago. */
+  async function confirmacaoDeExcluir(titulo: string) {
+    const usuario = userEvent.setup();
+    await screen.findByDisplayValue("Protocolar recurso");
+    await usuario.click(screen.getByRole("button", { name: "Cancelar" }));
+    await screen.findByText(titulo);
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    await usuario.click(screen.getByRole("checkbox", { name: `Selecionar ${titulo}` }));
+    await usuario.click(screen.getByRole("button", { name: "Excluir 1" }));
+    return screen.findByRole("dialog");
+  }
+
+  it("🔴 com OUTRO subgrupo lembrado, diz o nome do subgrupo do link", async () => {
+    lembrarTrabalhista();
+    subgruposComUmForaDaPrimeiraPagina();
+    comCartao("sg-fora", "Cartão do Civil");
+    montar({ subgrupoId: "sg-fora", tarefaId: "t-atrasada" });
+
+    await screen.findByDisplayValue("Protocolar recurso");
+    await waitFor(() => expect(screen.getAllByText("Civil").length).toBeGreaterThan(0));
+    expect(screen.queryByText("Trabalhista")).not.toBeInTheDocument();
+    expect(screen.queryByText("sg-fora")).not.toBeInTheDocument();
+
+    const dialogo = await confirmacaoDeExcluir("Cartão do Civil");
+    expect(dialogo).toHaveTextContent("de Civil");
+    expect(dialogo).not.toHaveTextContent("Trabalhista");
+  });
+
+  it("🔴 sem nada lembrado, diz o nome -- não o id", async () => {
+    subgruposComUmForaDaPrimeiraPagina();
+    montar({ subgrupoId: "sg-fora", tarefaId: "t-atrasada" });
+
+    await screen.findByDisplayValue("Protocolar recurso");
+    await waitFor(() => expect(screen.getAllByText("Civil").length).toBeGreaterThan(0));
+    expect(screen.queryByText("sg-fora")).not.toBeInTheDocument();
+  });
+
+  it("par negativo: subgrupo da primeira página tem nome mesmo sem o catálogo", async () => {
+    /* A primeira página basta: o catálogo é só para quem está fora dela. */
+    subgruposComUmForaDaPrimeiraPagina(true);
+    mocks.detalhesTarefa.mockResolvedValue(TAREFA_DO_LINK);
+    comCartao("sg-trab", "Cartão do Trabalhista");
+    montar({ subgrupoId: "sg-trab", tarefaId: "t-atrasada" });
+
+    await screen.findByDisplayValue("Protocolar recurso");
+    expect((await screen.findAllByText("Trabalhista")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("sg-trab")).not.toBeInTheDocument();
+
+    /* A pílula e o modal tiram o nome das PRÓPRIAS opções; a confirmação,
+       não -- é ela que prova que a primeira página basta. */
+    const dialogo = await confirmacaoDeExcluir("Cartão do Trabalhista");
+    expect(dialogo).toHaveTextContent("de Trabalhista");
+    expect(dialogo).not.toHaveTextContent("sg-trab");
+  });
+
+  it("a memória do MESMO subgrupo vale mesmo com o catálogo fora do ar", async () => {
+    localStorage.setItem(
+      "pje-monitor-ultimo-subgrupo-kanban",
+      JSON.stringify({ id: "sg-fora", nome: "Civil" }),
+    );
+    subgruposComUmForaDaPrimeiraPagina(true);
+    montar({ subgrupoId: "sg-fora", tarefaId: "t-atrasada" });
+
+    await screen.findByDisplayValue("Protocolar recurso");
+    expect((await screen.findAllByText("Civil")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("sg-fora")).not.toBeInTheDocument();
+  });
+});
+
 describe("KanbanPage — link do lembrete de prazo", () => {
   it("abre o modal da tarefa mesmo ela estando FORA da janela do quadro", async () => {
     /* O quadro abre filtrado no mês, e lembrete de prazo é de tarefa
