@@ -16,6 +16,13 @@ export interface BarraDeSelecaoProps {
   onTodas: () => void;
   /** As N estão a caminho. O link diz isso em vez de parecer travado. */
   carregandoTodas?: boolean;
+  /** Uma linha sobre o que o modo CUSTA nesta tela, quando custa algo.
+   *
+   * 🔴 Nasceu no Kanban, onde a seleção desliga o arraste -- o gesto
+   * principal daquela tela. Sem a frase, a pessoa descobre tentando arrastar
+   * e concluindo que o quadro travou. Nas telas em que a seleção não tira
+   * nada, fica de fora: nota que aparece sempre deixa de ser lida. */
+  nota?: string;
   onCancelar: () => void;
   onExcluir: () => void;
   excluindo?: boolean;

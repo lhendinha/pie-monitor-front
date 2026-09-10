@@ -9,10 +9,10 @@ import {
   EstadoDeErro,
   Esqueleto,
   IconePlus,
+  BarraDoLote,
   ConfirmacaoDeExclusaoEmLote,
   ModalDeTarefa,
 } from "../../components";
-import { BarraDeSelecao } from "../../components";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { useAssuntosDasTarefas } from "./hooks/useAssuntosDasTarefas";
 import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
@@ -35,7 +35,7 @@ import type { FiltrosDaAgenda as Filtros, PeriodoDaAgenda } from "./types";
 import type { OpcaoDeSelect, Tarefa } from "../../types";
 import { podeAgirEmLote, podeListarPessoas } from "../../utils/permissoes";
 import { useAcoesEmLote } from "../../hooks/useAcoesEmLote";
-import { chaveDe, contarVinculadas, estadoDaCaixaDoTopo } from "../../utils";
+import { chaveDe } from "../../utils";
 import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
 import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 
@@ -146,7 +146,6 @@ export default function AgendaPage() {
   const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
   const selecionando = selecao.escopo === "agenda";
 
-  const marcadas = visiveis.filter(selecao.estaMarcada);
   const chavesVisiveis = visiveis.map(chaveDe);
 
   /* 🔴 UMA função para as DUAS listas da tela. A pilha de dias e o cartão
@@ -248,19 +247,10 @@ export default function AgendaPage() {
           contagem é do PERÍODO inteiro, e um dia não pode falar por ele. */}
       {selecionando && (
         <Box mb="14px">
-          <BarraDeSelecao
-            marcadas={selecao.marcadas.size}
-            total={visiveis.length}
-            estadoDaCaixa={estadoDaCaixaDoTopo(marcadas.length, visiveis.length)}
-            vinculadas={contarVinculadas(marcadas)}
-            onAlternarTopo={() => selecao.alternarTodas(chavesVisiveis)}
-            onTodas={() =>
-              selecao.marcadas.size >= visiveis.length
-                ? selecao.limpar()
-                : selecao.alternarTodas(chavesVisiveis)
-            }
-            onCancelar={selecao.sair}
-            onExcluir={() => setConfirmando(marcadas)}
+          <BarraDoLote
+            selecao={selecao}
+            universo={visiveis}
+            onExcluir={setConfirmando}
             excluindo={excluir.isPending}
           />
         </Box>

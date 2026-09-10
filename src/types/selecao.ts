@@ -7,6 +7,8 @@
  * que é o caso normal da Agenda.
  */
 
+import type { Tarefa } from "./tarefa";
+
 /** Por que uma tarefa do lote não foi tocada. Espelha as constantes de
  * `api/src/services/tarefas_em_lote_service.py` -- os dois lados mudam
  * juntos, como em `ALVO_*` de notificação. */
@@ -40,3 +42,24 @@ export interface ResultadoDoLote {
 /** O estado da caixa do topo. `indeterminada` é o traço, não o tique --
  * marcar parte da lista e ver o tique cheio mentiria sobre o que sai. */
 export type EstadoDaCaixa = "vazia" | "indeterminada" | "marcada";
+
+/** O que `useSelecaoDeTarefas` devolve.
+ *
+ * Existe como tipo para que a barra do lote possa receber a seleção INTEIRA
+ * em vez de oito props soltas -- o mesmo desenho de `OpcoesBuscaveis`, que
+ * descreve o retorno de `useSubgruposBuscaveis`.
+ *
+ * ⚠️ `marcadas` é o conjunto de CHAVES (`subgrupo:tarefa`), nunca de ids
+ * soltos: dois subgrupos podem ter tarefas de mesmo id. Ver `chaveDe`.
+ */
+export interface SelecaoDeTarefas {
+  escopo: string;
+  marcadas: Set<string>;
+  estaMarcada: (tarefa: Tarefa) => boolean;
+  entrar: (escopo: string) => void;
+  sair: () => void;
+  limpar: () => void;
+  alternar: (tarefa: Tarefa, ordem: string[], comShift?: boolean) => void;
+  alternarTodas: (chaves: string[]) => void;
+  esquecer: (chaves: string[]) => void;
+}

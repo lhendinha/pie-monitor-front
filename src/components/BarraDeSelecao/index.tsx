@@ -32,6 +32,7 @@ export default function BarraDeSelecao({
   onAlternarTopo,
   onTodas,
   carregandoTodas,
+  nota,
   onCancelar,
   onExcluir,
   excluindo,
@@ -72,6 +73,15 @@ export default function BarraDeSelecao({
               : `Selecionar todas as ${total}`}
         </BotaoDeTexto>
 
+        {/* Mesmo peso da contagem: o que o modo TIRA é tão importante quanto
+            quantas estão marcadas, e em peso normal a frase se perdia na
+            fileira. Com `wrap`, ela desce em vez de espremer os botões. */}
+        {nota && (
+          <Text fontSize="12.5px" fontWeight="700" color="brand.darker">
+            {nota}
+          </Text>
+        )}
+
         <Flex align="center" gap="8px" ml="auto">
           <Botao variante="ghost" onClick={onCancelar}>
             Cancelar
@@ -83,8 +93,9 @@ export default function BarraDeSelecao({
         </Flex>
       </Flex>
 
-      {/* 🔴 "Sem responsável" NÃO é sinônimo de lixo: medido em produção em
-          09/09/2026, três das quatro órfãs apontavam para um processo VIVO.
+      {/* 🔴 "Sem responsável" NÃO é sinônimo de lixo.
+          Medido em produção em 09/09/2026: três das quatro órfãs apontavam
+          para um processo VIVO.
           A faixa some quando o número é zero -- aviso que aparece sempre
           deixa de ser lido. */}
       {vinculadas > 0 && (

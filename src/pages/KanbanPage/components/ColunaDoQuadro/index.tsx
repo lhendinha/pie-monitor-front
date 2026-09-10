@@ -18,6 +18,7 @@ export default function ColunaDoQuadro({
   tarefas,
   onAbrirTarefa,
   onNovaTarefa,
+  selecaoDe,
 }: ColunaDoQuadroProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: coluna.coluna_id,
@@ -88,6 +89,7 @@ export default function ColunaDoQuadro({
                carregava". */
             responsavel={t.responsavel_nome || t.responsavel_id || undefined}
             onAbrir={onAbrirTarefa}
+            selecao={selecaoDe?.(t)}
           />
         ))}
       </SortableContext>
