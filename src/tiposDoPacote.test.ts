@@ -17,7 +17,10 @@ const PASTA = join(process.cwd(), "src/types");
 /** Os envelopes e corpos das rotas ficam fora do índice de propósito: quem
  * os usa importa `types/respostas` e `types/requisicoes` pelo caminho. */
 const FORA_DO_INDICE = new Set(["index.ts", "respostas.ts", "requisicoes.ts"]);
-const TIPOS_NO_PACOTE = 114;
+/* 119 desde a Fase 2 do PLANO_ACOES_EM_LOTE: `selecao.ts` trouxe cinco
+   (MotivoDeRecusa, ChaveDeTarefa, TarefaNaoTocada, ResultadoDoLote,
+   EstadoDaCaixa). O número é o guarda: tipo novo sem pensar não passa. */
+const TIPOS_NO_PACOTE = 119;
 
 const dominios = readdirSync(PASTA)
   .filter((a) => a.endsWith(".ts") && !FORA_DO_INDICE.has(a))

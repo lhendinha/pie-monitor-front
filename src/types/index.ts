@@ -20,6 +20,7 @@ export type * from "./financeiro";
 export type * from "./grupo";
 export type * from "./notificacao";
 export type * from "./processo";
+export type * from "./selecao";
 export type * from "./sessao";
 export type * from "./tarefa";
 export type * from "./ui";
