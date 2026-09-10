@@ -30,6 +30,7 @@ import { chaveDe } from "../../utils";
 import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
 import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { useUltimoSubgrupo } from "../../hooks/useUltimoSubgrupo";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
 import type { KanbanPageProps } from "./types";
 
 
@@ -76,8 +77,16 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
      aplicou. */
   const subgrupoId =
     filtros.subgrupoId || lembrado?.id || subgrupos.primeiraPagina[0]?.value || "";
+  /* 🔴 A memória só empresta o nome quando é o MESMO subgrupo. Entrava sem
+     conferir o id: um link para um subgrupo fora da primeira página, com
+     outro lembrado, fazia a pílula e a confirmação do lote dizerem o nome
+     errado ("excluir 1 tarefa de A Filtro"). O catálogo é a chave que o sino
+     já carrega em toda tela. */
+  const nomeNoCatalogo = useNomeDeSubgrupo();
   const subgrupoNome =
-    subgrupos.primeiraPagina.find((o) => o.value === subgrupoId)?.label ?? lembrado?.nome ?? "";
+    subgrupos.primeiraPagina.find((o) => o.value === subgrupoId)?.label ||
+    (lembrado?.id === subgrupoId ? lembrado.nome : "") ||
+    nomeNoCatalogo(subgrupoId);
 
   const quadroQuery = useQuery<RespostaDoQuadro>({
     queryKey: qk.quadro(subgrupoId),
