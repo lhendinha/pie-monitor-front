@@ -5,7 +5,7 @@
  * seção 3 do `CONTEXT.md`: auxiliar de transformação mora em `utils/`.
  */
 import { contar } from "./plural";
-import type { ChaveDeTarefa, EstadoDaCaixa, Tarefa } from "../types";
+import type { ChaveDeTarefa, EstadoDaCaixa, ResultadoDoLote, Tarefa } from "../types";
 
 /** A chave de uma tarefa na seleção.
  *
@@ -88,4 +88,26 @@ export function chavesDoIntervalo(ordem: string[], de: string, ate: string): str
   const j = ordem.indexOf(ate);
   if (i < 0 || j < 0) return [];
   return ordem.slice(Math.min(i, j), Math.max(i, j) + 1);
+}
+
+/** A frase do aviso, montada do que o servidor devolveu.
+ *
+ * 🔴 Ela sempre diz **quantas ficaram e por quê**. Sem isso a pessoa não sabe
+ * se apagou metade -- e as duas razões são diferentes: `recusadas` mudou de
+ * dono (alguém assumiu no meio do caminho), `ignoradas` já não existia.
+ *
+ * ⚠️ Continua sendo SUCESSO, e não erro: nada falhou. A tarefa recusada ganhou
+ * dono, que é o desfecho bom.
+ */
+export function fraseDoResultado(r: ResultadoDoLote): string {
+  const partes = [`${contar(r.removidas, "tarefa excluída", "tarefas excluídas")}.`];
+  if (r.recusadas.length) {
+    partes.push(
+      `${contar(r.recusadas.length, "ficou", "ficaram")}: o responsável mudou enquanto você escolhia.`,
+    );
+  }
+  if (r.ignoradas.length) {
+    partes.push(`${contar(r.ignoradas.length, "já não existia", "já não existiam")}.`);
+  }
+  return partes.join(" ");
 }

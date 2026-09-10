@@ -57,6 +57,16 @@ export function useSelecaoDeTarefas() {
     setAncora(chave);
   }, [ancora]);
 
+  /** Desmarca tudo SEM sair do modo.
+   *
+   * ⚠️ Diferente de `sair`, e a diferença é visível: "Limpar seleção" desfaz
+   * as escolhas e deixa a barra de pé; "Cancelar" fecha o modo. Um botão
+   * fazendo o do outro tiraria a pessoa de onde ela estava trabalhando. */
+  const limpar = useCallback(() => {
+    setMarcadas(new Set());
+    setAncora("");
+  }, []);
+
   /** Marca todas as `chaves`, ou desmarca se já estiverem todas marcadas. */
   const alternarTodas = useCallback((chaves: string[]) => {
     setMarcadas((atuais) => {
@@ -90,6 +100,7 @@ export function useSelecaoDeTarefas() {
     estaMarcada: (tarefa: Tarefa) => marcadas.has(chaveDe(tarefa)),
     entrar,
     sair,
+    limpar,
     alternar,
     alternarTodas,
     esquecer,

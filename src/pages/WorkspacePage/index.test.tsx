@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
   listarLancamentos: vi.fn(),
   efetivarLancamento: vi.fn(),
   lerCatalogoFinanceiro: vi.fn(),
+  /* A seleção em lote: o piso de papel e a chamada do lote. */
+  papelAtende: vi.fn(),
+  removerTarefasEmLote: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
@@ -73,7 +76,13 @@ const lancamento = (id: string, descricao: string, natureza: string, centavos: n
   parcela: "", criado_por: "x", criado_em: "2026-09-01T00:00:00Z",
 });
 
-const tarefa = (id: string, titulo: string, responsavel: string | null) => ({
+const tarefa = (
+  id: string,
+  titulo: string,
+  responsavel: string | null,
+  /** O vínculo com o processo -- é o que a faixa amarela da seleção conta. */
+  processo: string | null = null,
+) => ({
   subgrupo_id: "sg",
   tarefa_id: id,
   titulo,
@@ -81,12 +90,17 @@ const tarefa = (id: string, titulo: string, responsavel: string | null) => ({
   coluna_id: "c1",
   prioridade: "Média",
   responsavel_id: responsavel,
+  processo_numero: processo,
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getEmail.mockReturnValue("ana@argos.local");
   mocks.getApelido.mockReturnValue("Ana Paula");
+  /* `manager` por padrão: a seleção em lote é o piso dela, e o par negativo
+     está no `describe` do fim. */
+  mocks.papelAtende.mockReturnValue(true);
+  mocks.removerTarefasEmLote.mockResolvedValue({ removidas: 0, ignoradas: [], recusadas: [] });
   mocks.resumoDaAreaDeTrabalho.mockResolvedValue(RESUMO);
   mocks.listarLancamentos.mockResolvedValue({
     lancamentos: [lancamento("l1", "Aluguel da sede", "saida", 285_000)],
@@ -504,5 +518,160 @@ describe("o Financeiro na Área de trabalho", () => {
       );
       await waitFor(() => expect(mocks.listarLancamentos).toHaveBeenCalled());
     });
+  });
+});
+
+
+describe("seleção em lote (Fase 3 do PLANO_ACOES_EM_LOTE)", () => {
+  it("a entrada aparece nos DOIS cards", async () => {
+    montar();
+    await screen.findByText("Protocolar réplica");
+    expect(screen.getAllByRole("button", { name: "Selecionar" })).toHaveLength(2);
+  });
+
+  it("🔴 entrar num card SOME com a entrada do outro", async () => {
+    /* Dois modos abertos fariam "Excluir 7" não dizer quais sete. */
+    const { usuario } = { usuario: userEvent.setup() };
+    montar();
+    await screen.findByText("Protocolar réplica");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[0]);
+    expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
+  });
+
+  it("a barra nasce dizendo de quantas se fala, e com Excluir travado", async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Protocolar réplica");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[0]);
+    expect(screen.getByText("0 de 2 selecionadas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Excluir 0/ })).toBeDisabled();
+  });
+
+  it("marcar uma linha conta, e o Excluir destrava", async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Protocolar réplica");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[0]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Protocolar réplica" }));
+    expect(screen.getByText("1 de 2 selecionadas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Excluir 1/ })).toBeEnabled();
+  });
+
+  it("Cancelar fecha o modo e devolve as duas entradas", async () => {
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Protocolar réplica");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[0]);
+    await usuario.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.getAllByRole("button", { name: "Selecionar" })).toHaveLength(2);
+  });
+
+  it("🔴 excluir manda ao servidor o `responsavel_id` que a TELA VIU", async () => {
+    /* É ele que a guarda do lote compara. Sem ele no fio, a proteção some. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Conferir prazo");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[1]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Conferir prazo" }));
+    await usuario.click(screen.getByRole("button", { name: /Excluir 1/ }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    await waitFor(() => expect(mocks.removerTarefasEmLote).toHaveBeenCalled());
+    expect(mocks.removerTarefasEmLote.mock.calls[0][0]).toEqual([
+      { subgrupo_id: "sg", tarefa_id: "t3", responsavel_id: null },
+    ]);
+  });
+
+  it("🔴 e leva o responsável DE VERDADE quando a tarefa tem dono", async () => {
+    /* O par do teste acima, e ele existe porque uma mutação passou verde:
+       com `responsavel_id: null` fixo, o caso sem dono continuava certo e o
+       COM dono ia errado -- e aí a guarda recusaria tudo, sempre. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Protocolar réplica");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[0]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Protocolar réplica" }));
+    await usuario.click(screen.getByRole("button", { name: "Excluir 1" }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    await waitFor(() => expect(mocks.removerTarefasEmLote).toHaveBeenCalled());
+    expect(mocks.removerTarefasEmLote.mock.calls[0][0]).toEqual([
+      { subgrupo_id: "sg", tarefa_id: "t1", responsavel_id: "ana@argos.local" },
+    ]);
+  });
+
+  it("⚠️ o aviso diz quantas FICARAM e por quê", async () => {
+    /* Sem isso a pessoa não sabe se apagou metade. */
+    mocks.removerTarefasEmLote.mockResolvedValue({
+      removidas: 1,
+      ignoradas: [],
+      recusadas: [{ subgrupo_id: "sg", tarefa_id: "t4", motivo: "responsavel_mudou" }],
+    });
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Conferir prazo");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[1]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Conferir prazo" }));
+    await usuario.click(screen.getByRole("button", { name: /Excluir 1/ }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    expect(await screen.findByText(/1 ficou: o responsável mudou/)).toBeInTheDocument();
+  });
+
+  it("🔴 o botão da barra e o do modal têm nomes DIFERENTES", async () => {
+    /* Dois botões com o mesmo nome acessível no mesmo documento fazem o
+       leitor anunciar a mesma escolha duas vezes -- a regra que criou
+       `rotuloDeCancelar`. Foi este teste que pegou o defeito. */
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Conferir prazo");
+    await usuario.click(screen.getAllByRole("button", { name: "Selecionar" })[1]);
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Conferir prazo" }));
+    await usuario.click(screen.getByRole("button", { name: "Excluir 1" }));
+
+    await screen.findByRole("dialog");
+    const nomes = screen.getAllByRole("button")
+      .map((b) => b.textContent?.trim())
+      .filter((t) => t?.startsWith("Excluir"));
+    expect(new Set(nomes).size).toBe(nomes.length);
+  });
+
+  it("🔴 a faixa conta as vinculadas de TODAS as marcadas, não só as da página", async () => {
+    /* Foi a conferência em Chrome que pegou: com 12 marcadas por "todas as
+       N", a faixa dizia "3" -- as da página visível -- e o número certo era
+       outro. Numa ação destrutiva, o aviso subestimado é o pior tipo. */
+    const daPagina = [
+      tarefa("t3", "Com processo", null, "08012345620268190001"),
+      tarefa("t4", "Sem processo", null),
+    ];
+    const foraDaPagina = [tarefa("t5", "Outra com processo", null, "07055661220268190002")];
+
+    mocks.listarTarefas.mockImplementation((p: { responsavel?: string; pagina?: number }) =>
+      Promise.resolve(
+        p?.responsavel === "eu"
+          ? { tarefas: [], total: 0, total_paginas: 0 }
+          : (p?.pagina ?? 1) === 1
+            ? { tarefas: daPagina, total: 3, total_paginas: 2 }
+            : { tarefas: foraDaPagina, total: 3, total_paginas: 2 },
+      ),
+    );
+
+    const usuario = userEvent.setup();
+    montar();
+    await screen.findByText("Com processo");
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+
+    /* Duas das três têm processo -- e uma delas está FORA da página. */
+    expect(await screen.findByText(/2 delas estão vinculadas/)).toBeInTheDocument();
+  });
+
+  it("🔴 quem NÃO é manager não vê a entrada", async () => {
+    /* Esconder não é a proteção -- a rota devolve 403. É para não oferecer
+       o que ela vai negar. */
+    mocks.papelAtende.mockReturnValue(false);
+    montar();
+    await screen.findByText("Protocolar réplica");
+    expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
   });
 });

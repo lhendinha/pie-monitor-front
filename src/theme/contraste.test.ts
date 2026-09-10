@@ -86,6 +86,28 @@ describe("as cores CHEIAS continuam servindo pro que são", () => {
   });
 });
 
+describe("a caixa de marcar", () => {
+  /* 🔴 A borda da caixa DESMARCADA é o único traço que diz onde clicar --
+   * some ela e a caixa vira um quadrado branco sobre fundo branco.
+   *
+   * Medido em 10/09/2026, e foi o que trocou a cor: `border` (#e2e8ee) dá
+   * 1,23:1 sobre o branco. A régua de elemento gráfico é 3:1. */
+  it("a borda passa em 3:1 sobre o cartão branco", () => {
+    expect(contraste(cores.slate2, cores.surface)).toBeGreaterThanOrEqual(AA_GRAFICO);
+  });
+
+  it("🔴 e o par negativo: `border` REPROVA -- é por isso que ela não serve", () => {
+    /* Sem isto, alguém "simplifica" o tema devolvendo a caixa para `border`
+     * e o teste de cima continua verde apontando para outra cor. */
+    expect(contraste(cores.line, cores.surface)).toBeLessThan(AA_GRAFICO);
+  });
+
+  it("a caixa MARCADA tem contraste contra o branco do tique", () => {
+    /* O preenchimento é `fg.brand` com o glifo branco em cima. */
+    expect(contraste(cores.brand, cores.surface)).toBeGreaterThanOrEqual(AA_GRAFICO);
+  });
+});
+
 describe("os *Dark são a cor cheia ESCURECIDA, não outra cor", () => {
   it.each([
     ["bad", cores.bad, cores.badDark],

@@ -2,7 +2,7 @@ import { Box, Grid, Stack } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
-import { Avatar, CabecalhoDePagina } from "../../components";
+import { Avatar, BarraDeSelecao, CabecalhoDePagina, ModalDeConfirmacao } from "../../components";
 import { useToast } from "../../contexts/ToastContext";
 import { getApelido, getEmail, resumoDaAreaDeTrabalho } from "../../services";
 import { toastErroMutation, useToastOnQueryError } from "../../services/queryClient";
@@ -17,7 +17,13 @@ import MinhasAtividades from "./components/MinhasAtividades";
 import ResumoRapido from "./components/ResumoRapido";
 import { useAssumirTarefa } from "./hooks/useAssumirTarefa";
 import { useConcluirTarefa } from "./hooks/useConcluirTarefa";
-import type { ResumoDaAreaDeTrabalho } from "../../types";
+import { useSelecaoDeTarefas } from "../../hooks/useSelecaoDeTarefas";
+import { useExcluirTarefasEmLote } from "../../hooks/useExcluirTarefasEmLote";
+import CaixaDaLinha from "./components/CaixaDaLinha";
+import { podeAgirEmLote } from "../../utils/permissoes";
+import { chaveDe, contar, contarVinculadas, estadoDaCaixaDoTopo, fraseDoResultado } from "../../utils";
+import { useNomeDeSubgrupo } from "../../hooks/useNomeDeSubgrupo";
+import type { ResumoDaAreaDeTrabalho, Tarefa } from "../../types";
 
 /** Área de trabalho: o resumo do dia.
  *
@@ -85,6 +91,82 @@ export default function WorkspacePage() {
     (err) => toastErroMutation(toast, err, "Não foi possível concluir."),
   );
 
+  /* 🔴 O escopo mora AQUI, não em cada card: é ele que impede os dois de
+     selecionarem ao mesmo tempo, e sem isso "Excluir 7" não diz quais sete. */
+  const subgrupoNome = useNomeDeSubgrupo();
+  const selecao = useSelecaoDeTarefas();
+  const [confirmando, setConfirmando] = useState<Tarefa[] | null>(null);
+  /** As N do filtro, guardadas quando alguém pede "todas" -- é delas que o
+   * lote sai, porque elas estão fora da página. */
+  const [todasDoFiltro, setTodasDoFiltro] = useState<Tarefa[]>([]);
+  const [buscandoTodas, setBuscandoTodas] = useState(false);
+
+  function entrarNaSelecao(escopo: string) {
+    setTodasDoFiltro([]);
+    selecao.entrar(escopo);
+  }
+
+  const excluir = useExcluirTarefasEmLote(
+    (resultado) => {
+      selecao.sair();
+      setConfirmando(null);
+      toast.sucesso(fraseDoResultado(resultado));
+    },
+    (err) => {
+      setConfirmando(null);
+      toastErroMutation(toast, err, "Não foi possível excluir.");
+    },
+  );
+
+  /** A barra e as caixas de um card. A PÁGINA monta, o card só posiciona --
+   * é o que mantém o estado num lugar só com dois cards na tela. */
+  function barraDoCard(
+    tarefas: Tarefa[],
+    total: number,
+    carregarTodas: () => Promise<Tarefa[]>,
+  ) {
+    const chavesDaPagina = tarefas.map(chaveDe);
+    const daPagina = tarefas.filter(selecao.estaMarcada);
+    /* 🔴 O universo é o que "todas as N" guardou, quando guardou -- senão a
+       página visível. Contar só o visível fazia a faixa afirmar "3 delas
+       estão vinculadas" com DOZE marcadas, quando o número certo era outro.
+       Medido em Chrome em 10/09/2026, e o comentário que estava aqui antes
+       chamava isso de honesto. Numa ação destrutiva, aviso subestimado é o
+       pior tipo de aviso. */
+    const universo = todasDoFiltro.length ? todasDoFiltro : tarefas;
+    const marcadas = universo.filter(selecao.estaMarcada);
+    return (
+      <BarraDeSelecao
+        marcadas={selecao.marcadas.size}
+        total={total}
+        estadoDaCaixa={estadoDaCaixaDoTopo(daPagina.length, tarefas.length)}
+        vinculadas={contarVinculadas(marcadas)}
+        onAlternarTopo={() => selecao.alternarTodas(chavesDaPagina)}
+        onTodas={async () => {
+          if (selecao.marcadas.size >= total) return selecao.limpar();
+          setBuscandoTodas(true);
+          try {
+            const todas = await carregarTodas();
+            setTodasDoFiltro(todas);
+            selecao.alternarTodas(todas.map(chaveDe));
+          } catch (err) {
+            toastErroMutation(toast, err, "Não foi possível carregar todas.");
+          } finally {
+            setBuscandoTodas(false);
+          }
+        }}
+        carregandoTodas={buscandoTodas}
+        onCancelar={selecao.sair}
+        onExcluir={() => {
+          /* O que vai para o lote é o MESMO conjunto que a faixa contou --
+             a barra não pode avisar sobre um recorte e apagar outro. */
+          setConfirmando(marcadas);
+        }}
+        excluindo={excluir.isPending}
+      />
+    );
+  }
+
   const assumir = useAssumirTarefa(
     () => {
       recarregar();
@@ -117,6 +199,18 @@ export default function WorkspacePage() {
               />
             )}
             responsavel={() => <Avatar nome={meuNome} tamanho="pequeno" />}
+            escopo="minhas"
+            escopoAtivo={selecao.escopo}
+            onSelecionar={podeAgirEmLote() ? () => entrarNaSelecao("minhas") : undefined}
+            selecao={barraDoCard}
+            caixa={(t, ordem) => (
+              <CaixaDaLinha
+                tarefa={t}
+                marcada={selecao.estaMarcada(t)}
+                ordem={ordem}
+                onAlternar={selecao.alternar}
+              />
+            )}
           />
 
           <Box
@@ -139,6 +233,18 @@ export default function WorkspacePage() {
                   !meuEmail
                 }
                 onAssumir={() => meuEmail && assumir.mutate({ tarefa: t, email: meuEmail })}
+              />
+            )}
+            escopo="disponiveis"
+            escopoAtivo={selecao.escopo}
+            onSelecionar={podeAgirEmLote() ? () => entrarNaSelecao("disponiveis") : undefined}
+            selecao={barraDoCard}
+            caixa={(t, ordem) => (
+              <CaixaDaLinha
+                tarefa={t}
+                marcada={selecao.estaMarcada(t)}
+                ordem={ordem}
+                onAlternar={selecao.alternar}
               />
             )}
           />
@@ -172,6 +278,39 @@ export default function WorkspacePage() {
           />
         </Stack>
       </Grid>
+
+      {/* 🔴 Irmão fixo do conteúdo, nunca dentro de um ramo condicional: uma
+          troca de ramo com ele aberto o REMONTA, e ele volta vazio sem
+          ninguém perceber. É a regra do docstring do `Modal`. */}
+      {confirmando && (
+        <ModalDeConfirmacao
+          titulo={`Excluir ${contar(confirmando.length, "tarefa", "tarefas")}`}
+          mensagem={
+            <>
+              Você vai excluir <strong>{contar(confirmando.length, "tarefa", "tarefas")}</strong>
+              {" de "}
+              {[...new Set(confirmando.map((t) => subgrupoNome(t.subgrupo_id)))].join(", ")}.
+            </>
+          }
+          aviso={
+            contarVinculadas(confirmando) > 0
+              ? `${contar(contarVinculadas(confirmando), "delas está vinculada", "delas estão vinculadas")} a um processo ativo. O processo não muda — mas o que a tarefa pedia deixa de existir.`
+              : undefined
+          }
+          /* 🔴 O rótulo do modal NÃO pode ser igual ao do gatilho na barra.
+             Dois botões com o mesmo nome acessível no mesmo documento fazem
+             o leitor de tela anunciar a mesma escolha duas vezes e quebram
+             qualquer busca por nome -- é a regra que criou
+             `rotuloDeCancelar`, e foi um teste que a pegou aqui.
+
+             O número fica nos DOIS, porque é ele a guarda; o que separa é o
+             substantivo, que na confirmação lê melhor de qualquer forma. */
+          rotulo={`Excluir ${contar(confirmando.length, "tarefa", "tarefas")}`}
+          confirmando={excluir.isPending}
+          onConfirmar={() => excluir.mutate(confirmando)}
+          onFechar={() => setConfirmando(null)}
+        />
+      )}
     </>
   );
 }

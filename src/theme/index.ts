@@ -233,7 +233,20 @@ export const system = createSystem(defaultConfig, {
         slots: ["root", "label", "control", "indicator", "group"],
         base: {
           control: {
-            borderColor: "border",
+            /* 🔴 `fg.subtle`, e NÃO `border`. Medido em 10/09/2026: `border`
+               (#e2e8ee) dá 1,23:1 sobre o branco, e a régua de ELEMENTO
+               GRÁFICO da WCAG 1.4.11 é 3:1 -- a caixa desmarcada praticamente
+               sumia. `fg.subtle` dá 3,15:1 e passa.
+
+               ⚠️ Não é token novo de propósito: `fg.subtle` já significa
+               "contorno de controle" nesta base -- é o que `BotaoDeAssumir`
+               usa no círculo tracejado que fica na MESMA linha da caixa, e o
+               que a "Nova atividade" do quadro usa. Cor nova ao lado de uma
+               que já quer dizer isso seria a divergência que esta receita
+               existe para impedir.
+
+               ➡️ `contraste.test.ts`, "a caixa de marcar". */
+            borderColor: "fg.subtle",
             /* ⚠️ A variável, não a propriedade -- a mesma armadilha do campo
                de texto: a receita da lib emite `outline-color:
                var(--focus-ring-color)` depois da nossa declaração. */
@@ -244,7 +257,7 @@ export const system = createSystem(defaultConfig, {
           variant: {
             solid: {
               control: {
-                borderColor: "border",
+                borderColor: "fg.subtle",
                 "&:is([data-state=checked], [data-state=indeterminate])": {
                   bg: "fg.brand",
                   borderColor: "fg.brand",
