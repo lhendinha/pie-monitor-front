@@ -4618,3 +4618,70 @@ conteúdo caber, e o texto nunca chega a estourar a própria caixa. Quem corta
 é o `maxW`. É a mesma lição da coluna VALOR saindo da tela, e agora
 `CelulaComSub` tem `maxLargura` -- com ele o principal também trunca, senão
 ele quebraria em duas linhas e a altura deixaria de ser uniforme.
+
+## Ações em lote nas três telas (10/09/2026)
+
+`api/PLANO_ACOES_EM_LOTE.md`, **EXECUTADO**. Área de trabalho, Agenda e Kanban
+selecionam tarefas e agem sobre elas: excluir, concluir, alterar status e
+atribuir. A costura inteira mora em `useAcoesEmLote`; cada tela só decide o que
+a caixa do topo alcança.
+
+### Onde a entrada mora, e por que ela some
+
+A entrada ("Selecionar") fica no cabeçalho do que É a lista: no do **card**
+quando a lista é um card (`CardDeTarefas`, na Área de trabalho), no da
+**página** quando a lista é a página (Agenda, Kanban).
+
+🔴 **Ela some enquanto a barra está na tela.** `BarraDeSelecao` é a moldura do
+modo e carrega o Cancelar -- duas saídas para a mesma ação fariam a pessoa
+procurar a diferença. E na Área de trabalho é **um modo por vez**: com um card
+selecionando, a entrada do outro card também some.
+
+### A barra quebra em duas fileiras no card, e é de propósito
+
+Medido em Chrome: nos 634px do card da Área de trabalho, com as ações da Fase 8,
+o conteúdo passa de 600px. `flex-wrap` desce o grupo de ações para uma segunda
+fileira, à direita, e nunca transborda. Na Agenda e no Kanban, de largura
+cheia, fica numa fileira só -- com a nota do Kanban, também pode quebrar.
+
+### Ação reversível NÃO sai do modo
+
+Distribuir é multi-passo: um punhado para uma pessoa, outro para outra. Concluir,
+alterar status e atribuir tiram do conjunto só o que foi TOCADO
+(`selecao.esquecer`); **só excluir sai** (`selecao.sair`), porque não há o que
+continuar.
+
+### O Desfazer, e por que excluir não tem
+
+É a chamada INVERSA, com a mesma guarda do responsável -- não um endpoint novo.
+Volta só o que o lote de fato tocou (`tocadas`: a tarefa que já estava concluída
+não sai da conclusão), agrupado pela origem (`agruparPorOrigem`), porque cada
+rota aceita um destino por chamada. Excluir não ganha Desfazer: a tarefa voltaria
+com outro id, e o link do sino seguiria morto.
+
+### Seleção
+
+- **Shift+clique** segue a ordem VISÍVEL (`chavesDoIntervalo`).
+- **"Selecionar todas as N"** busca pelo FILTRO, todas as páginas, não só a
+  visível. O link some quando o universo é zero -- a Agenda recarrega o período
+  ao entrar no modo, e oferecia "Selecionar todas as 0" nesse intervalo.
+- **O arraste do Kanban fica desligado** no modo: arrastar e marcar disputariam o
+  mesmo gesto.
+- **"Alterar status…" trava com o motivo À VISTA** quando a seleção cruza
+  subgrupos: nome de coluna é de cada quadro.
+- **As confirmações dizem QUAIS**, não só quantas: `ListaDoLote` mostra três
+  títulos e "e mais N".
+
+### O que a execução corrigiu fora do lote
+
+- **O modal de uma tarefa que o lote excluiu fingia que dava para salvar.** O
+  404 vinha como frase crua e o formulário ficava aberto para insistir. Hoje,
+  editando, salvar fecha com "Esta tarefa foi excluída, e as alterações não
+  foram salvas." e recarrega a lista; excluir o que já sumiu é sucesso.
+- 🔴 **O quadro aberto por link dizia o nome do subgrupo ERRADO**, até na
+  confirmação de excluir. O nome vinha da memória do último subgrupo usado sem
+  conferir o id. Hoje vem da primeira página, da memória só quando é o mesmo
+  subgrupo, e do catálogo (`useNomeDeSubgrupo`).
+
+Conferido de ponta a ponta em produção, num grupo de teste apagado ao fim:
+`scripts/conferir-acoes-em-lote-em-producao.mjs`.
