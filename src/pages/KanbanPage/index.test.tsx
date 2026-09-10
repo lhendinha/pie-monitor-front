@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   atualizarTarefa: vi.fn(),
   criarTarefa: vi.fn(),
   papelAtende: vi.fn(),
+  removerTarefasEmLote: vi.fn(),
 }));
 
 vi.mock("../../services", async (importOriginal) => {
@@ -103,6 +104,7 @@ beforeEach(() => {
   mocks.listarMembrosDoSubgrupo.mockResolvedValue({ membros: [] });
   mocks.criarTarefa.mockResolvedValue({ tarefa_id: "nova" });
   mocks.detalhesTarefa.mockResolvedValue(TAREFA_DO_LINK);
+  mocks.removerTarefasEmLote.mockResolvedValue({ removidas: 0, ignoradas: [], recusadas: [] });
 });
 
 describe("KanbanPage — link do lembrete de prazo", () => {
@@ -559,5 +561,154 @@ describe("guarda de descarte na tarefa", () => {
     await user.keyboard("{Escape}");
 
     expect(perguntou()).toBe(false);
+  });
+});
+
+describe("seleção em lote no Kanban (Fase 5 do PLANO_ACOES_EM_LOTE)", () => {
+  /** Três cartões em DUAS colunas: é o que separa "a contagem é do quadro"
+   * de "a contagem é da coluna". */
+  const NO_QUADRO = [
+    { subgrupo_id: "sg-trab", tarefa_id: "k1", titulo: "Elaborar defesa", data: "2026-09-10",
+      coluna_id: "c1", prioridade: "Alta", responsavel_id: null },
+    { subgrupo_id: "sg-trab", tarefa_id: "k2", titulo: "Reunir provas", data: "2026-09-11",
+      coluna_id: "c1", prioridade: "Média", responsavel_id: "ana@x.com", responsavel_nome: "Ana" },
+    { subgrupo_id: "sg-trab", tarefa_id: "k3", titulo: "Fechar acordo", data: "2026-09-12",
+      coluna_id: "c2", prioridade: "Baixa", responsavel_id: null },
+  ];
+
+  async function entrar() {
+    const usuario = userEvent.setup();
+    lembrarTrabalhista();
+    mocks.listarTarefas.mockResolvedValue({ tarefas: NO_QUADRO, total: 3, total_paginas: 1 });
+    montar();
+    await screen.findByText("Elaborar defesa");
+    await usuario.click(screen.getByRole("button", { name: "Selecionar" }));
+    return usuario;
+  }
+
+  it("🔴 o cartão deixa de ser BOTÃO e vira a caixa", async () => {
+    /* Caixa de marcar dentro de conteúdo interativo é HTML inválido, e o
+       mesmo apertar-e-mover significaria marcar E arrastar. */
+    await entrar();
+    expect(
+      await screen.findByRole("checkbox", { name: "Selecionar Elaborar defesa" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Elaborar defesa/ })).not.toBeInTheDocument();
+  });
+
+  it("🔴 a barra DIZ que o arraste está desligado", async () => {
+    /* É o que a seleção custa nesta tela. Sem a frase, a pessoa descobre
+       tentando arrastar e conclui que o quadro travou. */
+    await entrar();
+    expect(
+      screen.getByText("O arraste fica desligado enquanto você seleciona."),
+    ).toBeInTheDocument();
+  });
+
+  it("⚠️ o par: fora do modo, a barra e a frase não existem", async () => {
+    lembrarTrabalhista();
+    mocks.listarTarefas.mockResolvedValue({ tarefas: NO_QUADRO, total: 3, total_paginas: 1 });
+    montar();
+    await screen.findByText("Elaborar defesa");
+    expect(screen.queryByText(/arraste fica desligado/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/selecionadas/)).not.toBeInTheDocument();
+  });
+
+  it("🔴 a contagem é do QUADRO inteiro, não de uma coluna", async () => {
+    /* São três cartões em duas colunas. Uma barra por coluna contaria dois e
+       um; a barra do quadro conta três -- e marcar cartões de colunas
+       diferentes na mesma leva é metade da razão de existir a seleção aqui. */
+    const usuario = await entrar();
+    expect(screen.getByText("0 de 3 selecionadas")).toBeInTheDocument();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+    expect(screen.getByText("3 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("⚠️ trocar de QUADRO SAI do modo -- o universo é outro", async () => {
+    /* Diferente de trocar filtro, que só limpa: o quadro do Cível não tem
+       nada a ver com o do Trabalhista, e uma barra dizendo "0 de N" sobre
+       cartões que ninguém escolheu é moldura sem conteúdo. */
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+    expect(screen.getByText("3 de 3 selecionadas")).toBeInTheDocument();
+
+    await usuario.click(screen.getByText("Trabalhista"));
+    await usuario.click(await screen.findByRole("option", { name: "Cível" }));
+    await waitFor(() => expect(screen.queryByText(/selecionadas/)).not.toBeInTheDocument());
+  });
+
+  it("⚠️ a busca LIMPA a seleção, sem sair do modo", async () => {
+    /* A contagem passaria a falar de cartão que saiu da tela, e o lote
+       apagaria o que ninguém vê. */
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("button", { name: /Selecionar todas as 3/ }));
+    await usuario.type(screen.getByLabelText(/Pesquisar cartão/), "defesa");
+    await waitFor(() => expect(screen.getByText(/^0 de/)).toBeInTheDocument());
+  });
+
+  it("clicar no CARTÃO inteiro marca -- ele é o rótulo da caixa", async () => {
+    /* É onde a pessoa clica: a caixa tem 16px, o cartão tem a largura da
+       coluna. E marcar UMA vez -- sem o `preventDefault` do `onClick` o
+       Chakra alterna junto e o clique se anula. */
+    const usuario = await entrar();
+    await usuario.click(screen.getByText("Elaborar defesa"));
+    expect(screen.getByText("1 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("Shift+clique no cartão marca o intervalo, ATRAVESSANDO colunas", async () => {
+    /* O modificador só existe no evento de CLIQUE. E o intervalo segue a
+       ordem do QUADRO: "Elaborar defesa" e "Reunir provas" estão na primeira
+       coluna, "Fechar acordo" na segunda -- as três entram. */
+    const usuario = await entrar();
+    await usuario.click(screen.getByText("Elaborar defesa"));
+    await usuario.keyboard("{Shift>}");
+    await usuario.click(screen.getByText("Fechar acordo"));
+    await usuario.keyboard("{/Shift}");
+    expect(screen.getByText("3 de 3 selecionadas")).toBeInTheDocument();
+  });
+
+  it("🔴 excluir manda o `responsavel_id` que a TELA VIU", async () => {
+    /* É ele que a guarda do lote compara. Sem ele no fio, a proteção some --
+       e o par de baixo existe porque `null` fixo passaria neste teste. */
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Reunir provas" }));
+    await usuario.click(screen.getByRole("button", { name: "Excluir 1" }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    await waitFor(() => expect(mocks.removerTarefasEmLote).toHaveBeenCalled());
+    expect(mocks.removerTarefasEmLote.mock.calls[0][0]).toEqual([
+      { subgrupo_id: "sg-trab", tarefa_id: "k2", responsavel_id: "ana@x.com" },
+    ]);
+  });
+
+  it("🔴 e leva `null` de verdade quando o cartão não tem dono", async () => {
+    const usuario = await entrar();
+    await usuario.click(screen.getByRole("checkbox", { name: "Selecionar Elaborar defesa" }));
+    await usuario.click(screen.getByRole("button", { name: "Excluir 1" }));
+    await usuario.click(await screen.findByRole("button", { name: "Excluir 1 tarefa" }));
+
+    await waitFor(() => expect(mocks.removerTarefasEmLote).toHaveBeenCalled());
+    expect(mocks.removerTarefasEmLote.mock.calls[0][0]).toEqual([
+      { subgrupo_id: "sg-trab", tarefa_id: "k1", responsavel_id: null },
+    ]);
+  });
+
+  it("🔴 quem NÃO é manager não vê a entrada", async () => {
+    /* Esconder não é a proteção -- a rota devolve 403. É para não oferecer o
+       que ela vai negar. */
+    mocks.papelAtende.mockReturnValue(false);
+    lembrarTrabalhista();
+    mocks.listarTarefas.mockResolvedValue({ tarefas: NO_QUADRO, total: 3, total_paginas: 1 });
+    montar();
+    await screen.findByText("Elaborar defesa");
+    expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
+  });
+
+  it("⚠️ sem cartão nenhum não há o que selecionar, e a entrada some", async () => {
+    lembrarTrabalhista();
+    mocks.listarTarefas.mockResolvedValue({ tarefas: [], total: 0, total_paginas: 0 });
+    montar();
+    await screen.findByText("A Fazer");
+    expect(screen.queryByRole("button", { name: "Selecionar" })).not.toBeInTheDocument();
   });
 });

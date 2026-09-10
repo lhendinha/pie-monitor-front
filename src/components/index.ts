@@ -68,3 +68,4 @@ export { default as BotaoDeCancelar } from "./BotaoDeCancelar";
 export { default as RodapeDeFormulario } from "./RodapeDeFormulario";
 export { default as BarraDeSelecao } from "./BarraDeSelecao";
 export { default as ConfirmacaoDeExclusaoEmLote } from "./ConfirmacaoDeExclusaoEmLote";
+export { default as BarraDoLote } from "./BarraDoLote";

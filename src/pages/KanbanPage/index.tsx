@@ -3,13 +3,18 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, closestCorners } from "@dnd-kit/core";
 
-import { Botao, CabecalhoDePagina, EstadoVazio, EstadoDeErro, Esqueleto, IconePlus, ModalDeTarefa } from "../../components";
+import {
+  BarraDoLote, Botao, CabecalhoDePagina, ConfirmacaoDeExclusaoEmLote, EstadoVazio,
+  EstadoDeErro, Esqueleto, IconePlus, ModalDeTarefa,
+} from "../../components";
 import { PERIODO_TODOS } from "../../constants";
+import { FILTROS_VAZIOS } from "./constants";
 import { listarQuadro, papelAtende } from "../../services";
 import { useToastOnQueryError } from "../../services/queryClient";
 import { qk } from "../../services/queryKeys";
 import { intervaloDoPeriodo } from "../../utils";
 import ColunaDoQuadro from "./components/ColunaDoQuadro";
+import QuadroSemColunas from "./components/QuadroSemColunas";
 import FiltrosDoKanban from "./components/FiltrosDoKanban";
 
 import ModalDoQuadro from "./components/ModalDoQuadro";
@@ -19,34 +24,14 @@ import { useTarefasDoQuadro } from "./hooks/useTarefasDoQuadro";
 import type { FiltrosDoQuadro } from "./types";
 import type { RespostaDoQuadro } from "../../types/respostas";
 import type { Tarefa } from "../../types";
-import { podeListarPessoas } from "../../utils/permissoes";
+import { podeAgirEmLote, podeListarPessoas } from "../../utils/permissoes";
+import { useAcoesEmLote } from "../../hooks/useAcoesEmLote";
+import { chaveDe } from "../../utils";
 import { usePessoasBuscaveis } from "../../hooks/usePessoasBuscaveis";
 import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { useUltimoSubgrupo } from "../../hooks/useUltimoSubgrupo";
 import type { KanbanPageProps } from "./types";
 
-/** O quadro ABRE SEM JANELA DE DATA -- diverge do artifact, que abre no mês
- * (`PERIODS = { kanban: 'mes' }`).
- *
- * O mês só fazia sentido enquanto a janela limitava uma ponta só. Desde que
- * ela passou a limitar as DUAS (necessário pros períodos passados, como
- * "Ontem" e "Últimos 7 dias"), "Este mês" ESCONDE tarefa vencida do mês
- * anterior -- num quadro, exatamente o que mais precisa de atenção.
- *
- * O custo conhecido: tarefa concluída não some, só muda de coluna, então a
- * coluna de conclusão acumula com o tempo. Preferimos um quadro cheio a um
- * quadro que mente sobre o que está em aberto -- e a separação certa
- * (aberta × concluída, que a API sabe fazer com `apenas_abertas`) fica pra
- * quando o desenho da coluna de conclusão for decidido. */
-/* ⚠️ `mostrarArquivadas` fica FORA daqui de propósito: "Limpar filtros" não
-   pode esconder uma coluna que a pessoa acabou de revelar. É preferência de
-   visualização, não filtro. */
-const FILTROS_VAZIOS = {
-  periodoId: PERIODO_TODOS,
-  intervaloPersonalizado: undefined,
-  pessoa: "todas",
-  busca: "",
-};
 
 /** Gestão kanban.
  *
@@ -119,6 +104,12 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
 
   const { sensors, handleDragEnd } = useArrastarTarefa(invalidar);
 
+  /* 🔴 O escopo é do QUADRO, não de uma coluna: "Excluir 7" tem que dizer
+     quais sete, e no kanban a pessoa marca cartões de colunas diferentes na
+     mesma leva -- é metade da razão de existir a seleção aqui. */
+  const { selecao, confirmando, setConfirmando, excluir } = useAcoesEmLote();
+  const selecionando = selecao.escopo === "kanban";
+
   const colunas = [...(quadroQuery.data?.colunas || [])].sort((a, b) => a.ordem - b.ordem);
   /** O Arquivado só aparece no quadro quando pedido.
    *
@@ -144,6 +135,17 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
       (filtros.pessoa === "sem" ? !t.responsavel_id : t.responsavel_id === filtros.pessoa);
     return bateBusca && batePessoa;
   });
+
+  /* 🔴 A seleção age sobre `visiveis` -- o que os filtros deixaram na tela.
+     Aqui o quadro inteiro já está em mãos (o `useTarefasDoQuadro` traz o
+     subgrupo todo), então "selecionar todas" não custa requisição nenhuma. */
+  const chavesVisiveis = visiveis.map(chaveDe);
+  const selecaoDaLinha = selecionando
+    ? (t: Tarefa) => ({
+        marcada: selecao.estaMarcada(t),
+        onAlternar: (comShift: boolean) => selecao.alternar(t, chavesVisiveis, comShift),
+      })
+    : undefined;
 
   const temFiltro =
     Boolean(busca) || filtros.pessoa !== "todas" || filtros.periodoId !== PERIODO_TODOS;
@@ -194,6 +196,13 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
                   ou seja, um formulário inteiro que não conclui. Enquanto o
                   quadro não existe, o caminho é montá-lo, e é isso que o
                   estado vazio abaixo oferece. */}
+              {/* Some com a barra de pé: ela é a moldura do modo e carrega
+                  o Cancelar. */}
+              {podeAgirEmLote() && !selecionando && visiveis.length > 0 && (
+                <Botao variante="ghost" onClick={() => selecao.entrar("kanban")}>
+                  Selecionar
+                </Botao>
+              )}
               {colunas.length > 0 && (
                 <Botao onClick={() => setCriandoNaColuna(colunas[0]?.coluna_id ?? "")}>
                   <IconePlus />
@@ -226,8 +235,15 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
             pessoas={pessoas}
             mostrarPessoas={podeListarPessoas()}
             filtros={{ ...filtros, subgrupoId }}
-            onMudar={(parcial) => setFiltros((f) => ({ ...f, subgrupoId, ...parcial }))}
+            /* ⚠️ Mudar de filtro (ou de QUADRO) limpa a seleção: a contagem
+               passaria a falar de cartão que saiu da tela, e o lote apagaria
+               o que ninguém vê. */
+            onMudar={(parcial) => {
+              if (selecionando) selecao.limpar();
+              setFiltros((f) => ({ ...f, subgrupoId, ...parcial }));
+            }}
             onEscolherSubgrupo={(id, nome) => {
+              if (selecionando) selecao.sair();
               lembrar(id, nome);
               setFiltros((f) => ({ ...f, subgrupoId: id }));
             }}
@@ -242,38 +258,9 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
           ) : carregando ? (
             <Esqueleto linhas={4} />
           ) : colunas.length === 0 ? (
-            /* 🔴 Subgrupo SEM COLUNA NENHUMA -- e a tela não pode ficar em
-               branco.
-             *
-             * `subgrupos_service.criar` semeia o quadro padrão junto, então
-             * o caminho normal nunca chega aqui. Mas quadro sem coluna é um
-             * estado ALCANÇÁVEL: subgrupo gravado fora do serviço (foi o que
-             * aconteceu na semeadura local, e a tela de Kanban abria em
-             * branco no primeiro clique de quem subia o ambiente), criação
-             * que falhou no meio, ou alguém que apagou as colunas uma a uma.
-             *
-             * Antes disto o quadro simplesmente não desenhava nada: sem
-             * colunas, sem mensagem, sem erro. Com cara de sistema quebrado,
-             * e sem dizer a ninguém o que fazer.
-             *
-             * ⚠️ A mensagem muda com quem está olhando, porque a saída é
-             * outra: criar coluna é `admin` (o servidor exige), então quem
-             * PODE resolver recebe o caminho e quem não pode recebe a quem
-             * pedir. Uma frase só ou mandaria o admin procurar outra pessoa,
-             * ou mandaria o `user` para um botão que ele não tem. */
-            <EstadoVazio
-              mensagem={
-                papelAtende("admin")
-                  ? "Este subgrupo ainda não tem quadro. Crie as colunas para começar a usar o kanban."
-                  : "O quadro deste subgrupo ainda não foi montado. Peça a um admin para criar as colunas."
-              }
-              acao={
-                papelAtende("admin") ? (
-                  <Botao variante="ghost" onClick={() => setEditandoQuadro(true)}>
-                    Editar quadro
-                  </Botao>
-                ) : undefined
-              }
+            <QuadroSemColunas
+              podeMontar={papelAtende("admin")}
+              onEditarQuadro={() => setEditandoQuadro(true)}
             />
           ) : temFiltro && visiveis.length === 0 ? (
             /* Quadro vazio POR FILTRO não é o mesmo que quadro vazio: sem
@@ -289,6 +276,18 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
               }
             />
           ) : (
+            <>
+            {/* 🔴 ACIMA do quadro, e não dentro de uma coluna: a contagem é
+                do quadro inteiro, e uma coluna não pode falar por ele. */}
+            {selecionando && (
+              <BarraDoLote
+                selecao={selecao}
+                universo={visiveis}
+                nota="O arraste fica desligado enquanto você seleciona."
+                onExcluir={setConfirmando}
+                excluindo={excluir.isPending}
+              />
+            )}
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
               <Flex gap="16px" align="flex-start" overflowX="auto" pb="8px">
                 {colunasVisiveis.map((c) => (
@@ -298,12 +297,26 @@ export default function KanbanPage({ tarefaDoLink }: KanbanPageProps = {}) {
                     tarefas={visiveis.filter((t) => t.coluna_id === c.coluna_id)}
                     onAbrirTarefa={setTarefaAberta}
                     onNovaTarefa={setCriandoNaColuna}
+                    selecaoDe={selecaoDaLinha}
                   />
                 ))}
               </Flex>
             </DndContext>
+            </>
           )}
         </>
+      )}
+
+      {/* Irmão FIXO do conteúdo, como o `Modal` exige: dentro de um ramo
+          condicional, uma troca de ramo com ele aberto o remonta vazio. */}
+      {confirmando && (
+        <ConfirmacaoDeExclusaoEmLote
+          tarefas={confirmando}
+          subgrupoNome={() => subgrupoNome}
+          excluindo={excluir.isPending}
+          onConfirmar={() => excluir.mutate(confirmando)}
+          onFechar={() => setConfirmando(null)}
+        />
       )}
 
       {editandoQuadro && (
