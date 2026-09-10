@@ -16,6 +16,7 @@ import {
   listarMembrosDoSubgrupo,
 } from "../../services";
 import { toastErroMutation } from "../../services/queryClient";
+import { ApiError } from "../../services/api/client";
 import { qk } from "../../services/queryKeys";
 import { useSubgruposBuscaveis } from "../../hooks/useSubgruposBuscaveis";
 import { hojeISO, mascararNumeroProcesso } from "../../utils";
@@ -200,6 +201,13 @@ export function useFormularioDeTarefa({
     if (colunaEscolhida) resemear("colunaDoQuadro", { coluna: colunaEscolhida });
   }, [colunaEscolhida, resemear]);
 
+  /** 🔴 A tarefa aberta pode ter deixado de existir: um lote a excluiu em
+   * outra aba, ou outra pessoa. O servidor responde 404 -- a tarefa ou o
+   * subgrupo inteiro sumiu -- e insistir não adianta; o formulário fecha e a
+   * lista atrás dele, que ainda a mostra, recarrega. Só vale EDITANDO: ao
+   * criar, o 404 é do subgrupo escolhido, e o modal fica para trocar. */
+  const tarefaSumiu = (err: unknown) => editando && err instanceof ApiError && err.status === 404;
+
   const salvarMutation = useMutation({
     mutationFn: () =>
       editando && tarefa
@@ -225,7 +233,15 @@ export function useFormularioDeTarefa({
       onSalvo();
       onFechar();
     },
-    onError: (err) => toastErroMutation(toast, err, "Não foi possível salvar a tarefa."),
+    onError: (err) => {
+      if (tarefaSumiu(err)) {
+        toast.erro("Esta tarefa foi excluída, e as alterações não foram salvas.");
+        onSalvo();
+        onFechar();
+        return;
+      }
+      toastErroMutation(toast, err, "Não foi possível salvar a tarefa.");
+    },
   });
 
   const removerMutation = useMutation({
@@ -235,7 +251,16 @@ export function useFormularioDeTarefa({
       onSalvo();
       onFechar();
     },
-    onError: (err) => toastErroMutation(toast, err, "Não foi possível excluir."),
+    onError: (err) => {
+      /* Excluir o que já não existe chegou aonde a pessoa queria: não é erro. */
+      if (tarefaSumiu(err)) {
+        toast.sucesso("A tarefa já tinha sido excluída.");
+        onSalvo();
+        onFechar();
+        return;
+      }
+      toastErroMutation(toast, err, "Não foi possível excluir.");
+    },
   });
 
   function handleSubmit(e: FormEvent) {

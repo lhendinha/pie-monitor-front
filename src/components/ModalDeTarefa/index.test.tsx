@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../../services", () => mocks);
 
 import ModalDeTarefa from "./index";
+import { ApiError } from "../../services/api/client";
+import type { Tarefa } from "../../types";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -211,5 +213,149 @@ describe("guarda de descarte", () => {
     await usuario.keyboard("{Escape}");
 
     expect(perguntou()).toBe(true);
+  });
+});
+
+// ── 🔴 a tarefa que sumiu com o modal aberto ──────────────────────────────
+
+/** Um lote -- ou outra pessoa -- exclui a tarefa enquanto o modal dela está
+ * aberto. O servidor responde 404 (contrato em
+ * `api/tests/test_tarefas_router.py`), e a tela não pode fingir que salvou
+ * nem deixar a pessoa insistindo num formulário que não leva a lugar nenhum. */
+describe("a tarefa que sumiu com o modal aberto", () => {
+  const TAREFA = {
+    tarefa_id: "t1",
+    subgrupo_id: "s1",
+    titulo: "Protocolar contestação",
+    data: "2026-08-27",
+    prioridade: "Média",
+    coluna_id: "c1",
+  } as Tarefa;
+  const AVISO_DE_SUMIDA = "Esta tarefa foi excluída, e as alterações não foram salvas.";
+
+  function montarCom(tarefa?: Tarefa) {
+    const onSalvo = vi.fn();
+    const onFechar = vi.fn();
+    renderComProviders(
+      <MemoryRouter>
+        <ModalDeTarefa tarefa={tarefa} subgrupoAtual="s1" onSalvo={onSalvo} onFechar={onFechar} />
+      </MemoryRouter>,
+    );
+    return { onSalvo, onFechar };
+  }
+
+  async function confirmarExclusao(usuario: ReturnType<typeof userEvent.setup>) {
+    await usuario.click(screen.getByRole("button", { name: "Excluir" }));
+    const confirmacao = await screen.findByRole("dialog", { name: "Excluir tarefa" });
+    await usuario.click(within(confirmacao).getByRole("button", { name: "Excluir" }));
+  }
+
+  it("🔴 salvar: diz que NADA foi salvo, fecha e recarrega a lista", async () => {
+    mocks.atualizarTarefa.mockRejectedValue(new ApiError("Tarefa não encontrada", 404));
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom(TAREFA);
+    await screen.findByText("A fazer");
+
+    await usuario.click(screen.getByRole("button", { name: "Salvar" }));
+
+    const aviso = await screen.findByText(AVISO_DE_SUMIDA);
+    expect(aviso.closest("[data-tipo]")).toHaveAttribute("data-tipo", "erro");
+    expect(screen.queryByText("Tarefa atualizada.")).not.toBeInTheDocument();
+    /* A frase crua do servidor não explica o que aconteceu com o que a
+       pessoa digitou. */
+    expect(screen.queryByText("Tarefa não encontrada")).not.toBeInTheDocument();
+    expect(onFechar).toHaveBeenCalledTimes(1);
+    expect(onSalvo).toHaveBeenCalledTimes(1);
+  });
+
+  it("par negativo: com 200, salva e fecha como sempre", async () => {
+    mocks.atualizarTarefa.mockResolvedValue({ mensagem: "atualizada", tarefa_id: "t1" });
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom(TAREFA);
+    await screen.findByText("A fazer");
+
+    await usuario.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Tarefa atualizada.")).toBeInTheDocument();
+    expect(screen.queryByText(AVISO_DE_SUMIDA)).not.toBeInTheDocument();
+    expect(onFechar).toHaveBeenCalledTimes(1);
+    expect(onSalvo).toHaveBeenCalledTimes(1);
+  });
+
+  it("🔴 outro erro NÃO fecha: a pessoa corrige e tenta de novo", async () => {
+    mocks.atualizarTarefa.mockRejectedValue(
+      new ApiError("Responsável não é membro do subgrupo", 400),
+    );
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom(TAREFA);
+    await screen.findByText("A fazer");
+
+    await usuario.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Responsável não é membro do subgrupo")).toBeInTheDocument();
+    expect(screen.queryByText(AVISO_DE_SUMIDA)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Salvar" })).toBeEnabled());
+    expect(onFechar).not.toHaveBeenCalled();
+    expect(onSalvo).not.toHaveBeenCalled();
+  });
+
+  it("🔴 ao CRIAR, o 404 é do subgrupo: o modal fica aberto para trocar", async () => {
+    mocks.criarTarefa.mockRejectedValue(new ApiError("Subgrupo não encontrado nesse grupo", 404));
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom();
+    await screen.findByText("A fazer");
+
+    await usuario.type(screen.getByLabelText(/Descrição da tarefa/), "Peticionar");
+    await usuario.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Subgrupo não encontrado nesse grupo")).toBeInTheDocument();
+    expect(screen.queryByText(AVISO_DE_SUMIDA)).not.toBeInTheDocument();
+    expect(onFechar).not.toHaveBeenCalled();
+    expect(onSalvo).not.toHaveBeenCalled();
+  });
+
+  it("🔴 excluir o que já sumiu não é erro: diz isso, fecha e recarrega", async () => {
+    mocks.removerTarefa.mockRejectedValue(new ApiError("Tarefa não encontrada", 404));
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom(TAREFA);
+    await screen.findByText("A fazer");
+
+    await confirmarExclusao(usuario);
+
+    const aviso = await screen.findByText("A tarefa já tinha sido excluída.");
+    /* Chegou aonde a pessoa queria: o aviso é de sucesso, não de erro. */
+    expect(aviso.closest("[data-tipo]")).toHaveAttribute("data-tipo", "sucesso");
+    expect(screen.queryByText("Não foi possível excluir.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tarefa não encontrada")).not.toBeInTheDocument();
+    expect(onFechar).toHaveBeenCalledTimes(1);
+    expect(onSalvo).toHaveBeenCalledTimes(1);
+  });
+
+  it("par negativo: excluir com 200 diz 'Tarefa excluída.'", async () => {
+    mocks.removerTarefa.mockResolvedValue({ mensagem: "removida", tarefa_id: "t1" });
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom(TAREFA);
+    await screen.findByText("A fazer");
+
+    await confirmarExclusao(usuario);
+
+    expect(await screen.findByText("Tarefa excluída.")).toBeInTheDocument();
+    expect(screen.queryByText("A tarefa já tinha sido excluída.")).not.toBeInTheDocument();
+    expect(onFechar).toHaveBeenCalledTimes(1);
+    expect(onSalvo).toHaveBeenCalledTimes(1);
+  });
+
+  it("outro erro ao excluir NÃO fecha", async () => {
+    mocks.removerTarefa.mockRejectedValue(new ApiError("Você não participa desse subgrupo", 403));
+    const usuario = userEvent.setup();
+    const { onSalvo, onFechar } = montarCom(TAREFA);
+    await screen.findByText("A fazer");
+
+    await confirmarExclusao(usuario);
+
+    expect(await screen.findByText("Você não participa desse subgrupo")).toBeInTheDocument();
+    expect(screen.queryByText("A tarefa já tinha sido excluída.")).not.toBeInTheDocument();
+    expect(onFechar).not.toHaveBeenCalled();
+    expect(onSalvo).not.toHaveBeenCalled();
   });
 });
