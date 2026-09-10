@@ -1,3 +1,4 @@
+import ListaDoLote from "../ListaDoLote";
 import ModalDeConfirmacao from "../ModalDeConfirmacao";
 import { contar } from "../../utils";
 import type { ConfirmacaoDeConclusaoEmLoteProps } from "./types";
@@ -35,6 +36,7 @@ export default function ConfirmacaoDeConclusaoEmLote({
           {subgrupos.join(", ")} — e ganha a data de hoje.
         </>
       }
+      detalhe={<ListaDoLote tarefas={tarefas} />}
       aviso={
         jaFeitas > 0
           ? contar(jaFeitas, "já está concluída e será ignorada.", "já estão concluídas e serão ignoradas.")
