@@ -1,3 +1,4 @@
+import ListaDoLote from "../ListaDoLote";
 import ModalDeConfirmacao from "../ModalDeConfirmacao";
 import { contar, contarVinculadas } from "../../utils";
 import type { ConfirmacaoDeExclusaoEmLoteProps } from "./types";
@@ -39,6 +40,7 @@ export default function ConfirmacaoDeExclusaoEmLote({
           {subgrupos.join(", ")}.
         </>
       }
+      detalhe={<ListaDoLote tarefas={tarefas} />}
       /* 🔴 "Sem responsável" NÃO é sinônimo de lixo.
          Medido em produção em 09/09/2026: três das quatro órfãs prendiam um
          processo VIVO. */

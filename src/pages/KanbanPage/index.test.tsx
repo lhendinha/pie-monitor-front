@@ -1167,4 +1167,22 @@ describe("ações reversíveis do lote no Kanban (Fase 8 do PLANO_ACOES_EM_LOTE)
     expect(screen.getByText("0 de 3 selecionadas")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Desfazer" })).toBeInTheDocument();
   });
+
+  it("🔴 as DUAS confirmações dizem QUAIS tarefas, e não só quantas", async () => {
+    /* Uma com a lista e a outra sem, lado a lado, fariam a pessoa procurar a
+       diferença que não existe. */
+    const usuario = await entrarEMarcar("Elaborar defesa", "Reunir provas");
+
+    await usuario.click(screen.getByRole("button", { name: "Concluir" }));
+    let dialogo = await screen.findByRole("dialog");
+    expect(within(within(dialogo).getByRole("list")).getByText("Elaborar defesa")).toBeInTheDocument();
+    expect(within(within(dialogo).getByRole("list")).getByText("Reunir provas")).toBeInTheDocument();
+    await usuario.click(within(dialogo).getByRole("button", { name: "Cancelar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    await usuario.click(screen.getByRole("button", { name: "Excluir 2" }));
+    dialogo = await screen.findByRole("dialog");
+    expect(within(within(dialogo).getByRole("list")).getByText("Elaborar defesa")).toBeInTheDocument();
+    expect(within(within(dialogo).getByRole("list")).getByText("Reunir provas")).toBeInTheDocument();
+  });
 });

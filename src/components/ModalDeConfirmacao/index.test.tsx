@@ -75,4 +75,14 @@ describe("ModalDeConfirmacao", () => {
     await user.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(props.onFechar).toHaveBeenCalled();
   });
+
+  it("mostra o `detalhe` -- o QUE vai ser afetado -- junto da frase", () => {
+    montar({ detalhe: <ul><li>Protocolar recurso</li></ul> });
+    expect(screen.getByRole("list")).toHaveTextContent("Protocolar recurso");
+  });
+
+  it("⚠️ esconde o `detalhe` enquanto verifica -- nada para conferir ainda", () => {
+    montar({ detalhe: <ul><li>Protocolar recurso</li></ul>, verificando: true });
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
 });

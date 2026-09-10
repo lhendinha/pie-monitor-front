@@ -18,6 +18,13 @@ export interface ModalDeConfirmacaoProps {
    * ⚠️ Some enquanto `verificando`: escolher o alcance de uma exclusão que
    * ainda pode ser negada seria pedir uma decisão à toa. */
   escolha?: ReactNode;
+  /** O QUE vai ser afetado, quando a frase só diz quantos -- a lista de
+   * títulos das confirmações do lote.
+   *
+   * ⚠️ Slot próprio pelo mesmo motivo de `escolha`: a `mensagem` é um `<p>`, e
+   * uma lista dentro dele é HTML inválido. Fica logo abaixo da frase, antes do
+   * aviso -- a ordem do artefato validado. Some enquanto `verificando`. */
+  detalhe?: ReactNode;
   /** Recado extra em faixa amarela -- consequência que a frase principal
    * não cobre. */
   aviso?: string;
