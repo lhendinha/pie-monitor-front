@@ -168,6 +168,33 @@ export const ALVOS_DE_NOTIFICACAO = [
   ALVO_DOCUMENTO,
 ] as const;
 
+/** O que o clique numa linha do sino encontraria -- espelha os estados do
+ * backend, que o sino calcula ao listar.
+ *
+ * 🔴 **"excluido" e "sem_acesso" são linhas MORTAS**: não levam a lugar
+ * nenhum, e o clique só as marca como lidas. "disponivel", ausência e valor
+ * desconhecido abrem como sempre abriram -- um front mais antigo que o
+ * servidor não pode esconder linha viva.
+ *
+ * ➡️ `api/PLANO_SINO_COM_ALVOS_VIVOS.md`, decisão 3. */
+export const ESTADO_DO_ALVO_DISPONIVEL = "disponivel";
+export const ESTADO_DO_ALVO_EXCLUIDO = "excluido";
+export const ESTADO_DO_ALVO_SEM_ACESSO = "sem_acesso";
+
+/** Todos os estados, para derivar a união em `types/`. */
+export const ESTADOS_DO_ALVO = [
+  ESTADO_DO_ALVO_DISPONIVEL,
+  ESTADO_DO_ALVO_EXCLUIDO,
+  ESTADO_DO_ALVO_SEM_ACESSO,
+] as const;
+
+/** O texto da marca de cada linha morta. Diferentes de propósito: "sem
+ * acesso" tem remédio (pedir acesso), "não existe mais" não tem. */
+export const MARCA_DO_ALVO = {
+  [ESTADO_DO_ALVO_EXCLUIDO]: "Não existe mais",
+  [ESTADO_DO_ALVO_SEM_ACESSO]: "Sem acesso",
+} as const;
+
 /** Largura do painel do sino. Estreito o bastante pra caber ao lado do
  * botão em telas médias, largo o bastante pra uma frase não quebrar em
  * três linhas. */

@@ -26,6 +26,12 @@ vi.mock("react-router-dom", async (original) => ({
 }));
 
 import SinoDeNotificacoes from "./index";
+import {
+  ESTADO_DO_ALVO_DISPONIVEL,
+  ESTADO_DO_ALVO_EXCLUIDO,
+  ESTADO_DO_ALVO_SEM_ACESSO,
+  MARCA_DO_ALVO,
+} from "../../../../constants/notificacoes";
 
 function notificacao(parcial: Record<string, unknown> = {}) {
   return {
@@ -178,6 +184,84 @@ describe("abrir uma notificação", () => {
     await userEvent.click(await screen.findByText("Prazo final é amanhã"));
 
     expect(navegou).toHaveBeenCalledWith("/processos/s1/00001234520248130001");
+  });
+});
+
+describe("🔴 a linha cujo item não existe mais", () => {
+  const FRASE = "Ana Paula atribuiu uma tarefa a você";
+
+  it("clicar numa morta NÃO lida só a marca como lida -- sem navegar e sem fechar o painel", async () => {
+    comSino([notificacao({ alvo_estado: ESTADO_DO_ALVO_EXCLUIDO })]);
+    await abrirPainel();
+    await userEvent.click(await screen.findByText(FRASE));
+
+    expect(mocks.marcarNotificacaoLida).toHaveBeenCalledWith("1787000000000000_abc");
+    expect(navegou).not.toHaveBeenCalled();
+    expect(screen.getByText(FRASE)).toBeInTheDocument();
+  });
+
+  it("a morta JÁ lida não chama nada", async () => {
+    comSino([notificacao({ alvo_estado: ESTADO_DO_ALVO_EXCLUIDO, lida: true })]);
+    await abrirPainel();
+    const linha = (await screen.findByText(FRASE)).closest("button");
+    /* 🔴 Habilitada MESMO lida: desabilitar tiraria a linha do teclado -- e o
+       texto do aviso continua sendo informação. */
+    expect(linha).not.toBeDisabled();
+    await userEvent.click(linha!);
+
+    expect(mocks.marcarNotificacaoLida).not.toHaveBeenCalled();
+    expect(navegou).not.toHaveBeenCalled();
+  });
+
+  it("sem acesso tem o MESMO clique: só marca lida", async () => {
+    comSino([notificacao({ alvo_estado: ESTADO_DO_ALVO_SEM_ACESSO })]);
+    await abrirPainel();
+    await userEvent.click(await screen.findByText(FRASE));
+
+    expect(mocks.marcarNotificacaoLida).toHaveBeenCalled();
+    expect(navegou).not.toHaveBeenCalled();
+  });
+
+  it("a marca é TEXTO, e diferente para cada estado", async () => {
+    comSino([
+      notificacao({ alvo_estado: ESTADO_DO_ALVO_EXCLUIDO }),
+      notificacao({ notificacao_id: "1787000000000001_def", alvo_estado: ESTADO_DO_ALVO_SEM_ACESSO }),
+    ]);
+    await abrirPainel();
+
+    expect(await screen.findByText(MARCA_DO_ALVO[ESTADO_DO_ALVO_EXCLUIDO])).toBeInTheDocument();
+    expect(screen.getByText(MARCA_DO_ALVO[ESTADO_DO_ALVO_SEM_ACESSO])).toBeInTheDocument();
+  });
+
+  it("🔴 a morta continua botão HABILITADO -- alcançável pelo teclado e pelo leitor de tela", async () => {
+    comSino([notificacao({ alvo_estado: ESTADO_DO_ALVO_EXCLUIDO })]);
+    await abrirPainel();
+
+    expect((await screen.findByText(FRASE)).closest("button")).not.toBeDisabled();
+  });
+
+  it("par negativo: disponível abre como sempre, sem marca", async () => {
+    comSino([notificacao({ alvo_estado: ESTADO_DO_ALVO_DISPONIVEL })]);
+    await abrirPainel();
+    await userEvent.click(await screen.findByText(FRASE));
+
+    expect(navegou).toHaveBeenCalledWith("/tarefas/s1/t1");
+    expect(screen.queryByText(MARCA_DO_ALVO[ESTADO_DO_ALVO_EXCLUIDO])).not.toBeInTheDocument();
+  });
+
+  it("valor DESCONHECIDO abre como sempre -- front antigo não esconde linha viva", async () => {
+    comSino([notificacao({ alvo_estado: "algo_que_nao_existe_ainda" })]);
+    await abrirPainel();
+    await userEvent.click(await screen.findByText(FRASE));
+
+    expect(navegou).toHaveBeenCalledWith("/tarefas/s1/t1");
+  });
+
+  it("a morta NÃO lida conta no sino", async () => {
+    comSino([notificacao({ alvo_estado: ESTADO_DO_ALVO_EXCLUIDO })]);
+    await abrirPainel();
+
+    expect(await screen.findByText("(1)")).toBeInTheDocument();
   });
 });
 

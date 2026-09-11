@@ -13,7 +13,7 @@ import {
   MAXIMO_NO_BADGE,
 } from "../../../../constants";
 import { useNotificacoes } from "../../../../hooks/useNotificacoes";
-import { destinoDaNotificacao } from "../../../../utils/notificacao";
+import { destinoDaNotificacao, estadoMorto } from "../../../../utils/notificacao";
 import type { Notificacao } from "../../../../types";
 import { useNomeDeSubgrupo } from "../../../../hooks/useNomeDeSubgrupo";
 import LinhaDeNotificacao from "./LinhaDeNotificacao";
@@ -51,6 +51,15 @@ export default function SinoDeNotificacoes() {
     if (!notificacao.lida) marcarLida(notificacao.notificacao_id);
     setAberto(false);
     navigate(destino);
+  }
+
+  /** A linha MORTA: o clique só a tira da contagem, e não leva a lugar nenhum.
+   *
+   * 🔴 Sem isto, uma não lida morta ficaria contando no sino até expirar -- o
+   * único lugar que marca lida é o clique, e ela não teria mais clique. O
+   * painel fica aberto: não houve navegação para fechá-lo. */
+  function lerMorta(notificacao: Notificacao) {
+    if (!notificacao.lida) marcarLida(notificacao.notificacao_id);
   }
 
   return (
@@ -109,15 +118,21 @@ export default function SinoDeNotificacoes() {
               ) : notificacoes.length === 0 ? (
                 <EstadoVazio mensagem="Nenhuma notificação." />
               ) : (
-                notificacoes.map((n, indice) => (
-                  <LinhaDeNotificacao
-                    key={n.notificacao_id}
-                    notificacao={n}
-                    subgrupoNome={subgrupoNome}
-                    onAbrir={destinoDaNotificacao(n) ? () => abrir(n) : undefined}
-                    ultima={indice === notificacoes.length - 1}
-                  />
-                ))
+                notificacoes.map((n, indice) => {
+                  const morta = estadoMorto(n);
+                  return (
+                    <LinhaDeNotificacao
+                      key={n.notificacao_id}
+                      notificacao={n}
+                      subgrupoNome={subgrupoNome}
+                      estadoMorto={morta ?? undefined}
+                      onAbrir={
+                        morta ? () => lerMorta(n) : destinoDaNotificacao(n) ? () => abrir(n) : undefined
+                      }
+                      ultima={indice === notificacoes.length - 1}
+                    />
+                  );
+                })
               )}
             </Box>
           </Popover.Content>

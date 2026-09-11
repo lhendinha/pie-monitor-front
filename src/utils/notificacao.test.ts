@@ -9,7 +9,7 @@ import {
   TIPO_TAREFAS_ATRIBUIDAS,
   TIPOS_DE_NOTIFICACAO,
 } from "../constants";
-import { destinoDaNotificacao, detalheSecundario, frasePrincipal } from "./notificacao";
+import { destinoDaNotificacao, detalheSecundario, estadoMorto, frasePrincipal } from "./notificacao";
 import type { Notificacao } from "../types";
 
 const BASE: Notificacao = {
@@ -337,5 +337,20 @@ describe("tarefas atribuídas em lote", () => {
 
   it("⚠️ e leva mesmo SEM `alvo_id` -- não há uma tarefa para abrir", async () => {
     expect(destinoDaNotificacao({ ...ATRIBUIDAS, alvo_id: "" })).toBe("/");
+  });
+});
+
+describe("🔴 estadoMorto: só dois valores matam a linha", () => {
+  const com = (alvo_estado?: string) => ({ alvo_estado } as unknown as Notificacao);
+
+  it("excluído e sem acesso são linhas mortas", () => {
+    expect(estadoMorto(com("excluido"))).toBe("excluido");
+    expect(estadoMorto(com("sem_acesso"))).toBe("sem_acesso");
+  });
+
+  it("disponível, ausente e desconhecido NÃO são -- a linha abre como sempre", () => {
+    expect(estadoMorto(com("disponivel"))).toBeNull();
+    expect(estadoMorto(com(undefined))).toBeNull();
+    expect(estadoMorto(com("algo_novo"))).toBeNull();
   });
 });

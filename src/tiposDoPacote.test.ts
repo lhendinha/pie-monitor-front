@@ -25,9 +25,10 @@ const FORA_DO_INDICE = new Set(["index.ts", "respostas.ts", "requisicoes.ts"]);
    das ações novas (`ResultadoDaConclusao`, `ResultadoDoStatus`,
    `ResultadoDaAtribuicao`), os dois pedidos que os hooks recebem
    (`PedidoDeStatusEmLote`, `PedidoDeAtribuicaoEmLote`) e `OpcoesDoAviso`,
-   o segundo argumento do aviso com Desfazer. O número é o guarda: tipo
-   novo sem pensar não passa. */
-const TIPOS_NO_PACOTE = 126;
+   o segundo argumento do aviso com Desfazer. O `PLANO_SINO_COM_ALVOS_VIVOS`
+   trouxe `EstadoDoAlvo`, a união dos estados do alvo de uma notificação. O
+   número é o guarda: tipo novo sem pensar não passa. */
+const TIPOS_NO_PACOTE = 127;
 
 const dominios = readdirSync(PASTA)
   .filter((a) => a.endsWith(".ts") && !FORA_DO_INDICE.has(a))
