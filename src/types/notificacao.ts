@@ -58,6 +58,16 @@ export interface Notificacao {
    * Ausente também quando não há autor (lembrete, sessão alterada) ou quando
    * a pessoa não tem apelido. */
   autor_nome?: string | null;
+  /** Nome do subgrupo da notificação, resolvido no servidor (`sino_service.listar`).
+   *
+   * 🔴 Do servidor, e não do catálogo de subgrupos de quem lê: quem SAIU de um
+   * subgrupo não o tem mais no catálogo, e a linha "Sem acesso" mostrava o id
+   * cru -- justamente a que precisa do nome para pedir acesso.
+   *
+   * ⚠️ Opcional pelo mesmo motivo de `autor_nome` (o push do canal não o
+   * traz), e ausente quando o subgrupo não é do escritório de quem lê, foi
+   * apagado, ou a notificação não tem subgrupo. */
+  subgrupo_nome?: string | null;
   titulo: string;
   /** Complemento: a coluna de destino, o status novo, o motivo do
    * lembrete. */

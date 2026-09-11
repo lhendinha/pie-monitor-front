@@ -27,9 +27,10 @@ export default function LinhaDeNotificacao({
   estadoMorto,
   mostrarSubgrupo,
   ultima,
-  subgrupoNome,
 }: LinhaDeNotificacaoProps) {
-  const nomeDoSubgrupo = notificacao.subgrupo_id ? subgrupoNome(notificacao.subgrupo_id) : "";
+  /* 🔴 O nome vem pronto na notificação, e sem ele a linha não diz subgrupo
+     nenhum: um id cru não é informação para quem lê. */
+  const nomeDoSubgrupo = notificacao.subgrupo_nome ?? "";
   /* ⚠️ A linha morta continua BOTÃO, e habilitada: é assim que ela segue
      alcançável pelo teclado e pelo leitor de tela. O ponteiro e o realce só
      aparecem quando o clique ainda faz algo -- a morta já lida não faz. */
