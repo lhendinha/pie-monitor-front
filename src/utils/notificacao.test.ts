@@ -352,5 +352,7 @@ describe("🔴 estadoMorto: só dois valores matam a linha", () => {
     expect(estadoMorto(com("disponivel"))).toBeNull();
     expect(estadoMorto(com(undefined))).toBeNull();
     expect(estadoMorto(com("algo_novo"))).toBeNull();
+    // Vazio também não: é "sem estado", não um estado que mata.
+    expect(estadoMorto(com(""))).toBeNull();
   });
 });

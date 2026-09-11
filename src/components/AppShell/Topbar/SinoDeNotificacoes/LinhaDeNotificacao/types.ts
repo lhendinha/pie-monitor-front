@@ -13,5 +13,8 @@ export interface LinhaDeNotificacaoProps {
   /** Presente, a linha é MORTA: ganha a marca, e `onAbrir` só a marca como
    * lida. */
   estadoMorto?: EstadoDoAlvo;
+  /** O painel mistura subgrupos? Só então a linha diz de qual veio -- com
+   * todas do mesmo, o nome repetido não diferencia nada. */
+  mostrarSubgrupo?: boolean;
   ultima?: boolean;
 }

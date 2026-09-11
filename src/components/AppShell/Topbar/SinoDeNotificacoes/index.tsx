@@ -62,6 +62,10 @@ export default function SinoDeNotificacoes() {
     if (!notificacao.lida) marcarLida(notificacao.notificacao_id);
   }
 
+  /** O nome do subgrupo só diferencia alguma coisa quando a lista mistura
+   * mais de um. */
+  const variosSubgrupos = new Set(notificacoes.map((n) => n.subgrupo_id).filter(Boolean)).size > 1;
+
   return (
     <Popover.Root
       open={aberto}
@@ -126,6 +130,7 @@ export default function SinoDeNotificacoes() {
                       notificacao={n}
                       subgrupoNome={subgrupoNome}
                       estadoMorto={morta ?? undefined}
+                      mostrarSubgrupo={variosSubgrupos}
                       onAbrir={
                         morta ? () => lerMorta(n) : destinoDaNotificacao(n) ? () => abrir(n) : undefined
                       }
