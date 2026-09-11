@@ -4685,3 +4685,32 @@ com outro id, e o link do sino seguiria morto.
 
 Conferido de ponta a ponta em produção, num grupo de teste apagado ao fim:
 `scripts/conferir-acoes-em-lote-em-producao.mjs`.
+
+## O sino marca a linha que não leva a lugar nenhum (11/09/2026)
+
+`api/PLANO_SINO_COM_ALVOS_VIVOS.md`, **EXECUTADO**. A API diz, em cada linha,
+o que o clique encontraria (`alvo_estado`), e o sino desenha a resposta.
+
+- **A linha morta** ganha ícone e texto na linha da data: lixeira com "Não existe
+  mais", cadeado com "Sem acesso". O usuário recusou a etiqueta depois de ver as
+  duas versões no Chrome. A linha fica apagada; o ponto azul e o peso da não
+  lida continuam.
+- 🔴 **O clique da morta só marca lida**, sem navegar e sem fechar o painel. A já
+  lida não faz nada, mas segue botão habilitado, alcançável pelo teclado. Sem
+  esse clique, a não lida morta contaria no sino até expirar.
+- ⚠️ **Ausente ou desconhecido abre como sempre** (`estadoMorto`). Foi o que
+  deixou o front subir antes da API, adormecido, e é o que impede um front
+  antigo de esconder uma linha viva.
+- **O subgrupo** é texto discreto ao lado da data, e só quando o painel mistura
+  mais de um. O nome vem do servidor (`subgrupo_nome`): a conferência em
+  produção achou a linha "Sem acesso" com o id cru, porque quem saiu do subgrupo
+  não o tem mais no catálogo. Sem nome, a linha não diz subgrupo nenhum, e o
+  sino deixou de consultar o catálogo.
+- ⚠️ **Medido em Chrome:** com a marca ao lado, a data quebrava na vírgula. A
+  linha dos metadados agora quebra (`wrap`) com a data inteira (`nowrap`).
+
+Conferido de ponta a ponta em produção, num grupo de teste apagado ao fim: as
+doze linhas com a marca certa, a morta clicada virou lida sem navegar, e a viva
+abriu.
+
+➡️ `scripts/verificar-marca-do-sino.mjs` e os testes de `SinoDeNotificacoes`.
