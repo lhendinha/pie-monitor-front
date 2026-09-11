@@ -390,105 +390,99 @@ describe("erro", () => {
 });
 
 describe("o subgrupo na notificação", () => {
+  const OUTRO = "1787000000000002_ghi";
   const DOIS_SUBGRUPOS = [
-    notificacao(),
-    notificacao({ notificacao_id: "1787000000000002_ghi", subgrupo_id: "s2", alvo_id: "t2" }),
+    notificacao({ subgrupo_nome: "Cível" }),
+    notificacao({ notificacao_id: OUTRO, subgrupo_id: "s2", subgrupo_nome: "Trabalhista", alvo_id: "t2" }),
   ];
 
-  it("🔴 com subgrupos MISTURADOS, cada linha diz de qual veio", async () => {
+  it("🔴 com subgrupos MISTURADOS, cada linha diz de qual veio -- pelo nome que vem do servidor", async () => {
     /* O sino junta tudo que acontece nos seus subgrupos. "Fulano atribuiu uma
        tarefa a você" não diz de onde ela vem -- e quem participa de vários
        precisa saber antes de abrir. */
-    mocks.listarSubgrupos.mockResolvedValue({
-      subgrupos: [
-        { subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" },
-        { subgrupo_id: "s2", nome: "Trabalhista", grupo_id: "g1" },
-      ],
-    });
     comSino(DOIS_SUBGRUPOS);
-    renderComProviders(<SinoDeNotificacoes />);
-    await userEvent.click(sino());
+    await abrirPainel();
 
     expect(await screen.findByTitle("Cível")).toHaveTextContent("Cível");
     expect(screen.getByTitle("Trabalhista")).toHaveTextContent("Trabalhista");
   });
 
-  it("⚠️ sem o subgrupo no catálogo, mostra o id -- e não some", async () => {
-    mocks.listarSubgrupos.mockResolvedValue({ subgrupos: [] });
+  it("🔴 o sino NÃO consulta o catálogo de subgrupos -- o nome já vem na notificação", async () => {
     comSino(DOIS_SUBGRUPOS);
-    renderComProviders(<SinoDeNotificacoes />);
-    await userEvent.click(sino());
+    await abrirPainel();
+    await screen.findByTitle("Cível");
 
-    expect(await screen.findByTitle("s1")).toHaveTextContent("s1");
+    expect(mocks.listarSubgrupos).not.toHaveBeenCalled();
+  });
+
+  it("🔴 a linha SEM ACESSO diz o nome do subgrupo de onde a pessoa saiu", async () => {
+    /* É o caso que a conferência em produção achou: sem o subgrupo no catálogo
+       de quem saiu, a linha mostrava o id cru. */
+    comSino([
+      notificacao({ subgrupo_nome: "Cível" }),
+      notificacao({ notificacao_id: OUTRO, subgrupo_id: "s2", subgrupo_nome: "Trabalhista", alvo_id: "t2",
+        titulo: "Tarefa trancada", alvo_estado: ESTADO_DO_ALVO_SEM_ACESSO }),
+    ]);
+    await abrirPainel();
+
+    const linha = (await screen.findByText("Tarefa trancada")).closest("button")!;
+    expect(within(linha).getByTitle("Trabalhista")).toBeInTheDocument();
+    expect(within(linha).getByText(MARCA_DO_ALVO[ESTADO_DO_ALVO_SEM_ACESSO])).toBeInTheDocument();
+  });
+
+  it.each([
+    ["ausente", undefined],
+    ["nulo", null],
+    ["vazio", ""],
+  ])("⚠️ nome %s (subgrupo apagado ou de outro escritório): a linha NÃO mostra o id cru", async (_, nome) => {
+    comSino([
+      notificacao({ subgrupo_nome: "Cível" }),
+      notificacao({ notificacao_id: OUTRO, subgrupo_id: "s2-apagado", subgrupo_nome: nome, alvo_id: "t2", titulo: "Sem nome" }),
+    ]);
+    await abrirPainel();
+    await screen.findByTitle("Cível");
+
+    const linha = screen.getByText("Sem nome").closest("button")!;
+    expect(linha).not.toHaveTextContent("s2-apagado");
+    expect(within(linha).queryByText(/^·/)).not.toBeInTheDocument();
   });
 
   it("🔴 todas do MESMO subgrupo: o nome não aparece -- não diferencia nada", async () => {
-    mocks.listarSubgrupos.mockResolvedValue({
-      subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
-    });
-    comSino([notificacao(), notificacao({ notificacao_id: "1787000000000003_jkl", alvo_id: "t3" })]);
-    renderComProviders(<SinoDeNotificacoes />);
-    await userEvent.click(sino());
+    comSino([
+      notificacao({ subgrupo_nome: "Cível" }),
+      notificacao({ notificacao_id: "1787000000000003_jkl", subgrupo_nome: "Cível", alvo_id: "t3" }),
+    ]);
+    await abrirPainel();
 
     expect((await screen.findAllByText("Ana Paula atribuiu uma tarefa a você")).length).toBe(2);
-    await waitFor(() => expect(mocks.listarSubgrupos).toHaveBeenCalled());
     expect(screen.queryByTitle("Cível")).not.toBeInTheDocument();
-    expect(screen.queryByTitle("s1")).not.toBeInTheDocument();
   });
 
   it("⚠️ aviso SEM subgrupo não conta como outro subgrupo", async () => {
     /* Nem toda notificação tem subgrupo (a de sessão alterada não tem). Contada
        como um "subgrupo vazio", ela faria um painel de um subgrupo só repetir o
        nome em todas as linhas. */
-    mocks.listarSubgrupos.mockResolvedValue({
-      subgrupos: [{ subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" }],
-    });
     comSino([
-      notificacao(),
-      notificacao({ notificacao_id: "1787000000000004_mno", subgrupo_id: undefined, alvo_tipo: undefined, alvo_id: undefined }),
+      notificacao({ subgrupo_nome: "Cível" }),
+      notificacao({ notificacao_id: "1787000000000004_mno", subgrupo_id: undefined, subgrupo_nome: undefined,
+        alvo_tipo: undefined, alvo_id: undefined }),
     ]);
-    renderComProviders(<SinoDeNotificacoes />);
-    await userEvent.click(sino());
+    await abrirPainel();
 
     expect((await screen.findAllByText("Ana Paula atribuiu uma tarefa a você")).length).toBe(2);
-    await waitFor(() => expect(mocks.listarSubgrupos).toHaveBeenCalled());
     expect(screen.queryByTitle("Cível")).not.toBeInTheDocument();
   });
 
   it("🔴 morta num painel misturado mostra o subgrupo E a marca, na mesma linha", async () => {
-    mocks.listarSubgrupos.mockResolvedValue({
-      subgrupos: [
-        { subgrupo_id: "s1", nome: "Cível", grupo_id: "g1" },
-        { subgrupo_id: "s2", nome: "Trabalhista", grupo_id: "g1" },
-      ],
-    });
     comSino([
-      notificacao(),
-      notificacao({ notificacao_id: "1787000000000002_ghi", subgrupo_id: "s2", alvo_id: "t2", titulo: "Tarefa trancada", alvo_estado: ESTADO_DO_ALVO_SEM_ACESSO }),
+      notificacao({ subgrupo_nome: "Cível" }),
+      notificacao({ notificacao_id: OUTRO, subgrupo_id: "s2", subgrupo_nome: "Trabalhista", alvo_id: "t2",
+        titulo: "Tarefa apagada", alvo_estado: ESTADO_DO_ALVO_EXCLUIDO }),
     ]);
-    renderComProviders(<SinoDeNotificacoes />);
-    await userEvent.click(sino());
+    await abrirPainel();
 
-    const linha = (await screen.findByText("Tarefa trancada")).closest("button")!;
-    expect(await within(linha).findByTitle("Trabalhista")).toBeInTheDocument();
-    expect(within(linha).getByText(MARCA_DO_ALVO[ESTADO_DO_ALVO_SEM_ACESSO])).toBeInTheDocument();
-  });
-
-  it("⚠️ catálogo de subgrupos FALHOU: a linha mostra o id e a morta segue marcando lida", async () => {
-    /* O sino não depende do catálogo para funcionar: ele só traduz o nome. */
-    mocks.listarSubgrupos.mockRejectedValue(new Error("caiu"));
-    comSino([
-      notificacao({ alvo_estado: ESTADO_DO_ALVO_EXCLUIDO }),
-      notificacao({ notificacao_id: "1787000000000002_ghi", subgrupo_id: "s2", alvo_id: "t2" }),
-    ]);
-    renderComProviders(<SinoDeNotificacoes />);
-    await userEvent.click(sino());
-    await waitFor(() => expect(mocks.listarSubgrupos).toHaveBeenCalled());
-
-    expect(await screen.findByTitle("s1")).toHaveTextContent("s1");
-    expect(screen.getByTitle("s2")).toHaveTextContent("s2");
-    await userEvent.click(screen.getByTitle("s1").closest("button")!);
-    expect(mocks.marcarNotificacaoLida).toHaveBeenCalledWith("1787000000000000_abc");
-    expect(navegou).not.toHaveBeenCalled();
+    const linha = (await screen.findByText("Tarefa apagada")).closest("button")!;
+    expect(within(linha).getByTitle("Trabalhista")).toBeInTheDocument();
+    expect(within(linha).getByText(MARCA_DO_ALVO[ESTADO_DO_ALVO_EXCLUIDO])).toBeInTheDocument();
   });
 });
