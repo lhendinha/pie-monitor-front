@@ -59,35 +59,35 @@ beforeEach(() => vi.clearAllMocks());
 const CASOS = [
   {
     nome: "useExcluirTarefasEmLote",
-    usar: (ok: never, falha: never) => useExcluirTarefasEmLote(ok, falha),
+    useDoCaso: (ok: never, falha: never) => useExcluirTarefasEmLote(ok, falha),
     pedido: TAREFAS,
     mock: mocks.removerTarefasEmLote,
     chamadoCom: [NO_FIO],
   },
   {
     nome: "useConcluirTarefasEmLote",
-    usar: (ok: never, falha: never) => useConcluirTarefasEmLote(ok, falha),
+    useDoCaso: (ok: never, falha: never) => useConcluirTarefasEmLote(ok, falha),
     pedido: TAREFAS,
     mock: mocks.concluirTarefasEmLote,
     chamadoCom: [NO_FIO],
   },
   {
     nome: "useAlterarStatusEmLote",
-    usar: (ok: never, falha: never) => useAlterarStatusEmLote(ok, falha),
+    useDoCaso: (ok: never, falha: never) => useAlterarStatusEmLote(ok, falha),
     pedido: { tarefas: TAREFAS, colunaId: "c9" },
     mock: mocks.alterarStatusEmLote,
     chamadoCom: [NO_FIO, "c9"],
   },
   {
     nome: "useAtribuirTarefasEmLote (a uma pessoa)",
-    usar: (ok: never, falha: never) => useAtribuirTarefasEmLote(ok, falha),
+    useDoCaso: (ok: never, falha: never) => useAtribuirTarefasEmLote(ok, falha),
     pedido: { tarefas: TAREFAS, responsavelId: "bia@x.com" },
     mock: mocks.atribuirTarefasEmLote,
     chamadoCom: [NO_FIO, "bia@x.com"],
   },
   {
     nome: "useAtribuirTarefasEmLote (ao pool)",
-    usar: (ok: never, falha: never) => useAtribuirTarefasEmLote(ok, falha),
+    useDoCaso: (ok: never, falha: never) => useAtribuirTarefasEmLote(ok, falha),
     pedido: { tarefas: TAREFAS, responsavelId: null },
     mock: mocks.atribuirTarefasEmLote,
     /* ⚠️ `null`, e não `undefined`: devolver ao pool é uma escolha. */
@@ -95,11 +95,11 @@ const CASOS = [
   },
 ];
 
-describe.each(CASOS)("$nome", ({ usar, pedido, mock, chamadoCom }) => {
+describe.each(CASOS)("$nome", ({ useDoCaso, pedido, mock, chamadoCom }) => {
   it("manda ao cliente a lista no formato do lote", async () => {
     mock.mockResolvedValue({ ok: true });
     const aoTerminar = vi.fn();
-    const { result } = montar(() => usar(aoTerminar as never, vi.fn() as never));
+    const { result } = montar(() => useDoCaso(aoTerminar as never, vi.fn() as never));
 
     act(() => {
       (result.current.mutate as (p: unknown) => void)(pedido);
@@ -112,7 +112,7 @@ describe.each(CASOS)("$nome", ({ usar, pedido, mock, chamadoCom }) => {
   it("🔴 invalida tarefas E resumo -- o card e a contagem falam do mesmo conjunto", async () => {
     mock.mockResolvedValue({ ok: true });
     const aoTerminar = vi.fn();
-    const { result, invalidar } = montar(() => usar(aoTerminar as never, vi.fn() as never));
+    const { result, invalidar } = montar(() => useDoCaso(aoTerminar as never, vi.fn() as never));
 
     act(() => {
       (result.current.mutate as (p: unknown) => void)(pedido);
@@ -127,7 +127,7 @@ describe.each(CASOS)("$nome", ({ usar, pedido, mock, chamadoCom }) => {
     const resultado = { ok: true };
     mock.mockResolvedValue(resultado);
     const aoTerminar = vi.fn();
-    const { result } = montar(() => usar(aoTerminar as never, vi.fn() as never));
+    const { result } = montar(() => useDoCaso(aoTerminar as never, vi.fn() as never));
 
     act(() => {
       (result.current.mutate as (p: unknown) => void)(pedido);
@@ -145,7 +145,7 @@ describe.each(CASOS)("$nome", ({ usar, pedido, mock, chamadoCom }) => {
     mock.mockRejectedValue(erro);
     const aoTerminar = vi.fn();
     const aoFalhar = vi.fn();
-    const { result, invalidar } = montar(() => usar(aoTerminar as never, aoFalhar as never));
+    const { result, invalidar } = montar(() => useDoCaso(aoTerminar as never, aoFalhar as never));
 
     act(() => {
       (result.current.mutate as (p: unknown) => void)(pedido);
