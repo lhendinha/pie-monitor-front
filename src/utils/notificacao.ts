@@ -1,6 +1,8 @@
 import {
   ALVO_ATENDIMENTO,
   ALVO_DOCUMENTO,
+  ESTADO_DO_ALVO_EXCLUIDO,
+  ESTADO_DO_ALVO_SEM_ACESSO,
   ALVO_PROCESSO,
   ALVO_TAREFA,
   TIPO_ATENDIMENTO_ATRIBUIDO,
@@ -20,7 +22,19 @@ import {
   TIPO_TAREFAS_MOVIDAS,
   TIPO_TAREFAS_ATRIBUIDAS,
 } from "../constants";
-import type { Notificacao } from "../types";
+import type { EstadoDoAlvo, Notificacao } from "../types";
+
+/** O estado da linha MORTA, ou `null` quando ela abre normalmente.
+ *
+ * 🔴 Só `ESTADO_DO_ALVO_EXCLUIDO` e `ESTADO_DO_ALVO_SEM_ACESSO` contam.
+ * Ausência, `ESTADO_DO_ALVO_DISPONIVEL` e valor desconhecido devolvem `null`:
+ * um front mais antigo que o servidor, ou o objeto que chega pelo canal sem o
+ * campo, não podem esconder linha viva. */
+export function estadoMorto(n: Notificacao): EstadoDoAlvo | null {
+  return n.alvo_estado === ESTADO_DO_ALVO_EXCLUIDO || n.alvo_estado === ESTADO_DO_ALVO_SEM_ACESSO
+    ? n.alvo_estado
+    : null;
+}
 
 /** A frase que a notificação vira na tela.
  *

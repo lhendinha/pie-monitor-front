@@ -1,10 +1,19 @@
 import { Box, Flex, Text } from "@chakra-ui/react";
 
 import { BotaoNu } from "../../../../BotaoNu";
-import EtiquetasDeSubgrupo from "../../../../EtiquetasDeSubgrupo";
+import { IconeCadeado, IconeLixeira } from "../../../../Icons";
+import { ESTADO_DO_ALVO_EXCLUIDO, MARCA_DO_ALVO } from "../../../../../constants/notificacoes";
 import { formatarDataHora } from "../../../../../utils";
 import { detalheSecundario, frasePrincipal } from "../../../../../utils/notificacao";
 import type { LinhaDeNotificacaoProps } from "./types";
+
+/** A cor da marca da linha morta: cinza para excluído, e a cor de aviso para
+ * sem acesso -- que pede atenção porque tem remédio (pedir acesso). */
+const COR_DA_MARCA = { excluido: "fg.subtle", semAcesso: "status.warn.text" } as const;
+
+/** Os ícones do sino são de 15px dentro de botão; na linha da data, ao lado de
+ * texto de 11px, precisam ser do tamanho da letra. */
+const ICONE_DA_MARCA = { "& > svg": { width: "12px", height: "12px", flex: "0 0 auto" } } as const;
 
 /** Uma linha do painel do sino.
  *
@@ -15,16 +24,22 @@ import type { LinhaDeNotificacaoProps } from "./types";
 export default function LinhaDeNotificacao({
   notificacao,
   onAbrir,
+  estadoMorto,
+  mostrarSubgrupo,
   ultima,
   subgrupoNome,
 }: LinhaDeNotificacaoProps) {
-  const clicavel = Boolean(onAbrir);
+  const nomeDoSubgrupo = notificacao.subgrupo_id ? subgrupoNome(notificacao.subgrupo_id) : "";
+  /* ⚠️ A linha morta continua BOTÃO, e habilitada: é assim que ela segue
+     alcançável pelo teclado e pelo leitor de tela. O ponteiro e o realce só
+     aparecem quando o clique ainda faz algo -- a morta já lida não faz. */
+  const clicavel = Boolean(onAbrir) && !(estadoMorto && notificacao.lida);
 
   return (
     <BotaoNu
       type="button"
       onClick={onAbrir}
-      disabled={!clicavel}
+      disabled={!onAbrir}
       display="flex"
       alignItems="flex-start"
       gap="10px"
@@ -49,24 +64,61 @@ export default function LinhaDeNotificacao({
       />
 
       <Box flex="1" minW="0">
-        <Text fontSize="13px" fontWeight={notificacao.lida ? "600" : "700"}>
+        {/* A linha morta fica APAGADA: de relance se vê quais não levam a lugar
+            nenhum. O ponto azul e o peso da não lida continuam iguais -- o aviso
+            ainda é um fato que aconteceu. */}
+        <Text
+          fontSize="13px"
+          fontWeight={notificacao.lida ? "600" : "700"}
+          color={estadoMorto ? "fg.muted" : undefined}
+        >
           {frasePrincipal(notificacao)}
         </Text>
-        <Text fontSize="12px" color="fg.muted" mt="1px" truncate>
+        <Text fontSize="12px" color={estadoMorto ? "fg.subtle" : "fg.muted"} mt="1px" truncate>
           {detalheSecundario(notificacao)}
         </Text>
-        {/* 🔴 Junto da data, que é a linha de metadados desta linha. O sino
-            avisa sobre tudo que acontece nos seus subgrupos, misturado -- e
-            "Fulano atribuiu uma tarefa a você" não diz de onde ela vem.
+        {/* 🔴 O subgrupo é TEXTO discreto ao lado da data, e não a etiqueta das
+            tabelas. Numa tabela a etiqueta é uma coluna; aqui ela pesava mais
+            que a própria data e disputava espaço com a marca da linha morta.
+            Decisão do usuário, depois de ver as duas.
 
-            ⚠️ Fora do `Text` da data, e não dentro: aquele é `fontFamily
-            mono` e a etiqueta tem tipografia própria. Herdar mono deixaria a
-            etiqueta diferente das outras seis telas. */}
-        <Flex align="center" gap="7px" mt="3px" minW="0">
-          <Text fontSize="11px" color="fg.subtle" fontFamily="mono">
+            ⚠️ Só aparece quando o painel mistura subgrupos (`mostrarSubgrupo`):
+            com todas do mesmo, o nome repetido em cada linha não diferencia
+            nada.
+
+            ⚠️ `wrap` e a data `nowrap`: com a marca, o conteúdo pode passar da
+            largura do painel. Sem isto a DATA quebrava na vírgula (medido em
+            Chrome); com isto é o resto que desce inteiro. */}
+        <Flex align="center" gap="7px" rowGap="4px" mt="3px" minW="0" wrap="wrap">
+          <Text fontSize="11px" color="fg.subtle" fontFamily="mono" whiteSpace="nowrap">
             {formatarDataHora(notificacao.criado_em)}
           </Text>
-          <EtiquetasDeSubgrupo nomes={[subgrupoNome(notificacao.subgrupo_id)]} />
+          {mostrarSubgrupo && nomeDoSubgrupo && (
+            <Text
+              as="span"
+              fontSize="11px"
+              color="fg.subtle"
+              title={nomeDoSubgrupo}
+              truncate
+              maxW="150px"
+            >
+              · {nomeDoSubgrupo}
+            </Text>
+          )}
+          {estadoMorto && (
+            <Flex
+              align="center"
+              gap="4px"
+              whiteSpace="nowrap"
+              color={estadoMorto === ESTADO_DO_ALVO_EXCLUIDO ? COR_DA_MARCA.excluido : COR_DA_MARCA.semAcesso}
+              css={ICONE_DA_MARCA}
+            >
+              {estadoMorto === ESTADO_DO_ALVO_EXCLUIDO ? <IconeLixeira /> : <IconeCadeado />}
+              <Text as="span" fontSize="11px" fontWeight="600">
+                {MARCA_DO_ALVO[estadoMorto as keyof typeof MARCA_DO_ALVO]}
+              </Text>
+            </Flex>
+          )}
         </Flex>
       </Box>
     </BotaoNu>

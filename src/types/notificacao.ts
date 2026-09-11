@@ -3,7 +3,7 @@
    divergirem. `import type` do ARQUIVO de `constants`, não do índice: o
    índice reexporta o pacote inteiro, e puxá-lo daqui ligaria `types` a tudo
    que mora lá. Some na compilação, então não há ciclo em tempo de execução. */
-import type { ALVOS_DE_NOTIFICACAO, TIPOS_DE_NOTIFICACAO } from "../constants/notificacoes";
+import type { ALVOS_DE_NOTIFICACAO, ESTADOS_DO_ALVO, TIPOS_DE_NOTIFICACAO } from "../constants/notificacoes";
 
 /** Contagens da Área de trabalho (`GET /resumo`). */
 export interface ResumoDaAreaDeTrabalho {
@@ -72,6 +72,12 @@ export interface Notificacao {
      precisa justamente distinguir "não tem alvo" de "alvo que não conheço". */
   alvo_tipo: AlvoDeNotificacao | "";
   alvo_id: string;
+  /** O que o clique encontraria, calculado pelo servidor ao listar.
+   *
+   * ⚠️ **Opcional, e não por comodidade** -- a mesma razão de `autor_nome`:
+   * o objeto que chega pelo canal WebSocket não tem o campo, e a linha sem
+   * alvo também não. Ausente, a linha abre como sempre abriu. */
+  alvo_estado?: EstadoDoAlvo;
 }
 
 /** O que o canal de tempo real manda. `tipo` distingue os formatos --
@@ -112,3 +118,6 @@ export type TipoDeNotificacao = (typeof TIPOS_DE_NOTIFICACAO)[number];
 /** O que o servidor pode mandar em `Notificacao.alvo_tipo`. Decide PRA ONDE
  * o clique leva (`destinoDaNotificacao`). */
 export type AlvoDeNotificacao = (typeof ALVOS_DE_NOTIFICACAO)[number];
+
+/** O que o servidor pode mandar em `Notificacao.alvo_estado`. */
+export type EstadoDoAlvo = (typeof ESTADOS_DO_ALVO)[number];
